@@ -57,6 +57,7 @@
   <Folder Name="/docs/">
     <File Path="README.md" />
     <File Path="LICENSE" />
+    <File Path="THIRD-PARTY-NOTICES.md" />
     <File Path="CLAUDE.md" />
   </Folder>
 </Solution>

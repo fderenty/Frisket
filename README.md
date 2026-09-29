@@ -242,7 +242,7 @@ kind.
 The four bundled typefaces are **not** covered by that licence — all four are under
 the SIL Open Font License.
 Each carries its own licence text and copyright notice in its own folder, and those
-must travel with it. See [LICENSE](LICENSE).
+must travel with it. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Fonts that could not produce a licence were removed rather than shipped on the
 strength of a label. "Freeware" means free to use, which is not the same as free to

@@ -646,7 +646,7 @@ namespace test
             File.Copy(source, Path.Combine(twice, "a-copy-of-it.ttf"), true);
 
             // And its licence beside them. These copies are committed under tests/output,
-            // and the OFL asks that every copy carry it - LICENSE promises as much. A .txt
+            // and the OFL asks that every copy carry it - THIRD-PARTY-NOTICES.md promises as much. A .txt
             // is not a font, so RegisterDirectory passes over it and the count below is
             // untouched.
             File.Copy(Path.Combine(Path.GetDirectoryName(source)!, "OFL.txt"),
