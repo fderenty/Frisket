@@ -1,0 +1,67 @@
+{
+  "Title": "Test 3: Anchor Layouts",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Header",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [],
+          "Style": {
+            "Location": {
+              "HeightValue": 50,
+              "Dock": "Left, Top, Right"
+            }
+          }
+        },
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        },
+        {
+          "$type": "Footer",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [],
+          "Style": {
+            "Location": {
+              "HeightValue": 50,
+              "Dock": "Left, Right, Bottom"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

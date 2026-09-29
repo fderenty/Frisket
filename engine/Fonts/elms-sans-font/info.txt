@@ -1,0 +1,5 @@
+license: SIL Open Font License 1.1, see OFL.txt
+copyright: Copyright 2025 The Elms Sans Project Authors (https://github.com/mara-aa/elms-sans.git)
+designer: Amarachi Nwauwa
+link: https://github.com/mara-aa/elms-sans.git
+note: the licence is declared in the font files themselves

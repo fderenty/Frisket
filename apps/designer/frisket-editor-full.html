@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frisket — editor, everything showing</title>
+<link rel="stylesheet" href="frisket-chrome.css">
+<link rel="stylesheet" href="frisket-editor.css">
+</head>
+<body>
+
+<!-- The same editor with the header and the panel showing, for working on the editor
+     itself: the title and page size have no other home in this face, and the findings
+     are quicker to read on the page than through an event.
+
+     Not built into release/. What ships is the lean one - see frisket-editor.html, and
+     the attributes on its div, which are the same names <frisket-editor> reads. This
+     page carries none, because the defaults for a plain page are already everything:
+     a page IS the application. -->
+<div id="frisket-editor-root"></div>
+
+<script src="frisket-core.js"></script>
+<script src="frisket-runs.js"></script>
+<script src="frisket-editor.js"></script>
+</body>
+</html>

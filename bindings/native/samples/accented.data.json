@@ -1,0 +1,189 @@
+{
+  "IssuerName": "Ateliers Nordé & Fils",
+  "IssuerLine1": "12 rue de l’Église",
+  "IssuerLine2": "00001 Châteauneuf-sur-Loire",
+  "IssuerCompanyNo": "000 000 000 00001",
+  "IssuerVat": "XX00 000 000 001",
+  "IssuerRegistry": "Newtown B000 00001",
+  "IssuerActivity": "Réparation mécanique",
+  "IssuerCapital": "1,000,000.00 EUR",
+  "InvoiceNumber": "No. 33250200001",
+  "InvoiceDate": "2025-10-02",
+  "Job": "Contrôle technique : « conforme »",
+  "InterventionNo": "01",
+  "InterventionLabel": "Révision complète — pièces d’origine",
+  "Vehicle": {
+    "Plate": "AAA-0000",
+    "Make": "ACME",
+    "Model": "Type 20",
+    "Vin": "ZZ0ACME000000001",
+    "FirstRegistration": "2010-10-27",
+    "Mileage": 148210
+  },
+  "Customer": {
+    "Code": "411ACM001",
+    "Name": "ACME Logistics",
+    "Line1": "5 Mill Road",
+    "Line2": "00002 Oldford",
+    "CompanyNo": "000 000 000 00002",
+    "Vat": "XX00 000 000 002"
+  },
+  "Charge": "Default cost centre",
+  "Totals": {
+    "Ht": 11876769.42,
+    "Vat": 2375353.88,
+    "Ttc": 14252123.3,
+    "DiscountedHt": 9160758.58
+  },
+  "Payment": {
+    "Method": "Cheque",
+    "DueDate": "2025-10-02"
+  },
+  "Version": "ACME 2.1.0.42",
+  "Lines": [
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0001",
+      "Label": "parts",
+      "Qty": 1037,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 19.9
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0002",
+      "Label": "parts",
+      "Qty": 1074,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 39.8
+    },
+    {
+      "Family": "Labour",
+      "Vat": "A",
+      "Ref": "A-0003",
+      "Label": "fixed price",
+      "Qty": 1111,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 59.699999999999996
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0004",
+      "Label": "parts",
+      "Qty": 1148,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 79.6
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0005",
+      "Label": "parts",
+      "Qty": 1185,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 99.5
+    },
+    {
+      "Family": "Labour",
+      "Vat": "A",
+      "Ref": "A-0006",
+      "Label": "fixed price",
+      "Qty": 1222,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 119.39999999999999
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0007",
+      "Label": "parts",
+      "Qty": 1259,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 139.29999999999998
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0008",
+      "Label": "parts",
+      "Qty": 1296,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 159.2
+    },
+    {
+      "Family": "Labour",
+      "Vat": "A",
+      "Ref": "A-0009",
+      "Label": "fixed price",
+      "Qty": 1333,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 179.1
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0010",
+      "Label": "parts",
+      "Qty": 1370,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 199
+    },
+    {
+      "Family": "Parts",
+      "Vat": "A",
+      "Ref": "A-0011",
+      "Label": "parts",
+      "Qty": 1407,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 218.89999999999998
+    },
+    {
+      "Family": "Labour",
+      "Vat": "A",
+      "Ref": "A-0012",
+      "Label": "fixed price",
+      "Qty": 1444,
+      "UnitPrice": 312.0,
+      "Discount": 42.0,
+      "DiscountAmount": 980310.24,
+      "NetPrice": 180.96,
+      "Total": 238.79999999999998
+    }
+  ]
+}

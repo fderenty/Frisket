@@ -1,0 +1,433 @@
+{
+  "Title": "Bulletin",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "en-GB",
+  "HeadingNumbering": "1.1",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "",
+                "MediaType": "image/png"
+              },
+              "Scaling": "Uniform",
+              "SourceField": "Logo",
+              "AltText": "Logo ACME",
+              "Style": {}
+            },
+            {
+              "$type": "BarcodeItem",
+              "Value": "ACME-001",
+              "Correction": "Medium",
+              "Ink": {
+                "A": 255
+              },
+              "ShowText": true,
+              "Font": {
+                "Size": 0.7
+              },
+              "AltText": "Code-barres du dossier ACME-001",
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "signature",
+              "Tooltip": "Customer\u0027s signature",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "paraphe",
+              "Tooltip": "Customer initials",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 2,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "placed by hand",
+                  "Font": {},
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {},
+                {},
+                {},
+                {},
+                {},
+                {}
+              ],
+              "RepeatHeader": true,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "B",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "C",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "D",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "E",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "F",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                },
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 1",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 2",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 3",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 4",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 5",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Col 6",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "ImageGridItem",
+              "GridColumns": 3,
+              "RowHeight": 40,
+              "Gap": 4,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "SubTemplateItem",
+              "TemplatePath": "fragment.json",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "Repaired text."
+                }
+              ],
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "Page {Page}."
+                }
+              ],
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "RepeatOver": "Recipients",
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Cher {Name},",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "PageBreak": "Before"
+                  }
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Introduction",
+              "Font": {},
+              "Role": "Heading1",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "See {HeadingNumber[1]} below",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "First paragraph.",
+              "Font": {
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Sign here",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "approval",
+              "Kind": "Signature",
+              "Tooltip": "Sign here",
+              "Signing": "Digital",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "AltText": "Where the customer signs",
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "countersign",
+              "Kind": "Signature",
+              "Tooltip": "Countersign here",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "AltText": "Where the surveyor countersigns",
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "over",
+                  "Font": {},
+                  "Style": {}
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "under",
+                  "Font": {},
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Second one.",
+              "Font": {
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "left column",
+                  "Font": {},
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 80
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "right column",
+                  "Font": {},
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 84,
+                      "Dock": "Right"
+                    }
+                  }
+                }
+              ],
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

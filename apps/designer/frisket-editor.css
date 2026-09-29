@@ -1,0 +1,508 @@
+/* The content editor's own rules.
+ *
+ * Lifted out of frisket-editor.html on 24 August 2026 so that a shadow root can be
+ * given the same sheet the page gets, rather than the two keeping copies. Every colour
+ * here is a custom property from frisket-chrome.css, which is what lets a host theme
+ * this without touching it - and what the palette audit holds it to.
+ */
+  /* The flow editor's own layout. No tree and no coordinates: this face edits a
+     Stack, and a Stack has no coordinates to show. What it does have is the shape
+     every rich-text editor has and people already know - a strip of tools sitting on
+     top of the thing being written, both inside one frame. */
+  main { flex: 1; display: grid; min-height: 0; grid-template-columns: 1fr 300px; }
+
+  /* The desk does not scroll; the sheet inside the frame does. A scrollbar riding
+     the window edge says "this page is long", and what is long is the document -
+     which is a thing inside the frame, with a toolbar pinned above it. */
+  #desk {
+    display: flex; justify-content: center;
+    padding: 24px 20px; min-height: 0; overflow: hidden;
+    background: var(--surround);
+  }
+
+  /* Toolbar and sheet are one object, not two regions of the window. That is the
+     whole difference in feel between this and the designer, and it is mostly this
+     border. */
+  #frame {
+    display: flex; flex-direction: column; min-height: 0;
+
+    /* At least as wide as the strip of tools needs, and never wider than the room
+       there is. The frame used to be exactly the sheet, so on A4 portrait the tools
+       wrapped onto a second line - and a toolbar that reflows is one whose buttons
+       are somewhere different depending on the paper. The sheet keeps its true width
+       inside and is centred; what shows beside it is desk, not paper, or the page
+       would be claiming to be wider than it is.
+
+       An A3 landscape sheet still shrinks to fit rather than pushing a scrollbar
+       onto the window. */
+    /* The floor is what the TOOLBAR needs, not what the sheet needs, and it was set
+       when the row was shorter. Counted rather than guessed, for the face that ships:
+       nineteen buttons at 28 and the colour chevron at 18 make 550; the two lists about
+       266; six separators at 11 with their margins, 66; the gaps between some thirty
+       items, 60; and 16 of padding. About 960, against a floor of 832 - which is three
+       and a half buttons short, and reported as exactly that.
+
+       60rem, so the row fits at any ordinary size. `flex-wrap` on the toolbar stays as
+       the last resort for a genuinely narrow window: nothing is ever squeezed out of
+       square or cut off, it goes to a second row instead. Add controls and this number
+       wants counting again - it is a floor, not a law. */
+    width: min(max(var(--sheet-width, 210mm), 60rem), 100%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    background: var(--surround);
+  }
+
+  /* ---- the strip ---- */
+  #toolbar {
+    flex: none;                        /* pinned: the sheet moves under it */
+    /* WRAPS rather than squeezing. A flex row with nothing said about it shrinks its
+       items when it runs out of width, and it shrinks them in ONE direction - so every
+       icon button came out narrower than it is tall while every height stayed 28px.
+       Reported as "the buttons are not square", which is exactly what it was. Two rows
+       of square buttons is the honest answer to a narrow editor. */
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+    padding: 5px 8px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Toolbar buttons carry an icon and nothing else: a row of words reads as a menu,
+     a row of glyphs reads as a toolbar, and the difference is what tells somebody
+     which kind of thing they are looking at before they have read any of it. */
+  /* Three states, three strengths: --chrome-ink at rest, --ink under the pointer,
+     the accent when it is on.
+
+     Both ends of that were found by looking rather than by measuring. At --ink the
+     row was as loud as the text it edits; at --muted it read as greyed out, because
+     --muted is the colour of labels and hints everywhere else in this chrome and an
+     interactive row wearing it is wearing the colour of things you cannot click.
+     --chrome-ink is the value in between, derived from the two rather than typed. */
+  #toolbar button {
+    /* `flex: none` because 28 by 28 is a claim, and a flex item makes no such claim by
+       default: it shrinks. The chevron below carried a min-width for exactly this and
+       nothing else did - a symptom plastered over in the one place somebody saw it. */
+    flex: none;
+    width: 28px; height: 28px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid transparent; border-radius: var(--radius);
+    color: var(--chrome-ink, var(--ink)); cursor: pointer;
+    transition: color .12s, background .12s;
+  }
+  #toolbar button:hover,
+  #toolbar button:focus-visible { color: var(--ink); background: var(--hover-wash);
+                                  border-color: transparent; }
+  /* An ACTIVE button has a ground of its own, and until now it did not: it wore
+     var(--hover-wash), the very thing a merely hovered button wears, so "this style
+     is on" and "your pointer is here" were painted identically. Reported from the
+     browser with a screenshot, and visible in it - the left-align button is on, and
+     it takes a moment to see which one.
+
+     So three grounds for three states, the way there are already three strengths of
+     ink: nothing at rest, the wash under the pointer, and a real tint with an edge
+     when it is on. The tint is derived from the accent rather than typed, so it
+     follows every theme there is, present and future - and it is 16% against the
+     hover's 9-11%, which is the
+     gap that makes them tell apart at a glance rather than on inspection.
+
+     The edge matters as much as the fill. At 16% a tint is a whisper on a light
+     theme and a bruise on a dark one; a border at 38% reads the same on both, and it
+     is what turns a patch of colour into a pressed key. */
+  #toolbar button.on {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+  #toolbar button.on:hover {
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 52%, transparent);
+  }
+  /* Thin, and thinner than it was. The first pass drew at 1.6, the second at 1.15,
+     and 1.15 on a 16-unit box shown at 17px is 1.22 device pixels - heavier than the
+     hairline it was meant to be. At 1 it is one pixel, which is what "drawn rather
+     than built" was always asking for. */
+  #toolbar button svg { width: 17px; height: 17px; fill: none;
+                        stroke: currentColor; stroke-width: 1;
+                        stroke-linecap: round; stroke-linejoin: round; }
+
+  /* The letters, and the fallback nobody had looked at. The stack read "Iowan Old
+     Style", Georgia, serif - Iowan is a Mac face, so on Windows every B, I, U and S
+     was set in GEORGIA, which is the heaviest-stemmed serif of the three and exactly
+     the "pataud" that was reported. The list now runs from the finest-stemmed face
+     down: Didot and Bodoni are hairline-thin, Iowan is moderate, and Times is a long
+     way lighter than Georgia, which is no longer in it at all.
+
+     15px of a high-contrast serif also sets smaller than 15px of Georgia, so the size
+     goes up a touch to keep the mark the same size while its strokes get finer - the
+     point is the weight, not the footprint. */
+  #toolbar .glyph { font: 400 16px/1 Didot, "Bodoni 72", "Iowan Old Style",
+                              "Times New Roman", Times, serif;
+                    letter-spacing: .3px; }
+
+  #toolbar .sep { width: 1px; height: 18px; background: var(--line); margin: 0 5px; }
+
+  /* The selects sit at the same strength as the buttons and come forward under the
+     pointer. They show a value rather than an action - which font, which size - so
+     they carry the row's only words, and words at full ink were half of what made it
+     loud in the first place. */
+  /* A GROUND OF ITS OWN, even at rest, and even though it is the toolbar's own colour.
+     `background: none` reads as "let the toolbar show through" and means something else
+     to a <select>: with no background declared the browser paints its native widget,
+     and the only reason that was invisible is that a background WAS declared on hover.
+     Open the list and the pointer moves onto the list, so the hover falls away - and
+     the closed box came back as a pale native control under a dark menu. Reported from
+     the browser, with a screenshot.
+
+     --panel is what the toolbar is painted in, so at rest it looks exactly as it did.
+     The difference is only that the browser is no longer deciding. */
+  #toolbar select {
+    /* And the lists are what gives way when something must: a narrower list is still a
+       list, where a squeezed icon is a broken icon. `min-width: 0` because a flex item
+       will not shrink below its own content otherwise - which is what left the buttons
+       as the only thing there was to squeeze. */
+    flex: 0 1 auto; min-width: 0;
+    height: 28px; padding: 0 4px; border: 1px solid transparent;
+    background: var(--panel); color: var(--chrome-ink, var(--ink));
+    border-radius: var(--radius);
+    transition: color .12s, background .12s;
+  }
+  /* Focus is also the state a select is in while its list is open, so it needs the
+     lifted ground the hover gives - otherwise opening the list makes the box recede
+     exactly when it is the thing being used. */
+  #toolbar select:focus { background: var(--control); color: var(--ink); }
+  /* An opaque hover rather than the wash the buttons take, and named colours on the
+     options - because the list a select opens is painted by the browser out of the
+     control's own colours. With `background: none` and a translucent mint hover, the
+     open list came out a pale mint sheet with light grey text on it: illegible, and
+     only in the dark theme, because only there is the ink light enough to disappear
+     into it. Reported from the browser, with a screenshot. */
+  #toolbar select:hover { background: var(--control); color: var(--ink); }
+  #toolbar select option { background: var(--panel); color: var(--ink); }
+
+  /* A colour well rather than a raw colour input: the browser's own control is a
+     bordered box the size of a button and looks nothing like the rest. */
+  /* The colour control, in two halves: the swatch applies what is on it, the chevron
+     opens the choice. One button could only ever answer one of those two questions,
+     and it answered the wrong one - a native picker raises `change` when it closes,
+     so pressing it again with the same colour already chosen raised nothing. */
+  #toolbar .ink { position: relative; display: flex; align-items: center; }
+  /* Over the control and out of the way: the browser opens the picker beside this
+     box, so it has to have one and it has to be here. */
+  #toolbar .ink > input[type="color"] {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    padding: 0; border: none; background: none;
+  }
+  /* The min-width that used to be here was this same fault, patched on the one control
+     somebody noticed it on. `flex: none` above says it for all of them. */
+  #toolbar .ink .chevron { width: 18px; }
+  #toolbar .ink .chevron svg { width: 12px; height: 12px; }
+  #toolbar #well {
+    display: block; width: 17px; height: 17px; border-radius: 3px;
+    border: 1px solid var(--line); background: var(--ink);
+  }
+
+  /* Declared plainly: the shared sheet restates the browser's [hidden] rule with an
+     !important, so a display here can no longer un-hide it. Guarding this one rule as
+     well would leave two mechanisms of which neither could be shown to fail. */
+  #toolbar #inkMenu {
+    position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;
+    display: flex; flex-direction: column; gap: 7px; padding: 8px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow-modal);
+  }
+  /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are
+     still one glance. */
+  #toolbar #inkSwatches { display: grid; grid-template-columns: repeat(8, 18px); gap: 4px; }
+  /* Never empty now - the "no colour" cell is always in it - so the rule that hid
+     it when a document had no colours yet would hide the one cell that is always
+     worth offering. */
+  /* The one that is on, marked the way the toolbar marks a pressed button - the
+     accent, and an edge rather than a fill, because a fill would be a second colour
+     on a cell whose whole job is to show one. The ring sits outside the cell so it
+     covers none of it. */
+  #toolbar #inkSwatches button.chosen {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  #toolbar #inkSwatches button.none {
+    background: var(--control);
+    background-image: linear-gradient(to top right,
+      transparent calc(50% - 1px), var(--muted) calc(50% - 1px),
+      var(--muted) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+  #toolbar #inkSwatches button {
+    width: 18px; height: 18px; min-width: 0; padding: 0; border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+  /* The errand, under a rule: one gesture opens a picker and the rest choose a
+     colour, and a line is what says they are different kinds of thing. */
+  #toolbar #inkMenu > button {
+    width: auto; height: auto; padding: 6px 6px 2px; font: 12px system-ui;
+    color: var(--chrome-ink, var(--ink)); justify-content: flex-start;
+    border-top: 1px solid var(--line); border-radius: 0;
+  }
+  #toolbar #inkMenu > button:hover { background: var(--hover-wash); }
+
+  /* ---- the sheet ---- */
+  #sheet {
+    flex: 1; min-height: 0; overflow: auto;
+    width: min(var(--sheet-width, 210mm), 100%); margin: 0 auto;
+    background: var(--paper);
+    padding: var(--sheet-pad, 20mm);
+    color: var(--on-paper-text);   /* the sheet's ink, never var(--ink) */
+  }
+
+  /* A block. One per child of the Body, and exactly one of them is contenteditable
+     at a time - the sheet never is. That single decision is what keeps a picture or
+     a table from being a foreign body inside flowing text, which is where every
+     contenteditable editor comes apart. */
+  /* pre-wrap so a newline inside a paragraph is drawn as one. The engine has always
+     understood a hard break inside a run - BreakAdvancedText splits on it - and this
+     is what makes the page agree. */
+  .block { position: relative; padding: 1px 0; }
+
+  /* The editable, and nothing else in it.
+     Twice now something was appended to a block that turned out to be the editable
+     itself - the kind label, then the drag handle - and both times it became part of
+     the paragraph and was read back into the document. A block is furniture; the
+     surface inside it is the text. Anything can be added to the first without
+     touching the second. */
+  .surface { outline: none; white-space: pre-wrap; }
+  .surface[contenteditable] { min-height: 1.2em; }
+
+  /* THE KIND IS IN THE HANDLE'S TOOLTIP, and no longer floating on the paper.
+     It was a pseudo-element in the margin - deliberately ::after and not a child,
+     because an element inside a contenteditable is part of the text: it showed up in
+     the block, it could be typed over, and reading the runs back concatenated
+     "Advanced text" into the paragraph and saved it into the document.
+
+     That was the right answer to the wrong question. The kind is reference: you want
+     it once, about a block you cannot identify by looking. Hovering anything printed
+     it beside the text, in the page's own margin, where nothing else in this face
+     draws - so the sheet carried a running commentary while you typed. The handle's
+     `title` says it now, at the moment somebody is actually asking. */
+  .block.here { box-shadow: -10px 0 0 -8px var(--accent); }
+
+  /* Where a dragged block would land. A line rather than a highlight, because what
+     is being chosen is a position between two blocks, not one of them. */
+  /* Where a dragged block would land, shown as the arrangement it will make.
+     A line at the edge said which side and left the rest to be inferred: dropping
+     beside a paragraph pairs the two into one container, dropping above it reorders
+     the body, and those are different enough that guessing between them is a poor
+     way to spend a drag. So the target draws the shape of the result - the half the
+     dragged block would take, filled, with the target's own half beside it. */
+  .block .zones {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    opacity: 0; transition: opacity .1s;
+  }
+  .block.landing .zones { opacity: 1; }
+
+  .block .zone {
+    position: absolute; border-radius: var(--radius);
+    background: var(--hover-wash);
+    border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: inset .1s;
+  }
+  /* Filled where the block would go, outlined where the target would end up: which
+     one is which is the whole question, and two weights answer it without a word. */
+  .block .zone.taken {
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+    border-style: solid;
+  }
+
+  .block.lifted { opacity: .35; }
+
+  /* The one thing a block is dragged by.
+     Before this, a block was its own handle - which meant a paragraph was dragged by
+     its contenteditable, where the browser would rather be selecting text, and a pair
+     was dragged by the picture inside one of its cells, where it is not even clear
+     whether the gesture means "move the pair" or "take the picture out of it". Both
+     read as "dragging stopped working" without either being obviously broken.
+     A handle answers all of it: one element, outside the editable, on every block
+     alike. */
+  /* Its box REACHES the block. At `left: -24px` and 18 wide it stopped at -6, leaving
+     six pixels of nothing between the two - and crossing that gap on the way to the
+     handle ends `.block:hover`, so it faded exactly as you reached for it. A wider box
+     with the extra as padding closes it: the glyph does not move, and the handle stays
+     lit because it is a CHILD of the block, so pointing at it is still pointing at the
+     block.
+
+     Geometry rather than a timer. A control that lingers after the pointer has left is
+     a control drawn over whatever is being pointed at now, which is the fault the cell
+     handles were just mended for. */
+  .block > .handle {
+    /* The BOX reaches the block and the CHIP is square, which are two different things
+       and were one until somebody looked: the padding that closes the gap is inside the
+       box, and a background paints the box - so the wash under the pointer came out 24
+       by 20 where a cell's is 18 by 18. `background-clip: content-box` paints the
+       content alone, and the content is 20 by 20. */
+    position: absolute; left: -28px; top: 0;
+    width: 28px; padding-right: 6px; height: 22px; cursor: grab;
+    background-clip: content-box;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;
+    border: 1px solid transparent; border-radius: var(--radius);
+    opacity: 0; transition: opacity .12s, color .12s, background .12s;
+  }
+  .block:hover > .handle, .block.here > .handle { opacity: 1; }
+  .block > .handle:hover {
+    color: var(--on-paper-accent); background: var(--on-paper-wash);
+    border-color: var(--on-paper-line);
+  }
+  .block > .handle:active { cursor: grabbing; }
+
+  /* Half of a pair takes hold of itself, inside its own corner.
+     In the gutter it would land under the pair's own handle - the left-hand cell
+     starts at the block's left edge, so the two were exactly on top of one another
+     and the picture, which is the cell on the left, could not be grabbed at all.
+     Inside also means it is legible over a photograph, which the gutter never was. */
+  .cell > .handle {
+    position: absolute; left: 3px; top: 3px; z-index: 2;
+    width: 18px; height: 18px; cursor: grab;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;
+    background: var(--on-paper); border: 1px solid var(--on-paper-line);
+    border-radius: var(--radius); box-shadow: 0 1px 3px var(--on-paper-shadow);
+    opacity: 0; transition: opacity .12s, color .12s;
+  }
+  /* On hover ALONE, unlike a block's. A block's handle lives in the gutter, where
+     leaving it showing for the current block costs nothing; a cell's was moved into its
+     own corner precisely because the gutter is taken - so it sits OVER the text, and
+     leaving it there for whichever cell was last clicked puts a second handle on the
+     page while you are looking at another block. Reported exactly that way. */
+  .cell:hover > .handle { opacity: .95; }
+  .cell > .handle:hover { opacity: 1; color: var(--on-paper-accent); }
+  .cell > .handle:active { cursor: grabbing; }
+
+  /* One block above another, which is what a cell holding a caption under a picture
+     is. No flex and no gap of its own: the parts are ordinary blocks in order, exactly
+     as the engine will stack them, and each carries its own handle so nothing put in a
+     stack is stuck in it. */
+  .block.stack, .cell.stack, td.stack { display: block; }
+  .stack > .slot { position: relative; padding: 1px 0; }
+  .stack > .slot + .slot { margin-top: 1.5mm; }
+  .stack > .slot.here { box-shadow: -8px 0 0 -6px var(--accent); }
+
+  /* Its handle sits in the slot's own corner, for the reason a cell's does: the
+     gutter belongs to the block, and two handles in one gutter hide each other. */
+  .slot > .handle {
+    position: absolute; left: 3px; top: 3px; z-index: 2;
+    width: 18px; height: 18px; cursor: grab;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;
+    background: var(--on-paper); border: 1px solid var(--on-paper-line);
+    border-radius: var(--radius); box-shadow: 0 1px 3px var(--on-paper-shadow);
+    opacity: 0; transition: opacity .12s, color .12s;
+  }
+  .slot:hover > .handle { opacity: .95; }   /* over the text too - see .cell above */
+  .slot > .handle:hover { opacity: 1; color: var(--on-paper-accent); }
+  .slot > .handle:active { cursor: grabbing; }
+
+  /* A picture beside a paragraph. Flex here mirrors what the engine does with
+     coordinates: the picture keeps its width, the paragraph takes what is left. */
+  .block.pair { display: flex; gap: 4mm; align-items: flex-start; }
+  .block.pair .cell { position: relative; outline: none; min-width: 0; }
+  .block.pair .cell.here { box-shadow: -8px 0 0 -6px var(--accent); }
+
+  /* Shown at the width it will be printed at, never at the file's pixel size: an
+     editor that draws a 2000-pixel photograph full-bleed is telling you something
+     about the file, not about the page. */
+  .block img { display: block; max-width: 100%; }
+
+  /* The grip, on the picture being edited. Bottom-right because that is where every
+     other program puts it. */
+  .block .grip {
+    position: absolute; width: 14px; height: 14px; z-index: 2;
+    background: var(--accent); border: 2px solid var(--paper); border-radius: var(--radius);
+    cursor: nwse-resize; opacity: 0; transition: opacity .12s;
+  }
+  .block.here .grip, .block:hover .grip { opacity: 1; }
+  .block.resizing { user-select: none; }
+  .block hr { border: none; border-top: 1px solid var(--on-paper-rule); margin: 8px 0; }
+
+  /* A table, drawn as one. Cells are editable one at a time, the same rule the whole
+     face rests on: the sheet is never one editable surface, so a picture in a cell is
+     a picture and not a foreign body in somebody's text. */
+  .block table.grid { width: 100%; border-collapse: collapse; margin: 2px 0; }
+  .block table.grid td, .block table.grid th {
+    border: 1px solid var(--on-paper-grid); padding: 1.5mm 2mm; vertical-align: top;
+    outline: none; min-width: 8mm;
+  }
+  .block table.grid th { background: var(--on-paper-head); font-weight: 600; text-align: left; }
+  .block table.grid td.here, .block table.grid th.here { box-shadow: inset 0 0 0 2px var(--accent); }
+
+  /* The handles for a row and a column, in the margins. They appear on the table being
+     edited, because a grid of buttons over every table would be a grid of buttons. */
+  /* A table keeps room for its own rails. Without it the column rail sat at -20px,
+     which is over whatever block is above - and the paragraph above a table is where
+     somebody is reading. */
+  .block.tabular { padding-top: 22px; }
+  .block.tabular > .handle { left: -22px; top: 0; }
+
+  .block .rail { position: absolute; opacity: 0; transition: opacity .12s; }
+  .block:hover .rail, .block.here .rail { opacity: 1; }
+  .block .rail button {
+    position: absolute; width: 16px; height: 16px; padding: 0; font: 11px/1 system-ui;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--on-paper-line); border-radius: var(--radius);
+    background: var(--on-paper); color: var(--on-paper-ink); cursor: pointer;
+    box-shadow: 0 1px 2px var(--on-paper-shadow);
+  }
+  .block .rail button:hover {
+    color: var(--on-paper-accent); border-color: var(--on-paper-accent);
+    background: var(--on-paper-wash);
+  }
+  /* A cell lit as a place a picture would land. Only ever shown where the drop will
+     actually be taken, so what is offered and what happens cannot disagree. */
+  .grid td.landing, .grid th.landing {
+    outline: 2px solid var(--on-paper-accent); outline-offset: -2px;
+    background: var(--on-paper-wash);
+  }
+
+  .block .rail.columns { top: 2px; left: 0; right: 0; height: 16px; }
+  .block .rail.rows { left: -22px; top: 22px; bottom: 0; width: 16px; }
+
+  /* What this face cannot edit says so, rather than showing half of it - the same
+     gesture the designer already makes for a sub-template it cannot resolve. */
+  .foreign {
+    border: 1px dashed var(--on-paper-line); border-radius: var(--radius); padding: 9px 12px;
+    color: var(--on-paper-muted); font: italic 12px/1.5 system-ui; background: var(--on-paper-wash);
+  }
+  .foreign b { font-style: normal; color: var(--on-paper-text); }
+
+  /* Alternative text sits under the picture rather than in a panel: a picture
+     without it is refused by PDF/UA, and the moment to write it is while looking
+     at the picture. */
+  .alt {
+    display: block; width: 100%; margin-top: 3px;
+    font: 11px system-ui; color: var(--on-paper-muted);
+    background: none; border: none; border-bottom: 1px dotted var(--on-paper-line);
+    padding: 2px 0; border-radius: 0;
+  }
+  .alt:focus { outline: none; border-bottom-color: var(--accent); }
+
+  /* ---- the panel ---- */
+  aside { background: var(--panel); border-left: 1px solid var(--line);
+          overflow: auto; padding: 14px; }
+  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--muted); margin: 18px 0 8px; }
+  aside h2:first-child { margin-top: 0; }
+  .field { display: grid; grid-template-columns: 84px 1fr; gap: 6px;
+           align-items: center; margin-bottom: 6px; }
+  .field label { color: var(--muted); font-size: 12px; }
+  .check { display: flex; align-items: center; gap: 6px; margin: 5px 0; font-size: 12px; }
+  .hint { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 8px 0; }
+
+  .issues { list-style: none; margin: 0; padding: 0; }
+  .issue { display: flex; gap: 8px; padding: 6px 4px; border-radius: var(--radius);
+           cursor: pointer; font-size: 12px; line-height: 1.45; }
+  .issue:hover { background: var(--hover-wash); }
+  .issue .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; }
+  .issue.error .dot { background: var(--error); }
+  .issue.warning .dot { background: var(--caution); }
+  .count { font-size: 12px; margin: 10px 0 6px; }
+  .count.bad { color: var(--error); }
+  .count.warn { color: var(--caution); }
+  .count.good { color: var(--muted); }

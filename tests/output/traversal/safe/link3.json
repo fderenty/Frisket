@@ -1,0 +1,47 @@
+{
+  "Title": "link3",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {},
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "SubTemplateItem",
+              "TemplatePath": "link4.json",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+﻿namespace Frisket
+{
+    /// <summary>
+    /// The fonts a report may use, keyed by family, weight and slant.
+    ///
+    /// Fonts are registered explicitly rather than looked up in the system: a report is
+    /// laid out against precise advance widths, so a font quietly swapped for another at
+    /// render time changes every line break. On a server there may be no system font at
+    /// all, which is exactly when a silent substitution would do the most damage.
+    /// </summary>
+    public sealed class FontLibrary
+    {
+        private readonly Dictionary<string, FontFile> _fonts = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Family used when a text does not name one.</summary>
+        public string? DefaultFamily { get; set; }
+
+        private readonly List<FontClash> _clashes = new();
+
+        public IEnumerable<FontFile> Fonts => _fonts.Values;
+
+        /// <summary>
+        /// Where two files claimed one slot. Empty in the ordinary case.
+        ///
+        /// The library can serve only one of them, and which one is settled by the order
+        /// a directory happens to enumerate in - so the caller is told rather than left
+        /// with a report drawn in a cut it never asked for. Recorded, not refused: a
+        /// duplicate is not a reason to fail a whole directory, and the widths are the
+        /// only thing that moves, so nothing else would ever give it away.
+        /// </summary>
+        public IReadOnlyList<FontClash> Clashes => _clashes;
+
+        private static string Key(string family, bool bold, bool italic)
+            => string.Concat(family, "|", bold ? "b" : "", italic ? "i" : "");
+
+        public FontLibrary Register(FontFile font, string? family = null, bool? bold = null, bool? italic = null)
+        {
+            string name = family ?? font.Family;
+            bool isBold = bold ?? font.Bold;
+            bool isItalic = italic ?? font.Italic;
+            string key = Key(name, isBold, isItalic);
+
+            if (_fonts.TryGetValue(key, out FontFile? held) && !ReferenceEquals(held, font))
+                _clashes.Add(new FontClash(name, isBold, isItalic, held, font));
+
+            _fonts[key] = font;
+            DefaultFamily ??= name;
+            return this;
+        }
+
+        public FontFile Register(string path, string? family = null, bool? bold = null, bool? italic = null)
+        {
+            FontFile font = FontFile.Load(path);
+            Register(font, family, bold, italic);
+            return font;
+        }
+
+        /// <summary>
+        /// Registers a font from its bytes, for a caller that has no file: something
+        /// posted over HTTP, held in a database, or embedded in another document.
+        ///
+        /// It throws where <see cref="RegisterDirectory"/> would shrug. A directory scan
+        /// steps over a file that is not a font because it was never asked about that
+        /// file in particular; this was asked about exactly one, chosen on purpose, and
+        /// a silent skip would leave somebody looking at a list their font is not in
+        /// with nothing to explain why.
+        ///
+        /// Parsing is the check. There is no cheaper one worth having: reading the
+        /// header proves the first twelve bytes look like a font, while getting through
+        /// <see cref="FontFile.Load(byte[])"/> proves the tables are there, the cmap can
+        /// be read and the 'H' can be measured - which is what the engine will actually
+        /// need. A second, weaker reader that answered first could only ever agree with
+        /// this one or contradict it.
+        /// </summary>
+        public FontFile Register(byte[] data, string? family = null, bool? bold = null, bool? italic = null)
+        {
+            FontFile font = FontFile.Load(data);
+            Register(font, family, bold, italic);
+            return font;
+        }
+
+        /// <summary>
+        /// Registers every font file of a directory, taking family and style from each
+        /// file's own name table. Returns how many were loaded.
+        /// </summary>
+        public int RegisterDirectory(string directory, bool recursive = true)
+        {
+            if (!Directory.Exists(directory))
+                throw new DirectoryNotFoundException(directory);
+
+            var option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+            int loaded = 0;
+
+            // In a fixed order, never the one the file system happens to give - see
+            // InRegistrationOrder for why that decides which typeface a document gets.
+            foreach (string path in InRegistrationOrder(
+                         Directory.EnumerateFiles(directory, "*.*", option), directory))
+            {
+                string extension = Path.GetExtension(path).ToLowerInvariant();
+                if (extension is not (".ttf" or ".otf" or ".ttc"))
+                    continue;
+
+                try
+                {
+                    Register(path);
+                    loaded++;
+                }
+                catch (InvalidDataException)
+                {
+                    // A file that is not a font is not a reason to fail the whole load.
+                }
+            }
+
+            return loaded;
+        }
+
+        /// <summary>
+        /// The order a directory's files are registered in, which is not a detail.
+        ///
+        /// The first family registered becomes <see cref="DefaultFamily"/>, and a key
+        /// claimed twice goes to the file registered last - so the typeface of every text
+        /// that names none, and which file wins a clash, were whatever the file system
+        /// happened to list first. NTFS lists alphabetically; ext4 lists by a hash of the
+        /// name. The same template came out in Elms Sans Black on Windows and in Mulish on
+        /// Linux, and nothing said so: every font was a legal answer.
+        ///
+        /// The key is the path relative to <paramref name="directory"/> with one separator,
+        /// because '\' and '/' do not sort in the same place among the other characters,
+        /// and two platforms would otherwise order the same tree differently.
+        /// Case-insensitive first, which is the order NTFS already gives - so what Windows
+        /// produced before is exactly what it produces now - then ordinal, so two names
+        /// differing only in case, which Linux allows, still have an order.
+        /// </summary>
+        internal static IEnumerable<string> InRegistrationOrder(IEnumerable<string> paths, string directory)
+            => paths
+                .Select(path => (path, key: Path.GetRelativePath(directory, path).Replace('\\', '/')))
+                .OrderBy(f => f.key, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(f => f.key, StringComparer.Ordinal)
+                .Select(f => f.path);
+
+        /// <summary>
+        /// Finds the closest cut *within the requested family*: the exact style first,
+        /// then a single-axis match, then the regular. Null when the family itself is
+        /// unknown - falling back to another family would silently relayout the report.
+        ///
+        /// An unnamed family resolves to <see cref="DefaultFamily"/>. To keep an existing
+        /// report working under a new typeface, register the file under the old name:
+        /// <c>library.Register(path, family: "Helvetica")</c>.
+        /// </summary>
+        public FontFile? Resolve(string family, bool bold, bool italic)
+        {
+            if (string.IsNullOrWhiteSpace(family))
+                family = DefaultFamily ?? string.Empty;
+
+            if (_fonts.TryGetValue(Key(family, bold, italic), out FontFile? exact))
+                return exact;
+
+            // Synthesising bold or italic is the renderer's business, not ours; for
+            // measuring, another cut of the right family is the honest approximation.
+            if (bold && italic)
+            {
+                if (_fonts.TryGetValue(Key(family, true, false), out FontFile? boldOnly))
+                    return boldOnly;
+                if (_fonts.TryGetValue(Key(family, false, true), out FontFile? italicOnly))
+                    return italicOnly;
+            }
+
+            if (_fonts.TryGetValue(Key(family, false, false), out FontFile? regular))
+                return regular;
+
+            // Some families ship no regular cut at all - a "Bold Italic" only, say. Taking
+            // another cut of the family the report asked for is not the substitution this
+            // guards against: it is the same typeface, drawn by the same hand.
+            foreach (KeyValuePair<string, FontFile> entry in _fonts)
+            {
+                int bar = entry.Key.LastIndexOf('|');
+                if (bar > 0 && entry.Key.AsSpan(0, bar).Equals(family, StringComparison.OrdinalIgnoreCase))
+                    return entry.Value;
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Two font files that came out with the same family, weight and slant.
+    ///
+    /// One of them is unreachable: no template can name it, because there is nothing
+    /// left to name it with. <see cref="Kept"/> is the one a report will get - the last
+    /// registered, which is to say whichever the filesystem listed last.
+    /// </summary>
+    public sealed record FontClash(string Family, bool Bold, bool Italic, FontFile Shadowed, FontFile Kept)
+    {
+        public override string ToString()
+            => $"{Family}{(Bold ? " Bold" : "")}{(Italic ? " Italic" : "")}: " +
+               $"{Name(Shadowed)} is hidden by {Name(Kept)}";
+
+        // The cut, when the two differ - "Light hidden by Regular" says it at a glance.
+        // When they do not, which is the commonest way to get here, saying "Regular is
+        // hidden by Regular" says nothing at all, and the path is the only thing left
+        // that tells one file from the other.
+        private static string Name(FontFile font)
+            => font.Source == "<memory>"
+                 ? $"'{font.Subfamily}'"
+                 : $"'{font.Subfamily}' ({System.IO.Path.GetFileName(font.Source)})";
+    }
+
+    /// <summary>Thrown when a report asks for a font the library does not hold.</summary>
+    public sealed class FontNotFoundException : Exception
+    {
+        public string Family { get; }
+
+        public FontNotFoundException(string family)
+            : base($"No font registered for family '{family}'. Register it in the FontLibrary: " +
+                   "substituting silently would change every line break in the report.")
+            => Family = family;
+    }
+}

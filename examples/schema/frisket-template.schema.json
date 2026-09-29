@@ -1,0 +1,1440 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frisket.invalid/schema/template.json",
+  "title": "Frisket template",
+  "description": "The shape of a template, generated from the model rather than written beside it. It carries structure only: what is required of a section beyond its shape - alternative text on a figure, rows of equal width, columns asked of a container that places its children by coordinates - is checked by TemplateValidator, in the engine and in the designer, and cannot be expressed here. A template this schema accepts may still have things to report.",
+  "$ref": "#/$defs/Report",
+  "$defs": {
+    "AdvancedTextItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "AdvancedTextItem",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Runs": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/TextRun" }
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" }
+      },
+      "additionalProperties": false
+    },
+    "BackPage": {
+      "type": "object",
+      "properties": {
+        "Content": { "$ref": "#/$defs/ContainerItem" },
+        "Scope": {
+          "type": "string",
+          "enum": ["EveryPage", "LastPage", "FirstPage"]
+        },
+        "Padding": { "$ref": "#/$defs/EdgeSize" }
+      },
+      "additionalProperties": false
+    },
+    "Backdrop": {
+      "type": "object",
+      "properties": {
+        "Source": { "$ref": "#/$defs/ImageSource" },
+        "Area": {
+          "type": "string",
+          "enum": ["Sheet", "Margins"]
+        },
+        "NaturalWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "NaturalHeight": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Scaling": {
+          "type": "string",
+          "enum": ["Stretch", "Uniform", "None"]
+        },
+        "AlignHorizontal": {
+          "type": "string",
+          "enum": ["None", "Start", "Center", "End"]
+        },
+        "AlignVertical": {
+          "type": "string",
+          "enum": ["None", "Start", "Center", "End"]
+        },
+        "Opacity": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "PageScope": {
+          "type": "string",
+          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BarcodeItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "BarcodeItem",
+          "description": "What kind of element this is."
+        },
+        "Value": {
+          "type": ["string", "null"]
+        },
+        "Symbology": {
+          "type": "string",
+          "enum": ["Qr", "Code128"]
+        },
+        "Correction": {
+          "type": "string",
+          "enum": ["Low", "Medium", "Quartile", "High"]
+        },
+        "Ink": { "$ref": "#/$defs/Color" },
+        "QuietZone": {
+          "type": "integer"
+        },
+        "ShowText": {
+          "type": "boolean"
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "BaseItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "BaseItem",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "Body": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "Body",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "BrushStyle": {
+      "type": "object",
+      "properties": {
+        "Color": { "$ref": "#/$defs/Color" }
+      },
+      "additionalProperties": false
+    },
+    "Color": {
+      "type": "object",
+      "properties": {
+        "R": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "G": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "B": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "A": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "additionalProperties": false
+    },
+    "Constraints": {
+      "type": "object",
+      "properties": {
+        "MinWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "MinHeight": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "MaxWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "MaxHeight": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContainerItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "ContainerItem",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "DocumentDimension": {
+      "type": "object",
+      "properties": {
+        "Width": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Height": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        }
+      },
+      "additionalProperties": false
+    },
+    "EdgeSize": {
+      "type": "object",
+      "properties": {
+        "Left": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Top": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Right": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Bottom": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        }
+      },
+      "additionalProperties": false
+    },
+    "FieldItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "FieldItem",
+          "description": "What kind of element this is."
+        },
+        "Name": {
+          "type": ["string", "null"]
+        },
+        "Kind": {
+          "type": "string",
+          "enum": ["Text", "Checkbox", "Signature"]
+        },
+        "Value": {
+          "type": ["string", "null"]
+        },
+        "Tooltip": {
+          "type": ["string", "null"]
+        },
+        "ReadOnly": {
+          "type": "boolean"
+        },
+        "Required": {
+          "type": "boolean"
+        },
+        "Multiline": {
+          "type": "boolean"
+        },
+        "MaxLength": {
+          "type": "integer"
+        },
+        "Signing": {
+          "type": "string",
+          "enum": ["ByHand", "Digital"]
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" },
+        "Outline": { "$ref": "#/$defs/PenStyle" },
+        "Fill": { "$ref": "#/$defs/BrushStyle" },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "Footer": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "Footer",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "FrameDimension": {
+      "type": "object",
+      "properties": {
+        "LeftValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "LeftUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "RightValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "RightUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "WidthValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "WidthUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "TopValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "TopUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "BottomValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BottomUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "HeightValue": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "HeightUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "AutoWidth": {
+          "type": "boolean"
+        },
+        "AutoHeight": {
+          "type": "boolean"
+        },
+        "Dock": {
+          "type": "string",
+          "pattern": "^(?:None|Left|Top|Right|Bottom|Fill)(?:, (?:None|Left|Top|Right|Bottom|Fill))*$",
+          "description": "One of None, Left, Top, Right, Bottom, Fill - or several of them joined with a comma and a space."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Header": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "Header",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ImageGridItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "ImageGridItem",
+          "description": "What kind of element this is."
+        },
+        "GridColumns": {
+          "type": "integer"
+        },
+        "RowHeight": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Gap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ImageItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "ImageItem",
+          "description": "What kind of element this is."
+        },
+        "Source": { "$ref": "#/$defs/ImageSource" },
+        "NaturalWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "NaturalHeight": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Scaling": {
+          "type": "string",
+          "enum": ["Stretch", "Uniform", "None"]
+        },
+        "SourceField": {
+          "type": ["string", "null"]
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "ImageSource": {
+      "type": "object",
+      "properties": {
+        "Data": {
+          "type": ["string", "null"],
+          "contentEncoding": "base64"
+        },
+        "SourcePath": {
+          "type": ["string", "null"]
+        },
+        "MediaType": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ImportedPageItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "ImportedPageItem",
+          "description": "What kind of element this is."
+        },
+        "Data": {
+          "type": ["string", "null"],
+          "contentEncoding": "base64"
+        },
+        "SourcePath": {
+          "type": ["string", "null"]
+        },
+        "Page": {
+          "type": "integer"
+        },
+        "Scaling": {
+          "type": "string",
+          "enum": ["Stretch", "Uniform", "None"]
+        },
+        "Alt": {
+          "type": ["string", "null"]
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "LineItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "LineItem",
+          "description": "What kind of element this is."
+        },
+        "Orientation": {
+          "type": "string",
+          "enum": ["Horizontal", "Vertical", "DiagonalDown", "DiagonalUp"]
+        },
+        "Pen": { "$ref": "#/$defs/PenStyle" },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "PenStyle": {
+      "type": "object",
+      "properties": {
+        "Color": { "$ref": "#/$defs/Color" },
+        "Width": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "DashStyle": {
+          "type": "string",
+          "enum": ["Solid", "Dash", "Dot", "DashDot"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Report": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": ["string", "null"]
+        },
+        "RootFontSize": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "DefaultFont": { "$ref": "#/$defs/TextStyle" },
+        "Fields": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "HeadingNumbering": {
+          "type": ["string", "null"]
+        },
+        "Author": {
+          "type": ["string", "null"]
+        },
+        "Subject": {
+          "type": ["string", "null"]
+        },
+        "Keywords": {
+          "type": ["string", "null"]
+        },
+        "BackPage": { "$ref": "#/$defs/BackPage" },
+        "Watermark": { "$ref": "#/$defs/Watermark" },
+        "Backdrop": { "$ref": "#/$defs/Backdrop" },
+        "ProofBackground": { "$ref": "#/$defs/Color" },
+        "Swatches": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/Color" }
+        },
+        "GeneratedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "Sections": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/Section" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Section": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "Section",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        },
+        "Dimension": { "$ref": "#/$defs/DocumentDimension" },
+        "PageLimit": {
+          "type": ["integer", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Style": {
+      "type": "object",
+      "properties": {
+        "Location": { "$ref": "#/$defs/FrameDimension" },
+        "Margin": { "$ref": "#/$defs/EdgeSize" },
+        "Padding": { "$ref": "#/$defs/EdgeSize" },
+        "Constraints": { "$ref": "#/$defs/Constraints" },
+        "Visibility": {
+          "type": "string",
+          "enum": ["Visible", "Invisible", "Gone"]
+        },
+        "PageBreak": {
+          "type": "string",
+          "enum": ["None", "Before", "After", "BeforeAndAfter"]
+        },
+        "Splitting": {
+          "type": "string",
+          "enum": ["Auto", "KeepTogether"]
+        },
+        "KeepWithNext": {
+          "type": "boolean"
+        },
+        "PageScope": {
+          "type": "string",
+          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+        },
+        "PageRange": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "integer"
+          }
+        },
+        "AlignHorizontal": {
+          "type": "string",
+          "enum": ["None", "Start", "Center", "End"]
+        },
+        "AlignVertical": {
+          "type": "string",
+          "enum": ["None", "Start", "Center", "End"]
+        },
+        "RepeatOnBreak": {
+          "type": "boolean"
+        },
+        "Border": { "$ref": "#/$defs/PenStyle" },
+        "Background": { "$ref": "#/$defs/BrushStyle" }
+      },
+      "additionalProperties": false
+    },
+    "SubTemplateItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "SubTemplateItem",
+          "description": "What kind of element this is."
+        },
+        "Mode": {
+          "type": "string",
+          "enum": ["Splice", "Append"]
+        },
+        "TemplatePath": {
+          "type": ["string", "null"]
+        },
+        "TemplateData": {
+          "type": ["string", "null"],
+          "contentEncoding": "base64"
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TableColumn": {
+      "type": "object",
+      "properties": {
+        "Width": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "WidthUnit": {
+          "type": "string",
+          "enum": ["Millimeter", "Percentage"]
+        },
+        "Fit": {
+          "type": "boolean"
+        },
+        "MinWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "MaxWidth": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        }
+      },
+      "additionalProperties": false
+    },
+    "TableItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "TableItem",
+          "description": "What kind of element this is."
+        },
+        "Columns": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/TableColumn" }
+        },
+        "RepeatHeader": {
+          "type": "boolean"
+        },
+        "Grid": { "$ref": "#/$defs/PenStyle" },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TableRow": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "TableRow",
+          "description": "What kind of element this is."
+        },
+        "IsHeader": {
+          "type": "boolean"
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Layout": {
+          "type": "string",
+          "enum": ["Absolute", "Stack"]
+        },
+        "ColumnCount": {
+          "type": "integer"
+        },
+        "ColumnGap": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "BalanceColumns": {
+          "type": "boolean"
+        },
+        "RepeatOver": {
+          "type": ["string", "null"]
+        },
+        "EmptyText": {
+          "type": ["string", "null"]
+        },
+        "GroupBy": {
+          "type": ["string", "null"]
+        },
+        "GroupItems": {
+          "type": ["string", "null"]
+        },
+        "Childs": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextItem": {
+      "type": "object",
+      "properties": {
+        "$type": {
+          "const": "TextItem",
+          "description": "What kind of element this is."
+        },
+        "Bookmark": {
+          "type": ["string", "null"]
+        },
+        "BookmarkLevel": {
+          "type": "integer"
+        },
+        "Language": {
+          "type": ["string", "null"]
+        },
+        "Role": {
+          "type": "string",
+          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+        },
+        "AltText": {
+          "type": ["string", "null"]
+        },
+        "ShowWhen": {
+          "type": ["string", "null"]
+        },
+        "HideWhen": {
+          "type": ["string", "null"]
+        },
+        "Style": { "$ref": "#/$defs/Style" },
+        "Text": {
+          "type": ["string", "null"]
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" }
+      },
+      "additionalProperties": false
+    },
+    "TextRun": {
+      "type": "object",
+      "properties": {
+        "Text": {
+          "type": ["string", "null"]
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" }
+      },
+      "additionalProperties": false
+    },
+    "TextStyle": {
+      "type": "object",
+      "properties": {
+        "Family": {
+          "type": ["string", "null"]
+        },
+        "Size": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "SizeUnit": {
+          "type": ["string", "null"],
+          "enum": ["Point", "Millimeter", "Rem", "PercentOfFrame"]
+        },
+        "Bold": {
+          "type": ["boolean", "null"]
+        },
+        "Italic": {
+          "type": ["boolean", "null"]
+        },
+        "Underline": {
+          "type": ["boolean", "null"]
+        },
+        "Strikethrough": {
+          "type": ["boolean", "null"]
+        },
+        "Color": { "$ref": "#/$defs/Color" },
+        "HorizontalAlignment": {
+          "type": ["string", "null"],
+          "enum": ["Left", "Center", "Right", "Justify"]
+        },
+        "VerticalAlignment": {
+          "type": ["string", "null"],
+          "enum": ["Top", "Middle", "Bottom"]
+        },
+        "Wrap": {
+          "type": ["boolean", "null"]
+        },
+        "LineSpacing": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Watermark": {
+      "type": "object",
+      "properties": {
+        "Text": {
+          "type": ["string", "null"]
+        },
+        "Mode": {
+          "type": "string",
+          "enum": ["Tiled", "Single"]
+        },
+        "Layer": {
+          "type": "string",
+          "enum": ["Behind", "InFront"]
+        },
+        "Angle": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "Font": { "$ref": "#/$defs/TextStyle" },
+        "Spacing": {
+          "type": ["number", "string"],
+          "description": "A number; the string \u0022NaN\u0022 means undecided."
+        },
+        "PageScope": {
+          "type": "string",
+          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

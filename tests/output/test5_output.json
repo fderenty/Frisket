@@ -1,0 +1,73 @@
+{
+  "Title": "Test 5: Visibility States",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Visible Item",
+              "Font": {},
+              "Style": {
+                "Location": {
+                  "LeftValue": 10,
+                  "TopValue": 10
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Gone Item",
+              "Font": {},
+              "Style": {
+                "Location": {
+                  "LeftValue": 10,
+                  "TopValue": 30
+                },
+                "Visibility": "Gone"
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Invisible Item",
+              "Font": {},
+              "Style": {
+                "Location": {
+                  "LeftValue": 10,
+                  "TopValue": 50
+                },
+                "Visibility": "Invisible"
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

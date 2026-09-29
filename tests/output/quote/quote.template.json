@@ -1,0 +1,576 @@
+{
+  "Title": "Quote Q-2025-0042",
+  "RootFontSize": 2.2,
+  "DefaultFont": {
+    "Family": "Elms Sans"
+  },
+  "Fields": {},
+  "Swatches": [],
+  "GeneratedAt": "2025-10-02T09:00:00+00:00",
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Header",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Quote {Number}",
+              "Font": {
+                "Size": 1.6,
+                "Bold": true,
+                "HorizontalAlignment": "Left"
+              },
+              "Style": {}
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 60,
+                  "G": 60,
+                  "B": 60,
+                  "A": 255
+                },
+                "Width": 0.3
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Left, Top, Right"
+            }
+          }
+        },
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "Services selected",
+                  "Font": {
+                    "Size": 1.1,
+                    "Bold": true,
+                    "HorizontalAlignment": "Left"
+                  },
+                  "Style": {}
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "FieldItem",
+                      "Name": "opt.revision",
+                      "Kind": "Checkbox",
+                      "Value": "{Choices.Revision}",
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "WidthValue": 4.5,
+                          "TopValue": 0,
+                          "HeightValue": 4.5
+                        }
+                      }
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Full overhaul",
+                      "Font": {
+                        "Size": 1,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 7,
+                          "TopValue": 0
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "HeightValue": 6,
+                      "Dock": "Left, Right"
+                    }
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "FieldItem",
+                      "Name": "opt.freins",
+                      "Kind": "Checkbox",
+                      "Value": "{Choices.Freins}",
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "WidthValue": 4.5,
+                          "TopValue": 0,
+                          "HeightValue": 4.5
+                        }
+                      }
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Remplacement plaquettes",
+                      "Font": {
+                        "Size": 1,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 7,
+                          "TopValue": 0
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "HeightValue": 6,
+                      "Dock": "Left, Right"
+                    }
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "FieldItem",
+                      "Name": "opt.pneus",
+                      "Kind": "Checkbox",
+                      "Value": "{Choices.Pneus}",
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "WidthValue": 4.5,
+                          "TopValue": 0,
+                          "HeightValue": 4.5
+                        }
+                      }
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Montage pneumatiques",
+                      "Font": {
+                        "Size": 1,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 7,
+                          "TopValue": 0
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "HeightValue": 6,
+                      "Dock": "Left, Right"
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Margin": {
+                  "Top": 3,
+                  "Bottom": 3
+                }
+              }
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "Your details",
+                  "Font": {
+                    "Size": 1.1,
+                    "Bold": true,
+                    "HorizontalAlignment": "Left"
+                  },
+                  "Style": {}
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Name",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "TopValue": 1
+                        }
+                      }
+                    },
+                    {
+                      "$type": "FieldItem",
+                      "Name": "customer.name",
+                      "Value": "{Customer.Name}",
+                      "Tooltip": "Name",
+                      "MaxLength": 60,
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 32,
+                          "TopValue": 0,
+                          "Dock": "Right"
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "Dock": "Left, Right"
+                    },
+                    "Margin": {
+                      "Top": 1.5
+                    }
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Telephone",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "TopValue": 1
+                        }
+                      }
+                    },
+                    {
+                      "$type": "FieldItem",
+                      "Name": "customer.phone",
+                      "Value": "{Customer.Phone}",
+                      "Tooltip": "Telephone",
+                      "MaxLength": 60,
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 32,
+                          "TopValue": 0,
+                          "Dock": "Right"
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "Dock": "Left, Right"
+                    },
+                    "Margin": {
+                      "Top": 1.5
+                    }
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Notes",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 0,
+                          "TopValue": 1
+                        }
+                      }
+                    },
+                    {
+                      "$type": "FieldItem",
+                      "Name": "customer.notes",
+                      "Value": "{Customer.Notes}",
+                      "Tooltip": "Notes",
+                      "Multiline": true,
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {
+                        "Location": {
+                          "LeftValue": 32,
+                          "TopValue": 0,
+                          "Dock": "Right"
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Location": {
+                      "Dock": "Left, Right"
+                    },
+                    "Margin": {
+                      "Top": 1.5
+                    }
+                  }
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "Agreed, on",
+                  "Font": {
+                    "Size": 0.9,
+                    "Bold": false,
+                    "HorizontalAlignment": "Left"
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "TopValue": 0
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "signature.date",
+                  "Tooltip": "jj/mm/aaaa",
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 30,
+                      "WidthValue": 35,
+                      "TopValue": 0
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "signature.customer",
+                  "Kind": "Signature",
+                  "Tooltip": "Customer\u0027s signature",
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Style": {
+                    "Location": {
+                      "RightValue": 0,
+                      "WidthValue": 70,
+                      "TopValue": 0
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Top": 8
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        },
+        {
+          "$type": "Footer",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Page {Page} / {Pages}",
+              "Font": {
+                "Size": 0.8,
+                "Bold": false,
+                "HorizontalAlignment": "Right"
+              },
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Left, Right, Bottom"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 15,
+          "Top": 12,
+          "Right": 15,
+          "Bottom": 12
+        }
+      }
+    }
+  ]
+}

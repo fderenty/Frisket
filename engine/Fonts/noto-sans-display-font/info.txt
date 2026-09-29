@@ -1,0 +1,5 @@
+license: SIL Open Font License 1.1, see OFL.txt
+copyright: Copyright 2015 Google Inc. All Rights Reserved.
+designer: Monotype Design Team
+link: http://www.google.com/get/noto/
+note: the licence is declared in the font files themselves

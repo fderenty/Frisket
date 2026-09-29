@@ -1,0 +1,945 @@
+{
+  "Title": "Fragment, never opened on its own",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 999,
+        "Height": 999
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 1 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 2 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 3 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 4 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 5 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 6 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 7 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 8 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 9 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 10 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 11 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 12 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 13 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 14 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 15 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 16 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 17 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 18 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 19 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 20 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 21 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 22 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 23 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 24 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 25 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 26 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 27 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 28 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 29 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 30 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 31 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 32 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 33 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 34 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 35 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 36 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 37 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 38 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 39 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 40 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 41 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 42 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 43 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 44 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 45 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 46 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 47 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 48 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 49 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 50 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 51 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 52 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 53 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 54 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 55 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 56 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 57 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 58 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 59 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 60 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 61 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 62 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 63 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 64 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 65 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 66 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 67 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 68 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 69 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 70 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 71 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 72 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 73 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 74 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 75 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 76 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 77 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 78 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 79 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 80 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 81 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 82 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 83 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 84 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 85 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 86 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 87 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 88 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 89 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 90 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 91 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 92 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 93 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 94 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 95 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 96 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 97 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 98 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 99 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 100 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 101 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 102 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 103 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 104 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 105 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 106 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 107 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 108 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 109 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 110 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 111 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 112 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 113 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 114 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 115 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 116 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 117 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 118 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 119 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 120 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 121 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 122 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 123 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 124 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 125 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 126 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 127 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 128 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 129 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 130 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 131 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 132 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 133 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 134 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 135 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 136 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 137 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 138 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 139 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 140 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 141 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 142 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 143 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 144 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 145 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 146 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 147 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 148 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 149 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Paragraphe 150 du sous-gabarit.",
+              "Font": {},
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 50,
+          "Top": 50,
+          "Right": 50,
+          "Bottom": 50
+        }
+      }
+    }
+  ]
+}

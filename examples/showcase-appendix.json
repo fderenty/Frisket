@@ -1,0 +1,76 @@
+{
+  "Title": "",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {},
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Method",
+              "Font": {
+                "Size": 1.25,
+                "Bold": true
+              },
+              "Role": "Heading2",
+              "Style": {
+                "Margin": {
+                  "Top": 4,
+                  "Bottom": 1
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe.",
+              "Font": {
+                "Size": 1,
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.",
+              "Font": {
+                "Size": 1,
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

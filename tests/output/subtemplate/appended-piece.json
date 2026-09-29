@@ -1,0 +1,67 @@
+{
+  "Title": "The piece\u0027s own title",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "de-DE",
+  "Author": "Somebody else",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 297,
+        "Height": 210
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "the appendix",
+              "Font": {},
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        },
+        {
+          "$type": "Footer",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "appendix footer",
+              "Font": {},
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Left, Right, Bottom"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

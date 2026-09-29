@@ -1,0 +1,40 @@
+# Normalize line endings on commit, check out native on Windows
+* text=auto
+
+*.cs      text diff=csharp
+*.csproj  text
+*.sln     text eol=crlf
+*.json    text
+*.md      text
+
+# Bytes that must arrive exactly as they left. `text=auto` above guesses, and it guesses
+# right today - every PDF and font here is detected as binary - but a PDF is mostly
+# ASCII with byte offsets in it, and a line-ending conversion anywhere in one moves every
+# offset after it and breaks the cross-reference table. That is not a risk worth leaving
+# to a heuristic, so it is said.
+*.pdf     binary
+*.ttf     binary
+*.otf     binary
+*.ttc     binary
+*.png     binary
+*.jpg     binary
+
+# What is generated says so.
+#
+# This repository tracks a great deal of it on purpose - the schema because it is a
+# published contract, tests/output because it is the evidence the checks produced, the
+# standalone pages because they are what somebody downloads. None of it is written by
+# hand, and none of it is worth reading in a diff.
+#
+# Measured before writing this: 18.4 MB of HTML and SVG against 1.5 MB of C#, nearly
+# all of it under tests/output. Left unmarked, GitHub's language bar would call a
+# layout engine a HTML project by about nine to one - a first impression that is not
+# merely unflattering but wrong, and the kind of claim this file is otherwise full of
+# warnings about.
+#
+# linguist-generated does both jobs: out of the language statistics, and collapsed in
+# a diff rather than printed.
+tests/output/**                     linguist-generated=true
+examples/schema/*.html              linguist-generated=true
+examples/schema/*.schema.json       linguist-generated=true
+release/**                          linguist-generated=true

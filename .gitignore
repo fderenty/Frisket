@@ -1,0 +1,107 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Publish output
+[Pp]ublish/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.publishproj
+
+# Except the native library's, which carry no credentials - only a runtime identifier
+# and an output directory. They are the single place the Publish dialog and the
+# command line both read, so an ignored one is a setting that exists on one machine
+# and nowhere else, and a Publish button that works for whoever wrote it.
+# The .user file beside them stays out: that is where anything personal would land.
+!bindings/native/Properties/PublishProfiles/*.pubxml
+*.pubxml.user
+
+# Misc
+*.cache
+*.tmp
+*.bak
+*.swp
+_ReSharper*/
+*.tlog
+*.ilk
+*.pdb
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# tests/output/ is committed on purpose: the rendered documents are the record of
+# what the engine produces, and a diff on them is how a change to the renderer shows
+# itself. What used to be ignored here was a *second* output tree that appeared when
+# the suite was run from another directory - RepositoryRoot() anchors it now, so
+# there is nothing left to guard against, and ignoring the real one would quietly
+# drop every new sample from a commit.
+
+# Pulled out of the designer page to run the harness; regenerated, never edited.
+designer.js
+
+# Build leftovers from the C and Pascal samples.
+*.obj
+*.ppu
+*.o
+__pycache__/
+
+# Fonts arrive here as archives while their licence is being established. An
+# unproven one must never reach the repository by accident.
+engine/Fonts/*.zip
+
+# The font gallery is one page per family, and a family is one cut: 193 of them
+# now, which is 105 MB rewritten whole on every run. It is a thing to look at
+# while choosing a typeface, not a result worth a diff - test 33 still renders
+# it, and still fails if a family stops drawing.
+tests/output/fonts/
+
+# [Rr]elease/ above is MSBuild's output directory, and it matches that name at any
+# depth - including a release/ at the top of the repository, which is where the
+# single-file builds of the two faces are written. Excluded, they would have been
+# generated, committed, and simply not there.
+#
+# The negation has to re-include the DIRECTORY and not its contents: git stops walking
+# an excluded directory, so !/release/*.html would never be reached.
+!/release/

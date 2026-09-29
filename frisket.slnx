@@ -1,0 +1,62 @@
+<Solution>
+  <!-- The engine itself. Listed rather than left to arrive as everybody's dependency:
+       a referenced project that no solution names is one Solution Explorer does not
+       show, and the engine is the thing most of the work happens in. -->
+  <Project Path="engine/Frisket.csproj" />
+
+  <!-- Everything that compiles, in folders that read like the disk. The suite alone
+       used to be here, which meant a break in the CLI or in the C boundary compiled
+       nowhere and was found by running the thing by hand - and a stale binary looks
+       exactly like a working one.
+
+       No <File> beside a project, ever. An SDK-style project already shows every file
+       in its own directory, so naming one here lists it twice - apps/cli/README.md
+       appeared under Frisket.Cli and under this folder at once, which is a solution
+       arguing with itself about where a file lives. The rule: a solution folder
+       carries only what no project's directory contains. -->
+  <!-- The PDF reader, and a separate assembly on purpose: everything in it consumes
+       bytes somebody else chose, and a document that imports nothing should not be
+       carrying a parser for the privilege. It references the engine; the engine must
+       never reference it. -->
+  <Project Path="import/Frisket.Import.csproj" />
+
+  <Folder Name="/apps/">
+    <Project Path="apps/cli/Frisket.Cli.csproj" />
+    <Project Path="apps/server/Frisket.Server.csproj" />
+  </Folder>
+
+  <Folder Name="/tests/">
+    <Project Path="tests/test.csproj" />
+  </Folder>
+
+  <!-- The C boundary. The project shows frisket.h, the samples and the wrappers on
+       its own, since all of them live under bindings/native. -->
+  <Folder Name="/bindings/">
+    <Project Path="bindings/native/Frisket.Native.csproj" />
+  </Folder>
+
+  <!-- Two faces over one core, none of it compiled and all of it part of the work.
+       They are standalone pages on purpose, so no project owns them and they would
+       otherwise be invisible from the solution. -->
+  <Folder Name="/designer/">
+    <File Path="apps/designer/frisket-core.js" />
+    <File Path="apps/designer/frisket-runs.js" />
+    <File Path="apps/designer/frisket-chrome.css" />
+    <File Path="apps/designer/frisket-designer.html" />
+    <File Path="apps/designer/frisket-editor.html" />
+    <File Path="apps/designer/check-against-engine.js" />
+    <File Path="apps/designer/check-editor.js" />
+    <File Path="apps/designer/README.md" />
+  </Folder>
+
+  <Folder Name="/examples/">
+    <File Path="examples/schema/frisket-template.schema.json" />
+    <File Path="examples/schema/README.md" />
+  </Folder>
+
+  <Folder Name="/docs/">
+    <File Path="README.md" />
+    <File Path="LICENSE" />
+    <File Path="CLAUDE.md" />
+  </Folder>
+</Solution>

@@ -1,0 +1,51 @@
+{
+  "Title": "Test 1: Absolute Positioning (Millimeters)",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Absolute Item",
+              "Font": {},
+              "Style": {
+                "Location": {
+                  "LeftValue": 10,
+                  "WidthValue": 50,
+                  "TopValue": 20,
+                  "HeightValue": 30
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

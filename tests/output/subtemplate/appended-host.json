@@ -1,0 +1,58 @@
+{
+  "Title": "The dossier",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "en-GB",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "the covering note",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "SubTemplateItem",
+              "Mode": "Append",
+              "TemplatePath": "appended-piece.json",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

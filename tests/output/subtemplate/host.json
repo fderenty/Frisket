@@ -1,0 +1,70 @@
+{
+  "Title": "Composed section",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "en-GB",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Avant l\u0027inclusion.",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "SubTemplateItem",
+              "TemplatePath": "included.json",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "After the inclusion.",
+              "Font": {},
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 15,
+          "Top": 15,
+          "Right": 15,
+          "Bottom": 15
+        }
+      }
+    }
+  ]
+}

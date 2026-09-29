@@ -1,0 +1,94 @@
+{
+  "Title": "Aligned",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "en-GB",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "START",
+              "Font": {
+                "Size": 3
+              },
+              "Style": {
+                "AlignHorizontal": "Start",
+                "AlignVertical": "Start"
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "CENTRE",
+              "Font": {
+                "Size": 3
+              },
+              "Style": {
+                "AlignHorizontal": "Center",
+                "AlignVertical": "Center"
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "END",
+              "Font": {
+                "Size": 3
+              },
+              "Style": {
+                "AlignHorizontal": "End",
+                "AlignVertical": "End"
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "PINNED",
+              "Font": {
+                "Size": 3
+              },
+              "Style": {
+                "Location": {
+                  "LeftValue": 0,
+                  "TopValue": 0
+                },
+                "AlignHorizontal": "Center",
+                "AlignVertical": "Center"
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 20,
+          "Top": 20,
+          "Right": 20,
+          "Bottom": 20
+        }
+      }
+    }
+  ]
+}

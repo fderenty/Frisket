@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Frisket</RootNamespace>
+    <AssemblyName>Frisket</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- The 2 300 /// comments in here are the model's real documentation, and with
+         this off they existed nowhere at run time. Turning it on is what lets a
+         generated reference page carry them - and it immediately found five broken
+         cross-references that nothing had ever read, one of them created earlier the
+         same week by adding a CancellationToken to Report.Resolve.
+
+         1591 is missing documentation on a public member, 680 times: a choice, not a
+         defect. 1573 is a method that documents some parameters and not others, where
+         the summary already carries the prose. Everything else stays loud, because
+         everything else means a comment that points at something which is not there. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
+  </PropertyGroup>
+
+  <!-- The test project checks the encoders directly. A QR that scans is the proof
+       that matters, but a generator polynomial can be compared to a published one,
+       and that says where the fault is rather than only that there is one. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="test" />
+  </ItemGroup>
+
+</Project>

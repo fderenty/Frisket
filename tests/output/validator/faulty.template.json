@@ -1,0 +1,265 @@
+{
+  "Title": "",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "",
+                "MediaType": "image/png"
+              },
+              "Scaling": "Uniform",
+              "Style": {}
+            },
+            {
+              "$type": "BarcodeItem",
+              "Value": "",
+              "Correction": "Medium",
+              "Ink": {
+                "A": 255
+              },
+              "ShowText": true,
+              "Font": {
+                "Size": 0.7
+              },
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "signature",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {}
+            },
+            {
+              "$type": "FieldItem",
+              "Name": "signature",
+              "Font": {},
+              "Outline": {
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 2,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "placed by hand",
+                  "Font": {},
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {},
+                {},
+                {},
+                {},
+                {},
+                {}
+              ],
+              "RepeatHeader": true,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A",
+                      "Font": {},
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "B",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "ImageGridItem",
+              "GridColumns": 0,
+              "RowHeight": 40,
+              "Gap": 4,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "SubTemplateItem",
+              "TemplatePath": "",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": ""
+                }
+              ],
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "Page {Page} sur {Pages}"
+                }
+              ],
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "RepeatOver": "Recipients",
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Cher {Name},",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "PageBreak": "Before"
+              }
+            },
+            {
+              "$type": "Section",
+              "Dimension": {},
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Introduction",
+              "Font": {},
+              "Role": "Heading1",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "See {HeadingNumber} below",
+              "Font": {},
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "First paragraph.\nSecond one.",
+              "Font": {
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Sign here",
+              "Font": {},
+              "Role": "Form",
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

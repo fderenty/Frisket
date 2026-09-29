@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frisket — editor</title>
+<link rel="stylesheet" href="frisket-chrome.css">
+<link rel="stylesheet" href="frisket-editor.css">
+</head>
+<body>
+
+<!-- THE FACE THAT SHIPS: the editor, and nothing about the machinery behind it.
+
+     Somebody typing a letter has no business being shown a render target, a page size
+     or a font source - whoever embeds this chose those when they decided what they were
+     producing, and offering them again invites two answers to one question. The panel
+     goes with them; Open and Save move to the toolbar, because a page with no header
+     still needs a way in and out.
+
+     What is NOT dropped is the checking. The findings are computed on every redraw and
+     handed to whoever is listening - `onChecks`, or the `checks` event on
+     <frisket-editor> - they simply are not painted here. Section 5c's rule is against an
+     editor that quietly produces a document `frisket check` would refuse, and silence is
+     exactly what it forbids; a host holding the findings and deciding what to do with
+     them is not silence. Same answer this project gives for a font's fsType and for an
+     imported page: only the caller can know, and the engine says so.
+
+     frisket-editor-full.html is the same editor with all of it showing, for working on
+     the editor itself. It is not built into release/. -->
+<div id="frisket-editor-root" chrome="false" panel="false" files="toolbar"></div>
+
+<script src="frisket-core.js"></script>
+<script src="frisket-runs.js"></script>
+<script src="frisket-editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Frisket.Native</RootNamespace>
+    <AssemblyName>frisket</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- A shared library with a flat C entry point per export. This is the whole
+         reason the engine is kept AOT-clean: what comes out here is a .dll or a .so
+         that any language with an FFI can load, with no runtime to install. -->
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <NativeLib>Shared</NativeLib>
+
+    <!-- Out parameters cross as pointers, which is the only shape C understands. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Exceptions must not cross the boundary; every export catches. Nothing here
+         is called from C#, so the analyzer's warning about that is the point. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <!-- The engine's sources, compiled in rather than referenced. What ships here is
+       one native file with no managed assembly beside it, so there is nothing to gain
+       from a second project - and referencing one would collide anyway: Windows
+       matches file names without regard to case, and this library has to be called
+       frisket for the wrappers to find it under the name every platform expects. -->
+  <ItemGroup>
+    <Compile Include="..\..\engine\**\*.cs" Exclude="..\..\engine\bin\**;..\..\engine\obj\**" />
+  </ItemGroup>
+
+  <!-- .NET names the shared library after the assembly, so a Linux build comes out as
+       frisket.so. Every convention there - dlopen, -l, ldconfig - expects the lib
+       prefix, and the wrappers ask for libfrisket.so because that is what a Linux
+       caller would write. So it is renamed once, here, rather than each caller being
+       told to spell it differently. -->
+  <!-- After CopyNativeBinary, not after Publish: the native artifact is copied into
+       the publish directory by that target, which runs later - so renaming after
+       Publish left the unprefixed file to be put straight back. -->
+  <Target Name="PrefixSharedLibrary" AfterTargets="CopyNativeBinary"
+          Condition="'$(NativeLib)' == 'Shared' and !$([MSBuild]::IsOSPlatform('Windows'))">
+    <ItemGroup>
+      <_Produced Include="$(PublishDir)$(AssemblyName).so;$(PublishDir)$(AssemblyName).dylib" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_Produced)"
+          DestinationFiles="@(_Produced->'%(RootDir)%(Directory)lib%(Filename)%(Extension)')"
+          Condition="Exists('%(_Produced.FullPath)')" />
+    <Delete Files="@(_Produced)" Condition="Exists('%(_Produced.FullPath)')" />
+  </Target>
+
+</Project>

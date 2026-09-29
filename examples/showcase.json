@@ -1,0 +1,1614 @@
+{
+  "Title": "ACME Field Operations Report {ReportNumber}",
+  "RootFontSize": 3,
+  "DefaultFont": {
+    "Family": "Elms Sans"
+  },
+  "Fields": {},
+  "Language": "en-GB",
+  "HeadingNumbering": "1.1",
+  "Author": "ACME Corporation",
+  "Subject": "Field operations report {ReportNumber}, {Period}",
+  "Keywords": "report, operations, {ReportNumber}",
+  "BackPage": {
+    "Content": {
+      "Layout": "Stack",
+      "ColumnCount": 2,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "TextItem",
+          "Text": "NOTES AND METHOD",
+          "Font": {
+            "Size": 1.1,
+            "Bold": true
+          },
+          "Style": {}
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 1 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 2 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 3 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 4 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 5 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 6 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 7 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 8 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 9 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 10 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 11 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 12 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 13 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "Note 14 \u2014 These notes apply to page {Page} of {Pages} of the report and are taken to have been read. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.",
+          "Font": {
+            "Size": 0.75,
+            "HorizontalAlignment": "Justify"
+          },
+          "Style": {
+            "Margin": {
+              "Top": 2
+            }
+          }
+        }
+      ],
+      "Style": {}
+    },
+    "Padding": {
+      "Left": 12,
+      "Top": 12,
+      "Right": 12,
+      "Bottom": 12
+    }
+  },
+  "Watermark": {
+    "Text": "DRAFT ",
+    "Layer": "InFront",
+    "Angle": 45,
+    "Font": {
+      "Size": 6,
+      "SizeUnit": "Millimeter",
+      "Bold": true,
+      "Color": {
+        "R": 128,
+        "G": 128,
+        "B": 128,
+        "A": 51
+      }
+    },
+    "Spacing": 1
+  },
+  "Swatches": [],
+  "GeneratedAt": "2025-08-01T09:00:00+00:00",
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Header",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageItem",
+                  "Source": {
+                    "Data": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAAF5ElEQVR42u3d0XEUSxBFwTZFBvCBBbIev4QHSIhluure7GgDnqpOzs4SD3Q+HKf4HCNwAHAcABwHAMcBwHEAcBwAHAcA5wXn1/vPv72GBkB+5d+7Rg1AUe5IAKB4HgDQPQkAiB4GAHRPAgC6JwEA6WMAgO5JAED6GAAgfQwA0D0JAEgfg2YAkmWgFIBSMSgFoE4MSgEoEoNeAEJkoBSA/jDoBSA7BkoBqA2DXgAiY6AUgLYw6AUgKQZ6AYiJgVIAGsKgF4B0GOgFIBoGegHIhYFeAEJhoBeARBgoBaAMDHoBCIKBXgDWbDi9AGzUxHoB2J8Z3p3hsbmYP9I2z00A7MlsJ8wWgOS/72fIQwFYiYEPGfixjJ5/BtDk7wOwAAxGreAYfecvhrCLpwEYNwYDl3LKB/3hdG+nF4Du7eghAOpnYOymTttMVW5lzwFQPwPDF9cCQNPW9zQA9TMwf4nH4JzmVYYDkK9tXgAgfQy2rPUYk9O83EAAMs02MBqA+hnYteVjLk7zrnMAiLLKwDgA6mdg49ITAAix08AgAOpnYOn2dwMQX7mBEQDU7+zN4Hj5efK8/Xj/ygXgsRKOx//13GNI1AFQ///ufp2EdUnsA9DZ/SIJAHTV/3D3KyRUAPD4v57+WAaL2jge/9vTn8kgHEBt/WPTH8hgRSQARKU/ikEsAPUzEJPKAgDSX80AgMUAAuq/biANgPoZSGoGgPz0rzPIAaB+BsIMANBV/y0DAKifgeUAsh//VfVfMTCzn+Px31l/vAEA1D/OwGIAHv8ARBo4Hv8uAIP+u9XPAADqTzawD0Dk+4/i4wF8Jafj8e82fwg0AhD6dQObAOS9/6i8B8CnUR2Pf7f5QwAAF4AaAOKeYwAAj38fAuMBePwzkP0hAIALQMH7j6CbDQAAAAAAuAB0ApDyWAOjAcR8A9ZxOYA/NHa8/7jNb0HH+4/b/BYEgAsAAC4AkQDkO98AAAAA0ArA+w8Ad0sDwAXAN2C39XswAC4AvgG7rd+DAXABAMAFAAAXAABcAABwAQDABQAAFwAAXAAAAAAAAAAAAAAAAAAAAAD836DqBwAAACIB+Bthrr8SCYALgO/BAPhXIQAAAABvQeoHAAAAAAAAAAD8fgD1A+BDAIDU3xDjLcj1S/K8BakfAAAAAAAAAABgQP0534ABcAEY/yHFQGT9Q9I6K5gC4PEPAAMe/wAAAEAqAAbUPxGADwEAUh//pQAYuFs/AAyofxUAHwIARD7+qwEwcKV+ABhQPwBjADDw8LS3AvAhAEBe/QC0Gyh//M8FwID6xwHI/hBoM/D8eGfGcwIQM6B+ABiYW38OAAbUn1Q/AEUMLk4yCgAD6k+qBYB8A3cHCMB6A3sZXJ/b/FRO6g/GgPoBKGUwZFbJAJoNTGYwZ0Rb8tgEYJSBaQxGTWZRG6dBeTaDgTNZFMYpgZ4nYewcdlWxD8BkAw9IGP6zr0vitP3ASyWs+Hk3xrAVwBYD3yOx8UdbWsLpdO94/L8MAAPO3gBO88efY/vHFJzmvScAYKCw/nEAGFD/xnXnAGCgp/6hABhQ/7otH9NxmvcbCICB4PoXAGBA/YvWeoKHhYFttgNgwCrvAGBA/SuWeIzPaV5fCwAMLO4CAAbUP3xlp3CgGNjUowAYUP/YHfUCwMB2ngMwecrNDCzlGHcnA7u4AGD+3BsYWMFNACsWkMrA5EcA2LKJJAYGPgvAopWslmDIADRKMNsFAPbuaawE81wGYPvOhkgww8UAMvb38C5NLApA3kZfu2DDyQcQv2Z37PeoKQAYUH87AAykDwAD6q8HwID62wEwoP52AAyovx0AA+pvB4CB9AFgQP31ABhQfzsADKQPAAPqrweAgfQBYED99QAwkD4ADKi/HgAG0gcAA+kDgIH0AWBA/QBgIH0ASNA9ABhIHwAMpA8ACboHAAPpA1AtwaIBaJRgrQD4xRMOAAUSLAuALg/WAUARCaMGIN+GoQHgOAA4DgCOA4DjAOA4ADgOAI7zr+c38qGL50YxKGoAAAAASUVORK5CYII=",
+                    "SourcePath": "acme-mark.png",
+                    "MediaType": "image/png"
+                  },
+                  "Scaling": "Uniform",
+                  "AltText": "ACME Corporation mark",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 15,
+                      "TopValue": 0,
+                      "HeightValue": 15
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "ACME Corporation",
+                  "Font": {
+                    "Size": 1.5,
+                    "Bold": true
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 19,
+                      "TopValue": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "Field Operations Report",
+                  "Font": {
+                    "Size": 1,
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    }
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 19,
+                      "TopValue": 7
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "{ReportNumber}\n{Period}",
+                  "Font": {
+                    "Size": 0.9,
+                    "HorizontalAlignment": "Right"
+                  },
+                  "Style": {
+                    "Location": {
+                      "WidthValue": 50,
+                      "TopValue": 1,
+                      "Dock": "Right"
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "HeightValue": 16,
+                  "Dock": "Left, Right"
+                }
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 40,
+                  "G": 40,
+                  "B": 40,
+                  "A": 255
+                },
+                "Width": 0.3
+              },
+              "Style": {}
+            }
+          ],
+          "Bookmark": "Report {ReportNumber}",
+          "Style": {
+            "Location": {
+              "Dock": "Left, Top, Right"
+            },
+            "Margin": {
+              "Bottom": 3
+            }
+          }
+        },
+        {
+          "$type": "Footer",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "Confidential \u2014 circulated for review only",
+                  "Font": {
+                    "Size": 0.75,
+                    "Color": {
+                      "R": 110,
+                      "G": 110,
+                      "B": 110,
+                      "A": 255
+                    }
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "Page {Page} of {Pages}",
+                  "Font": {
+                    "Size": 0.75,
+                    "HorizontalAlignment": "Right"
+                  },
+                  "Style": {
+                    "Location": {
+                      "WidthValue": 40,
+                      "Dock": "Right"
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "HeightValue": 6,
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Top": 1
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Left, Right, Bottom"
+            },
+            "Margin": {
+              "Top": 3
+            }
+          }
+        },
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Annual survey of field installations",
+              "Font": {
+                "Size": 2.2,
+                "Bold": true
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 4
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Prepared for {Client} \u00B7 {Period}",
+              "Font": {
+                "Size": 1,
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 3
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Summary",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Summary",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Justified text, and one paragraph carrying several styles at once. In the note below, bold, struck through, italic and a colour change happen inside a sentence rather than between sentences - which no run of separate text items can do. Look for straight right-hand edges on the two paragraphs above it, with the last line of each left short.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+              "Font": {
+                "Size": 1,
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit.",
+              "Font": {
+                "Size": 1,
+                "HorizontalAlignment": "Justify"
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "Note for {Client}: "
+                },
+                {
+                  "Text": "sixteen sites",
+                  "Font": {
+                    "Bold": true
+                  }
+                },
+                {
+                  "Text": " were surveyed, "
+                },
+                {
+                  "Text": "three were unreachable",
+                  "Font": {
+                    "Strikethrough": true,
+                    "Color": {
+                      "R": 192,
+                      "G": 57,
+                      "B": 43,
+                      "A": 255
+                    }
+                  }
+                },
+                {
+                  "Text": " two were unreachable",
+                  "Font": {
+                    "Italic": true
+                  }
+                },
+                {
+                  "Text": ", and the remainder reported nominal."
+                }
+              ],
+              "Font": {
+                "Size": 1
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 3
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Measurements",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Measurements",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "A table longer than a page, with one row taller than a page on its own. Look for the column headings repeating at the top of each page, and - the part worth checking - for the split row showing as many cells on the second page as the table has columns. A half-row with fewer cells is refused by a conformance checker and read aloud as nonsense.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 26
+                },
+                {},
+                {
+                  "Width": 24
+                },
+                {
+                  "Width": 22
+                }
+              ],
+              "RepeatHeader": true,
+              "Grid": {
+                "Color": {
+                  "R": 170,
+                  "G": 170,
+                  "B": 170,
+                  "A": 255
+                },
+                "Width": 0.15
+              },
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "RepeatOver": "Readings",
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Site",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Observation",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Reading",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Status",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Site}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Observation}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Reading}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Status}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                }
+              ],
+              "Bookmark": "Readings",
+              "BookmarkLevel": 1,
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Site photographs",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Site photographs",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "A contact sheet filled from the data: one picture is described in the template and repeated per record. Look for whole rows moving to the next page rather than a row of pictures being sliced, and for each picture keeping its proportions inside its cell.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "ImageGridItem",
+              "GridColumns": 3,
+              "RowHeight": 24,
+              "Gap": 3,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "RepeatOver": "Photos",
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageItem",
+                  "Source": {
+                    "Data": "",
+                    "MediaType": "image/png"
+                  },
+                  "NaturalWidth": 40,
+                  "NaturalHeight": 30,
+                  "Scaling": "Uniform",
+                  "SourceField": "Image",
+                  "AltText": "Photograph of site {Site}",
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Appendix",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Appendix",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Everything below this line comes from a second template file, spliced in before the layout ever ran. Look for it flowing on from this page rather than starting one of its own: a sub-template is part of the surrounding flow, and brings none of its own margins or page size.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "SubTemplateItem",
+              "TemplatePath": "showcase-appendix.json",
+              "TemplateData": "",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [],
+              "Style": {
+                "Margin": {
+                  "Top": 4
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. References",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "References",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Two barcodes, drawn by the engine rather than embedded as pictures, and both carrying values from the data. Look for the two titled below this one - numbered from it, so they read 5.1 and 5.2 without either number being typed anywhere - and for each carrying alternative text, without which a barcode is a figure with nothing to say.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "{HeadingNumber}. QR code",
+                  "Font": {
+                    "Size": 1,
+                    "Bold": true
+                  },
+                  "Role": "Heading2",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 36,
+                      "TopValue": 0
+                    },
+                    "Margin": {
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "{HeadingNumber}. Code 128",
+                  "Font": {
+                    "Size": 1,
+                    "Bold": true
+                  },
+                  "Role": "Heading2",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 40,
+                      "WidthValue": 60,
+                      "TopValue": 0
+                    },
+                    "Margin": {
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "BarcodeItem",
+                  "Value": "https://example.invalid/r/{ReportNumber}",
+                  "Correction": "Medium",
+                  "Ink": {
+                    "A": 255
+                  },
+                  "ShowText": true,
+                  "Font": {
+                    "Size": 0.7
+                  },
+                  "AltText": "QR code linking to report {ReportNumber} online",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 32,
+                      "TopValue": 6,
+                      "HeightValue": 32
+                    }
+                  }
+                },
+                {
+                  "$type": "BarcodeItem",
+                  "Value": "{ReportNumber}",
+                  "Symbology": "Code128",
+                  "Correction": "Medium",
+                  "Ink": {
+                    "A": 255
+                  },
+                  "ShowText": true,
+                  "Font": {
+                    "Size": 0.7
+                  },
+                  "AltText": "Code 128 of the report number {ReportNumber}",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 40,
+                      "WidthValue": 60,
+                      "TopValue": 10,
+                      "HeightValue": 20
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "HeightValue": 42,
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. Sign-off",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Sign-off",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Fillable form fields: a tick box, two text boxes, a place to sign, and one more inside a table. Try typing in them - if they are flat, the document was rendered with the form flattened and the boxes are only a picture of somewhere to write. A signature is the case worth watching, because flattened it looks exactly the same and nothing on the page says so. The cell in the cost table is here because a field that is a table cell is tagged as a cell, not as a control, and its widget was reachable from nothing in the structure tree - which no reader shows you and only a validator refuses.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Absolute",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "Findings reviewed and accepted",
+                  "Font": {
+                    "Size": 0.9
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 8,
+                      "TopValue": 0.5
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "accepted",
+                  "Kind": "Checkbox",
+                  "Tooltip": "Tick to accept the findings",
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "AltText": "Checkbox: the findings are accepted",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 5,
+                      "TopValue": 0,
+                      "HeightValue": 5
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "Reviewer reference",
+                  "Font": {
+                    "Size": 0.85,
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    }
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "TopValue": 8
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "reviewer_reference",
+                  "Tooltip": "Reviewer\u0027s own reference for this report",
+                  "MaxLength": 32,
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "AltText": "Box for the reviewer\u0027s own reference",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 75,
+                      "TopValue": 12,
+                      "HeightValue": 7
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "Prepared by",
+                  "Font": {
+                    "Size": 0.85,
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    }
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "TopValue": 22
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "prepared_by",
+                  "Kind": "Signature",
+                  "Tooltip": "Prepared by, signed by hand",
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "AltText": "Box reserved for the prepared by signature",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 0,
+                      "WidthValue": 75,
+                      "TopValue": 27,
+                      "HeightValue": 18
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "Approved by",
+                  "Font": {
+                    "Size": 0.85,
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    }
+                  },
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 95,
+                      "TopValue": 22
+                    }
+                  }
+                },
+                {
+                  "$type": "FieldItem",
+                  "Name": "approved_by",
+                  "Kind": "Signature",
+                  "Tooltip": "Approved by, signed digitally",
+                  "Signing": "Digital",
+                  "Font": {},
+                  "Outline": {
+                    "Color": {
+                      "R": 90,
+                      "G": 90,
+                      "B": 90,
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "AltText": "Box reserved for the approved by signature",
+                  "Style": {
+                    "Location": {
+                      "LeftValue": 95,
+                      "WidthValue": 75,
+                      "TopValue": 27,
+                      "HeightValue": 18
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "HeightValue": 46,
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Top": 6
+                }
+              }
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {},
+                {
+                  "Width": 34
+                }
+              ],
+              "RepeatHeader": true,
+              "Grid": {
+                "Color": {
+                  "R": 170,
+                  "G": 170,
+                  "B": 170,
+                  "A": 255
+                },
+                "Width": 0.15
+              },
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Work carried out",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Agreed cost",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Remedial works, as scheduled above",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "FieldItem",
+                      "Name": "agreed_cost",
+                      "Tooltip": "The cost agreed for the remedial works",
+                      "MaxLength": 12,
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "AltText": "Box for the agreed cost",
+                      "Style": {
+                        "Location": {
+                          "HeightValue": 6
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Margin": {
+                  "Top": 4
+                }
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber}. What is here but not visible",
+              "Font": {
+                "Size": 1.35,
+                "Bold": true
+              },
+              "Bookmark": "Not visible",
+              "BookmarkLevel": 1,
+              "Role": "Heading1",
+              "Style": {
+                "Margin": {
+                  "Top": 5,
+                  "Bottom": 1
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "R": 150,
+                  "G": 150,
+                  "B": 150,
+                  "A": 255
+                },
+                "Width": 0.2
+              },
+              "Style": {
+                "Location": {
+                  "Dock": "Left, Right"
+                },
+                "Margin": {
+                  "Bottom": 1.5
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "Three things this file carries that no page can show you. A Factur-X invoice is attached - open the attachments pane to find factur-x.xml. The whole document is tagged, so a reader can announce headings, table cells and alternative text - the structure tree is where to check. And it claims PDF/A-3B and PDF/UA-1, which only a validator can confirm; a file that claims nothing is judged as PDF/A-1b instead, which forbids the transparency used by the watermark on every page.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Bottom": 2
+                },
+                "KeepWithNext": true
+              }
+            },
+            {
+              "$type": "TextItem",
+              "Text": "The watermark behind this text is that transparency, drawn under the content rather than over it. The back of each sheet carries the terms, which is why the page count is higher than the sheet count printed in the footer.",
+              "Font": {
+                "Size": 0.95,
+                "Italic": true,
+                "Color": {
+                  "R": 85,
+                  "G": 85,
+                  "B": 85,
+                  "A": 255
+                }
+              },
+              "Style": {
+                "Margin": {
+                  "Top": 1
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 12,
+          "Top": 10,
+          "Right": 12,
+          "Bottom": 8
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,317 @@
+/* Frisket - the chrome every face wears.
+ *
+ * The palette and the handful of controls each page needs, in one file because two
+ * copies of a palette are two palettes: the moment the designer and the flow editor
+ * each kept their own, an accent set in one would stop meaning anything in the other.
+ * Each page still owns its own layout - a tree and two panels is not a column of
+ * blocks - and this owns only what they must agree on.
+ *
+ * The line inside it matters more than the file: the CHROME follows the theme, and
+ * one day the theme of whatever page embeds a face; the PAPER does not follow
+ * anything, because what the canvas shows is a printed page. See the comment on the
+ * palette itself, and the audit in check-against-engine.js that keeps both honest.
+ */
+
+  /* ---------------------------------------------------------------------
+     The palette. Two families, and the line between them is the point.
+
+     THE CHROME follows the theme, and one day the theme of whatever page this
+     is embedded in: every one of these is a name, never a literal, so a host
+     can set `--accent` and have the whole interface agree. Semantic rather
+     than literal - `--accent`, not `--blue` - because a host overriding
+     `--blue` with an orange is a sentence nobody should have to write.
+
+     THE PAPER does not, and must not. What the canvas shows is a printed page:
+     white stock, ink, and the marks this tool draws over them. Tie those to the
+     theme and a dark interface makes the designer lie about what comes out of
+     the printer - the same fault this project chases everywhere else, wearing
+     CSS. They are named too, so that "these do not follow" is a rule with a
+     place rather than an intention, but they hold one value in all themes.
+
+     Anything hex outside these blocks is a drift; the harness refuses it.
+
+     FOUR rooms: Auto, Graphite, Light, Frost - and Auto is not a fourth palette
+     but the machine's own answer, which is why it is the default (section 2b: a
+     preference stored somewhere is still a preference).
+
+     There were seven. Four dark ones were proposed against stated directions and
+     measured rather than admired, which was the right way to build them and told
+     nobody which to live in - that took using them. Graphite won and the other
+     three went, along with the blue-leaning dark that was here first: every grey
+     literally R=G=B, one steel blue carrying the interface, and nothing else with
+     an opinion. The argument for it is the same one this palette makes everywhere -
+     the sheet on the canvas is white, and any tint in the chrome makes the paper
+     look tinted the other way.
+
+     So Graphite IS the dark room, declared here where `auto` reads it and again
+     under its own name where the selector does. Light is the plain one people
+     expect on paper; Frost is the light one taken the way the darks were, for a
+     bright screen. A room removed is not a room lost: four palettes that get used
+     say more than seven that get looked at once.
+     --------------------------------------------------------------------- */
+
+  /* --- Graphite: the dark room, and what `auto` gives on a dark machine ---- */
+  /* :root AND :host, on every one of these.
+   *
+   * :root matches the document element and nothing else, so inside a shadow root it
+   * matches nothing at all and not one of these names is set. The editor packaged as
+   * an element therefore came up with no palette: the only colours it had were the
+   * handful the host page happened to set on the tag, --paper was not among them, and
+   * the text came out the colour of the sheet it was written on.
+   *
+   * The contract - "every colour is a custom property a host can override, and one day
+   * the theme of whatever page embeds this" - was written in July and was right. The
+   * selector was not, and nothing could say so until there was a shadow root to fail
+   * in. :host is the same rule for the other side of the boundary. */
+  :root, :host {
+    color-scheme: dark;
+
+    /* Every grey literally R=G=B, and that is the whole argument: the sheet on the
+       canvas is white, and any tint in the chrome makes the paper look tinted the
+       other way. One steel blue carries the interface; nothing else has an opinion. */
+    --bg: #1a1a1a;          /* the application's own ground */
+    --panel: #242424;       /* header, side panels - lifted, not outlined */
+    --sunken: #141414;      /* a column set back from the rest */
+    --control: #202020;     /* buttons, inputs, selects at rest */
+    /* The line sits +4.7 L* above the panel it bounds and the control -1.9 below it:
+       a gentle well with a hairline round it. That is the elevation rule this project
+       paid for once already - the first dark theme had the signs the other way up and
+       drew every field as a lit box, which was reported as heavy and cluttered. */
+    --line: #2e2e2e;
+    --ink: #e6e6e6;
+    --muted: #9c9c9c;
+
+    /* At full saturation, not the 60% it was first drawn at: "one saturated colour
+       doing the work of ten greys" is what the base palette says it is for, and a
+       steel tint is not that - least of all on a field with no hue of its own to lend
+       it any. It also stands 11.2 L* clear of --muted where it stood 9.2, which is
+       the adjacency that matters most here: a label beside a lit control. */
+    --accent: #7cc0ff;
+    --on-accent: #121212;
+    --drop: #26374d;
+
+    --warn: #e0b13f;
+    --warn-bg: #2f2819;
+    --warn-line: #4a3e22;
+    --error: #f08a82;
+    --caution: #f5c463;
+    --danger: #f08a82;
+    --ok: #7bc98f;
+    --bad: #ef7f8e;
+    --idle: #5a5a5a;
+
+    --scrim: rgba(0, 0, 0, .66);
+    /* A shadow at .55 of black, on a ground that is already near black, reads as
+       soot rather than as depth. The light theme casts at .14. */
+    --shadow: 0 6px 20px rgba(0, 0, 0, .42);
+    --shadow-modal: 0 20px 56px rgba(0, 0, 0, .46);
+    --hover-wash: rgba(124, 192, 255, .11);
+
+    /* The desk the sheet sits on. Chrome, not paper - it is the room, and a
+       document's own non-printing background is a separate idea that belongs
+       to the template rather than to the viewer's taste. */
+    --surround: #0d0d0d;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root, :host {
+      color-scheme: light;
+
+      --bg: #eef1f5;
+      --panel: #ffffff;
+      --sunken: #f7f9fb;
+      --control: #ffffff;
+      --line: #dde3ea;
+      --ink: #10161f;
+      --muted: #5d6b7d;
+
+      --accent: #0f766e;
+      --on-accent: #ffffff;
+      --drop: #d7f0ec;
+
+      --warn: #a45c00;
+      --warn-bg: #fdf5e6;
+      --warn-line: #ecd9ab;
+      --error: #b3261e;
+      --caution: #8a5a00;
+      --danger: #b3261e;
+      --ok: #12734a;
+      --bad: #c62828;
+      --idle: #a6b1bf;
+
+      --scrim: rgba(16, 22, 31, .34);
+      --shadow: 0 2px 12px rgba(16, 22, 31, .14);
+      --shadow-modal: 0 18px 48px rgba(16, 22, 31, .2);
+      --hover-wash: rgba(15, 118, 110, .09);
+
+      --surround: #9aa5b1;   /* mid grey: white paper is judged against it */
+    }
+  }
+
+  /* The explicit choice wins over the system's, in both directions, so "light"
+     stays light on a machine set to dark. Written out rather than derived, because a
+     preference has to be able to disagree - and the harness compares them name for
+     name, so none can drift from the others. */
+  :root[data-theme="light"], :host([data-theme="light"]) {
+    color-scheme: light;
+    --bg: #eef1f5; --panel: #ffffff; --sunken: #f7f9fb; --control: #ffffff;
+    --line: #dde3ea; --ink: #10161f; --muted: #5d6b7d;
+    --accent: #0f766e; --on-accent: #ffffff; --drop: #d7f0ec;
+    --warn: #a45c00; --warn-bg: #fdf5e6; --warn-line: #ecd9ab;
+    --error: #b3261e; --caution: #8a5a00; --danger: #b3261e;
+    --ok: #12734a; --bad: #c62828; --idle: #a6b1bf;
+    --scrim: rgba(16, 22, 31, .34);
+    --shadow: 0 2px 12px rgba(16, 22, 31, .14);
+    --shadow-modal: 0 18px 48px rgba(16, 22, 31, .2);
+    --hover-wash: rgba(15, 118, 110, .09);
+    --surround: #9aa5b1;
+  }
+
+  /* Frost: the light one taken the way the dark one was. Near-white grounds with
+     a blue cast, lines that barely draw, and the same saturated accent - for a
+     bright room, where the plain light theme is the safer, more paper-like
+     choice and this is the one that looks like now. */
+  :root[data-theme="frost"], :host([data-theme="frost"]) {
+    color-scheme: light;
+    --bg: #eaf0f4; --panel: #f8fbfd; --sunken: #ffffff; --control: #ffffff;
+    --line: #d5e2ea; --ink: #0d1b24; --muted: #5b7183;
+    --accent: #0891b2; --on-accent: #ffffff; --drop: #d3f0f7;
+    --warn: #a35a00; --warn-bg: #fef6e7; --warn-line: #ead6a8;
+    --error: #b02418; --caution: #8a5800; --danger: #b02418;
+    --ok: #0f7357; --bad: #c22a2a; --idle: #a3b4c0;
+    --scrim: rgba(9, 26, 36, .3);
+    --shadow: 0 2px 14px rgba(9, 26, 36, .12);
+    --shadow-modal: 0 18px 52px rgba(9, 26, 36, .18);
+    --hover-wash: rgba(8, 145, 178, .09);
+    --surround: #93a6b2;
+  }
+
+  /* Graphite under its own name, and the same values the base sets - which is not a
+     duplication to remove. The base is what `auto` reads on a dark machine; this is
+     what the SELECTOR reads when somebody picks Graphite on a light one. A preference
+     has to be able to disagree with the machine, and it cannot do that by inheritance.
+
+     The reasoning for the colours is on the base block, where a reader meets it first. */
+  :root[data-theme="graphite"], :host([data-theme="graphite"]) {
+    color-scheme: dark;
+    --bg: #1a1a1a; --panel: #242424; --sunken: #141414; --control: #202020;
+    --line: #2e2e2e; --ink: #e6e6e6; --muted: #9c9c9c;
+    --accent: #7cc0ff; --on-accent: #121212; --drop: #26374d;
+    --warn: #e0b13f; --warn-bg: #2f2819; --warn-line: #4a3e22;
+    --error: #f08a82; --caution: #f5c463; --danger: #f08a82;
+    --ok: #7bc98f; --bad: #ef7f8e; --idle: #5a5a5a;
+    --scrim: rgba(0, 0, 0, .66);
+    --shadow: 0 6px 20px rgba(0, 0, 0, .42);
+    --shadow-modal: 0 20px 56px rgba(0, 0, 0, .46);
+    --hover-wash: rgba(124, 192, 255, .11);
+    --surround: #0d0d0d;
+  }
+
+  /* A CHROME that is neither the document nor a label.
+     ---------------------------------------------------------------------------
+     Reported twice from the browser, once in each direction, which is what makes it
+     worth a name at all.
+
+     The toolbar was painted at --ink: the strength of the text it edits, so it drew
+     the eye away from the page. Moved to --muted it read as GREYED OUT - and that was
+     not a matter of taste either. --muted is what labels, hints, section headings and
+     counts are painted in throughout this chrome, so an interactive row wearing it is
+     wearing the colour of things you cannot click.
+
+     So: between the two, and DERIVED from them rather than typed. Not a
+     twenty-fifth palette name - a theme has nothing new to decide here, and §5b is
+     plain that too many names make the contract unspecifiable. The mix follows every
+     theme for nothing, present and future.
+
+     70%, measured across the four that remain: 10.1:1 to 13.4:1 on the panel, and
+     well clear of --muted, which is the whole point - it can no longer be mistaken
+     for the label colour, and it is still a step below the document. (It was measured
+     over seven when there were seven; a number carried past the thing it was measured
+     on is a claim about a repository that no longer exists.)
+
+     The plain --ink declaration above it is the fallback for a browser with no
+     color-mix, and it is the right one: too loud is what this looked like before
+     anybody complained, and it is a great deal better than invisible. */
+  :root, :host {
+    --chrome-ink: var(--ink);
+    --chrome-ink: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  }
+
+  /* THE PAPER, and the one shape constant. Both are one value in every theme, and
+     for the same reason: a corner is not brighter in a dark room. Named so that
+     "slightly rounded" is decided once rather than typed at nine call sites and
+     drifting into three different roundnesses. */
+  :root, :host,
+  :root[data-theme="light"], :host([data-theme="light"]),
+  :root[data-theme="frost"], :host([data-theme="frost"]),
+  :root[data-theme="graphite"], :host([data-theme="graphite"]) {
+    --paper: #ffffff;
+
+    /* What is laid on top of the sheet, and is therefore on white whatever the theme
+       is doing everywhere else. The rails and the drag handles float over the page;
+       given the panel'"'"'s colours they came out as a dark chip with darker ink on white
+       paper, and were reported as simply not visible. The paper does not follow the
+       theme, so neither can anything drawn on it. */
+    --on-paper: #ffffff;
+    --on-paper-ink: #3a4048;
+    --on-paper-line: #c7ccd4;
+    --on-paper-wash: #eef2f7;
+    --on-paper-accent: #2f6fb0;
+    --on-paper-shadow: rgba(0, 0, 0, .2);
+
+    /* And the marks the page itself carries, which are not chrome at all: they are
+       what the printer will put on the sheet. They live here rather than in the
+       editor's own sheet because there is one paper, and because the check that
+       forbids a loose colour has to have somewhere to send this one.
+
+       --on-paper-muted replaces a #666 and a #555 that were doing the same job a
+       shade apart, nobody's decision - section 5b, in the face that ships. */
+    --on-paper-text: #111111;      /* the document's own ink */
+    --on-paper-muted: #666f7a;     /* a note about the page rather than on it */
+    --on-paper-faint: #b0b0b0;     /* the kind labels, out in the margin */
+    --on-paper-rule: #888888;      /* a rule the document draws */
+    --on-paper-grid: #cccccc;      /* a table's own borders */
+    --on-paper-head: #f4f6f8;      /* a table header's tint */
+
+    --radius: 5px;
+  }
+
+  * { box-sizing: border-box; }
+
+  /* The browser's own rule for `hidden`, restated so an author rule cannot beat it.
+     `hidden` works by way of `display: none` in the user-agent sheet, which sits at
+     the very bottom of the cascade - so any selector in either face that sets a
+     display silently un-hides whatever it matches, and the element is toggled by a
+     button that then appears to do nothing at all. Reported exactly that way, as a
+     colour menu that would not close: it had never been closed, because it had never
+     been hidden.
+
+     Once, here, rather than every rule that sets a display having to remember. */
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; height: 100vh; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--ink);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  /* 500, not 600. The header is a label on a room, not a heading in a document, and
+     at semibold it was the loudest thing on a page whose subject is somebody else's
+     text. The letter-spacing does the work a heavier weight was doing. */
+  header h1 { font-size: 14px; margin: 0 12px 0 0; font-weight: 500; letter-spacing: .3px; }
+  header .grow { flex: 1; }
+  button, select, input {
+    background: var(--control); color: var(--ink); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 4px 9px; font: inherit;
+  }
+  button { cursor: pointer; transition: border-color .12s, background .12s; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  input[type=number] { width: 72px; }
+  input[type=text] { width: 100%; }
+  input:focus, select:focus, button:focus-visible {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--hover-wash);
+  }

@@ -1,0 +1,1890 @@
+{
+  "Title": "Invoice F-2025-0142",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {
+    "Customer": "ACME Industries"
+  },
+  "Swatches": [],
+  "GeneratedAt": "2025-07-24T09:30:00+00:00",
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Header",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "{Title}",
+              "Font": {
+                "Family": "Elms Sans",
+                "Size": 2,
+                "SizeUnit": "Rem",
+                "Bold": true
+              },
+              "Style": {
+                "Location": {
+                  "LeftValue": 0,
+                  "TopValue": 0
+                }
+              }
+            },
+            {
+              "$type": "LineItem",
+              "Pen": {
+                "Color": {
+                  "A": 255
+                },
+                "Width": 0.4,
+                "DashStyle": "Dash"
+              },
+              "Style": {
+                "Location": {
+                  "BottomValue": 2,
+                  "Dock": "Left, Right"
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "HeightValue": 32,
+              "Dock": "Left, Top, Right"
+            }
+          }
+        },
+        {
+          "$type": "Footer",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Page {Page} / {Pages}",
+              "Font": {
+                "Family": "Elms Sans",
+                "Size": 0.85,
+                "SizeUnit": "Rem",
+                "Color": {
+                  "R": 90,
+                  "G": 90,
+                  "B": 90,
+                  "A": 255
+                },
+                "HorizontalAlignment": "Right"
+              },
+              "Style": {
+                "Location": {
+                  "RightValue": 0,
+                  "BottomValue": 0
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "HeightValue": 14,
+              "Dock": "Left, Right, Bottom"
+            }
+          }
+        },
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 22
+                },
+                {},
+                {
+                  "Width": 18,
+                  "WidthUnit": "Percentage"
+                }
+              ],
+              "RepeatHeader": true,
+              "Grid": {
+                "Color": {
+                  "R": 180,
+                  "G": 180,
+                  "B": 180,
+                  "A": 255
+                },
+                "Width": 0.15
+              },
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Ref",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": true,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Description",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": true,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Total HT",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": true,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.5,
+                      "Right": 1.5,
+                      "Bottom": 1.5
+                    },
+                    "Background": {
+                      "Color": {
+                        "R": 238,
+                        "G": 238,
+                        "B": 238,
+                        "A": 255
+                      }
+                    }
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-001",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 1",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "19.90 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-002",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 2",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "39.80 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-003",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 3",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "59.70 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-004",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 4",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "79.60 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-005",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 5",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "99.50 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-006",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 6",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "119.40 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-007",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 7",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "139.30 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-008",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 8",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "159.20 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-009",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 9",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "179.10 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-010",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 10",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "199.00 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-011",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 11",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "218.90 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-012",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 12",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "238.80 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-013",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 13",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "258.70 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-014",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 14",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "278.60 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-015",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 15",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "298.50 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-016",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 16",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "318.40 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-017",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 17",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "338.30 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-018",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 18",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "358.20 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-019",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 19",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "378.10 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-020",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 20",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "398.00 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-021",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 21",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "417.90 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-022",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 22",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "437.80 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-023",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 23",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "457.70 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-024",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 24",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "477.60 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-025",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 25",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "497.50 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-026",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 26",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "517.40 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-027",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 27",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "537.30 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-028",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 28",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "557.20 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-029",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 29",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "577.10 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "A-030",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Service no. 30",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "597.00 \u20AC",
+                      "Font": {
+                        "Family": "Elms Sans",
+                        "Size": 1,
+                        "SizeUnit": "Rem",
+                        "Bold": false,
+                        "HorizontalAlignment": "Right"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1.2,
+                      "Right": 1.5,
+                      "Bottom": 1.2
+                    },
+                    "Splitting": "KeepTogether"
+                  }
+                }
+              ],
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        },
+        {
+          "$type": "TextItem",
+          "Text": "COPIE",
+          "Font": {},
+          "Style": {
+            "Location": {
+              "TopValue": 140
+            },
+            "Visibility": "Invisible",
+            "PageScope": "Last"
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 15,
+          "Top": 12,
+          "Right": 15,
+          "Bottom": 12
+        }
+      }
+    }
+  ]
+}

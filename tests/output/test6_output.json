@@ -1,0 +1,53 @@
+{
+  "Title": "Test 6: Mixed Units (MM \u002B Percentage)",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "Mixed Units",
+              "Font": {},
+              "Style": {
+                "Location": {
+                  "LeftValue": 10,
+                  "LeftUnit": "Percentage",
+                  "WidthValue": 50,
+                  "WidthUnit": "Percentage",
+                  "TopValue": 15,
+                  "HeightValue": 20
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {}
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>test</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PublishAot>False</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- The engine itself takes no dependency; a test project is free to. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.61" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\engine\Frisket.csproj" />
+
+    <!-- The PDF reader. Referenced here and nowhere in the engine, which is the whole
+         arrangement: a document that imports nothing carries no parser. -->
+    <ProjectReference Include="..\import\Frisket.Import.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,101 @@
+{
+  "Title": "t",
+  "RootFontSize": 3,
+  "DefaultFont": {},
+  "Fields": {},
+  "Language": "en-GB",
+  "HeadingNumbering": "A) a. 1",
+  "Swatches": [],
+  "Sections": [
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [
+        {
+          "$type": "Body",
+          "Layout": "Stack",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber} Alpha",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading1",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber} Beta",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading2",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber} Gamma",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading3",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber} Delta",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading1",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{HeadingNumber} Epsilon",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading2",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "{SectionHeadingNumber} Zeta",
+              "Font": {
+                "Size": 3
+              },
+              "Role": "Heading2",
+              "Style": {}
+            }
+          ],
+          "Style": {
+            "Location": {
+              "Dock": "Fill"
+            }
+          }
+        }
+      ],
+      "Style": {
+        "Padding": {
+          "Left": 15,
+          "Top": 15,
+          "Right": 15,
+          "Bottom": 15
+        }
+      }
+    }
+  ]
+}

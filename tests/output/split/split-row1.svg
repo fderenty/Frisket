@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="210mm" height="90mm" viewBox="0 0 210 90">
+  <title>Coupure - page 1</title>
+  <rect x="0" y="0" width="210" height="90" fill="#FFFFFF"/>
+  <text x="0" y="6" font-family="Elms Sans" font-size="6.857" fill="#000000" font-weight="bold">A table row split across pages</text>
+  <line x1="0" y1="8.3" x2="210" y2="8.3" stroke="#969696" stroke-width="0.2"/>
+  <text x="0" y="13.463" font-family="Elms Sans" font-size="4.071" fill="#555555" font-style="italic">One row too tall for what is left of the page, continued on the next. Look for the description carrying on</text>
+  <text x="0" y="17.738" font-family="Elms Sans" font-size="4.071" fill="#555555" font-style="italic">where it stopped rather than restarting or dropping a line, for the grid being redrawn around each half</text>
+  <text x="0" y="22.013" font-family="Elms Sans" font-size="4.071" fill="#555555" font-style="italic">so no text floats outside the table, for the short cell beside it still being drawn though it has nothing left</text>
+  <text x="0" y="26.288" font-family="Elms Sans" font-size="4.071" fill="#555555" font-style="italic">to say - a row showing fewer cells than the table has columns is refused by veraPDF and unreadable</text>
+  <text x="0" y="30.563" font-family="Elms Sans" font-size="4.071" fill="#555555" font-style="italic">aloud - and for the header repeating above the continuation.</text>
+  <rect x="0" y="34.275" width="30" height="4.05" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <rect x="30" y="34.275" width="180" height="4.05" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <text x="0" y="37.65" font-family="Elms Sans" font-size="3.857" fill="#000000" font-weight="bold">Reference</text>
+  <text x="30" y="37.65" font-family="Elms Sans" font-size="3.857" fill="#000000" font-weight="bold">Description</text>
+  <rect x="0" y="38.325" width="30" height="5.825" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <rect x="30" y="38.325" width="180" height="5.825" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <text x="1.5" y="42.513" font-family="Elms Sans" font-size="3.643" fill="#000000">REF-001</text>
+  <text x="31.5" y="42.513" font-family="Elms Sans" font-size="3.643" fill="#000000">Standard service</text>
+  <rect x="0" y="44.15" width="30" height="5.825" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <rect x="30" y="44.15" width="180" height="5.825" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <text x="1.5" y="48.338" font-family="Elms Sans" font-size="3.643" fill="#000000">REF-002</text>
+  <text x="31.5" y="48.338" font-family="Elms Sans" font-size="3.643" fill="#000000">Standard service</text>
+  <rect x="0" y="49.975" width="30" height="36.425" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <rect x="30" y="49.975" width="180" height="36.425" fill="none" stroke="#969696" stroke-width="0.15"/>
+  <text x="1.5" y="54.163" font-family="Elms Sans" font-size="3.643" fill="#000000">REF-LONG</text>
+  <text x="31.5" y="54.163" font-family="Elms Sans" font-size="3.643" fill="#000000">Full replacement of the sub-assembly, clearances checked and settings reset Full replacement of</text>
+  <text x="31.5" y="57.988" font-family="Elms Sans" font-size="3.643" fill="#000000">the sub-assembly, clearances checked and settings reset Full replacement of the sub-assembly,</text>
+  <text x="31.5" y="61.813" font-family="Elms Sans" font-size="3.643" fill="#000000">clearances checked and settings reset Full replacement of the sub-assembly, clearances checked</text>
+  <text x="31.5" y="65.638" font-family="Elms Sans" font-size="3.643" fill="#000000">and settings reset Full replacement of the sub-assembly, clearances checked and settings reset</text>
+  <text x="31.5" y="69.463" font-family="Elms Sans" font-size="3.643" fill="#000000">Full replacement of the sub-assembly, clearances checked and settings reset Full replacement of</text>
+  <text x="31.5" y="73.288" font-family="Elms Sans" font-size="3.643" fill="#000000">the sub-assembly, clearances checked and settings reset Full replacement of the sub-assembly,</text>
+  <text x="31.5" y="77.113" font-family="Elms Sans" font-size="3.643" fill="#000000">clearances checked and settings reset Full replacement of the sub-assembly, clearances checked</text>
+  <text x="31.5" y="80.938" font-family="Elms Sans" font-size="3.643" fill="#000000">and settings reset Full replacement of the sub-assembly, clearances checked and settings reset</text>
+  <text x="31.5" y="84.763" font-family="Elms Sans" font-size="3.643" fill="#000000">Full replacement of the sub-assembly, clearances checked and settings reset Full replacement of</text>
+</svg>

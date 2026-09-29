@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="210mm" height="297mm" viewBox="0 0 210 297">
+  <title>Quote Q-2025-0042 - page 1</title>
+  <rect x="0" y="0" width="210" height="297" fill="#FFFFFF"/>
+  <text x="15" y="16.4" font-family="Elms Sans" font-size="5.029" fill="#000000" font-weight="bold">Quote D-2025-0042</text>
+  <line x1="15" y1="17.43" x2="195" y2="17.43" stroke="#3C3C3C" stroke-width="0.3"/>
+  <text x="195" y="284.56" font-family="Elms Sans" font-size="2.514" fill="#000000" text-anchor="end">Page 1 / 1</text>
+  <text x="15" y="23.605" font-family="Elms Sans" font-size="3.457" fill="#000000" font-weight="bold">Services selected</text>
+  <rect x="15" y="24.21" width="3.3" height="3.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="22" y="26.96" font-family="Elms Sans" font-size="3.143" fill="#000000">Full overhaul</text>
+  <rect x="15" y="30.21" width="3.3" height="3.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="22" y="32.96" font-family="Elms Sans" font-size="3.143" fill="#000000">Remplacement plaquettes</text>
+  <rect x="15" y="36.21" width="3.3" height="3.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="22" y="38.96" font-family="Elms Sans" font-size="3.143" fill="#000000">Montage pneumatiques</text>
+  <text x="15" y="48.235" font-family="Elms Sans" font-size="3.457" fill="#000000" font-weight="bold">Your details</text>
+  <text x="15" y="53.815" font-family="Elms Sans" font-size="2.829" fill="#000000">Name</text>
+  <rect x="47" y="50.34" width="148" height="4.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="48" y="53.49" font-family="Elms Sans" font-size="3.143" fill="#969696">Name</text>
+  <text x="15" y="59.615" font-family="Elms Sans" font-size="2.829" fill="#000000">Telephone</text>
+  <rect x="47" y="56.14" width="148" height="4.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="48" y="59.29" font-family="Elms Sans" font-size="3.143" fill="#969696">Telephone</text>
+  <text x="15" y="65.415" font-family="Elms Sans" font-size="2.829" fill="#000000">Notes</text>
+  <rect x="47" y="61.94" width="148" height="10.9" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="48" y="65.09" font-family="Elms Sans" font-size="3.143" fill="#969696">Notes</text>
+  <text x="15" y="83.315" font-family="Elms Sans" font-size="2.829" fill="#000000">Agreed, on</text>
+  <rect x="45" y="80.84" width="35" height="4.3" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <text x="46" y="83.99" font-family="Elms Sans" font-size="3.143" fill="#969696">jj/mm/aaaa</text>
+  <rect x="125" y="80.84" width="70" height="10.9" fill="none" stroke="#5A5A5A" stroke-width="0.2"/>
+  <line x1="126" y1="88.44" x2="194" y2="88.44" stroke="#969696" stroke-width="0.15"/>
+  <text x="126" y="91.19" font-family="Elms Sans" font-size="3.143" fill="#969696">Customer's signature</text>
+</svg>
