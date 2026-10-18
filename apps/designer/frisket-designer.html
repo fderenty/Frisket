@@ -62,7 +62,7 @@
             display: flex; flex-flow: row wrap; gap: 16px;
             justify-content: safe center; align-content: flex-start; }
   #canvas svg { width: calc(var(--zoom, 1) * var(--sheet, 210) * 1mm); height: auto;
-                flex: none; }
+                flex: none; font-synthesis: none; }
   svg.page { background: var(--paper); box-shadow: var(--shadow); }
   /* Each sheet carries its own caption, so a wrap cannot leave a page on one line
      and the label that names it on the next. */
@@ -2512,8 +2512,36 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   if (theme === "auto") refresh(true);
 });
 
+// The engine's own faces, when the exact-preview server answers: the files it measures
+// and embeds, and the family it gives text that names none. Without them this page
+// draws a family with whatever the machine has installed under its name, and unnamed
+// text in the browser's sans-serif while the PDF has the engine's default. Laid out
+// again once they arrive, since the measurements are taken with them.
+function askServerForFonts() {
+  const base = ui.server.value.replace(/\/+$/, "");
+  fetch(base + "/fonts")
+    .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+    .then(list => {
+      const got = fontsFromServer(list, base);
+      if (got.defaultFamily) setDefaultFace(faceOf(got.defaultFamily));
+      if (typeof FontFace !== "function" || !document.fonts) { refresh(true); return; }
+      Promise.all(got.faces.map(d =>
+        new FontFace(d.family, `url("${d.url}")`, { weight: d.weight, style: d.style })
+          .load().then(face => document.fonts.add(face)).catch(() => {})))
+        .then(() => {
+          // The banner said the browser measures with its own fonts. It no longer does.
+          const banner = document.querySelector('.banner[data-i18n="hint.approximate"]');
+          if (banner) banner.dataset.i18n = "hint.approximateEngineFonts";
+          applyStaticText();
+          refresh(true);
+        });
+    })
+    .catch(() => {});
+}
+
 applyStaticText();
 refresh();
+askServerForFonts();
 </script>
 </body>
 </html>

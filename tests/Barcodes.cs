@@ -263,8 +263,9 @@ namespace test
             // validator to guess a flavour, and it guesses PDF/A-1 - which forbids things
             // this engine now writes. Better to say what it is.
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b };
+            sheet.GeneratedAt = SampleDate;
             ReportRenderer.Render(sheet, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "codes.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "codes.pdf"), pdf.ToArray());
 
             // The template carries a token and the data decides what is encoded, which is
             // the whole point of a barcode on an invoice. Left unbound, the brace itself

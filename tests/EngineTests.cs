@@ -78,6 +78,36 @@ namespace test
 
         static string FontDirectory() => Path.Combine(RepositoryRoot(), "engine", "Fonts");
 
+        /// <summary>
+        /// Writes a PDF a test leaves behind, and refuses one dated by the clock.
+        ///
+        /// What lands under tests/output is tracked, and a document dated "now" differs on
+        /// every run - its timestamp, and the /ID that follows from it. Twelve did, so no
+        /// run ever left the tree clean and a real change had to be found among twelve
+        /// that were not one. <see cref="Report.GeneratedAt"/> fixes the date; this asks
+        /// that it was fixed, so the next sample to forget is named by the run rather than
+        /// by a diff nobody reads. A file with no date at all - a hostile fixture built by
+        /// hand - is the same on every run, and passes.
+        /// </summary>
+        /// <summary>The date a sample says it was made, for one that has no reason to choose its own.</summary>
+        static readonly DateTimeOffset SampleDate = new(2026, 1, 15, 9, 0, 0, TimeSpan.Zero);
+
+        static void WriteSamplePdf(string path, byte[] pdf)
+        {
+            var dated = System.Text.RegularExpressions.Regex.Match(
+                System.Text.Encoding.Latin1.GetString(pdf), @"/CreationDate \(D:(\d{14})");
+            if (dated.Success)
+            {
+                DateTime written = DateTime.ParseExact(dated.Groups[1].Value, "yyyyMMddHHmmss",
+                    System.Globalization.CultureInfo.InvariantCulture);
+                Assert.True(Math.Abs((written - DateTime.UtcNow).TotalHours) > 36,
+                    $"{Path.GetFileName(path)} is dated {written:yyyy-MM-dd HH:mm}, which is now: set "
+                    + "Report.GeneratedAt, or the file changes on every run.");
+            }
+
+            File.WriteAllBytes(path, pdf);
+        }
+
         static void SaveReport(Report report, string filename)
         {
             try

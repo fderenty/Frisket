@@ -101,6 +101,7 @@ namespace test
             AssertEqual(testName, "strikethrough reaches the SVG", true, svgText1.Contains("line-through"), 0);
 
             var pdf1 = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            oneLineReport.GeneratedAt = SampleDate;
             ReportRenderer.Render(Report.FromJson(oneLineReport.ToJson()), pdf1);
             string pdf1Text = System.Text.Encoding.Latin1.GetString(pdf1.ToArray());
             AssertEqual(testName, "and the PDF is well-formed", true, pdf1Text.StartsWith("%PDF-1.7"), 0);
@@ -381,7 +382,7 @@ namespace test
             string dir = OutputDirectory("advanced-text");
             svg1.SaveTo(dir, "styles");
             svg3.SaveTo(dir, "wrap");
-            File.WriteAllBytes(Path.Combine(dir, "styles.pdf"), pdf1.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "styles.pdf"), pdf1.ToArray());
             Console.WriteLine($"  ▤ {Path.Combine(dir, "styles.pdf")}");
             Console.WriteLine();
         }
@@ -790,8 +791,9 @@ namespace test
             backend.SaveTo(dir, "terms");
 
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            reloaded.GeneratedAt = SampleDate;
             ReportRenderer.Render(reloaded, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "terms.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "terms.pdf"), pdf.ToArray());
 
             Console.WriteLine($"  ▤ {Path.Combine(dir, "terms.pdf")}");
             Console.WriteLine();

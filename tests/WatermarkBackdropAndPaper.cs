@@ -132,7 +132,7 @@ namespace test
             var pdf = new PdfBackend(library) { Compress = false };
             ReportRenderer.Render(report, pdf);
             byte[] bytes = pdf.ToArray();
-            File.WriteAllBytes(Path.Combine(dir, "draft.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "draft.pdf"), bytes);
 
             string raw = System.Text.Encoding.Latin1.GetString(bytes);
             AssertEqual(testName, "and the PDF carries it too", true, raw.Contains(" Tm"), 0);
@@ -156,7 +156,7 @@ namespace test
             var archived = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b };
             ReportRenderer.Render(report, archived);
             byte[] archivable = archived.ToArray();
-            File.WriteAllBytes(Path.Combine(dir, "draft.pdfa.pdf"), archivable);
+            WriteSamplePdf(Path.Combine(dir, "draft.pdfa.pdf"), archivable);
 
             string conforming = System.Text.Encoding.Latin1.GetString(archivable);
             AssertEqual(testName, "an archivable file carries the mark", true,
@@ -531,7 +531,7 @@ namespace test
 
             var archived = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
             ReportRenderer.Render(sample, archived);
-            File.WriteAllBytes(Path.Combine(dir, "stationery.pdf"), archived.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "stationery.pdf"), archived.ToArray());
 
             Console.WriteLine($"    ecrit dans {dir}");
             Console.WriteLine();

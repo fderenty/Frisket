@@ -892,6 +892,8 @@ if (linked.length) {
       held.setLang = setLang; held.setData = setData;
       held.breakLines = breakLines; held.breakAdvancedRuns = breakAdvancedRuns;
       held.textWidth = textWidth; held.BREAKS_AT = BREAKS_AT;
+      held.setDefaultFace = setDefaultFace; held.defaultFace = defaultFace;
+      held.MAIL_FACE = MAIL_FACE; held.fontsFromServer = fontsFromServer;
     `;
     vm.runInContext(linked.join('\n') + handles, Object.assign(context, { held }));
 
@@ -973,6 +975,59 @@ if (linked.length) {
             disagree.length === 0 && engineBreaks.size > 0,
             disagree.length ? disagree.slice(0, 6).join(', ') : engineBreaks.size + ' characters break');
     }
+
+    // Text that names no family. The stack a mail reader is handed is the engine's,
+    // read out of FlowingHtml rather than trusted; and the face the page declares is
+    // what both the drawing and the measuring use - a page that measured in one face
+    // and drew in another would wrap every line wrongly.
+    const flowing = fs.readFileSync(path.join(REPO, 'engine', 'Html', 'FlowingHtml.cs'), 'utf8');
+    const engineMailFace = (flowing.match(/IsNullOrWhiteSpace\(family\)\s*\?\s*"([^"]+)"/) || [])[1];
+    check('the face mail text names no family in is the engine\'s, not a copy of it',
+          engineMailFace && engineMailFace === held.MAIL_FACE,
+          `engine ${engineMailFace || 'not found'} / echo ${held.MAIL_FACE}`);
+
+    const measured = [];
+    held.setTextRuler((text, font) => { measured.push(font); return String(text).length * 7; });
+    held.setDefaultFace("'Probe Face', sans-serif");
+    const unnamed = held.blankReport();
+    unnamed.Language = 'en-GB';
+    const unnamedBody = unnamed.Sections[0].Childs.find(c => c.$type === 'Body');
+    unnamedBody.Childs.push({ $type: 'TextItem', Text: 'Nothing names a family here' });
+    unnamed.Watermark = { Text: 'NOR HERE' };
+    const drawn = held.render(unnamed, null, 0);
+    // Two writers of text, each asked: the paragraph and the watermark. Asked as one,
+    // either could fall back to sans-serif while the other carried the check.
+    const probed = `font-family="'Probe Face', sans-serif"`;
+    const textTag = (drawn.match(/<text[^>]*>Nothing names a family here/) || [''])[0];
+    const markTag = (drawn.match(/<text[^>]*>NOR HERE/) || [''])[0];
+    check('text naming no family is drawn in the face the page declares',
+          textTag.includes(probed), (textTag.match(/font-family="[^"]*"/) || ['no text drawn'])[0]);
+    check('and so is a watermark naming none',
+          markTag.includes(probed), (markTag.match(/font-family="[^"]*"/) || ['no watermark drawn'])[0]);
+    check('and measured in it too',
+          measured.some(f => f.endsWith("'Probe Face', sans-serif")),
+          measured.slice(0, 2).join(' | ') || 'nothing measured');
+    held.setDefaultFace(null);
+    held.setTextRuler((text) => String(text).length * 7);
+
+    // And the server's list read the way the server writes it. The route and its three
+    // parameters are read out of the server, so a rename on either side fails here
+    // rather than in a browser that quietly draws with a fallback.
+    const server = fs.readFileSync(path.join(REPO, 'apps', 'server', 'Program.cs'), 'utf8');
+    const route = server.match(/MapGet\("(\/fonts\/file)",\s*\(string (\w+), bool (\w+), bool (\w+)\)/);
+    const marks = /IsDefault\s*=/.test(server);
+    const got = held.fontsFromServer([
+      { family: 'House Face', subfamily: 'Regular', bold: false, italic: false, isDefault: true },
+      { family: 'House Face', subfamily: 'Bold Italic', bold: true, italic: true, isDefault: true },
+      { family: 'Other Face', subfamily: 'Regular', bold: false, italic: false, isDefault: false },
+    ], 'http://server');
+    const boldItalic = got.faces.find(f => f.weight === '700' && f.style === 'italic');
+    check('the server marks its default family, and the page reads which one it is',
+          marks && got.defaultFamily === 'House Face', `${marks ? 'marked' : 'not marked'}, read ${got.defaultFamily}`);
+    check('and asks for each cut at the address the server hands it out from',
+          route && boldItalic && boldItalic.url ===
+            `http://server${route[1]}?${route[2]}=House%20Face&${route[3]}=true&${route[4]}=true`,
+          boldItalic ? boldItalic.url : 'no bold italic face');
   } catch (e) {
     check('the core loads with no document and no window', false, e.message);
   }

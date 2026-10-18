@@ -362,7 +362,7 @@ namespace test
             string dir = OutputDirectory("acme");
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "acme.pdf");
-            File.WriteAllBytes(path, bytes);
+            WriteSamplePdf(path, bytes);
 
             Console.WriteLine($"  📄 {layout.PageCount} pages, {bytes.Length / 1024} kB -> {path}");
             Console.WriteLine();
@@ -759,7 +759,7 @@ namespace test
             string dir = OutputDirectory("acme");
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "acme.factur-x.pdf");
-            File.WriteAllBytes(path, bytes);
+            WriteSamplePdf(path, bytes);
 
             Console.WriteLine($"  🇫🇷 PDF/A-3 + Factur-X, {bytes.Length / 1024} kB -> {path}");
             Console.WriteLine();
@@ -917,7 +917,7 @@ namespace test
             byte[] bytes = pdf.ToArray();
 
             string dir = OutputDirectory("conformance");
-            File.WriteAllBytes(Path.Combine(dir, "conformance.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "conformance.pdf"), bytes);
 
             // The same section on screen. Two ways of looking at one thing catch
             // different faults: the PDF is what a validator reads, this is what an eye
@@ -1297,7 +1297,7 @@ namespace test
 
             string pdf = Path.Combine(OutputDirectory("conformance"),
                 $"validated-{flavour}-{(interactive ? "fillable" : "flat")}.pdf");
-            File.WriteAllBytes(pdf, backend.ToArray());
+            WriteSamplePdf(pdf, backend.ToArray());
 
             var process = new System.Diagnostics.Process
             {

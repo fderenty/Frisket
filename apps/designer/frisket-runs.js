@@ -26,7 +26,7 @@ function runElement(run) {
 
   // Drawn as well as stored: what is written into data-font is what comes back out,
   // and what is written into style is what a person sees while typing.
-  if (run.Font.Family) span.style.fontFamily = run.Font.Family;
+  if (run.Font.Family) span.style.fontFamily = faceOf(run.Font.Family);
   if (run.Font.Bold) span.style.fontWeight = "bold";
   if (run.Font.Italic) span.style.fontStyle = "italic";
   const deco = [];

@@ -59,9 +59,33 @@ app.MapGet("/editor", () => File.Exists(Face("frisket-editor.html"))
     ? Results.Content(File.ReadAllText(Face("frisket-editor.html")), "text/html; charset=utf-8")
     : Results.NotFound($"The editor was not found under {faces}."));
 
+// IsDefault marks the family text that names none is drawn in - what the font directory
+// declares - so a face can show such text as it will print rather than in whatever its
+// browser falls back to.
 app.MapGet("/fonts", () => Results.Ok(fonts.Fonts
-    .Select(f => new { f.Family, f.Subfamily, f.Bold, f.Italic, f.CapHeight })
+    .Select(f => new
+    {
+        f.Family, f.Subfamily, f.Bold, f.Italic, f.CapHeight,
+        IsDefault = string.Equals(f.Family, fonts.DefaultFamily, StringComparison.OrdinalIgnoreCase)
+    })
     .OrderBy(f => f.Family).ThenBy(f => f.Subfamily)));
+
+/// The file behind one cut, so a face draws with the outlines the engine measures and
+/// embeds instead of with a namesake installed on the machine, or with nothing. Only an
+/// exact cut is served. Where a family has no bold or no italic the browser then picks
+/// another of its cuts, as FontLibrary.Resolve does - provided it is not allowed to
+/// synthesise one, which is why the faces say font-synthesis: none. A slanted regular
+/// on screen would be a promise the PDF does not keep.
+app.MapGet("/fonts/file", (string family, bool bold, bool italic) =>
+{
+    FontFile? font = fonts.Fonts.FirstOrDefault(f =>
+        string.Equals(f.Family, family, StringComparison.OrdinalIgnoreCase) && f.Bold == bold && f.Italic == italic);
+    if (font == null)
+        return Results.NotFound(new { error = $"No {(bold ? "bold " : "")}{(italic ? "italic " : "")}cut of '{family}'." });
+
+    bool cff = font.Data.Length >= 4 && font.Data[0] == 'O' && font.Data[1] == 'T' && font.Data[2] == 'T' && font.Data[3] == 'O';
+    return Results.File(font.Data, cff ? "font/otf" : "font/ttf");
+});
 
 /// Takes a font the person at the keyboard chose.
 ///

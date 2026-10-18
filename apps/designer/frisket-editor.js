@@ -445,7 +445,7 @@ function draw() {
   // The document's own type size, so what is typed is the size it will print at.
   const rem = report.RootFontSize || 3;
   sheet.style.fontSize = (rem / 0.7) + "mm";
-  sheet.style.fontFamily = (report.DefaultFont && report.DefaultFont.Family) || "Georgia, serif";
+  sheet.style.fontFamily = sheetFace();
 
   const keep = current && current.dataset.index;
   sheet.innerHTML = "";
@@ -1145,6 +1145,24 @@ function chooseFontSource(declared) {
 }
 
 let libraryFamilies = null;          // null until the server has been asked
+let libraryDefault = null;           // the family the server's engine gives unnamed text
+
+const FONT_SERVER = "http://localhost:5080";
+
+/// What text that names no family is shown in: the face the output will give it. With
+/// the server's list that is the engine's default, which its font directory names;
+/// with the web's own families it is the stack a mail reader is handed. A document
+/// naming its own default is shown in that, as the engine would print it.
+function applyDefaultFace() {
+  setDefaultFace(fontSource === "websafe" ? MAIL_FACE
+                 : libraryDefault ? faceOf(libraryDefault) : "sans-serif");
+  wire("sheet", n => { n.style.fontFamily = sheetFace(); });
+}
+
+function sheetFace() {
+  const named = report && report.DefaultFont && report.DefaultFont.Family;
+  return named ? faceOf(named) : defaultFace();
+}
 
 /// Every family the document already names. What the list falls back to with no
 /// server: it cannot be wrong, since these are in use whatever the engine holds.
@@ -1200,16 +1218,33 @@ function fillFamilies() {
 /// Asks the preview server what it can actually embed. Best effort: the page opens
 /// from a file:// URL as often as not, and saying so is better than an empty list.
 function askServerForFonts() {
-  fetch("http://localhost:5080/fonts")
+  fetch(FONT_SERVER + "/fonts")
     .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
-    .then(list => {
-      // Either spelling: the model's property is Family and ASP.NET publishes it as
-      // family, so reading only one of them is a list that is empty for no visible
-      // reason. Checked against the running server rather than assumed.
-      libraryFamilies = [...new Set(list.map(f => f.Family || f.family))].filter(Boolean).sort();
-      fillFamilies();
-    })
-    .catch(() => { libraryFamilies = null; fillFamilies(); });
+    .then(receiveFonts)
+    .catch(() => { libraryFamilies = null; libraryDefault = null; fillFamilies(); applyDefaultFace(); });
+}
+
+/// What the server answered: the families to offer, the one it gives unnamed text, and
+/// the files themselves to draw with.
+function receiveFonts(list) {
+  const got = fontsFromServer(list, FONT_SERVER);
+  libraryFamilies = got.families;
+  libraryDefault = got.defaultFamily;
+  loadFaces(got.faces);
+  fillFamilies();
+  applyDefaultFace();
+}
+
+/// The engine's own files, so the sheet draws with what the PDF will embed rather than
+/// with whatever this machine has installed under that name - or, when it has nothing,
+/// with the browser's default face, which is a serif. Added to the document's set: a
+/// font belongs to the document, and a shadow root draws from the same set. Nothing to
+/// redraw once they arrive - the sheet is laid out by the browser, which repaints.
+function loadFaces(faces) {
+  if (typeof FontFace !== "function" || !document.fonts) return;
+  for (const d of faces)
+    new FontFace(d.family, `url("${d.url}")`, { weight: d.weight, style: d.style })
+      .load().then(face => document.fonts.add(face)).catch(() => {});
 }
 
 function bandWidth() {
@@ -2514,6 +2549,7 @@ function mount() {
   wire("fontSource", n => { n.onchange = e => {
     fontSource = e.target.value;
     try { localStorage.setItem("frisket.fonts", fontSource); } catch {}
+    applyDefaultFace();
     if (fontSource === "library" && libraryFamilies === null) askServerForFonts();
     else fillFamilies();
   }; });
@@ -2706,6 +2742,7 @@ function mount() {
   fillPapers();
   applyStaticText();
   fillFamilies();
+  applyDefaultFace();
   if (fontSource === "library") askServerForFonts();
   report = blankFlow();
   syncPanel();

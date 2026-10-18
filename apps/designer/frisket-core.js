@@ -281,6 +281,49 @@ let ruler = null;
 /// Supplies the measurer: (text, cssFont) -> width in CSS pixels.
 function setTextRuler(fn) { ruler = fn; }
 
+// What text that names no family is drawn in - declared, like the ruler, because only
+// the page knows which output it is showing. The engine gives such text the default
+// its font directory names (engine/Fonts/default-family.txt); a mail reader gets the
+// stack FlowingHtml writes, which the harness reads out of that file rather than
+// trusting this copy. Until the page says, the browser's own sans-serif.
+//
+// It used to be assumed, and three ways at once: this file drew "sans-serif", the
+// content editor "Georgia, serif", and the PDF came out in Mulish.
+const MAIL_FACE = "Helvetica, Arial, sans-serif";
+let unnamedFace = "sans-serif";
+
+/// Supplies the face for text that names no family, as a CSS font-family list.
+function setDefaultFace(face) { unnamedFace = face || "sans-serif"; }
+function defaultFace() { return unnamedFace; }
+
+/// A family as a CSS font-family list, quoted, with a generic face behind it: a family
+/// the browser has no file for falls back to its default, which is a serif.
+const faceOf = family => `'${String(family).replace(/'/g, "")}', sans-serif`;
+
+/// What a font server's list (GET /fonts) asks a page to load: one face per cut, at the
+/// address the server hands that file out from, and the family it gives text that names
+/// none. Pure, so the harness can ask it; loading is the browser's, so the page does it.
+/// Either spelling of each field: the model says Family and ASP.NET publishes family.
+function fontsFromServer(list, base) {
+  const field = (f, name) => f[name] ?? f[name[0].toLowerCase() + name.slice(1)];
+  const faces = [];
+  for (const f of list || []) {
+    const family = field(f, "Family");
+    if (!family) continue;
+    const bold = !!field(f, "Bold"), italic = !!field(f, "Italic");
+    faces.push({
+      family, weight: bold ? "700" : "400", style: italic ? "italic" : "normal",
+      url: `${base}/fonts/file?family=${encodeURIComponent(family)}&bold=${bold}&italic=${italic}`
+    });
+  }
+  const marked = (list || []).find(f => field(f, "IsDefault"));
+  return {
+    families: [...new Set(faces.map(f => f.family))].sort(),
+    faces,
+    defaultFamily: marked ? field(marked, "Family") : null
+  };
+}
+
 let _gauge = null;
 function measureRun(text, font) {
   if (ruler) return ruler(text, font);
@@ -327,7 +370,7 @@ function emMm(font, report) {
 function cssFont(font, report) {
   const f = fontOf(font, report);
   const px = emMm(font, report) * 3.7795;      // 1mm at 96dpi
-  return `${f.Italic ? "italic " : ""}${f.Bold ? "700 " : ""}${px}px ${f.Family || "sans-serif"}`;
+  return `${f.Italic ? "italic " : ""}${f.Bold ? "700 " : ""}${px}px ${f.Family || unnamedFace}`;
 }
 function textWidth(text, font, report) {
   return measureRun(text, cssFont(font, report)) / 3.7795;
@@ -1610,6 +1653,8 @@ const STRINGS = {
                   + "even told something is there.",
     "hint.approximate": "Approximate preview: the browser measures with its own fonts, this "
                       + "page does not paginate and applies no repetition.",
+    "hint.approximateEngineFonts": "Approximate preview: measured with the engine's own "
+                      + "fonts, but this page does not paginate and applies no repetition.",
 
     "alert.noPreview": "Exact preview unavailable: ", "alert.noPdf": "PDF unavailable: ",
     "alert.unreadable": "Cannot read: ", "alert.badData": "Unreadable data: ",
@@ -1809,6 +1854,8 @@ const STRINGS = {
                   + "pas qu'il y a quelque chose.",
     "hint.approximate": "Aperçu approximatif : le navigateur mesure avec ses propres polices, "
                       + "cette page ne pagine pas et n'applique pas les répétitions.",
+    "hint.approximateEngineFonts": "Aperçu approximatif : mesuré avec les polices du moteur, "
+                      + "mais cette page ne pagine pas et n'applique pas les répétitions.",
 
     "alert.noPreview": "Aperçu exact indisponible : ", "alert.noPdf": "PDF indisponible : ",
     "alert.unreadable": "Lecture impossible : ", "alert.badData": "Données illisibles : ",
@@ -2128,7 +2175,7 @@ function watermarkSvg(report, page) {
 
   return watermarkMarks(report, page).map(m =>
     `<text x="0" y="0" transform="translate(${n3(m.x)} ${n3(m.y)}) rotate(${n3(-(w.Angle ?? 45))})"` +
-    ` font-family="${esc(font.Family || "sans-serif")}" font-size="${n3(em)}" fill="${fill}"` +
+    ` font-family="${esc(font.Family || unnamedFace)}" font-size="${n3(em)}" fill="${fill}"` +
     `${op < 1 ? ` fill-opacity="${n3(op)}"` : ""}` +
     `${font.Bold ? ' font-weight="bold"' : ""}>${esc(w.Text)}</text>`).join("");
 }
@@ -2252,7 +2299,7 @@ function text(item, r, report) {
                     : font.HorizontalAlignment === "Right" ? [r.right, "end"] : [r.left, "start"];
 
   return lines.map((line, i) =>
-    `<text x="${n3(x)}" y="${n3(r.top + offset + first + i * lh)}" font-family="${esc(font.Family || "sans-serif")}"` +
+    `<text x="${n3(x)}" y="${n3(r.top + offset + first + i * lh)}" font-family="${esc(font.Family || unnamedFace)}"` +
     ` font-size="${n3(emMm(font, report))}" fill="${hex(font.Color)}"` +
     (anchor !== "start" ? ` text-anchor="${anchor}"` : "") +
     justify(line, font, report, r.width, i === lines.length - 1) +

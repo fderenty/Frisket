@@ -220,8 +220,9 @@ namespace test
             svg.SaveTo(dir, "split-row");
 
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b };
+            report.GeneratedAt = SampleDate;
             ReportRenderer.Render(report, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "split-row.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "split-row.pdf"), pdf.ToArray());
 
             Console.WriteLine($"  \u2702 {Path.Combine(dir, "split-row.pdf")}");
             Console.WriteLine();
@@ -601,8 +602,9 @@ namespace test
             backend.SaveTo(dir, "grid");
 
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            bound.GeneratedAt = SampleDate;
             ReportRenderer.Render(bound, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "grid.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "grid.pdf"), pdf.ToArray());
 
             Console.WriteLine($"  ▤ {Path.Combine(dir, "grid.pdf")}");
             Console.WriteLine();
@@ -759,6 +761,7 @@ namespace test
                 {
                     Conformance = PdfConformance.PdfA3b, Tagged = true, Compress = false
                 };
+                report.GeneratedAt = SampleDate;
                 ReportRenderer.Render(report, pdf);
                 return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
             }
@@ -769,7 +772,7 @@ namespace test
             // Kept, because a document in two languages is exactly the kind of file a
             // validator has an opinion about and this side does not. Test 53 validates
             // the conformance document; this one is here to be pointed at by hand.
-            File.WriteAllBytes(Path.Combine(OutputDirectory("subtemplate"), "appended.pdf"),
+            WriteSamplePdf(Path.Combine(OutputDirectory("subtemplate"), "appended.pdf"),
                                System.Text.Encoding.Latin1.GetBytes(mixed));
 
             Console.WriteLine($"    /Lang (de-DE) : {CountOccurrences(mixed, "/Lang (de-DE)")} melange, "
@@ -1040,8 +1043,9 @@ namespace test
                 false, namedIssues.Any(i => i.Rule == "sound.emptySubTemplate"), 0);
 
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            loaded.GeneratedAt = SampleDate;
             ReportRenderer.Render(loaded, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "compose.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "compose.pdf"), pdf.ToArray());
 
             Console.WriteLine($"  ▤ {Path.Combine(dir, "compose.pdf")}");
             Console.WriteLine();

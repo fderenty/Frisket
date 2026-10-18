@@ -270,8 +270,25 @@ directory, so a family name typed into each host would be §1 three times over; 
 file carries the reasons beside the choice. Test 56 asks that the alphabet alone would
 have chosen otherwise, or the check would be true for want of matter.
 
-Still open, and not the engine's: the editor draws text that names no family in the
-browser's `sans-serif`, so its preview does not show the default the PDF will get.
+**And the faces showed a face of their own - two, in fact.** Text naming no family came
+out in `sans-serif` from the core, in `Georgia, serif` from the content editor, and in
+Mulish in the PDF. Worse, neither face had ever loaded the engine's files:
+`font-family: Mulish` draws Mulish on a machine that has it installed and the browser's
+default serif everywhere else, so even a *named* family was a guess.
+
+The default is declared now - `setDefaultFace`, beside `setTextRuler` - and the page
+says which output it is showing: the server's default family when the list is the
+server's (`/fonts` marks it with `IsDefault`, `/fonts/file` serves each exact cut, and
+the page loads them with `FontFace`), FlowingHtml's stack when the list is the web's
+own. `font-synthesis: none` stops the browser inventing a bold or a slant a family does
+not have, so it falls back to another cut exactly as `Resolve` does - a slanted Glametrix
+on screen would be a promise the PDF does not keep. The harness reads the mail stack out
+of `FlowingHtml.cs` and the route out of the server's `Program.cs`, and ten sabotages fall
+on ten checks; Edge, driven over the DevTools protocol, shows the 29 cuts loaded and the
+sheet in Mulish.
+
+The designer's banner said *the browser measures with its own fonts*. True until it
+loaded the engine's; it says the other thing once it has.
 
 ## 4. External checks, after any touch to text, fonts or the PDF
 
@@ -1831,6 +1848,15 @@ one and the other wrongly concluded that a fix did not work.
 A PDF open in a reader **locks the file**: the test that writes it fails on
 `IOException`. Under xUnit it fails alone, but closing the tab is still simpler
 than interpreting the result.
+
+**A sample dated by the clock is never the same file twice.** Twelve PDFs here took their
+date from `DateTimeOffset.Now`, so every run rewrote them - the timestamp and the `/ID`
+that follows from it - and no run ever left the tree clean: a real change had to be found
+among twelve that were not one. Every PDF a test writes goes through `WriteSamplePdf`,
+which refuses one dated now; the first run with it named ten tests, which is the check
+seen failing, and `SampleDate` dated them. Two runs now give the same 197 files to the
+byte. A copy made by one test from another's output (`outside.pdf`) settles one run
+later than its source - expected once, not a fault.
 
 ## 13. Writing into files
 

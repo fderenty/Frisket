@@ -103,10 +103,11 @@ namespace test
             report.Reattach();
 
             var backend = new PdfBackend(library) { Compress = false };
+            report.GeneratedAt = SampleDate;
             ReportRenderer.Render(report, backend);
             byte[] ours = backend.ToArray();
 
-            File.WriteAllBytes(Path.Combine(OutputDirectory("import"), "three-sheets.pdf"), ours);
+            WriteSamplePdf(Path.Combine(OutputDirectory("import"), "three-sheets.pdf"), ours);
 
             for (int i = 0; i < sheets.Length; i++)
             {
@@ -141,7 +142,7 @@ namespace test
 
             // --- a file written the modern way ----------------------------------------
             byte[] modern = ModernPdf();
-            File.WriteAllBytes(Path.Combine(OutputDirectory("import"), "xref-stream.pdf"), modern);
+            WriteSamplePdf(Path.Combine(OutputDirectory("import"), "xref-stream.pdf"), modern);
 
             IImportedPage packed = PdfPageSource.Read(modern, 0);
             var second = new Collected();
@@ -423,9 +424,10 @@ namespace test
                 Conformance = PdfConformance.PdfA3b, Language = "en-GB",
                 Tagged = true, Compress = false
             };
+            report.GeneratedAt = SampleDate;
             ReportRenderer.Render(report, laid, pdf);
             byte[] bytes = pdf.ToArray();
-            File.WriteAllBytes(Path.Combine(OutputDirectory("import"), "with-terms.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(OutputDirectory("import"), "with-terms.pdf"), bytes);
 
             string written = System.Text.Encoding.Latin1.GetString(bytes);
 
@@ -453,7 +455,7 @@ namespace test
             // semantics of that method, not a forgotten guard.
             string here = OutputDirectory("import");
             string above = Path.GetDirectoryName(Path.GetFullPath(here)) ?? here;
-            File.WriteAllBytes(Path.Combine(above, "outside.pdf"), elsewhere);
+            WriteSamplePdf(Path.Combine(above, "outside.pdf"), elsewhere);
 
             static Report Naming(string path)
             {
@@ -553,10 +555,11 @@ namespace test
                 {
                     Conformance = PdfConformance.PdfA3b, Language = "en-GB", Tagged = true
                 };
+                report.GeneratedAt = SampleDate;
                 ReportRenderer.Render(report, pdf);
 
                 string path = Path.Combine(OutputDirectory("import"), name);
-                File.WriteAllBytes(path, pdf.ToArray());
+                WriteSamplePdf(path, pdf.ToArray());
                 return path;
             }
 

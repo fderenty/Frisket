@@ -434,6 +434,10 @@ eval(script + `
   held.setTheme = v => { theme = v; };
   held.fontSource = () => fontSource;
   held.setFontSource = v => { fontSource = v; };
+  held.receiveFonts = receiveFonts;
+  held.receiveFontsReset = () => { libraryFamilies = null; libraryDefault = null; };
+  held.defaultFace = defaultFace;
+  held.mailFace = () => MAIL_FACE;
   held.webSafe = () => WEB_SAFE;
   held.mount = mount;
   held.shown = next => { SHOWN = next; };
@@ -2026,8 +2030,38 @@ if (!process.argv[2]) {
         offered.length > 0 && offered.every(f => held.webSafe().includes(f)),
         offered.join(', ') || 'nothing offered');
 
+  // And what text naming no family is shown in. It was three things at once: the core
+  // drew it in "sans-serif", this sheet in "Georgia, serif", and the PDF in the
+  // engine's default. Asked of the sheet a person looks at, under each source. The
+  // families below are stand-ins for what a server holds, not fonts this test relies on.
+  const face = () => held.el('sheet').style.fontFamily;
+  check('with the web\'s own families, unnamed text is in the stack a mail is sent with',
+        face() === held.mailFace(), face());
+
   held.onChecks(null);
   held.setFontSource('library');
+  held.shown(FULL); held.mount();
+  check('with the server\'s families and no server, in a generic face, not a chosen one',
+        face() === 'sans-serif', face());
+
+  held.receiveFonts([
+    { family: 'Other Face', subfamily: 'Regular', bold: false, italic: false, isDefault: false },
+    { family: 'House Face', subfamily: 'Regular', bold: false, italic: false, isDefault: true },
+    { family: 'House Face', subfamily: 'Bold', bold: true, italic: false, isDefault: true },
+  ]);
+  check('and once the server answers, in the family it gives text that names none',
+        face() === "'House Face', sans-serif" && held.defaultFace() === face(), face());
+
+  held.report().DefaultFont = { ...(held.report().DefaultFont || {}), Family: 'Other Face' };
+  held.draw();
+  check('while a document naming its own default is shown in that one, as it prints',
+        face() === "'Other Face', sans-serif", face());
+  delete held.report().DefaultFont.Family;
+
+  check('and a face missing a cut borrows another rather than letting the browser invent one',
+        /font-synthesis\s*:\s*none/.test(cssFor('#sheet')), cssFor('#sheet').trim().slice(0, 80));
+
+  held.receiveFontsReset();
   held.shown(FULL); held.mount();
 }
 

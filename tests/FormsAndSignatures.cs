@@ -950,7 +950,7 @@ namespace test
 
             string dir = OutputDirectory("quote");
             Directory.CreateDirectory(dir);
-            File.WriteAllBytes(Path.Combine(dir, "quote.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "quote.pdf"), bytes);
 
             // And the same section with the boxes drawn on the page as well, for a
             // pipeline that rasterises without carrying annotations over. In a reader it
@@ -962,7 +962,7 @@ namespace test
                 FieldBackdrop = true
             };
             ReportRenderer.Render(quote, backdrop);
-            File.WriteAllBytes(Path.Combine(dir, "quote-with-background.pdf"), backdrop.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "quote-with-background.pdf"), backdrop.ToArray());
 
             // So the designer's echo can be checked against a template holding fields.
             File.WriteAllText(Path.Combine(dir, "quote.template.json"), Quote().ToJson());
@@ -1189,7 +1189,7 @@ namespace test
 
             string dir = OutputDirectory("quote");
             Directory.CreateDirectory(dir);
-            File.WriteAllBytes(Path.Combine(dir, "quote-signed.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "quote-signed.pdf"), bytes);
 
             var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
             ReportRenderer.Render(signed, svg);

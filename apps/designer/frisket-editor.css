@@ -252,6 +252,10 @@
     background: var(--paper);
     padding: var(--sheet-pad, 20mm);
     color: var(--on-paper-text);   /* the sheet's ink, never var(--ink) */
+    /* A face with no bold or italic cut falls back to another cut of its family, as
+       the engine does, rather than to a bold or a slant the browser invents - which
+       the PDF would never draw. */
+    font-synthesis: none;
   }
 
   /* A block. One per child of the Body, and exactly one of them is contenteditable

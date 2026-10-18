@@ -392,7 +392,7 @@ namespace test
                 byte[] bytes = pdf.ToArray();
 
                 string slug = new string(family.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '-').ToArray());
-                File.WriteAllBytes(Path.Combine(dir, $"acme-{slug}.pdf"), bytes);
+                WriteSamplePdf(Path.Combine(dir, $"acme-{slug}.pdf"), bytes);
 
                 var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
                 ReportRenderer.Render(report, svg);

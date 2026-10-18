@@ -644,7 +644,7 @@ namespace test
 
             var pdf = new PdfBackend(library);
             ReportRenderer.Render(report, pdf);
-            File.WriteAllBytes(Path.Combine(dir, "terms.pdf"), pdf.ToArray());
+            WriteSamplePdf(Path.Combine(dir, "terms.pdf"), pdf.ToArray());
 
             // Only the last sheet, for a section whose conditions go once at the end.
             report.BackPage.Scope = BackPageScope.LastPage;
@@ -749,7 +749,7 @@ namespace test
 
             string dir = OutputDirectory("landscape");
             svg.SaveTo(dir, "landscape");
-            File.WriteAllBytes(Path.Combine(dir, "landscape.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "landscape.pdf"), bytes);
             Console.WriteLine($"  ▭ {Path.Combine(dir, "landscape.pdf")}");
             Console.WriteLine();
         }
@@ -1031,7 +1031,7 @@ namespace test
 
             string dir = OutputDirectory("sections");
             svg.SaveTo(dir, "sections");
-            File.WriteAllBytes(Path.Combine(dir, "sections.pdf"), bytes);
+            WriteSamplePdf(Path.Combine(dir, "sections.pdf"), bytes);
             Console.WriteLine($"  ⛶ {Path.Combine(dir, "sections.pdf")}");
             Console.WriteLine();
         }
