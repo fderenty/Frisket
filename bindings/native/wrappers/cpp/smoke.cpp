@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
             check("what is not a font is refused, not stepped over", refused);
         }
 
-        faces.set_default_family("Josefin Sans");
+        faces.set_default_family("Mulish");
         check("the library lists itself", faces.list().rfind('[', 0) == 0);
 
         const frisket::document doc = frisket::document::from_file(template_path);

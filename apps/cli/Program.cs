@@ -535,6 +535,9 @@ namespace Frisket.Cli
                                       at all. A family it does name and that is
                                       missing is an error, never a substitution:
                                       another face would relay out every line.
+                                      Default: the family the font directory names
+                                      in default-family.txt - Mulish for engine/Fonts -
+                                      or else the first one it holds.
 
             The PDF
 

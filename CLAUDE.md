@@ -211,7 +211,67 @@ real directory proves nothing on Windows, where NTFS already sorts.
 
 **That the default is Elms Sans *Black* is itself an accident of the alphabet** - `Black`
 sorts before `Bold` and `Regular`. It is deterministic now. Whether it is the right
-default is an open decision, not a settled one.
+default was an open decision until 30 September 2026, and the accident was worse than
+it looked: Black has **no bold cut**, so in every template naming no family - every
+document the content editor writes - bold text was drawn exactly like the rest. Settled
+as Mulish, and declared by the directory rather than by the alphabet (§3b).
+
+## 3b. A missing space is drawn, not boxed - and a no-break space does not break
+
+Asked which face should be the default, I built a specimen page and told the author that
+a face without U+202F would put a box in every French amount and have its PDF/A refused.
+**The author had never seen a box in a PDF, and was right.** `FontFile.GlyphOf` folds a
+missing white space onto the plain one: no `.notdef`, nothing in `MissingGlyphs`, no
+refusal - test 25 already said so. What differs is only the width: 0.166 em for
+Noto's real narrow space, 0.261 for Mulish's plain one, 0.429 for Elms Sans's.
+
+The page had been built to model the engine - the same files, the same leading, no
+kerning, no synthesised bold, the fallback cut `Resolve` picks - and it modelled every
+rule but the one I had not read. *A preview that guesses is §2's fault even when the
+preview is mine.*
+
+Checking that answer, rather than the question, found **two faults older than either**:
+
+- **Both line breakers split at any white space**, the no-break ones included, so
+  `12 480,00 EUR` could end a line on `12`. `LineBreaks.At` is `char.IsWhiteSpace` less
+  the three spaces UAX #14 calls glue - U+00A0, U+2007, U+202F - and both breakers ask
+  it, so they cannot come to disagree;
+- **ToUnicode kept the last character drawn with each glyph.** A folded U+202F shares
+  the space's glyph, so a French amount *closing* the text turned every space in the
+  document into a narrow no-break one for whoever copied, searched or listened to it,
+  and an amount anywhere else did nothing - an answer decided by the order of the text.
+  The smallest code point wins now, whatever the order.
+
+Neither shows on the page. The break falls where a reader expects one, at a space; and a
+ToUnicode map is only ever read by copying, searching or a screen reader - the three
+things nobody does while looking at a proof.
+
+**The echo's check nearly checked less than it said.** Asked only about the spaces the
+engine *names*, it would have gone on passing the day the engine stopped naming one,
+with the echo still holding it - and the C# tests could not see that either, since
+they iterate the same list (sabotaged: test 19 green, the engine breaking at U+2007).
+So test 19 writes `tests/output/text/line-breaks.json`, where the engine breaks for
+every character of the basic plane, and the harness holds the echo to it one character
+at a time. A check that follows its subject's list is one deletion away from checking
+less, exactly as one that keeps its own is one addition away (§16).
+
+**And an invisible character, again (§2b).** The `Glue` constant came out of the editing
+tool as the three characters themselves rather than `\u` escapes: it compiled, it
+worked, and it read as nothing - `"   "`. The harness's first guard, *the engine names
+the spaces a line may not break at*, failed with an empty-looking detail, which is the
+only reason it was seen. An escape that must survive an intermediary is built from
+`chr(92)`, and read back with `cat -A`.
+
+**The default typeface lives with the typefaces.** `engine/Fonts/default-family.txt`
+names Mulish, and `FontLibrary.RegisterDirectory` honours it: a default the caller had
+already set wins, and a family the directory does not hold is refused rather than left
+to the alphabet it replaced. The CLI, the server and the native library all load that
+directory, so a family name typed into each host would be §1 three times over; the
+file carries the reasons beside the choice. Test 56 asks that the alphabet alone would
+have chosen otherwise, or the check would be true for want of matter.
+
+Still open, and not the engine's: the editor draws text that names no family in the
+browser's `sans-serif`, so its preview does not show the default the PDF will get.
 
 ## 4. External checks, after any touch to text, fonts or the PDF
 

@@ -890,6 +890,8 @@ if (linked.length) {
       held.layout = layout; held.render = render; held.validate = validate;
       held.setTextRuler = setTextRuler; held.blankReport = blankReport;
       held.setLang = setLang; held.setData = setData;
+      held.breakLines = breakLines; held.breakAdvancedRuns = breakAdvancedRuns;
+      held.textWidth = textWidth; held.BREAKS_AT = BREAKS_AT;
     `;
     vm.runInContext(linked.join('\n') + handles, Object.assign(context, { held }));
 
@@ -917,6 +919,60 @@ if (linked.length) {
           flat.length > 0 && !flat[0].message.startsWith('issue.'),
           flat.map(i => i.rule).join(', '));
     held.setLang('en');
+
+    // Where a line may break, asked of the engine's own list rather than a copy of it:
+    // each space LineBreaks.Glue names must hold an amount together in both of the
+    // echo's breakers. The plain space has to break inside the same amount at the same
+    // width first - without that the window proves nothing (section 10b).
+    const glueSource = fs.readFileSync(path.join(REPO, 'engine', 'Text', 'LineBreaks.cs'), 'utf8');
+    const glueLine = (glueSource.match(/const string Glue = "([^"]*)"/) || [])[1] || '';
+    const glue = [...glueLine.matchAll(/\\u([0-9A-Fa-f]{4})/g)]
+      .map(m => String.fromCharCode(parseInt(m[1], 16)));
+    check('the engine names the spaces a line may not break at', glue.length > 0, glueLine);
+
+    const wrapFont = {}, wrapReport = held.blankReport();
+    const lead = 'Le total est de 12';
+    const amount = sep => lead + sep + '480,00 EUR';
+    const wrapWidth = (held.textWidth(lead, wrapFont, wrapReport)
+                  + held.textWidth(lead + ' 480,00', wrapFont, wrapReport)) / 2;
+    const cut = lines => lines.some(l => /12$/.test(l));
+    const runLines = text => held.breakAdvancedRuns({ Runs: [{ Text: text }], Font: {} }, wrapWidth, wrapReport)
+      .map(line => line.pieces.map(p => p.text).join('').replace(/\s+$/, ''));
+
+    const plainLines = held.breakLines(amount(' '), wrapFont, wrapReport, wrapWidth);
+    check('at that width a plain space breaks inside the amount, in both breakers',
+          cut(plainLines) && cut(runLines(amount(' '))),
+          plainLines.join(' | ') + '  /  ' + runLines(amount(' ')).join(' | '));
+    for (const g of glue) {
+      const name = 'U+' + g.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0');
+      const plain = held.breakLines(amount(g), wrapFont, wrapReport, wrapWidth);
+      const runs = runLines(amount(g));
+      check(`${name} holds it together, in both breakers`,
+            !cut(plain) && !cut(runs) && plain.some(l => l.includes('12' + g + '480'))
+              && runs.some(l => l.includes('12' + g + '480')),
+            plain.join(' | ') + '  /  ' + runs.join(' | '));
+    }
+
+    // And the whole rule, character by character, against where the engine really
+    // breaks - written by test 19. The checks above ask only about the spaces the engine
+    // names, so a space it stopped naming would go on being held here in silence.
+    const breaksFile = path.join(REPO, 'tests', 'output', 'text', 'line-breaks.json');
+    if (!fs.existsSync(breaksFile)) {
+      check('the echo breaks lines exactly where the engine does', false,
+            'no ' + path.relative(REPO, breaksFile) + ' - run dotnet test first');
+    } else {
+      const engineBreaks = new Set();
+      for (const [from, to] of JSON.parse(fs.readFileSync(breaksFile, 'utf8')).breaks)
+        for (let cp = from; cp <= to; cp++) engineBreaks.add(cp);
+      const disagree = [];
+      for (let cp = 0; cp <= 0xFFFF; cp++)
+        if (held.BREAKS_AT.test(String.fromCharCode(cp)) !== engineBreaks.has(cp))
+          disagree.push('U+' + cp.toString(16).toUpperCase().padStart(4, '0')
+                        + (engineBreaks.has(cp) ? ' (the engine breaks)' : ' (the echo breaks)'));
+      check('the echo breaks lines exactly where the engine does, over all 65,536',
+            disagree.length === 0 && engineBreaks.size > 0,
+            disagree.length ? disagree.slice(0, 6).join(', ') : engineBreaks.size + ' characters break');
+    }
   } catch (e) {
     check('the core loads with no document and no window', false, e.message);
   }

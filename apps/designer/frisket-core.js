@@ -347,13 +347,22 @@ function lineHeight(font, report) {
 // actual overflow.
 const WRAP_SLACK_MM = 1e-6;
 
+// Where a line may break: the engine's LineBreaks.At, which is char.IsWhiteSpace less
+// the three spaces Unicode calls glue (U+00A0, U+2007, U+202F). Spelled out rather than
+// written as \s, which differs from .NET on two characters: it counts U+FEFF, which .NET
+// does not, and misses U+0085, which it does. The harness reads LineBreaks.Glue and asks
+// this pattern about each of them.
+const BREAK_CHARS = "\\t\\n\\v\\f\\r \\u0085\\u1680\\u2000-\\u2006\\u2008-\\u200A\\u2028\\u2029\\u205F\\u3000";
+const BREAKS_AT = new RegExp("[" + BREAK_CHARS + "]");
+const BREAK_RUN = new RegExp("([" + BREAK_CHARS + "]+)");
+
 function breakLines(text, font, report, width) {
   const out = [];
   const wraps = fontOf(font, report).Wrap;
   for (const para of String(text ?? "").split("\n")) {
     if (!wraps || !(width > 0) || textWidth(para, font, report) <= width + WRAP_SLACK_MM) { out.push(para); continue; }
     let line = "";
-    for (const word of para.split(/(\s+)/)) {
+    for (const word of para.split(BREAK_RUN)) {
       const next = line + word;
       if (line && textWidth(next.trimEnd(), font, report) > width + WRAP_SLACK_MM) { out.push(line.trimEnd()); line = word.trimStart(); }
       else line = next;
@@ -1242,8 +1251,8 @@ function breakAdvancedRuns(item, width, report) {
       let start = 0;
       while (start < paragraph.length) {
         let end = start;
-        while (end < paragraph.length && !/\s/.test(paragraph[end])) end++;
-        while (end < paragraph.length && /\s/.test(paragraph[end])) end++;
+        while (end < paragraph.length && !BREAKS_AT.test(paragraph[end])) end++;
+        while (end < paragraph.length && BREAKS_AT.test(paragraph[end])) end++;
 
         const word = paragraph.slice(start, end);
         const wordWidth = textWidth(word, runFont, report);

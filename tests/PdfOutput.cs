@@ -667,6 +667,63 @@ namespace test
             AssertEqual(testName, "a document grouped the French way writes no .notdef",
                 0, narrowPdf.MissingGlyphs.Count, 0);
 
+            // And what the file says those spaces are. Folded onto the plain space, U+202F
+            // shares its glyph, and ToUnicode keeps one character per glyph: the last one
+            // drawn used to win, so an amount closing the text turned every space in the
+            // document into a narrow no-break one for whoever copied, searched or listened
+            // to it. Asked with the amount last and with a word last - the order the text
+            // came in must not decide.
+            FontFile? folding = library.Fonts.FirstOrDefault(f => !f.Bold && !f.Italic
+                && !f.HasGlyph(0x202F) && f.HasGlyph(' '));
+            AssertEqual(testName, "a face that folds U+202F onto its space is at hand", true, folding != null, 0);
+
+            string SpaceReadsBackAs(string text)
+            {
+                var r = new Report
+                {
+                    Language = "fr-FR",
+                    Dimension = new() { Width = 210, Height = 297 },
+                    Body = new() { Layout = LayoutMode.Stack }
+                };
+                r.Body!.Add(new TextItem { Text = text, Font = new TextStyle { Family = folding!.Family } });
+                var pdf = new PdfBackend(library);
+                ReportRenderer.Render(r, pdf);
+                byte[] bytes = pdf.ToArray();
+
+                // ToUnicode is compressed whatever Compress says, which covers page content
+                // only - so every stream is inflated and the CMap found among them.
+                string file = System.Text.Encoding.Latin1.GetString(bytes);
+                string cmap = "";
+                foreach (System.Text.RegularExpressions.Match stream in
+                         System.Text.RegularExpressions.Regex.Matches(file, @"(?<!end)stream\r?\n"))
+                {
+                    int start = stream.Index + stream.Length;
+                    int end = file.IndexOf("endstream", start, StringComparison.Ordinal);
+                    try
+                    {
+                        using var inflate = new System.IO.Compression.ZLibStream(
+                            new MemoryStream(bytes, start, end - start), System.IO.Compression.CompressionMode.Decompress);
+                        using var reader = new StreamReader(inflate, System.Text.Encoding.Latin1);
+                        string body = reader.ReadToEnd();
+                        if (body.Contains("beginbfchar"))
+                            cmap = body;
+                    }
+                    catch (InvalidDataException)
+                    {
+                        // Not a deflated stream: not the one being looked for.
+                    }
+                }
+
+                string glyph = folding.GlyphOf(' ').ToString("X4");
+                var entry = System.Text.RegularExpressions.Regex.Match(cmap, $@"<{glyph}>\s*<([0-9A-F]+)>");
+                return entry.Success ? entry.Groups[1].Value : "no entry";
+            }
+
+            AssertEqual(testName, "a space reads back as a space when an amount closes the text",
+                "0020", SpaceReadsBackAs("Le tarif du contrat est porté à 12\u202F480,00"), 0);
+            AssertEqual(testName, "and when a word closes it",
+                "0020", SpaceReadsBackAs("Le tarif est porté à 12\u202F480,00 EUR pour le contrat"), 0);
+
             // A character no font here carries must be refused rather than written out.
             var strict = new PdfBackend(library);
             strict.AttachFacturX(xml);

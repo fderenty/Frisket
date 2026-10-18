@@ -80,9 +80,27 @@
         }
 
         /// <summary>
+        /// The file a font directory names its default family in, at its root: the first
+        /// line that is neither blank nor a <c>#</c> comment is the family.
+        /// </summary>
+        public const string DefaultFamilyFile = "default-family.txt";
+
+        /// <summary>
         /// Registers every font file of a directory, taking family and style from each
         /// file's own name table. Returns how many were loaded.
+        ///
+        /// A directory may say which family text that names none should get, in
+        /// <see cref="DefaultFamilyFile"/>; otherwise the first family registered is the
+        /// default. Either way a default the caller had already set is kept. The first
+        /// rule alone gave the typefaces this repository ships Elms Sans Black - a face
+        /// with no bold cut, so bold text was drawn exactly like the rest - for no reason
+        /// but that "Black" sorts before "Bold" and "Regular".
         /// </summary>
+        /// <exception cref="InvalidDataException">
+        /// The directory names a default family it does not hold. A declared default that
+        /// is not there would otherwise fall back to the alphabet, which is the accident
+        /// the declaration exists to prevent.
+        /// </exception>
         public int RegisterDirectory(string directory, bool recursive = true)
         {
             if (!Directory.Exists(directory))
@@ -90,6 +108,7 @@
 
             var option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             int loaded = 0;
+            bool defaultWasSet = DefaultFamily != null;
 
             // In a fixed order, never the one the file system happens to give - see
             // InRegistrationOrder for why that decides which typeface a document gets.
@@ -108,6 +127,24 @@
                 catch (InvalidDataException)
                 {
                     // A file that is not a font is not a reason to fail the whole load.
+                }
+            }
+
+            string declaration = Path.Combine(directory, DefaultFamilyFile);
+            if (File.Exists(declaration))
+            {
+                string? family = File.ReadLines(declaration)
+                    .Select(line => line.Trim())
+                    .FirstOrDefault(line => line.Length > 0 && !line.StartsWith('#'));
+
+                if (family != null)
+                {
+                    if (Resolve(family, false, false) == null)
+                        throw new InvalidDataException(
+                            $"{DefaultFamilyFile} names '{family}', which this directory holds no font of");
+
+                    if (!defaultWasSet)
+                        DefaultFamily = family;
                 }
             }
 

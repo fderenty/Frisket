@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     check("a font library is made", fk_fonts_create(&fonts) == FK_OK);
     check("fonts are found", fk_fonts_add_directory(fonts, font_dir, &taken) == FK_OK && taken > 0);
     printf("       %d faces\n", taken);
-    check("a default family is accepted", fk_fonts_set_default(fonts, "Josefin Sans") == FK_OK);
+    check("a default family is accepted", fk_fonts_set_default(fonts, "Mulish") == FK_OK);
 
     check("the library lists itself", fk_fonts_list(fonts, &out) == FK_OK);
     check("and the list is JSON", out && fk_buffer_size(out) > 2

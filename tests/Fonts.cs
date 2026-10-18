@@ -147,6 +147,46 @@ namespace test
             AssertEqual(testName, "words are preserved", sentence,
                 string.Join(" ", lines).Replace("  ", " "), 0);
 
+            // A no-break space holds its neighbours together. Breaking at any white space
+            // put "12" at the end of one line and "480,00" at the start of the next - the
+            // narrow one is what French grouping writes, so every amount was exposed.
+            // The width is built, not guessed: room for everything up to "12" and not for
+            // the amount. The plain space has to break inside the amount there first, or
+            // the window proves nothing (section 10b).
+            const string lead = "Le total est de 12";
+            string Amount(char separator) => lead + separator + "480,00 EUR";
+            double wrapWindow = (measurer.WidthOf(lead, wrapStyle) + measurer.WidthOf(lead + " 480,00", wrapStyle)) / 2;
+            bool Cut(IReadOnlyList<string> broken) => broken.Any(l => l.EndsWith("12"));
+
+            var plainAmount = measurer.BreakLines(Amount(' '), wrapStyle, wrapWindow);
+            Console.WriteLine($"    plain space:  {string.Join(" | ", plainAmount)}");
+            AssertEqual(testName, "at that width a plain space breaks inside the amount", true, Cut(plainAmount), 0);
+
+            foreach (char glue in LineBreaks.Glue)
+            {
+                var held = measurer.BreakLines(Amount(glue), wrapStyle, wrapWindow);
+                Console.WriteLine($"    U+{(int)glue:X4}:       {string.Join(" | ", held).Replace(glue, '~')}");
+                AssertEqual(testName, $"U+{(int)glue:X4} holds the amount together", true,
+                    !Cut(held) && held.Any(l => l.Contains("12" + glue + "480,00")), 0);
+            }
+
+            // Where the engine breaks, character by character, for the designer's echo to
+            // be confronted with. Asking the echo only about the spaces the engine names
+            // would miss one the engine stopped naming: the echo would go on holding it
+            // and nothing would say so.
+            var breakRanges = new List<int[]>();
+            for (int cp = 0; cp <= 0xFFFF; cp++)
+            {
+                if (!LineBreaks.At((char)cp))
+                    continue;
+                if (breakRanges.Count > 0 && breakRanges[^1][1] == cp - 1)
+                    breakRanges[^1][1] = cp;
+                else
+                    breakRanges.Add(new[] { cp, cp });
+            }
+            File.WriteAllText(Path.Combine(OutputDirectory("text"), "line-breaks.json"),
+                "{\"breaks\":[" + string.Join(",", breakRanges.Select(r => $"[{r[0]},{r[1]}]")) + "]}\n");
+
             // A missing family must fail loudly rather than substitute silently.
             bool threw = false;
             try
@@ -632,6 +672,64 @@ namespace test
 
                 AssertEqual(testName, "a directory is registered in one order on every platform",
                     string.Join(" ", wanted), string.Join(" ", got), 0);
+            }
+
+            // --- and the default a directory declares --------------------------------
+            // Order alone gave the typefaces shipped here Elms Sans Black as the default: a
+            // face with no bold cut, so bold text was drawn exactly like the rest. The
+            // directory names its default now. Asked four ways - that the declaration is
+            // what decides and not the alphabet, that the family it names draws four styles
+            // from four files, that a default the caller set is kept, and that naming a
+            // family the directory does not hold is refused rather than left to the alphabet.
+            // The family is read from the declaration, never named here (section 3).
+            {
+                string declared = File.ReadLines(Path.Combine(FontDirectory(), FontLibrary.DefaultFamilyFile))
+                    .Select(line => line.Trim())
+                    .First(line => line.Length > 0 && !line.StartsWith('#'));
+
+                var alphabetical = new FontLibrary();
+                foreach (string path in FontLibrary.InRegistrationOrder(
+                             Directory.EnumerateFiles(FontDirectory(), "*.*", SearchOption.AllDirectories), FontDirectory()))
+                    if (Path.GetExtension(path).ToLowerInvariant() is ".ttf" or ".otf" or ".ttc")
+                        alphabetical.Register(path);
+
+                var declaredLibrary = new FontLibrary();
+                declaredLibrary.RegisterDirectory(FontDirectory());
+                Console.WriteLine($"    default: {declaredLibrary.DefaultFamily} (the alphabet alone: {alphabetical.DefaultFamily})");
+
+                AssertEqual(testName, "the alphabet alone would pick another family, so the declaration is what decides",
+                    true, !string.Equals(alphabetical.DefaultFamily, declared, StringComparison.OrdinalIgnoreCase), 0);
+                AssertEqual(testName, "the directory's declared default is the default",
+                    declared, declaredLibrary.DefaultFamily ?? "none", 0);
+
+                int styles = new[] { (false, false), (false, true), (true, false), (true, true) }
+                    .Select(s => declaredLibrary.Resolve(declared, s.Item1, s.Item2)?.Source)
+                    .Distinct().Count(source => source != null);
+                AssertEqual(testName, "the declared default draws four styles from four files", 4, styles, 0);
+
+                var chosen = new FontLibrary { DefaultFamily = DmsFont };
+                chosen.RegisterDirectory(FontDirectory());
+                AssertEqual(testName, "a default the caller set is kept", DmsFont, chosen.DefaultFamily ?? "none", 0);
+
+                // No font needs copying for this: a declaration is refused for naming what
+                // the library does not hold, and an empty directory holds nothing.
+                string wrongDir = Path.Combine(Path.GetTempPath(), "frisket-default-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(wrongDir);
+                File.WriteAllText(Path.Combine(wrongDir, FontLibrary.DefaultFamilyFile), "# nobody shipped it\nNo Such Family\n");
+                bool refused = false;
+                try
+                {
+                    new FontLibrary().RegisterDirectory(wrongDir);
+                }
+                catch (InvalidDataException)
+                {
+                    refused = true;
+                }
+                finally
+                {
+                    Directory.Delete(wrongDir, recursive: true);
+                }
+                AssertEqual(testName, "a declared default the directory does not hold is refused", true, refused, 0);
             }
 
             // --- and a slot claimed twice says so ------------------------------------

@@ -77,7 +77,11 @@ fk_status FK_CALL fk_fonts_add_file(fk_fonts fonts, const char* file);
    decision. */
 fk_status FK_CALL fk_fonts_add_memory(fk_fonts fonts, const uint8_t* data, int32_t length);
 
-/* What to fall back to when a template names a family that was not found. */
+/* The family for text that names none. fk_fonts_add_directory sets it from the
+   directory's default-family.txt when there is one, and otherwise to the first family it
+   registers; this overrides either. A family a template does name and the library does
+   not hold is an error, never a fall back to this one: another face would move every
+   line break. */
 fk_status FK_CALL fk_fonts_set_default(fk_fonts fonts, const char* family);
 
 /* ------------------------------------------------------------- cancellation */

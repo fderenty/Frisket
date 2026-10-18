@@ -888,9 +888,9 @@ namespace Frisket
                     while (start < paragraph.Length)
                     {
                         int end = start;
-                        while (end < paragraph.Length && !char.IsWhiteSpace(paragraph[end]))
+                        while (end < paragraph.Length && !LineBreaks.At(paragraph[end]))
                             end++;
-                        while (end < paragraph.Length && char.IsWhiteSpace(paragraph[end]))
+                        while (end < paragraph.Length && LineBreaks.At(paragraph[end]))
                             end++;
 
                         string word = paragraph[start..end];

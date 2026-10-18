@@ -1293,7 +1293,14 @@ namespace Frisket
                 if (glyph == 0)
                     missing.Add(codePoint);
 
-                font.Glyphs[glyph] = codePoint;
+                // One glyph can stand for several characters - a font draws the plain and
+                // the no-break space alike, and GlyphOf folds a space it lacks onto the
+                // plain one - while ToUnicode keeps one character per glyph. The smallest
+                // wins, whatever order the text came in: the last one drawn used to, so a
+                // French amount at the end of a document turned every space in it into
+                // U+202F for whoever copied, searched or listened to it.
+                if (!font.Glyphs.TryGetValue(glyph, out int known) || codePoint < known)
+                    font.Glyphs[glyph] = codePoint;
                 sb.Append(glyph.ToString("X4", CultureInfo.InvariantCulture));
             }
 

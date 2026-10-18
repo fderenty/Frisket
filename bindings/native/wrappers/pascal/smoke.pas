@@ -116,7 +116,7 @@ begin
       end;
     end;
 
-    Fonts.SetDefaultFamily('Josefin Sans');
+    Fonts.SetDefaultFamily('Mulish');
     Check('the library lists itself', Copy(Fonts.ListAsJson, 1, 1) = '[');
 
     Template := TErTemplate.CreateFromFile(ParamStr(2));

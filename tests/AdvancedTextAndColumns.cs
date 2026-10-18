@@ -236,6 +236,45 @@ namespace test
             AssertEqual(testName, "and the closing line is not stretched", true,
                 lastEnd < EndOfFirstLine(stretched) - 1, lastEnd);
 
+            // --- a no-break space holds its neighbours together ------------------------
+            // The same rule as plain text (test 19), asked of the breaker runs go through.
+            // The width is taken off the engine's own layout of the words, so the window is
+            // right whatever the font measures: room for everything up to "12" and not for
+            // the amount. The plain space must break inside the amount there first.
+            double LaidWidth(string text)
+            {
+                LayoutResult laid = OnePage(Paragraph(new TextRun { Text = text })).Resolve(new FontTextMeasurer(library));
+                var pieces = laid.Pages[0].Items.Where(p => p.Fragment != null).ToList();
+                return pieces.Max(p => p.Frame.Right) - pieces.Min(p => p.Frame.Left);
+            }
+
+            const string amountLead = "Le total est de 12";
+            double amountWindow = (LaidWidth(amountLead) + LaidWidth(amountLead + " 480,00")) / 2;
+
+            List<string> LaidLines(char separator)
+            {
+                var item = Paragraph(new TextRun { Text = amountLead + separator + "480,00 EUR" });
+                item.Style.Location.WidthValue = amountWindow;
+                LayoutResult laid = OnePage(item).Resolve(new FontTextMeasurer(library));
+                return laid.Pages[0].Items.Where(p => p.Fragment != null)
+                    .GroupBy(p => Math.Round(p.Frame.Top, 2)).OrderBy(g => g.Key)
+                    .Select(g => string.Concat(g.OrderBy(p => p.Frame.Left).Select(p => p.Fragment)).TrimEnd())
+                    .ToList();
+            }
+
+            List<string> plainRun = LaidLines(' ');
+            Console.WriteLine($"    plain space:  {string.Join(" | ", plainRun)}");
+            AssertEqual(testName, "at that width a plain space breaks inside the amount", true,
+                plainRun.Any(l => l.EndsWith("12")), 0);
+
+            foreach (char glue in LineBreaks.Glue)
+            {
+                List<string> held = LaidLines(glue);
+                Console.WriteLine($"    U+{(int)glue:X4}:       {string.Join(" | ", held).Replace(glue, '~')}");
+                AssertEqual(testName, $"U+{(int)glue:X4} holds the amount together in a run", true,
+                    !held.Any(l => l.EndsWith("12")) && held.Any(l => l.Contains("12" + glue + "480,00")), 0);
+            }
+
             var pageCounted = Paragraph(new TextRun { Text = "Page {Page} sur {Pages}" });
             var pageCountIssues = TemplateValidator.Check(OnePage(pageCounted), TemplateProfile.Sound);
             AssertEqual(testName, "{Pages} in a run is flagged, not silently wrong", true,

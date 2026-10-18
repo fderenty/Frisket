@@ -100,7 +100,7 @@ Three doors, and they differ on purpose:
 
 | | |
 |---|---|
-| `fk_fonts_add_directory` | every font in a directory; a file that is not one is stepped over |
+| `fk_fonts_add_directory` | every font in a directory; a file that is not one is stepped over. The directory's `default-family.txt`, when it has one, names the family for text that names none - `engine/Fonts` names Mulish |
 | `fk_fonts_add_file` | one file, named on purpose; a failure comes back |
 | `fk_fonts_add_memory` | one font from its bytes - posted, stored, picked in a browser |
 

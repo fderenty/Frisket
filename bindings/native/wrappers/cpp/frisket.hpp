@@ -179,7 +179,9 @@ public:
         add_memory(data.data(), data.size());
     }
 
-    /// What to fall back to when a template names a family that was not found.
+    /// The family for text that names none - overriding the one add_directory took from
+    /// the directory's default-family.txt, or its first family. A family a template does
+    /// name and the library does not hold is an error, never a fall back to this one.
     void set_default_family(const std::string& family) {
         detail::check(fk_fonts_set_default(handle_.get(), family.c_str()));
     }

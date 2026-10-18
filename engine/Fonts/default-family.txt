@@ -1,0 +1,13 @@
+# The family FontLibrary.RegisterDirectory makes the default when this directory is
+# loaded: what text that names no family is drawn in - every document the content
+# editor writes, among others. A caller that sets its own default keeps it.
+#
+# Chosen by the author on 30 September 2026. Before, the default was whichever family
+# sorted first, which made it Elms Sans Black: a face with no bold cut, so bold text
+# looked exactly like the rest.
+#
+# Mulish has its four cuts - regular, italic, bold, bold italic. It has no narrow
+# no-break space (U+202F), which French grouping writes between thousands; the engine
+# draws its plain space there instead, 0.261 em wide, which is what FontFile.GlyphOf
+# does for any space a font lacks.
+Mulish

@@ -128,11 +128,11 @@ namespace Frisket
             while (start < paragraph.Length)
             {
                 // A word plus the spaces that follow it, so trailing spaces never push a
-                // line over on their own.
+                // line over on their own. A no-break space belongs to the word.
                 int end = start;
-                while (end < paragraph.Length && !char.IsWhiteSpace(paragraph[end]))
+                while (end < paragraph.Length && !LineBreaks.At(paragraph[end]))
                     end++;
-                while (end < paragraph.Length && char.IsWhiteSpace(paragraph[end]))
+                while (end < paragraph.Length && LineBreaks.At(paragraph[end]))
                     end++;
 
                 string word = paragraph[start..end];

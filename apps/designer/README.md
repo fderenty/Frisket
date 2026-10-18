@@ -243,6 +243,13 @@ output, so with a single target that had everything switched off the rule could 
 be reached at all, and a rule written on both sides by hand and confronted nowhere
 is the one most likely to drift.
 
+One more file is read without being passed: `tests/output/text/line-breaks.json`,
+written by test 19, says for every character of the basic plane whether the engine
+may break a line at it. The echo's two line breakers are held to it character by
+character - a no-break space the engine stopped naming would otherwise go on being
+held here in silence, since the checks on amounts only ask about the ones it names.
+Missing, it fails and says to run `dotnet test` first.
+
 ## The face that ships shows the editor, and nothing about the machinery
 
 `frisket-editor.html` is what gets built into `release/` and what somebody embeds. It
