@@ -246,7 +246,11 @@ jobs:
           cd dist
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
+          # A version with a suffix - v0.1.0-rc.1 - is a pre-release, and GitHub must not
+          # call it Latest. v0.1.0-rc.1 was, because this line did not exist yet.
+          pre=()
+          case "$GITHUB_REF_NAME" in *-*) pre=(--prerelease) ;; esac
           gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                 --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+                 --title "$GITHUB_REF_NAME" --generate-notes --verify-tag "${pre[@]+"${pre[@]}"}"
           gh release upload "$GITHUB_REF_NAME" ./* --clobber --repo "$GITHUB_REPOSITORY"
