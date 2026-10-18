@@ -138,6 +138,9 @@
 
         public static FontFile Load(byte[] data) => Parse(data, "<memory>");
 
+        /// <summary>Bytes with a name to give them: where they came from, for a message.</summary>
+        internal static FontFile Load(byte[] data, string origin) => Parse(data, origin);
+
         /// <summary>Advance width of a code point, as a fraction of the em.</summary>
         public double AdvanceOf(int codePoint)
         {

@@ -4,6 +4,11 @@
        show, and the engine is the thing most of the work happens in. -->
   <Project Path="engine/Frisket.csproj" />
 
+  <!-- The typefaces a library nobody filled draws with: a package of their own, for a
+       licence of their own, and a dependency of the engine. The files stay in
+       engine/Fonts; this project chooses which of them ship. -->
+  <Project Path="fonts/Frisket.Fonts.csproj" />
+
   <!-- Everything that compiles, in folders that read like the disk. The suite alone
        used to be here, which meant a break in the CLI or in the C boundary compiled
        nowhere and was found by running the thing by hand - and a stale binary looks

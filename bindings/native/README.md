@@ -96,6 +96,13 @@ of the next section.
 
 ## A font the caller chose
 
+A font library nobody adds to is not empty: it draws with the typefaces bundled into the
+library itself, Mulish for text that names no family, and `fk_fonts_list` names them. They
+are compiled in - `Frisket.Fonts` is an assembly like the engine, and native AOT folds both
+into the one file - so there is no directory to ship beside it and none to find at run time.
+The first font added through any of the doors below makes them step aside entirely; the
+two are never mixed.
+
 Three doors, and they differ on purpose:
 
 | | |

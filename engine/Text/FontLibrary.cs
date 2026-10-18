@@ -7,17 +7,109 @@
     /// laid out against precise advance widths, so a font quietly swapped for another at
     /// render time changes every line break. On a server there may be no system font at
     /// all, which is exactly when a silent substitution would do the most damage.
+    ///
+    /// A library nobody fills draws with the typefaces bundled with Frisket
+    /// (<see cref="BundledFonts"/>, Mulish by default), so a first render never fails for
+    /// want of a font nobody said was needed. The moment a caller registers one of its own,
+    /// those stand aside and only what was registered is used: the two are never mixed,
+    /// because a family found in one set and not the other would change typeface without
+    /// a word. Filling a library is not thread-safe; reading it is, including the first read
+    /// of an empty one, which stands the bundled faces in under a lock.
     /// </summary>
     public sealed class FontLibrary
     {
         private readonly Dictionary<string, FontFile> _fonts = new(StringComparer.OrdinalIgnoreCase);
 
+        // The bundled faces, read and parsed once per process however many libraries stand
+        // them in: a FontFile does not change once it is read, so one copy serves them all.
+        private static readonly Lazy<IReadOnlyList<FontFile>> BundledFaces = new(() =>
+            BundledFonts.Files.Select(f => FontFile.Load(BundledFonts.Open(f), "Frisket.Fonts/" + f)).ToList());
+
+        private readonly object _gate = new();
+        private volatile bool _settled;          // filled by the caller, or standing in
+        private bool _standingIn;                // the bundled faces are what it holds
+        private bool _defaultFromBundle;         // and the default came with them
+        private string? _defaultFamily;
+
         /// <summary>Family used when a text does not name one.</summary>
-        public string? DefaultFamily { get; set; }
+        public string? DefaultFamily
+        {
+            get { StandIn(); return _defaultFamily; }
+            set => _defaultFamily = value;
+        }
 
         private readonly List<FontClash> _clashes = new();
 
-        public IEnumerable<FontFile> Fonts => _fonts.Values;
+        public IEnumerable<FontFile> Fonts
+        {
+            get { StandIn(); return _fonts.Values; }
+        }
+
+        /// <summary>Whether what this library holds is the bundled set, standing in.</summary>
+        internal bool UsesBundledFonts
+        {
+            get { StandIn(); return _standingIn; }
+        }
+
+        /// <summary>The families held, by the names they were registered under.</summary>
+        internal IEnumerable<string> Families()
+        {
+            StandIn();
+            return _fonts.Keys.Select(k => k[..k.LastIndexOf('|')])
+                              .Distinct(StringComparer.OrdinalIgnoreCase)
+                              .Order(StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// The bundled faces, put in a library nobody filled - at its first read, so a caller
+        /// that registers its own before using it never pays for them.
+        /// </summary>
+        private void StandIn()
+        {
+            if (_settled)
+                return;
+
+            lock (_gate)
+            {
+                if (_settled)
+                    return;
+
+                bool callerChose = _defaultFamily != null;
+                foreach (FontFile face in BundledFaces.Value)
+                    Add(face, null, null, null);
+
+                if (!callerChose)
+                {
+                    _defaultFamily = BundledFonts.DefaultFamily;
+                    _defaultFromBundle = true;
+                }
+
+                _standingIn = true;
+                _settled = true;
+            }
+        }
+
+        /// <summary>
+        /// The caller is filling this library itself: whatever stood in steps aside, so
+        /// what it registers is all there is.
+        /// </summary>
+        private void Own()
+        {
+            lock (_gate)
+            {
+                if (_standingIn)
+                {
+                    _fonts.Clear();
+                    _clashes.Clear();
+                    if (_defaultFromBundle)
+                        _defaultFamily = null;
+                    _standingIn = false;
+                    _defaultFromBundle = false;
+                }
+
+                _settled = true;
+            }
+        }
 
         /// <summary>
         /// Where two files claimed one slot. Empty in the ordinary case.
@@ -35,6 +127,13 @@
 
         public FontLibrary Register(FontFile font, string? family = null, bool? bold = null, bool? italic = null)
         {
+            Own();
+            Add(font, family, bold, italic);
+            return this;
+        }
+
+        private void Add(FontFile font, string? family, bool? bold, bool? italic)
+        {
             string name = family ?? font.Family;
             bool isBold = bold ?? font.Bold;
             bool isItalic = italic ?? font.Italic;
@@ -44,8 +143,7 @@
                 _clashes.Add(new FontClash(name, isBold, isItalic, held, font));
 
             _fonts[key] = font;
-            DefaultFamily ??= name;
-            return this;
+            _defaultFamily ??= name;
         }
 
         public FontFile Register(string path, string? family = null, bool? bold = null, bool? italic = null)
@@ -106,9 +204,13 @@
             if (!Directory.Exists(directory))
                 throw new DirectoryNotFoundException(directory);
 
+            // Before the default is read: a library standing in holds the bundled default,
+            // which is not one the caller set and must not stop this directory declaring its own.
+            Own();
+
             var option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             int loaded = 0;
-            bool defaultWasSet = DefaultFamily != null;
+            bool defaultWasSet = _defaultFamily != null;
 
             // In a fixed order, never the one the file system happens to give - see
             // InRegistrationOrder for why that decides which typeface a document gets.
@@ -144,7 +246,7 @@
                             $"{DefaultFamilyFile} names '{family}', which this directory holds no font of");
 
                     if (!defaultWasSet)
-                        DefaultFamily = family;
+                        _defaultFamily = family;
                 }
             }
 
@@ -186,8 +288,9 @@
         /// </summary>
         public FontFile? Resolve(string family, bool bold, bool italic)
         {
+            StandIn();
             if (string.IsNullOrWhiteSpace(family))
-                family = DefaultFamily ?? string.Empty;
+                family = _defaultFamily ?? string.Empty;
 
             if (_fonts.TryGetValue(Key(family, bold, italic), out FontFile? exact))
                 return exact;
@@ -250,6 +353,15 @@
         public FontNotFoundException(string family)
             : base($"No font registered for family '{family}'. Register it in the FontLibrary: " +
                    "substituting silently would change every line break in the report.")
+            => Family = family;
+
+        /// <summary>The same refusal, saying what the library does hold - the first thing
+        /// anyone asks next, and the answer is usually a spelling.</summary>
+        public FontNotFoundException(string family, IEnumerable<string> held)
+            : base($"No font registered for family '{family}'. " +
+                   $"{(held.Any() ? "This library holds " + string.Join(", ", held) : "This library holds none")}. " +
+                   "Register it in the FontLibrary: substituting silently would change every " +
+                   "line break in the report.")
             => Family = family;
     }
 }

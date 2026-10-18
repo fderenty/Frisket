@@ -23,6 +23,26 @@ All of these permit redistribution, and all permit embedding a font in a documen
 is what this engine does when it subsets a face into a PDF. None permits selling the fonts
 on their own.
 
+### In the `Frisket.Fonts` package
+
+[`fonts/Frisket.Fonts.csproj`](fonts/Frisket.Fonts.csproj) embeds four of those families in
+an assembly, and the `Frisket` package depends on it, so anything built on the engine
+carries them. The package is licensed `OFL-1.1` as a whole, and holds each family's licence
+text under `licenses/<family>/OFL.txt` as well as inside the assembly, as the OFL asks of
+anything that bundles a font with software (OFL FAQ 1.20). The software around them stays
+MIT (FAQ 1.3).
+
+```
+  Mulish              Regular, Italic, Bold, Bold Italic      the default
+  Elms Sans           Regular, Italic, Bold, Bold Italic      four of its eighteen cuts
+  Noto Sans Display   Regular, Italic, Bold, Bold Italic
+  Glametrix           Regular, Bold, Light
+```
+
+The files are not modified: test 94 compares every embedded face, byte for byte, with the
+one in `engine/Fonts`. A document made with them carries a subset of the face, which the
+OFL allows without the licence text travelling into the document (FAQ 1.12).
+
 The test suite copies Mulish into `tests/output/fonts-clash`, to prove that two files
 claiming one name are reported rather than one hiding the other. It copies Mulish's
 `OFL.txt` beside it, so that copy travels with its licence like the original.

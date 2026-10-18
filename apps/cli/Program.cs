@@ -391,6 +391,12 @@ namespace Frisket.Cli
                                   + (font.CapHeightIsEstimated ? "  (estimated)" : ""));
             }
 
+            // Where these came from and which one unnamed text gets - on standard error, so
+            // the list itself stays one face per line for whoever reads it with a script.
+            Console.Error.WriteLine();
+            Console.Error.WriteLine((options.NamesFonts ? "From the fonts named." : "Bundled with Frisket.")
+                                    + $" Text that names no family: {library.DefaultFamily}.");
+
             // A file that never made it into the list above, because another claimed the
             // same family, weight and slant. Said out loud here because nothing else
             // would ever say it: the document still comes out, in a cut nobody asked
@@ -430,6 +436,17 @@ namespace Frisket.Cli
         private static FontLibrary Library(Options options)
         {
             var library = new FontLibrary();
+
+            // Nothing named: the library is left empty, and an empty library draws with the
+            // typefaces bundled with Frisket. Named: only what was named, and a name that
+            // finds nothing is an error rather than a quiet fall back to those.
+            if (!options.NamesFonts)
+            {
+                if (options.DefaultFamily is { Length: > 0 } wanted)
+                    library.DefaultFamily = wanted;
+                return library;
+            }
+
             int found = 0;
 
             // A file named one by one is refused out loud where a directory scan would
@@ -529,15 +546,17 @@ namespace Frisket.Cli
             Fonts
 
                   --fonts <dir>       a directory of font files. Repeatable.
-                                      Default: engine/Fonts beside the executable.
+                                      Default: the typefaces bundled with Frisket -
+                                      `frisket fonts` lists them. Naming any font,
+                                      here or with --font, means only those are used.
                   --default-font <family>
                                       what to use where a template names no family
                                       at all. A family it does name and that is
                                       missing is an error, never a substitution:
                                       another face would relay out every line.
-                                      Default: the family the font directory names
-                                      in default-family.txt - Mulish for engine/Fonts -
-                                      or else the first one it holds.
+                                      Default: Mulish, with the bundled typefaces; with
+                                      --fonts, the family the directory names in
+                                      default-family.txt, or else the first it holds.
 
             The PDF
 

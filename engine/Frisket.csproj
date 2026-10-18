@@ -30,4 +30,11 @@
     <InternalsVisibleTo Include="test" />
   </ItemGroup>
 
+  <!-- The typefaces a library nobody filled draws with. Their own package, for their own
+       licence; a dependency of this one, so that a first render never fails for want of a
+       font nobody said was needed. -->
+  <ItemGroup>
+    <ProjectReference Include="..\fonts\Frisket.Fonts.csproj" />
+  </ItemGroup>
+
 </Project>

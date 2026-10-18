@@ -290,6 +290,53 @@ sheet in Mulish.
 The designer's banner said *the browser measures with its own fonts*. True until it
 loaded the engine's; it says the other thing once it has.
 
+## 3c. A library nobody filled draws with the bundled faces - and only then
+
+**The commonest first failure of a PDF library is a font nobody said was needed.**
+`new FontLibrary()` was empty, and an empty library refuses every text: `dotnet add
+package Frisket`, a template, a render - and an exception naming a family the newcomer
+never typed. Hence `fonts/Frisket.Fonts.csproj`, an assembly carrying Mulish, Elms Sans,
+Noto Sans Display and Glametrix as embedded resources, which the engine depends on.
+
+**A package of its own because the licence is.** The engine is MIT, the faces are the
+OFL 1.1, and a package states one licence; folded into `Frisket` they would make the
+engine's own `LICENSE` a lie about what the package holds. The files themselves **stay in
+`engine/Fonts`**, where the tests, the CLI, the server and a dozen paragraphs of this file
+look for them - the project only chooses which ship. Elms Sans ships four of its eighteen
+cuts. `default-family.txt` is embedded too, so the package's default **is** the
+directory's declaration rather than a second one (§1), and test 94 holds every embedded
+face to its file on disk byte for byte.
+
+**They stand in; they never mix.** An empty library draws with them, filled on first use,
+once. The first font registered - one face, a directory, bytes - makes them step aside
+entirely, and with them any default they brought. Mixing would be the substitution
+`FailOnMissingFont` exists to refuse: a family missing from the caller's fonts would
+quietly be found among ours, and the document would come out in a face nobody chose. A
+default the caller set on an empty library is kept; a directory given after the faces
+stood in still names its own.
+
+**Standing in happens on a read, so it needs a lock.** The first `Resolve` may come from
+several renders sharing one library. The check that the lock is there is a race, and a
+race check is only worth the rounds it runs: `Parallel.For` caught the lock's removal two
+times out of three, which is a check that will one day go green on the fault. Sixteen
+threads held at a `Barrier`, two hundred rounds, caught it five times out of five.
+
+**The native library is not the engine's assembly.** It compiles the engine's sources in,
+so a reference the engine gains is one it does not - the first native publish failed for
+want of `BundledFonts`. It references `Frisket.Fonts` itself, and AOT folds the faces into
+the one file: `fk_fonts_list` on a library nobody filled names fifteen.
+
+**The CLI stopped looking for a directory.** It walked up from its own executable to find
+`engine/Fonts`, so the same command worked inside the repository and stopped with *no
+fonts found beside the executable* everywhere a CLI is actually installed. Naming nothing now means the bundled faces; naming anything -
+`--fonts`, `--font` - means only those, and `frisket fonts` says which on standard error.
+
+**And the refusal said `family ''`** for as long as it existed, in exactly the case a
+mistyped `--default-font` produces: text naming no family asks for the default, so the
+default is what was not found. It names the default now, and lists what the library does
+hold - a refusal that says what was missing and not what was there sends people to read
+the code.
+
 ## 4. External checks, after any touch to text, fonts or the PDF
 
 **And a warning-free build can be a build that did not happen.** §6 says a stale
@@ -1230,7 +1277,7 @@ seam rather than unifying: they are two neighbouring questions, not the same one
 ## 6. Running the tests
 
 ```bash
-dotnet test tests/test.csproj                                 # all 93
+dotnet test tests/test.csproj                                 # the whole suite
 dotnet test tests/test.csproj --filter FullyQualifiedName~Test30
 dotnet test tests/test.csproj -l "console;verbosity=detailed"  # the narrative output
 ```

@@ -26,7 +26,15 @@ namespace Frisket
         {
             FontFile? font = _library.Resolve(style.Family ?? string.Empty, style.Bold ?? false, style.Italic ?? false);
             if (font == null && FailOnMissingFont)
-                throw new FontNotFoundException(style.Family ?? string.Empty);
+            {
+                // A text naming no family asked for the default, so the default is what was
+                // not found. Repeating the text's own family named nothing at all - "family ''"
+                // - in exactly the case a mistyped --default-font produces.
+                string asked = string.IsNullOrWhiteSpace(style.Family)
+                    ? _library.DefaultFamily ?? string.Empty
+                    : style.Family;
+                throw new FontNotFoundException(asked, _library.Families());
+            }
             return font;
         }
 

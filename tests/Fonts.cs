@@ -843,5 +843,172 @@ namespace test
 
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// The typefaces bundled with Frisket, and the rule that decides when they are used:
+        /// a library nobody fills draws with them, and one its caller fills holds only what it
+        /// was given. Every family, file and default below is read from the package or from the
+        /// repository's directory, never named here (section 3).
+        /// </summary>
+        [Fact]
+        public void Test94_BundledFonts()
+        {
+            var testName = "Test 94: The typefaces bundled with Frisket";
+            Console.WriteLine($"Running {testName}...");
+
+            // --- what the package carries --------------------------------------------------
+            string declared = File.ReadLines(Path.Combine(FontDirectory(), FontLibrary.DefaultFamilyFile))
+                .Select(line => line.Trim())
+                .First(line => line.Length > 0 && !line.StartsWith('#'));
+            AssertEqual(testName, "the package's default is the one the repository declares",
+                declared, BundledFonts.DefaultFamily, 0);
+
+            var families = BundledFonts.Files.Select(f => f[..f.IndexOf('/')]).Distinct().ToList();
+            Console.WriteLine($"    {BundledFonts.Files.Count} files in {families.Count} families: {string.Join(", ", families)}");
+            AssertEqual(testName, "it carries several families, not one", true, families.Count >= 3, 0);
+
+            // A font bundled with software travels with its copyright and licence (OFL FAQ 1.20).
+            var licensed = BundledFonts.Licences.Select(l => l[..l.IndexOf('/')]).ToHashSet();
+            AssertEqual(testName, "every family carries its licence text", "",
+                string.Join(", ", families.Where(f => !licensed.Contains(f))), 0);
+            AssertEqual(testName, "and every licence text is the OFL", true,
+                BundledFonts.Licences.Count > 0 && BundledFonts.Licences.All(l =>
+                    System.Text.Encoding.UTF8.GetString(BundledFonts.Open(l)).Contains("SIL Open Font License")), 0);
+
+            // The package chooses among the repository's faces; it never alters one.
+            var onDisk = Directory.EnumerateFiles(FontDirectory(), "*.*", SearchOption.AllDirectories)
+                .Where(p => p.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".otf", StringComparison.OrdinalIgnoreCase))
+                .Select(p => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(p))))
+                .ToHashSet();
+            AssertEqual(testName, "every face it carries is one the repository holds, byte for byte", "",
+                string.Join(", ", BundledFonts.Files.Where(f =>
+                    !onDisk.Contains(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(BundledFonts.Open(f)))))), 0);
+
+            // --- a library nobody filled ---------------------------------------------------
+            var empty = new FontLibrary();
+            AssertEqual(testName, "a library nobody filled draws unnamed text in the bundled default",
+                declared, empty.Resolve("", false, false)?.Family ?? "nothing", 0);
+            AssertEqual(testName, "and gives it as its default", declared, empty.DefaultFamily ?? "none", 0);
+            AssertEqual(testName, "and says the faces are the bundled ones", true, empty.UsesBundledFonts, 0);
+
+            int styles = new[] { (false, false), (false, true), (true, false), (true, true) }
+                .Select(s => empty.Resolve("", s.Item1, s.Item2)?.Source)
+                .Distinct().Count(source => source != null);
+            AssertEqual(testName, "with four styles from four files - bold drawn as bold", 4, styles, 0);
+
+            // Through a whole render: the PDF embeds the default's own faces.
+            var report = new Report { Language = "en-GB", Dimension = new() { Width = 210, Height = 297 },
+                                      Body = new() { Layout = LayoutMode.Stack } };
+            report.Body!.Add(new TextItem { Text = "Nothing names a family here." });
+            report.Body.Add(new TextItem { Text = "Nor here, in bold.", Font = new TextStyle { Bold = true } });
+            var pdf = new PdfBackend(new FontLibrary());
+            ReportRenderer.Render(report, pdf);
+            string written = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            var embedded = System.Text.RegularExpressions.Regex.Matches(written, @"/BaseFont /[A-Z]{6}\+([^\s/]+)")
+                .Select(m => m.Groups[1].Value).Distinct().ToList();
+            string sanitised = new string(declared.Select(c => char.IsLetterOrDigit(c) || c == '-' ? c : '_').ToArray());
+            Console.WriteLine($"    rendered with an empty library: {string.Join(", ", embedded)}");
+            AssertEqual(testName, "a document rendered with an empty library embeds the default, regular and bold",
+                true, embedded.Contains(sanitised) && embedded.Contains(sanitised + ",Bold"), 0);
+
+            // --- a library its caller filled -----------------------------------------------
+            // A face of the repository's that the package does not carry, found rather than named.
+            var bundledFamilies = empty.Families().ToHashSet(StringComparer.OrdinalIgnoreCase);
+            FontFile foreign = Directory.EnumerateFiles(FontDirectory(), "*.ttf", SearchOption.AllDirectories)
+                .Order(StringComparer.Ordinal)
+                .Select(FontFile.Load)
+                .First(f => !bundledFamilies.Contains(f.Family));
+
+            var filled = new FontLibrary();
+            filled.Resolve("", false, false);          // used first, so the bundled faces stood in
+            filled.Register(foreign.Source);
+            AssertEqual(testName, "once its caller registers a face, the bundled ones step aside",
+                true, filled.Fonts.All(f => f.Family == foreign.Family) && !filled.UsesBundledFonts, 0);
+            AssertEqual(testName, "and are no longer reached by name", true, filled.Resolve(declared, false, false) == null, 0);
+            AssertEqual(testName, "nor is their default the default", foreign.Family, filled.DefaultFamily ?? "none", 0);
+
+            // A directory registered into a library whose bundled faces already stood in still
+            // declares its own default: the bundled default is not one the caller chose, and
+            // must not stop the directory choosing. Two families the package does not carry,
+            // the second declared, so the alphabet alone would pick the first.
+            var foreignTwo = Directory.EnumerateFiles(FontDirectory(), "*.ttf", SearchOption.AllDirectories)
+                .Order(StringComparer.Ordinal)
+                .Select(FontFile.Load)
+                .Where(f => !bundledFamilies.Contains(f.Family) && !f.Bold && !f.Italic)
+                .DistinctBy(f => f.Family)
+                .Take(2).ToList();
+            string declaring = Path.Combine(Path.GetTempPath(), "frisket-declaring-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(declaring);
+            try
+            {
+                File.Copy(foreignTwo[0].Source, Path.Combine(declaring, "a.ttf"));
+                File.Copy(foreignTwo[1].Source, Path.Combine(declaring, "b.ttf"));
+                File.WriteAllText(Path.Combine(declaring, FontLibrary.DefaultFamilyFile), foreignTwo[1].Family + "\n");
+
+                var used = new FontLibrary();
+                used.Resolve("", false, false);       // the bundled faces stand in
+                used.RegisterDirectory(declaring);
+                AssertEqual(testName, "a directory given to a library already using the bundled faces declares its own default",
+                    foreignTwo[1].Family, used.DefaultFamily ?? "none", 0);
+            }
+            finally
+            {
+                Directory.Delete(declaring, recursive: true);
+            }
+
+            var directory = new FontLibrary();
+            int loaded = directory.RegisterDirectory(FontDirectory());
+            AssertEqual(testName, "a library filled before it is used never holds them at all",
+                true, directory.Fonts.Count() == loaded && directory.Clashes.Count == 0, 0);
+
+            // A default chosen before anything is registered is kept when the bundled faces stand in.
+            string another = bundledFamilies.First(f => !string.Equals(f, declared, StringComparison.OrdinalIgnoreCase));
+            var chose = new FontLibrary { DefaultFamily = another };
+            AssertEqual(testName, "a default chosen on an empty library is kept",
+                another, chose.Resolve("", false, false)?.Family ?? "nothing", 0);
+
+            // --- a family nobody holds ------------------------------------------------------
+            var refused = Assert.Throws<FontNotFoundException>(() =>
+                new FontTextMeasurer(new FontLibrary()).GetMetrics(new TextStyle { Family = "No Such Family" }));
+            Console.WriteLine($"    {refused.Message}");
+            AssertEqual(testName, "a family nobody holds is refused, and the refusal says what is held",
+                true, refused.Message.Contains(declared) && refused.Message.Contains("No Such Family"), 0);
+
+            // A default nobody holds, met by text that names no family: the refusal names the
+            // default, which is what was looked for - not the text's empty family.
+            var missingDefault = Assert.Throws<FontNotFoundException>(() =>
+                new FontTextMeasurer(new FontLibrary { DefaultFamily = "No Such Default" }).GetMetrics(new TextStyle()));
+            AssertEqual(testName, "a missing default is refused by its own name",
+                "No Such Default", missingDefault.Family, 0);
+
+            // --- one empty library, many threads at once -------------------------------------
+            // A host creating one library and rendering in parallel is the ordinary shape on a
+            // server, and the first read of an empty library writes into it. Sixteen threads
+            // held at a barrier and let go together, so they really do arrive at once: through
+            // Parallel.For they trickled in, and the lock taken out was seen two runs in three.
+            int expected = new FontLibrary().Fonts.Count();
+            var counts = new List<int>();
+            var thrown = new System.Collections.Concurrent.ConcurrentBag<string>();
+            for (int round = 0; round < 200; round++)
+            {
+                var shared = new FontLibrary();
+                using var together = new Barrier(16);
+                var threads = Enumerable.Range(0, 16).Select(_ => new Thread(() =>
+                {
+                    together.SignalAndWait();
+                    try { shared.Resolve("", true, false); }
+                    catch (Exception e) { thrown.Add(e.GetType().Name); }
+                })).ToList();
+                threads.ForEach(t => t.Start());
+                threads.ForEach(t => t.Join());
+                counts.Add(shared.Fonts.Count());
+            }
+            Console.WriteLine($"    faces after a first read by sixteen threads, over 200 rounds: "
+                              + $"{string.Join(", ", counts.Distinct())} (alone: {expected}), {thrown.Count} thrown");
+            AssertEqual(testName, "an empty library read by sixteen threads at once stands the faces in once",
+                true, thrown.IsEmpty && counts.All(c => c == expected) && expected == BundledFonts.Files.Count, 0);
+
+            Console.WriteLine();
+        }
     }
 }

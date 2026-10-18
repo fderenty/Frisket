@@ -34,7 +34,7 @@ question a file name answers is where a person would look.
 | `BindingAndTokens.cs` | tokens and formats, scope and its fallback, show/hide, mail merge, heading numbers |
 | `Checks.cs` | what frisket check answers: the three profiles, and the rules that must fall silent |
 | `EngineTests.cs` | the assertion, the paths, the small builders - and no tests, deliberately |
-| `Fonts.cs` | cap-height sizing and the cascade, measured metrics, family names, a font as bytes |
+| `Fonts.cs` | cap-height sizing and the cascade, measured metrics, family names, a font as bytes, and the typefaces a library nobody filled draws with |
 | `FormsAndSignatures.cs` | the quote fillable or flattened, field names that stay unique, a control inside a table cell, and signature fields fit to hand to a signing platform |
 | `MailOutput.cs` | --format mail: flowing HTML with no pages, the inverse of the SVG proof |
 | `NativeBoundary.cs` | the published native libraries export every entry point the C header declares |

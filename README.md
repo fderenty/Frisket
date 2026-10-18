@@ -1,8 +1,8 @@
 # Frisket
 
-A document engine for .NET 10, with **no dependencies at all** — it writes its own
-PDF, measures its own type, and encodes its own barcodes. A template is a JSON file,
-the data is another, and the two are kept apart on purpose.
+A document engine for .NET 10, with **no third-party dependencies** — it writes its
+own PDF, measures its own type, encodes its own barcodes and brings its own typefaces.
+A template is a JSON file, the data is another, and the two are kept apart on purpose.
 
 > **frisket**, *n.* — on a hand press, the frame of oiled paper cut away where the
 > impression should fall. It holds the sheet down and keeps ink off everything meant
@@ -39,7 +39,8 @@ every stream inflated, which is the comparison that means something there.
 
 | | |
 |---|---|
-| [`engine/`](engine) | the engine. No dependencies, AOT-clean — and its four bundled typefaces |
+| [`engine/`](engine) | the engine. No third-party dependencies, AOT-clean — and under `engine/Fonts` the typefaces it is tested with |
+| [`fonts/`](fonts) | `Frisket.Fonts`, which carries four of those families inside an assembly, so a font library nobody filled still draws — in Mulish |
 | [`apps/`](apps) | what is built on it: the [CLI](apps/cli/README.md), the [preview server](apps/server/README.md), and the [content editor and template designer](apps/designer/README.md) — one in the flow, one at coordinates |
 | [`release/`](release) | the content editor as a single HTML file, generated from its parts by the test suite |
 | [`bindings/`](bindings/native/README.md) | the same engine as a shared library behind a flat C interface, with wrappers for C++, Pascal and Python |
@@ -99,7 +100,7 @@ colours. None takes the focus on loading unless it says `autofocus`.
 [`apps/designer/frisket-editor-embedded.html`](apps/designer/frisket-editor-embedded.html)
 shows two side by side.
 
-## Two ideas worth knowing before reading the code
+## Three ideas worth knowing before reading the code
 
 **A size is a cap height in millimetres, not a point size.** Ask for 3 mm and the
 capitals are 3 mm tall in every typeface, because the height is measured from the
@@ -109,6 +110,12 @@ believing them printed capitals a fifth too small.
 **A template writes only what it decides.** Everything left at its default is absent
 from the file, which keeps a template readable and honest about what it actually
 chooses. The consequence is that nothing downstream may assume a key is there.
+
+**A font library nobody filled is not empty.** `new FontLibrary()` draws with the
+typefaces in `Frisket.Fonts` — Mulish for text that names no family — so a first render
+needs nothing but a template. Register one font of your own and the bundled ones step
+aside entirely: the two are never mixed, because a name that would quietly have found a
+bundled face is a name that should have been refused.
 
 ## Checking it
 
@@ -246,7 +253,7 @@ MIT — see [LICENSE](LICENSE). Do what you like with it; there is no warranty o
 kind.
 
 The four bundled typefaces are **not** covered by that licence — all four are under
-the SIL Open Font License.
+the SIL Open Font License, and so is the `Frisket.Fonts` package that carries them.
 Each carries its own licence text and copyright notice in its own folder, and those
 must travel with it. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

@@ -33,6 +33,13 @@
     <Compile Include="..\..\engine\**\*.cs" Exclude="..\..\engine\bin\**;..\..\engine\obj\**" />
   </ItemGroup>
 
+  <!-- The bundled typefaces, referenced rather than compiled in: Frisket.Fonts collides
+       with no name here, and AOT folds it and its resources into the one native file all
+       the same. Compiling it in instead would mean a second list of which fonts ship. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\fonts\Frisket.Fonts.csproj" />
+  </ItemGroup>
+
   <!-- .NET names the shared library after the assembly, so a Linux build comes out as
        frisket.so. Every convention there - dlopen, -l, ldconfig - expects the lib
        prefix, and the wrappers ask for libfrisket.so because that is what a Linux

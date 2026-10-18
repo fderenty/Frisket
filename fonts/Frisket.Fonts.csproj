@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The typefaces Frisket draws with when it is given none, in an assembly of their own.
+
+       Of their own because the licence is: the engine is MIT, these are the SIL Open Font
+       License 1.1, and a package says one licence. The engine depends on this one, so
+       `dotnet add package Frisket` renders out of the box - the confusion this avoids is
+       the commonest there is with a PDF library, a first render that fails for want of a
+       font nobody said was needed.
+
+       The files stay where the repository keeps them, engine/Fonts, and are embedded from
+       there: the tests, the CLI and the preview server read that directory, and the
+       documentation names it in a dozen places. This project chooses which of them ship. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Frisket</RootNamespace>
+    <AssemblyName>Frisket.Fonts</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <PackageId>Frisket.Fonts</PackageId>
+    <Description>The typefaces Frisket draws with when it is given none: Mulish, the default, then Elms Sans, Noto Sans Display and Glametrix - embedded, each under the SIL Open Font License 1.1, with its licence text.</Description>
+    <PackageLicenseExpression>OFL-1.1</PackageLicenseExpression>
+    <PackageTags>fonts;typefaces;ofl;pdf;frisket</PackageTags>
+  </PropertyGroup>
+
+  <!-- Embedded rather than copied beside the executable: an assembly carries them into a
+       single-file publish, a native library, a container, wherever it goes, and nothing
+       has to find a directory at run time. Each family travels with its licence text, as
+       the OFL asks of anything that bundles it (OFL FAQ 1.20).
+
+       Elms Sans ships its four ordinary cuts and not its fourteen weights, which would be
+       half the package again for faces a template has to name on purpose. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\engine\Fonts\mulish-font\Mulish-*.ttf;..\engine\Fonts\mulish-font\OFL.txt"
+                      LogicalName="fonts/mulish/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\engine\Fonts\elms-sans-font\ElmsSans-Regular.ttf;..\engine\Fonts\elms-sans-font\ElmsSans-Italic.ttf;..\engine\Fonts\elms-sans-font\ElmsSans-Bold.ttf;..\engine\Fonts\elms-sans-font\ElmsSans-BoldItalic.ttf;..\engine\Fonts\elms-sans-font\OFL.txt"
+                      LogicalName="fonts/elms-sans/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\engine\Fonts\noto-sans-display-font\NotoSansDisplay-*.ttf;..\engine\Fonts\noto-sans-display-font\OFL.txt"
+                      LogicalName="fonts/noto-sans-display/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\engine\Fonts\glametrix-font\*.otf;..\engine\Fonts\glametrix-font\misc\OFL_License-61e0.txt"
+                      LogicalName="fonts/glametrix/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\engine\Fonts\default-family.txt"
+                      LogicalName="fonts/default-family.txt" />
+  </ItemGroup>
+
+  <!-- And the licence texts in the package itself, where somebody reading what they
+       installed will look, beside the assembly that carries the faces. -->
+  <ItemGroup>
+    <None Include="..\engine\Fonts\mulish-font\OFL.txt" Pack="true" PackagePath="licenses/mulish/OFL.txt" Visible="false" />
+    <None Include="..\engine\Fonts\elms-sans-font\OFL.txt" Pack="true" PackagePath="licenses/elms-sans/OFL.txt" Visible="false" />
+    <None Include="..\engine\Fonts\noto-sans-display-font\OFL.txt" Pack="true" PackagePath="licenses/noto-sans-display/OFL.txt" Visible="false" />
+    <None Include="..\engine\Fonts\glametrix-font\misc\OFL_License-61e0.txt" Pack="true" PackagePath="licenses/glametrix/OFL.txt" Visible="false" />
+  </ItemGroup>
+
+</Project>

@@ -252,7 +252,9 @@ static FontLibrary LoadFonts(string from, ILogger logger)
         return library;
     }
 
-    logger.LogWarning("No engine/Fonts folder found above {From}; text will not measure.", from);
+    // Run from anywhere but the repository, there is no such folder - and an empty library
+    // draws with the typefaces bundled with Frisket, which is the right answer here too.
+    logger.LogInformation("No engine/Fonts folder found above {From}; using the bundled typefaces.", from);
     return library;
 }
 

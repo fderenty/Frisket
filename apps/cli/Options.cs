@@ -119,37 +119,22 @@ namespace Frisket.Cli
         }
 
         /// <summary>
-        /// Where to look for fonts. Without an answer, the library that ships beside the
-        /// executable - found by walking up, since a build puts the binary several
-        /// directories below the tree it came from.
-        /// </summary>
-        /// <summary>
         /// Font files named one by one, with --font. Separate from --fonts because the
         /// two want opposite treatment: a directory scan steps over what is not a font,
         /// and a file somebody named must be complained about instead.
         /// </summary>
         public IReadOnlyList<string> FontFiles() => _fontFiles;
 
-        public IEnumerable<string> FontDirectories()
-        {
-            if (_fonts.Count > 0)
-                return _fonts;
+        /// <summary>The directories named with --fonts, and nothing else.</summary>
+        public IReadOnlyList<string> FontDirectories() => _fonts;
 
-            // Naming a font is naming the fonts. Falling back to a directory beside the
-            // executable would be helpful right up until it is not there, and then a
-            // --font that was perfectly well formed fails for want of something the
-            // caller never asked for.
-            if (_fontFiles.Count > 0)
-                return Array.Empty<string>();
-
-            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
-            {
-                string candidate = Path.Combine(dir.FullName, "engine", "Fonts");
-                if (Directory.Exists(candidate))
-                    return new[] { candidate };
-            }
-
-            throw new CliError("no fonts found beside the executable. Pass --fonts <dir>.");
-        }
+        /// <summary>
+        /// Whether any font was named at all. When none was, the engine draws with the
+        /// typefaces bundled with Frisket - which is what replaced walking up from the
+        /// executable looking for an engine/Fonts directory: true inside the repository and
+        /// false everywhere a CLI is actually installed, so the one way of running it that
+        /// mattered was the one that failed.
+        /// </summary>
+        public bool NamesFonts => _fonts.Count > 0 || _fontFiles.Count > 0;
     }
 }
