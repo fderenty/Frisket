@@ -406,8 +406,28 @@ declared = new Set([
   }
 }
 
-const held = {};
-eval(script + `
+// The handles go inside the editor, at the line that says so. An editor is a call since
+// 18 October 2026, so its state is out of reach of anything appended after the file -
+// and a harness that appended them anyway would reach nothing and check nothing, so a
+// missing or doubled mark stops the run rather than letting it say all good.
+const HARNESS_MARK = '// @harness';
+const withHandles = (code, handles) => {
+  const at = code.indexOf(HARNESS_MARK);
+  if (at < 0 || code.indexOf(HARNESS_MARK, at + 1) >= 0)
+    throw new Error(`the editor needs exactly one "${HARNESS_MARK}" line for the handles`);
+  return code.slice(0, at) + handles + NL_FOR_HANDLES + code.slice(at);
+};
+const NL_FOR_HANDLES = '\n  ';
+
+// What a browser makes global by loading a classic script - a function declared at its
+// top level - this eval keeps to itself, the core being strict. The element looks the
+// editor up by name, as it does in a page, so it is put where a page would put it.
+const EXPOSE = '; globalThis.frisketEditor = frisketEditor;';
+
+// `let`, because a page may hold several editors and each one plants its handles in
+// whatever this names at the moment it is made - see the end of this file.
+let held = {};
+eval(withHandles(script, `
   held.report = () => report;
   held.body = body;
   held.insertAfterCurrent = insertAfterCurrent;
@@ -436,7 +456,7 @@ eval(script + `
   held.setFontSource = v => { fontSource = v; };
   held.receiveFonts = receiveFonts;
   held.receiveFontsReset = () => { libraryFamilies = null; libraryDefault = null; };
-  held.defaultFace = defaultFace;
+  held.defaultFace = () => unnamedHere;
   held.mailFace = () => MAIL_FACE;
   held.webSafe = () => WEB_SAFE;
   held.mount = mount;
@@ -470,7 +490,8 @@ eval(script + `
   held.validate = validate;
   held.applyVertical = applyVertical;
   held.verticalOf = verticalOf;
-`);
+  held.uiRoot = () => uiRoot;
+`) + EXPOSE);
 
 let failures = 0;
 let checked = 0;
@@ -2266,6 +2287,171 @@ if (!process.argv[2]) {
   check('while the colours chosen before are still remembered',
         (held.report().Swatches || []).length > 0,
         JSON.stringify(held.report().Swatches));
+}
+
+// --- several editors on one page ---------------------------------------------------
+// The face that ships is the one a host embeds, and a host may embed it more than once -
+// a letter and its footnote, every item of a list. Until 18 October 2026 an editor was the
+// file, one per page: a second <frisket-editor> took over the first one's root, document
+// and selection, and the first went on showing a sheet whose edits landed in the second.
+// Nothing failed. Asked through the element itself, which is how a host gets more than
+// one, each in a root of its own as a shadow root gives it.
+{
+  // A shadow root, small: it answers for the ids planted under it and for nothing else.
+  // Two editors each have a #sheet, and a lookup reaching across would make two editors
+  // one - which is exactly the fault under test, so a double that did it could not see it.
+  const within = (node, root) => {
+    for (let n = node; n; n = n.parentNode) if (n === root) return true;
+    return false;
+  };
+  class Root2 extends Node2 {
+    constructor(host) { super('#shadow-root'); this.host = host; this._byId = {}; }
+    getElementById(id) {
+      const owner = [...planted].find(n => n._ids && n._ids.has(id) && within(n, this));
+      if (!owner) return null;
+      const node = (this._byId[id] ??= new Node2('div'));
+      node.parentNode = owner;
+      return node;
+    }
+    getSelection() { return window.getSelection(); }
+  }
+
+  global.HTMLElement = class extends Node2 {
+    constructor() { super('frisket-editor'); }
+    attachShadow() { return (this.shadowRoot = new Root2(this)); }
+    dispatchEvent(e) { (this._listeners[e.type] || []).forEach(f => f(e)); }
+  };
+  global.CustomEvent = class { constructor(type, init) { this.type = type; this.detail = init && init.detail; } };
+  const registry = {};
+  global.customElements = { get: n => registry[n], define: (n, c) => { registry[n] = c; } };
+  document.currentScript = { src: 'file:///frisket/apps/designer/frisket-editor-element.js' };
+
+  // The element reads its own address with `new URL`, and this double's URL is only the
+  // two blob helpers the editor uses - so a real one, for the length of the load.
+  const pageURL = global.URL;
+  global.URL = Object.assign(class extends require('url').URL {}, pageURL);
+  eval(fs.readFileSync(path.join(DIR, 'frisket-editor-element.js'), 'utf8'));
+  global.URL = pageURL;
+  const Editor = customElements.get('frisket-editor');
+
+  // Mounting takes the focus only when asked. Counted on every node, since focusBlock
+  // focuses whichever surface it finds.
+  let focused = 0;
+  const focusWas = Node2.prototype.focus;
+  Node2.prototype.focus = function () { focused++; };
+
+  document.title = 'The host page';
+  const pageEditor = held;
+  const pageTitle = pageEditor.report().Title;
+
+  const made = [];
+  for (const room of ['graphite', 'frost']) {
+    held = {};               // each editor plants its own handles as it is made
+    const tag = new Editor();
+    tag.setAttribute('theme', room);
+    const found = [];
+    tag.addEventListener('checks', e => found.push(e.detail));
+    tag.connectedCallback();
+    made.push({ tag, held, found });
+  }
+  held = pageEditor;
+  const [a, b] = made;
+  const unasked = focused;
+
+  check('two elements make two editors, each in a root of its own',
+        a.held.uiRoot() === a.tag.shadowRoot && b.held.uiRoot() === b.tag.shadowRoot
+          && a.held.el('sheet') !== b.held.el('sheet'),
+        `${a.held.uiRoot() === b.held.uiRoot() ? 'one root' : 'two roots'}, `
+          + `${a.held.el('sheet') === b.held.el('sheet') ? 'one sheet' : 'two sheets'}`);
+
+  // A document each, through the property a host uses.
+  const docFor = (ed, title, words, language) => {
+    const r = JSON.parse(JSON.stringify(ed.tag.report));
+    r.Title = title;
+    if (language) r.Language = language; else delete r.Language;
+    const para = ed.held.newItem('AdvancedTextItem');
+    para.Runs = [{ Text: words, Font: null }];
+    r.Sections[0].Childs.find(c => c.$type === 'Body').Childs = [para];
+    return r;
+  };
+  a.tag.report = docFor(a, 'Alpha', 'Alpha writes here', 'en-GB');
+  b.tag.report = docFor(b, 'Beta', 'Beta writes here', null);
+
+  const sheetText = ed => textNodesIn(ed.held.el('sheet')).map(t => t.textContent).join('');
+  check('each holds its own document',
+        a.tag.report.Title === 'Alpha' && b.tag.report.Title === 'Beta',
+        `${a.tag.report.Title} / ${b.tag.report.Title}`);
+  check('and draws it into its own sheet, never the other one\'s',
+        sheetText(a).includes('Alpha writes here') && !sheetText(a).includes('Beta')
+          && sheetText(b).includes('Beta writes here') && !sheetText(b).includes('Alpha'),
+        `${sheetText(a)} / ${sheetText(b)}`);
+
+  // Typing into one, the way the page types: into its surface, then its input handler.
+  const typingA = surfaceOf(a.held.el('sheet').childNodes[0]);
+  typingA.appendChild(new Text2(' and goes on'));
+  typingA.fire('input');
+  check('typing into one reaches its document and no other',
+        JSON.stringify(a.tag.report).includes('and goes on')
+          && !JSON.stringify(b.tag.report).includes('and goes on')
+          && !JSON.stringify(pageEditor.report()).includes('and goes on'),
+        'reached: ' + ([['the first', a.tag.report], ['the second', b.tag.report], ['the page\'s', pageEditor.report()]]
+          .filter(([, r]) => JSON.stringify(r).includes('and goes on')).map(([n]) => n).join(', ') || 'nothing'));
+
+  const last = ed => ed.found[ed.found.length - 1] || [];
+  check('each tells its own host what it found',
+        !last(a).some(i => i.rule === 'ua.language') && last(b).some(i => i.rule === 'ua.language'),
+        `${last(a).map(i => i.rule).join(',') || 'nothing'} / ${last(b).map(i => i.rule).join(',') || 'nothing'}`);
+
+  check('each wears the room it was given',
+        a.tag.getAttribute('data-theme') === 'graphite' && b.tag.getAttribute('data-theme') === 'frost',
+        `${a.tag.getAttribute('data-theme')} / ${b.tag.getAttribute('data-theme')}`);
+
+  check('and neither renamed the page it was put in', document.title === 'The host page', document.title);
+
+  check('the page\'s own editor kept its document while two more were made',
+        pageEditor.report().Title === pageTitle, pageEditor.report().Title);
+
+  check('neither took the focus, not having been asked to', unasked === 0, `${unasked} focus calls`);
+  held = {};
+  const asking = new Editor();
+  asking.setAttribute('autofocus', '');
+  asking.connectedCallback();
+  held = pageEditor;
+  check('while one that says autofocus does', focused > unasked, `${focused - unasked} focus calls`);
+
+  Node2.prototype.focus = focusWas;
+
+  // Side by side is where the layout showed. A face with no panel kept the panel's 300
+  // pixels on its right, and the editor stopped where its content did rather than filling
+  // the element a host had sized - both unseen while an editor had the window to itself.
+  const markupOf = ed => ed.tag.shadowRoot.getElementById('frisket-editor-root').innerHTML;
+  const pageMarkup = document.getElementById('frisket-editor-root').innerHTML;
+  check('an editor with no panel lays out one column, not the panel\'s two',
+        markupOf(a).includes('<main class="alone">') && /grid-template-columns\s*:\s*1fr\s*;/.test(cssFor('main.alone')),
+        (markupOf(a).match(/<main[^>]*>/) || ['no main'])[0] + ' / ' + (cssFor('main.alone').trim() || 'no rule'));
+  check('while the face that has the panel keeps both',
+        pageMarkup.includes('<main>') && pageMarkup.includes('<aside'),
+        (pageMarkup.match(/<main[^>]*>/) || ['no main'])[0]);
+  const hostRule = cssFor('#frisket-editor-root');
+  const sheetsAlone = styles.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  check('and the editor fills the room it is given, in a page and in an element',
+        /height\s*:\s*100%/.test(hostRule) && /display\s*:\s*flex/.test(hostRule)
+          && /(^|\n)\s*:host\s*\{[^}]*display\s*:\s*block/.test(sheetsAlone),
+        hostRule.trim() || 'no rule for the host div');
+
+  // And the shape that keeps it so. The fault was state at the top of the file, one copy
+  // per page; the checks above catch the report and the root being shared, and would not
+  // notice the selection cache, the pending style or the drag in progress going back out
+  // the same way. So the top level is asked directly: what may live there is what
+  // belongs to the page - its language, and the server's fonts, asked once - and nothing
+  // an editor changes as somebody types.
+  const PAGE_STATE = ['lang0', 'serverFontsAsked', 'facesLoaded'];
+  const editorSource = fs.readFileSync(path.join(DIR, 'frisket-editor.js'), 'utf8');
+  const topLevel = [...editorSource.matchAll(/^(?:let|var)\s+(\w+)/gm)].map(m => m[1]);
+  const strays = topLevel.filter(name => !PAGE_STATE.includes(name));
+  check('nothing an editor changes lives at the top of the file, one copy for the page',
+        strays.length === 0 && PAGE_STATE.every(name => topLevel.includes(name)),
+        strays.length ? 'at the top: ' + strays.join(', ') : topLevel.join(', '));
 }
 
 console.log(failures ? `\n${checked} checks, ${failures} FAILED`

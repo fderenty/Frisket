@@ -287,9 +287,18 @@ otherwise; an element is inside somebody else's, which already has both.
 <!-- a page -->
 <div id="frisket-editor-root" chrome="false" panel="false" files="toolbar"></div>
 
-<!-- a host -->
-<frisket-editor paged="false" interactive="false" language="fr-FR"></frisket-editor>
+<!-- a host, with two -->
+<frisket-editor paged="false" interactive="false" autofocus></frisket-editor>
+<frisket-editor paged="false" interactive="false" margins="10"></frisket-editor>
 ```
+
+Each tag is an editor of its own - its document, its selection, its findings, its theme -
+so a page holds as many as it needs. That was not true until 18 October 2026: an editor
+was the script file itself, and a second tag took over the first one's document and root
+without a word. `frisket-editor-embedded.html` puts two side by side.
+
+(The example used to say `language="fr-FR"`. No such attribute was ever read - the
+document's language is the document's, set in it, not on the tag.)
 
 | attribute | what it decides | page default | element default |
 |---|---|---|---|
@@ -302,6 +311,7 @@ otherwise; an element is inside somebody else's, which already has both.
 | `tagged` | whether the structure a reader needs is written | true | true |
 | `interactive` | whether form fields stay fillable | true | true |
 | `paged` | whether the output has pages at all - `false` for a message | true | true |
+| `autofocus` | whether loading puts the caret in it - HTML's own rule for a control | true | false |
 
 `theme` is the sharper of the two, and it was found in an inspector rather than
 reasoned about. A host page painting the editor in its own dark colours got

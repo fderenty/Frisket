@@ -13,16 +13,17 @@
 /// every theme, because the canvas is showing a printed page and a mark that moved with
 /// the interface would make the tool disagree with the printer.
 ///
-/// This works because frisket-editor.js was made to ask rather than assume. What this
-/// element SETS: `uiRoot`, where its markup lives; `uiHost`, what the markup is planted
-/// in; `themeTarget`, what carries the theme; `SHOWN`, what this face shows at all;
-/// `renderTarget`, what is about to be produced; and `onChecks`, where the findings go.
-/// What it CALLS: `applyTheme()`, `mount()` and `loadReport()`.
+/// Every element makes an editor of its own - `frisketEditor(seams)` - so a page may hold
+/// as many as it likes, each with its document, its selection and its findings. What it
+/// HANDS that call: the shadow root the markup lives in, the div it is planted in, itself
+/// as what carries the theme, what this face shows, what is about to be produced, where
+/// the findings go, and whether to take the focus. What it CALLS on what comes back:
+/// `mount()`, `loadReport()` and `report()`. The list of seams lives once, at the end of
+/// `frisketEditor`, and is not repeated here.
 ///
-/// No total is given, here or in CLAUDE.md 5c-quater, because the two used to carry one
-/// and disagreed: this comment said four and that section said five, the difference
-/// being `selection()`, which is derived from `uiRoot` rather than set. A number in
-/// prose is a claim like any other.
+/// It used to SET those seams instead, as variables of the one editor the page had - so
+/// a second element set them over the first one's. That is the whole reason this is a
+/// call now.
 (function () {
   // Where our own files are, taken from this script's own URL rather than assumed to be
   // beside the host page - an element is meant to be loaded from somewhere else.
@@ -32,7 +33,7 @@
     connectedCallback() {
       if (this.shadowRoot) return;   // moved in the DOM, not a second editor
 
-      if (typeof mount !== "function") {
+      if (typeof frisketEditor !== "function") {
         this.textContent = "frisket-editor.js has not been loaded.";
         return;
       }
@@ -48,58 +49,66 @@
         ? this.getAttribute(name) !== "false"
         : fallback;
 
-      SHOWN = {
-        chrome: on("chrome", false),
-        panel: on("panel", false),
-        files: this.getAttribute("files") || "toolbar",
-      };
-
-      // The web-safe families unless the host says otherwise. An embedded editor has no
-      // preview server to ask - and no control to change its mind with - so asking one
-      // means a request that fails and a poorer list to show for it. A host that DOES
-      // have a font server writes fonts="library".
-      // The room, before applyTheme() below stamps it. A face with no picker does not
-      // read the preference stored by the face that has one - see chooseTheme.
-      margins = this.getAttribute("margins");
-      theme = chooseTheme(this.getAttribute("theme"));
-
-      fontSource = chooseFontSource(this.getAttribute("fonts"));
-
-      // What is about to be produced. The engine's own defaults - the richest output -
-      // for the engine's own reason: a caller that says nothing is told nothing, rather
-      // than warned about a loss that is not happening. `paged="false"` is what a host
-      // building an email says, and it is the only way can.absoluteInFlow ever speaks.
-      renderTarget = {
-        Tagged: on("tagged", true),
-        Interactive: on("interactive", true),
-        Paged: on("paged", true),
-      };
-
-      // The findings, to whoever embedded this. They are computed on every redraw
-      // whether or not there is a panel to paint them on - hiding the panel hides the
-      // machinery from somebody typing a letter, it does not stop the checking. What a
-      // host does with them is the host's to decide, which is the same answer this
-      // project gives for a font's fsType and for an imported page.
-      onChecks = found => {
-        this._issues = found;
-        this.dispatchEvent(new CustomEvent("checks", { detail: found }));
-      };
-
       const root = this.attachShadow({ mode: "open" });
       root.innerHTML =
         '<link rel="stylesheet" href="' + here + 'frisket-chrome.css">' +
         '<link rel="stylesheet" href="' + here + 'frisket-editor.css">' +
         '<div id="frisket-editor-root"></div>';
 
-      // The seams, set before a line of the editor runs.
-      uiRoot = root;
-      uiHost = root.getElementById("frisket-editor-root");
-      themeTarget = this;
+      this._editor = frisketEditor({
+        root,
+        host: root.getElementById("frisket-editor-root"),
+        themeTarget: this,
 
-      applyTheme();   // it ran once at load against the document; this is our copy
-      mount();
+        // What this host wants shown. Absent means the lean shape, because an element is
+        // by definition inside somebody else's application: it already has a header, it
+        // already knows what it is producing, and a second set of controls answering the
+        // same questions is worse than none. The plain page is the other way round and
+        // says so itself - it is the whole application, so it keeps the lot.
+        shown: {
+          chrome: on("chrome", false),
+          panel: on("panel", false),
+          files: this.getAttribute("files") || "toolbar",
+        },
 
-      if (this._pending) { loadReport(this._pending); this._pending = null; }
+        margins: this.getAttribute("margins"),
+
+        // The room, and the families: what the host declared, if anything. A face with
+        // no picker does not read the preference stored by the face that has one, so an
+        // editor with no font control gets the web-safe families unless the host says
+        // fonts="library" - it has no preview server to ask and no control to change its
+        // mind with.
+        theme: this.getAttribute("theme"),
+        fonts: this.getAttribute("fonts"),
+
+        // What is about to be produced. The engine's own defaults - the richest output -
+        // for the engine's own reason: a caller that says nothing is told nothing, rather
+        // than warned about a loss that is not happening. `paged="false"` is what a host
+        // building an email says, and it is the only way can.absoluteInFlow ever speaks.
+        target: {
+          Tagged: on("tagged", true),
+          Interactive: on("interactive", true),
+          Paged: on("paged", true),
+        },
+
+        // The findings, to whoever embedded this. They are computed on every redraw
+        // whether or not there is a panel to paint them on - hiding the panel hides the
+        // machinery from somebody typing a letter, it does not stop the checking. What a
+        // host does with them is the host's to decide, which is the same answer this
+        // project gives for a font's fsType and for an imported page.
+        onChecks: found => {
+          this._issues = found;
+          this.dispatchEvent(new CustomEvent("checks", { detail: found }));
+        },
+
+        // HTML's own rule for a control: it takes the focus when it says autofocus, and
+        // not otherwise. A page holding three editors that each took it on mounting
+        // would open scrolled to the last one.
+        autofocus: on("autofocus", false),
+      });
+
+      this._editor.mount();
+      if (this._pending) { this._editor.loadReport(this._pending); this._pending = null; }
     }
 
     /// The document, out and in.
@@ -108,13 +117,13 @@
     /// does - has no other way to the JSON: the Save button built a Blob and clicked an
     /// anchor, and that was the only egress this editor had. Hiding it without putting
     /// this here would be shipping an editor whose work cannot be collected.
-    get report() { return forEngine(report); }
+    get report() { return this._editor ? this._editor.report() : (this._pending ?? null); }
 
     set report(value) {
       // Before connectedCallback, there is no editor to put it in yet. Kept rather than
       // dropped: a host setting a property on an element it has just created, before
       // the browser has upgraded it, is ordinary and must not lose the document.
-      if (this.shadowRoot) loadReport(value); else this._pending = value;
+      if (this._editor) this._editor.loadReport(value); else this._pending = value;
     }
 
     /// What the checks found, last time anything was drawn. Also delivered as a

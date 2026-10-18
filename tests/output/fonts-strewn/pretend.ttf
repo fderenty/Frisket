@@ -93,6 +93,12 @@ host. The checks still run on every change — they go to the host instead of on
 screen. The attributes and what each one decides are listed in
 [`apps/designer/README.md`](apps/designer/README.md).
 
+A page may hold as many as it needs — a letter and its footnote, one per item of a list.
+Each tag is an editor of its own: its document, its selection, its findings and its
+colours. None takes the focus on loading unless it says `autofocus`.
+[`apps/designer/frisket-editor-embedded.html`](apps/designer/frisket-editor-embedded.html)
+shows two side by side.
+
 ## Two ideas worth knowing before reading the code
 
 **A size is a cap height in millimetres, not a point size.** Ask for 3 mm and the

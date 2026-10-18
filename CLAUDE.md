@@ -695,7 +695,7 @@ Putting a picture beside a paragraph — a `ContainerItem` in `Absolute`, the pi
 | `frisket-editor.html` | the face that **ships**: the editor, no header, no panel, files in the toolbar |
 | `frisket-editor-full.html` | the same editor with all of it showing, for working on the editor |
 | `frisket-editor-element.js` | the same face as `<frisket-editor>`, in a shadow root (§5c-quater) |
-| `frisket-editor-embedded.html` | a host page proving the palette crosses that boundary |
+| `frisket-editor-embedded.html` | a host page with two editors, proving each is its own and the palette crosses the boundary |
 | `check-against-engine.js` | the harness that confronts the echo with the engine |
 | `check-editor.js` | the harness for the flow face alone |
 
@@ -1121,19 +1121,50 @@ cannot reach in and the editor's cannot leak out. What crosses on purpose is the
 custom properties inherit through the boundary, which is what lets a host theme it by
 setting `--accent`, `--panel`, `--ink` on the tag.
 
-The boundary is named, and it is **set** and **called** rather than counted. Six things
-the element sets before a line of the editor runs — `uiRoot` (where its markup lives),
-`uiHost` (what the markup is planted in), `themeTarget` (what carries `data-theme` and
-`--paper`), `SHOWN` (what this face shows, §5c), `renderTarget` (what is about to be
-produced) and `onChecks` (where the findings go) — and three it calls: `applyTheme()`,
-`mount()` and `loadReport()`. `selection()` is derived from `uiRoot` rather than set,
-which is why it was in one count and not the other.
+The boundary is named, and it is **handed over** rather than counted: an editor is
+`frisketEditor(seams)`, and the seams - the root its markup lives in, the div it is
+planted in, what carries `data-theme` and `--paper`, what this face shows (§5c), what is
+about to be produced, where the findings go, whether to take the focus - are listed once,
+at the end of that function. The element and the plain page pass the same names, and
+call `mount()`, `loadReport()` and `report()` on what comes back.
 
 *It was stated twice and the two disagreed before any of this*: "five named seams" here
 against "the four of them are the whole of the boundary" in the element's own doc
 comment, which never counted `selection()`. A number in prose is a claim like any other,
-and two claims about one thing drift the moment either moves — so the list is what it is
-now, and neither place carries a total.
+and two claims about one thing drift the moment either moves — so the list lives in one
+place, and neither this section nor the element carries a total.
+
+**One editor per call, not one per page.** Until 18 October 2026 the seams were
+variables at the top of `frisket-editor.js`, which the element *set* - so a second
+`<frisket-editor>` set them over the first one's. The first went on showing its sheet
+while its root, its document and its selection were the second's: type into it and the
+words landed next door. Nothing failed, and nothing could, because the harness had one
+editor and one id space, and the element was covered by no check at all. *A shape that
+allows one of something is a requirement nobody wrote down* - the author's, as it turned
+out: several editors on one screen, "limite prioritaire".
+
+Everything an editor changes as somebody types lives inside the function now. What stays
+at the top is the page's - the interface language, and the preview server's fonts, asked
+once and loaded once however many editors want them - and check-editor.js holds the top
+level to exactly that list, because the checks on two editors would catch the document or
+the root going back out and would not notice the selection cache doing the same
+(sabotaged: one failure, and only that check). It drives two real `<frisket-editor>` in
+shadow roots of their own: two documents, typing that reaches one, findings to the right
+host, a room each.
+
+Two faults the second editor exposed, both present with one: an embedded editor set
+`document.title` on every redraw of its wording, **renaming the host's tab**; and every
+editor took the focus on mounting, so a page of three opened scrolled to the last. The
+title is the page's now, and an element takes the focus when it says `autofocus` - HTML's
+own rule. And side by side showed what one editor across the window hid: a face with no
+panel still reserved the panel's 300 pixels, and the editor stopped where its content did
+rather than filling the element a host had sized.
+
+The harness had to follow the editor inside: it plants its handles at the `// @harness`
+line of the function, and refuses to run if there is not exactly one. And the core being
+`"use strict"`, an `eval` keeps its functions to itself where a browser would make them
+global - so the element found no `frisketEditor` until the harness put it where a page
+would.
 
 One line
 already funnelled every lookup - `const el = id => document.getElementById(id)` - which

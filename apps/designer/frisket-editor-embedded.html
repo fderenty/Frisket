@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Frisket — the editor inside a host page</title>
+<title>Frisket — editors inside a host page</title>
 
 <!-- Deliberately NOT frisket-chrome.css. This page has a look of its own, and the
      point of the demonstration is that the two do not reach into each other: the
@@ -21,15 +21,22 @@
     border-bottom: 1px solid #262d36;
   }
   h1 { margin: 0 0 .35rem; font-size: 1.3rem; letter-spacing: -.01em; }
-  p { margin: 0; color: #9aa3ae; max-width: 46rem; }
+  h2 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; }
+  p { margin: 0; color: #9aa3ae; max-width: 52rem; }
   code { font: .88em ui-monospace, Menlo, Consolas, monospace; }
+
+  main {
+    display: grid; gap: 1.25rem; padding: 1.25rem 1.5rem 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr));
+  }
+  .findings { margin-top: .5rem; font-size: .85rem; color: #9aa3ae; }
 
   /* Everything a host may say about how the editor looks. These are the chrome's own
      names; custom properties inherit through a shadow boundary, which is what makes
      theming possible without either side knowing the other. */
   frisket-editor {
     display: block;
-    height: 78vh;
+    height: 64vh;
 
     --accent: #b4693f;
     --on-accent: #ffffff;
@@ -39,6 +46,9 @@
     --line: #262d36;
     --bg: #101418;
   }
+  /* A second editor, and a palette of its own: each is a separate element, so each
+     takes what is set on it. */
+  frisket-editor.footnote { --accent: #3f8fb4; }
 
   /* And what it may not say. --paper is one colour in every theme: the canvas is
      showing a printed page, and a host tinting it would make the tool disagree with
@@ -49,18 +59,44 @@
 <body>
 
 <header>
-  <h1>A host page, with the editor inside it</h1>
-  <p>Everything below the line is <code>&lt;frisket-editor&gt;</code>. This page's own
-     stylesheet is not the editor's, and neither reaches the other: the editor draws in
-     a shadow root. What crosses the boundary is the palette — the custom properties set
-     on the element above — because that is what a theme is meant to be.</p>
+  <h1>A host page, with two editors inside it</h1>
+  <p>Each panel below is a <code>&lt;frisket-editor&gt;</code> with a document of its own:
+     typing in one changes nothing in the other, and each tells the page what its own
+     checks found. This page's stylesheet is not the editors', and neither reaches the
+     other - they draw in shadow roots. What crosses the boundary is the palette, the
+     custom properties set on each element, because that is what a theme is meant to be.</p>
 </header>
 
-<frisket-editor></frisket-editor>
+<main>
+  <section>
+    <h2>The letter</h2>
+    <frisket-editor id="letter" autofocus></frisket-editor>
+    <div class="findings" data-for="letter"></div>
+  </section>
+  <section>
+    <h2>Its footnote</h2>
+    <frisket-editor id="footnote" class="footnote"></frisket-editor>
+    <div class="findings" data-for="footnote"></div>
+  </section>
+</main>
 
 <script src="frisket-core.js"></script>
 <script src="frisket-runs.js"></script>
 <script src="frisket-editor.js"></script>
 <script src="frisket-editor-element.js"></script>
+<script>
+  // What a host does with the findings is its own business. This one just says how many
+  // each editor has, under that editor - which is the point: they arrive separately.
+  for (const editor of document.querySelectorAll("frisket-editor")) {
+    const line = document.querySelector(`.findings[data-for="${editor.id}"]`);
+    const show = found => {
+      line.textContent = found.length
+        ? `${found.length} finding${found.length > 1 ? "s" : ""}: ${found.map(f => f.rule).join(", ")}`
+        : "Nothing to report";
+    };
+    editor.addEventListener("checks", e => show(e.detail));
+    show(editor.issues);
+  }
+</script>
 </body>
 </html>
