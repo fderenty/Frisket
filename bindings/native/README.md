@@ -38,16 +38,18 @@ One script per side. Both encode what is not obvious, so it need not be rediscov
 ./bindings/native/build.sh linux-arm64
 ```
 
-| Target | State |
-|---|---|
-| `win-x64` | built and run, and the section compared |
-| `linux-x64` | built and run, in WSL, and the section compared |
-| `win-arm64` | provided for, **never built**: needs the ARM64 C++ build tools, a separate Visual Studio component |
-| `linux-arm64` | provided for, **never built**: needs a cross linker and an arm64 sysroot, or an ARM64 machine |
+| Target | Built on | Run |
+|---|---|---|
+| `win-x64` | a Windows x64 runner | there |
+| `win-arm64` | an Arm64 Windows runner | there - for the first time on 18 October 2026 |
+| `linux-x64` | an Ubuntu x64 runner | there |
+| `linux-arm64` | an Ubuntu Arm64 runner | there |
+| `linux-arm` | an Ubuntu x64 runner, cross-compiled | in an armhf container under qemu |
 
-The two ARM targets are one line of script each and nothing more is expected of them,
-but neither has been compiled, let alone run, so they are listed as untried rather
-than as supported.
+Every release does all five (`.github/workflows/release.yml`), and so does running that
+workflow by hand: on each target the library, the CLI linked ahead of time and the managed
+CLI must write one document, and 32-bit ARM's is compared with the x64 render as well. A
+target that stops agreeing stops the release.
 
 ### What the scripts know that a plain `dotnet publish` does not
 
@@ -90,8 +92,9 @@ there is enough - no `vcvars`, no `IlcUseEnvironmentalTools` - and it is also wh
 makes the Publish button work from inside Visual Studio, whose process reaches its own
 installer.
 
-`win-arm64` was published for the first time on 20 August 2026 and has **never been
-run**: there is no ARM machine here. Built is not verified, which is the whole subject
+`win-arm64` was published for the first time on 20 August 2026 and **first run on
+18 October 2026**, on a hosted Arm64 Windows runner - two months built and unverified,
+because there is no ARM machine here. Built is not verified, which is the whole subject
 of the next section.
 
 ## A font the caller chose

@@ -1424,14 +1424,22 @@ Third lesson from the same exercise, this one visible only on screen: **one docu
   the script, not for the command a working machine happens to accept.
 
   **`win-arm64` was compiled for the first time** on 20 August 2026 (5,207,552 bytes),
-  and **never run**: there is no ARM machine here. Built ≠ checked, and the whole of
-  §8 says why the difference matters.
+  and **not run for two months**: there is no ARM machine here. Built ≠ checked, and the
+  whole of §8 says why the difference matters.
 
   **`linux-arm` and `linux-arm64` are built and run since 27 August 2026**, under
   `qemu-user`, and each produces the document the CLI produces. Four artefacts now
   agree - three native libraries and the managed CLI - checked with
-  `tools/compare-pdf.py`, never `cmp`. `win-arm64` stays built and unrun: qemu-user
-  runs Linux binaries, so it does not answer for that one.
+  `tools/compare-pdf.py`, never `cmp`. qemu-user runs Linux binaries, so it did not
+  answer for `win-arm64`.
+
+  **Every target is run on its own platform by `release.yml` since 18 October 2026** -
+  `win-arm64` on a hosted Arm64 Windows runner, its first run anywhere, and the Python
+  that loaded it was Arm64, which is what proves the library was. On each, the library,
+  the CLI linked ahead of time and the managed CLI write one document; 32-bit ARM has no
+  runner and is checked in an armhf container under qemu, then against the x64 render.
+  It agreed the first time. And a downloaded archive was run where nothing of the
+  repository is - the CLI's PDF/A passed veraPDF on both profiles.
 
   **`build.sh`'s guard was checking a linker the build never called.** It looked for
   `aarch64-linux-gnu-ld` and then published without saying which linker to use, so
