@@ -21,12 +21,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # A release runs the whole of this first, on the commit it is about to ship.
+  workflow_call:
 
 permissions:
   contents: read
 
+# The calling workflow's name is part of the group: a release dispatched from main must not
+# cancel, or be cancelled by, the CI of a push to main.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

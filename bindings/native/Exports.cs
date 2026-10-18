@@ -30,14 +30,32 @@ namespace Frisket.Native
         [UnmanagedCallersOnly(EntryPoint = "fk_last_error")]
         public static IntPtr LastError() => Interop.LastError();
 
+        /// <summary>
+        /// The version this library was built as - the release's tag, or 0.1.0-dev for a build
+        /// that is not one - without the commit the build metadata appends.
+        ///
+        /// It answered a literal "1.0.0" until the first release was being prepared, which
+        /// every build would have gone on saying; and it allocated a fresh copy on every call
+        /// while frisket.h promised a static string nobody frees. Made once, kept.
+        /// </summary>
         [UnmanagedCallersOnly(EntryPoint = "fk_version")]
-        public static IntPtr Version() => Interop.Utf8("1.0.0");
+        public static IntPtr Version() => VersionText;
+
+        private static readonly IntPtr VersionText = Interop.Utf8(
+            (typeof(Exports).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+                .FirstOrDefault()?.InformationalVersion ?? "0.0.0").Split('+')[0]);
 
         // ------------------------------------------------------------------
         // Fonts
         // ------------------------------------------------------------------
 
-        /// <summary>An empty font library. Nothing renders until it has faces in it.</summary>
+        /// <summary>
+        /// An empty font library. Left empty it draws with the typefaces bundled into this
+        /// library - Mulish for text that names no family; the first face added makes them
+        /// step aside, and the two are never mixed.
+        /// </summary>
         [UnmanagedCallersOnly(EntryPoint = "fk_fonts_create")]
         public static int FontsCreate(IntPtr* library) => Interop.Guarded(() =>
         {

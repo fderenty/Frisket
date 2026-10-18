@@ -1,0 +1,252 @@
+name: Release
+
+# A tag v1.2.3 makes a release; running this by hand builds and checks everything a release
+# would carry and publishes nothing, which is how this file is tried before a tag exists.
+#
+# First the whole of ci.yml, on the commit being shipped. Then, for each target, the native
+# library and the command line linked ahead of time, each built on a runner of its own
+# platform and held - by the document it writes, never by its return code - to the managed
+# CLI on that same machine (CLAUDE.md 8). The one target with no hosted runner, 32-bit ARM,
+# is cross-compiled from x64 and checked inside an ARM container under emulation.
+#
+# Then the three packages, versioned from the tag. nuget.org is reached only on a tag and
+# only once the repository variable NUGET_PUBLISH is 'true': a push there cannot be taken
+# back, and the packages point at a repository that has to be public first.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version stamped on what is built
+        required: false
+        default: 0.1.0-dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: Version
+    runs-on: ubuntu-26.04
+    outputs:
+      value: ${{ steps.resolve.outputs.value }}
+    steps:
+      - id: resolve
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${REQUESTED:-0.1.0-dev}" >> "$GITHUB_OUTPUT"
+          fi
+
+  native:
+    name: ${{ matrix.rid }}
+    needs: [ci, version]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            runner: windows-latest
+          # A real Arm64 Windows machine: the library built for it in August 2026 had never
+          # been run anywhere until this job (CLAUDE.md 8).
+          - rid: win-arm64
+            runner: windows-11-arm
+          - rid: linux-x64
+            runner: ubuntu-26.04
+          - rid: linux-arm64
+            runner: ubuntu-26.04-arm
+          # No hosted runner is 32-bit ARM. Cross-compiled from x64, as build.sh describes,
+          # then run in an armhf container under qemu.
+          - rid: linux-arm
+            runner: ubuntu-26.04
+            cross: true
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-python@v7
+        if: ${{ !matrix.cross }}
+        with:
+          python-version: '3.x'
+
+      # ILCompiler finds the linker through vswhere, and fails naming vswhere when it is not
+      # on PATH - a long way from the cause (CLAUDE.md 8). Put there rather than hoped for.
+      - name: Put vswhere on PATH
+        if: runner.os == 'Windows'
+        run: echo "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer" >> "$GITHUB_PATH"
+
+      - name: Install the native toolchain
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Install the 32-bit ARM cross toolchain
+        if: matrix.rid == 'linux-arm'
+        run: >
+          sudo apt-get install -y lld
+          gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabihf libc6-dev-armhf-cross
+
+      # The managed CLI, which every target is held to.
+      - name: Build the managed CLI
+        run: dotnet build apps/cli/Frisket.Cli.csproj -c Release --nologo
+
+      - name: Publish the native library
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then
+            pwsh -NoProfile -File bindings/native/build.ps1 -Target "${{ matrix.rid }}" -Version "$VERSION"
+            echo "NATIVE=bindings/native/bin/${{ matrix.rid }}/publish" >> "$GITHUB_ENV"
+            echo "LIBRARY=bindings/native/bin/${{ matrix.rid }}/publish/frisket.dll" >> "$GITHUB_ENV"
+          else
+            bindings/native/build.sh "${{ matrix.rid }}" Release "$VERSION"
+            echo "NATIVE=bindings/native/bin/Release/net10.0/${{ matrix.rid }}/publish" >> "$GITHUB_ENV"
+            echo "LIBRARY=bindings/native/bin/Release/net10.0/${{ matrix.rid }}/publish/libfrisket.so" >> "$GITHUB_ENV"
+          fi
+
+      - name: Publish the CLI ahead of time
+        run: |
+          cross=()
+          if [ "${{ matrix.rid }}" = linux-arm ]; then
+            cross=(-p:LinkerFlavor=lld -p:ObjCopyName=arm-linux-gnueabihf-objcopy)
+          fi
+          dotnet publish apps/cli/Frisket.Cli.csproj -c Release -r "${{ matrix.rid }}" \
+            -p:Version="$VERSION" "${cross[@]+"${cross[@]}"}" --nologo -o "$RUNNER_TEMP/cli"
+          exe=Frisket.Cli; [ "$RUNNER_OS" = Windows ] && exe=Frisket.Cli.exe
+          echo "CLI=$RUNNER_TEMP/cli/$exe" >> "$GITHUB_ENV"
+
+      - name: The library, the CLI as shipped and the managed CLI write one document
+        if: ${{ !matrix.cross }}
+        run: python bindings/native/check-against-cli.py "$LIBRARY" "$CLI" apps/cli/bin/Release/net10.0/Frisket.Cli.dll
+
+      - uses: docker/setup-qemu-action@v4
+        if: matrix.rid == 'linux-arm'
+        with:
+          platforms: arm
+
+      # Inside an armhf container: the library and the CLI as shipped, against each other.
+      # Then out here: what they wrote, against the managed CLI on this x64 machine - the
+      # comparison that would catch anything 32-bit ARM does differently.
+      - name: The library and the CLI write one document, on 32-bit ARM
+        if: matrix.rid == 'linux-arm'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/arm"
+          docker run --rm --platform linux/arm/v7 \
+            -v "$PWD:/w" -v "$RUNNER_TEMP:/t" -w /w python:3.13-slim-trixie \
+            sh -c 'uname -m && python3 bindings/native/check-against-cli.py "$0" /t/cli/Frisket.Cli --keep /t/arm' "$LIBRARY"
+          for data in tests/output/acme/acme.data.json bindings/native/samples/accented.data.json; do
+            name="$(basename "$data" .json)"
+            dotnet apps/cli/bin/Release/net10.0/Frisket.Cli.dll render \
+              -t tests/output/acme/acme.template.json -d "$data" -o "$RUNNER_TEMP/x64" --format pdf
+            python3 tools/compare-pdf.py "$RUNNER_TEMP/arm/$name.native.pdf" "$RUNNER_TEMP/x64/$name.pdf"
+          done
+
+      - name: Stage the archives
+        run: .github/scripts/stage-release.sh "${{ matrix.rid }}" "$VERSION" "$NATIVE" "$RUNNER_TEMP/cli"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: frisket-${{ matrix.rid }}
+          path: artifacts/release/*
+          if-no-files-found: error
+
+  pack:
+    name: NuGet packages
+    needs: [ci, version]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    # id-token lets the job ask GitHub for the signed token that nuget.org's trusted
+    # publishing exchanges for a short-lived key, so no key is stored anywhere.
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Pack
+        run: dotnet pack frisket.slnx -c Release -warnaserror -p:Version="$VERSION" --nologo -o "$RUNNER_TEMP/packages"
+
+      - name: Show what each package carries
+        run: |
+          set -euo pipefail
+          for p in "$RUNNER_TEMP"/packages/*.nupkg; do
+            echo "=== $(basename "$p")"
+            unzip -l "$p" | awk 'NR>3 && $4 != "" {print "    " $4}' | grep -v -E '_rels|Content_Types|package/services'
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: ${{ runner.temp }}/packages/*
+          if-no-files-found: error
+
+      - name: Log in to nuget.org
+        id: nuget
+        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
+        uses: NuGet/login@v1
+        with:
+          user: fderenty
+
+      # Each .snupkg goes up with its .nupkg.
+      - name: Push to nuget.org
+        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
+        run: >
+          dotnet nuget push "$RUNNER_TEMP/packages/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
+          --skip-duplicate
+
+  release:
+    name: GitHub release
+    needs: [native, pack]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Attach everything to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+                 --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+          gh release upload "$GITHUB_REF_NAME" ./* --clobber --repo "$GITHUB_REPOSITORY"

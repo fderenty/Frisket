@@ -6,6 +6,11 @@
 #   ./bindings/native/build.sh linux-arm64     # 64-bit ARM - a Pi 4/5, most cloud ARM
 #   ./bindings/native/build.sh linux-arm       # 32-bit ARM - an older Pi, embedded boards
 #
+# A third argument, after the configuration, is the version fk_version reports - a
+# release passes its tag; left out, the build carries Directory.Build.props' 0.1.0-dev:
+#
+#   ./bindings/native/build.sh linux-x64 Release 1.2.3
+#
 # Both ARM targets need the cross toolchain when built from x64; see below.
 #
 # linux-x64 wants clang and the zlib headers:
@@ -79,6 +84,7 @@ set -euo pipefail
 
 target="${1:-linux-x64}"
 configuration="${2:-Release}"
+version="${3:-}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 case "$target" in
@@ -141,7 +147,11 @@ esac
 if [ "$target" = "linux-arm64" ] && [ "$(uname -m)" = aarch64 ]; then cross=(); fi
 if [ "$target" = "linux-arm" ] && [ "$(uname -m)" = armv7l ]; then cross=(); fi
 
+versioned=()
+[ -n "$version" ] && versioned=(-p:Version="$version")
+
 dotnet publish "$here/Frisket.Native.csproj" -c "$configuration" -r "$target" \
+    "${versioned[@]+"${versioned[@]}"}" \
     "${cross[@]+"${cross[@]}"}" --nologo
 
 published="$here/bin/$configuration/net10.0/$target/publish"

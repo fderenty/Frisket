@@ -50,12 +50,15 @@ typedef void* fk_token;
 /* The last failure on this thread, UTF-8, or NULL. Valid until the next call. */
 const char* FK_CALL fk_last_error(void);
 
-/* The library's own version. Yours to free? No - it is a static string. */
+/* The library's own version - "1.2.3", or "0.1.0-dev" for a build that is not a
+   release. Yours to free? No - it is a static string. */
 const char* FK_CALL fk_version(void);
 
 /* --------------------------------------------------------------------- fonts */
 
-/* An empty library. Nothing renders until faces have been added to it. */
+/* An empty library. Left empty, it draws with the typefaces bundled into this
+   library - Mulish for text that names no family. The first face added makes them
+   step aside entirely; the two are never mixed. */
 fk_status FK_CALL fk_fonts_create(fk_fonts* out);
 
 /* Registers every font file in a directory. `count` may be NULL.

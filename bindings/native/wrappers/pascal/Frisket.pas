@@ -60,7 +60,8 @@ type
     function ToJson: UTF8String;
   end;
 
-  { The font library. Nothing renders until it has faces in it. }
+  { The font library. Left empty it draws with the typefaces bundled into the
+    library; the first face added makes them step aside. }
   TErFonts = class
   private
     FHandle: TErHandle;

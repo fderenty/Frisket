@@ -54,12 +54,22 @@
   </ItemGroup>
 
   <!-- And the licence texts in the package itself, where somebody reading what they
-       installed will look, beside the assembly that carries the faces. -->
+       installed will look, beside the assembly that carries the faces.
+
+       Copied to the output too, under the same names, so they reach every build that
+       carries the faces - the native library and the CLI linked ahead of time hold them
+       inside one file, and their release archives are assembled from what was published.
+       Listed here once rather than again in a release script, which would be a second
+       list of families to keep in step with this one. -->
   <ItemGroup>
-    <None Include="..\engine\Fonts\mulish-font\OFL.txt" Pack="true" PackagePath="licenses/mulish/OFL.txt" Visible="false" />
-    <None Include="..\engine\Fonts\elms-sans-font\OFL.txt" Pack="true" PackagePath="licenses/elms-sans/OFL.txt" Visible="false" />
-    <None Include="..\engine\Fonts\noto-sans-display-font\OFL.txt" Pack="true" PackagePath="licenses/noto-sans-display/OFL.txt" Visible="false" />
-    <None Include="..\engine\Fonts\glametrix-font\misc\OFL_License-61e0.txt" Pack="true" PackagePath="licenses/glametrix/OFL.txt" Visible="false" />
+    <None Include="..\engine\Fonts\mulish-font\OFL.txt" Pack="true" PackagePath="licenses/mulish/OFL.txt" Visible="false"
+          Link="licenses\mulish\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\engine\Fonts\elms-sans-font\OFL.txt" Pack="true" PackagePath="licenses/elms-sans/OFL.txt" Visible="false"
+          Link="licenses\elms-sans\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\engine\Fonts\noto-sans-display-font\OFL.txt" Pack="true" PackagePath="licenses/noto-sans-display/OFL.txt" Visible="false"
+          Link="licenses\noto-sans-display\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\engine\Fonts\glametrix-font\misc\OFL_License-61e0.txt" Pack="true" PackagePath="licenses/glametrix/OFL.txt" Visible="false"
+          Link="licenses\glametrix\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

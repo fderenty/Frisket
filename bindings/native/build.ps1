@@ -31,6 +31,10 @@
 .PARAMETER Target
     win-x64 or win-arm64.
 
+.PARAMETER Version
+    The version the library reports through fk_version - a release passes its tag.
+    Left out, the build carries Directory.Build.props' 0.1.0-dev.
+
 .EXAMPLE
     ./bindings/native/build.ps1 -Target win-x64
 #>
@@ -38,6 +42,8 @@
 param(
     [ValidateSet('win-x64', 'win-arm64')]
     [string] $Target = 'win-x64',
+
+    [string] $Version,
 
     [switch] $UseEnvironmentalTools
 )
@@ -61,6 +67,8 @@ if (Test-Path (Join-Path $installer 'vswhere.exe')) {
 Write-Host "Target  : $Target"
 Write-Host "Profile : $profilePath"
 
+$versioned = if ($Version) { "-p:Version=$Version" } else { "" }
+
 if ($UseEnvironmentalTools) {
     $vcvars = @(
         'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat'
@@ -70,9 +78,13 @@ if ($UseEnvironmentalTools) {
     if (-not $vcvars) { throw "No vcvars64.bat found. Install the Desktop development with C++ workload." }
 
     Write-Host "Toolchain: $vcvars"
-    cmd /c "call `"$vcvars`" >nul 2>&1 && dotnet publish `"$project`" -p:PublishProfile=$Target -p:IlcUseEnvironmentalTools=true --nologo"
+    cmd /c "call `"$vcvars`" >nul 2>&1 && dotnet publish `"$project`" -p:PublishProfile=$Target -p:IlcUseEnvironmentalTools=true $versioned --nologo"
 } else {
-    dotnet publish $project -p:PublishProfile=$Target --nologo
+    if ($Version) {
+        dotnet publish $project -p:PublishProfile=$Target -p:Version=$Version --nologo
+    } else {
+        dotnet publish $project -p:PublishProfile=$Target --nologo
+    }
 }
 
 if ($LASTEXITCODE -ne 0) {

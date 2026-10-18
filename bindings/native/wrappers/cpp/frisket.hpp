@@ -146,7 +146,8 @@ struct options {
     }
 };
 
-/// The faces a document may name. Nothing renders until it holds some.
+/// The faces a document may name. Left empty it draws with the typefaces bundled into
+/// the library; the first face added makes them step aside.
 class fonts {
 public:
     fonts() {
