@@ -245,7 +245,7 @@ so its dependency stays out of `Frisket`.
 ## How this was built
 
 The idea, the direction and every decision about what this should be are mine.
-The code was written by an AI — Claude Opus 5 — working to that direction.
+The code was written by an AI — Claude Opus — working to that direction.
 
 ## Licence
 
