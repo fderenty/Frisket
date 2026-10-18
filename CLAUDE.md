@@ -1322,6 +1322,17 @@ that finds the next one is the same run: build a CRLF clone, run everything, ask
 `git diff --exit-code`. Not `git status`, which on that checkout listed 81 files - every
 text file the suite rewrites in LF over a CRLF copy, identical once normalised.
 
+**CI is that run, every push** (`.github/workflows/ci.yml`, 18 October 2026). Windows in
+CRLF and Linux in LF, each with veraPDF installed, the native library published and set
+against the CLI by the document it writes (`bindings/native/check-against-cli.py`), and
+every harness over every face. Two rules carry it. A skip is refused unless the job names
+it - "Passed!" counts a skipped test as nothing, so a veraPDF that failed to install would
+otherwise read as green; Linux names test 75, which cannot read an ELF. And the tree is
+compared by content on Windows alone, where it can be. Every step is a script under
+`.github/scripts/` so that it runs on this machine before it is trusted on a runner: the
+first local run of the veraPDF install failed, because a path holding `--` had been put
+inside an XML comment, which no runner's path would have shown.
+
 xUnit, one `[Fact]` per test, all in `EngineTests` — so a single collection, run serially: the tests write into the same directories.
 
 **One class, one file per subject.** The suite was two files until 24 August 2026, and the

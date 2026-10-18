@@ -7,6 +7,10 @@
 *.json    text
 *.md      text
 
+# A shell script is read by bash, which takes a carriage return for part of the command.
+# Git for Windows' bash happens to forgive it; WSL reading the same checkout does not.
+*.sh      text eol=lf
+
 # Bytes that must arrive exactly as they left. `text=auto` above guesses, and it guesses
 # right today - every PDF and font here is detected as binary - but a PDF is mostly
 # ASCII with byte offsets in it, and a line-ending conversion anywhere in one moves every

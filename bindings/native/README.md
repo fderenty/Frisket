@@ -232,6 +232,15 @@ the `/ID`, the stream lengths, and the xref offsets that follow from them:
 python tools/compare-pdf.py from-c.pdf from-cli.pdf
 ```
 
+`check-against-cli.py` does the whole round for two data files - the invoice's own, and
+one written in accents and typographic quotes - rendering each through the Python wrapper
+and through the CLI, then comparing them that way. CI runs it on Windows and on Linux:
+
+```bash
+python bindings/native/check-against-cli.py bindings/native/bin/win-x64/publish/frisket.dll \
+       apps/cli/bin/Release/net10.0/Frisket.Cli.dll
+```
+
 Which says, for the run above: 7/7 streams identical once inflated, structure
 identical, exit 0. It has been seen to say no three ways - a different document, a
 byte changed in the structure, and a stream re-deflated with one byte moved inside it,
