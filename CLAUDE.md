@@ -1253,6 +1253,16 @@ family the *report* declares, legitimately, and failed. It never once looked at 
 names. Asked of the parsed tree now. A second platform is a second reader of every check,
 and `WSL-Frisket` exists to be one. Sabotage is not a courtesy paid to the important tests, it is what separates them from an executable comment. And a falling test count can be good news: what counts is the number of things checked, not the number of methods.
 
+**And a harness can hold on one line ending only.** A fresh Windows clone hands every file
+over in CRLF - `core.autocrlf`, git's own default there - and the palette audit tells a
+theme's own rule from the last line of a selector list by the comma before the break,
+`(?<!,)\n`. In CRLF the character before `\n` is `\r`, so the list that declares `--paper`
+for every room at once read as a fourth room missing all twenty-four names. The run
+failed on a clone and passed in the tree it was written in, where the edited files had
+come back LF; found by checking a commit in a worktree of its own, not by any check. Both
+harnesses read text through `readText`, which normalises, and each asks of its own source
+that no read goes round it - the next raw read is how this comes back.
+
 xUnit, one `[Fact]` per test, all in `EngineTests` — so a single collection, run serially: the tests write into the same directories.
 
 **One class, one file per subject.** The suite was two files until 24 August 2026, and the

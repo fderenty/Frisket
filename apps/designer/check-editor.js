@@ -14,6 +14,17 @@
 const fs = require('fs');
 const path = require('path');
 
+/// Text as this harness reads it: line endings normalised to \n.
+///
+/// A fresh Windows clone hands every file over in CRLF - core.autocrlf, which is git's
+/// own default there - and a pattern written against \n then reads something else. The
+/// palette audit tells a theme's own rule from the last line of a selector list by the
+/// comma before the line break, `(?<!,)\n`; in CRLF the character before \n is \r, so the
+/// list that declares --paper for every room at once was read as a fourth room missing
+/// all twenty-four names, and the run failed on a clone and passed in the tree it was
+/// written in. Every text read goes through here, and the run checks that it does.
+const readText = file => fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n');
+
 const DIR = 'apps/designer';
 // The split page by default, and any face on the command line - which is how the
 // single-file build gets checked by the very thing that checks the split one, rather
@@ -23,14 +34,14 @@ const DIR = 'apps/designer';
 // a path from the repository root, which is where the built pages went the day they
 // stopped living beside their parts.
 const asked = process.argv[2] || 'frisket-editor.html';
-const page = fs.readFileSync(
-  asked.includes('/') || asked.includes(path.sep) ? asked : path.join(DIR, asked), 'utf8');
+const page = readText(
+  asked.includes('/') || asked.includes(path.sep) ? asked : path.join(DIR, asked));
 
 // The stylesheet too. Two rules put a drag handle in the same place and one hid the
 // other; nothing in the model can see that, so it is read from where it happened.
 const styles = [...page.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n')
   + [...page.matchAll(/<link[^>]+href="([^"]+\.css)"/g)]
-      .map(m => fs.readFileSync(path.join(DIR, m[1]), 'utf8')).join('\n');
+      .map(m => readText(path.join(DIR, m[1]))).join('\n');
 
 /// One rule out of the stylesheet, by selector. Named `cssFor` and not `rule`
 /// because `rule` is taken twice in this file already - once by a LineItem - and a
@@ -363,7 +374,7 @@ global.requestAnimationFrame = fn => { fn(0); return 0; };
 
 // --- load the same three files the page loads, in the same order -----------
 const linked = [...page.matchAll(/<script src="([^"]+)"><\/script>/g)]
-  .map(m => fs.readFileSync(path.join(DIR, m[1]), 'utf8'));
+  .map(m => readText(path.join(DIR, m[1])));
 const inline = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 
 const script = [...linked, ...inline].join('\n');
@@ -543,7 +554,7 @@ const picture = held.newItem('ImageItem');
 // wrote. It proves the path rather than the bytes - and a made-up PNG header is
 // refused, correctly, by the engine's own reader, which is worth knowing: a picture
 // with an alpha channel (any screenshot) fails at render time, not at edit time.
-const borrowed = JSON.parse(fs.readFileSync('tests/output/acme/acme.template.json', 'utf8'));
+const borrowed = JSON.parse(readText('tests/output/acme/acme.template.json'));
 let bytes = null;
 (function findImage(n) {
   if (bytes || !n || typeof n !== 'object') return;
@@ -2330,7 +2341,7 @@ if (!process.argv[2]) {
   // two blob helpers the editor uses - so a real one, for the length of the load.
   const pageURL = global.URL;
   global.URL = Object.assign(class extends require('url').URL {}, pageURL);
-  eval(fs.readFileSync(path.join(DIR, 'frisket-editor-element.js'), 'utf8'));
+  eval(readText(path.join(DIR, 'frisket-editor-element.js')));
   global.URL = pageURL;
   const Editor = customElements.get('frisket-editor');
 
@@ -2446,12 +2457,30 @@ if (!process.argv[2]) {
   // belongs to the page - its language, and the server's fonts, asked once - and nothing
   // an editor changes as somebody types.
   const PAGE_STATE = ['lang0', 'serverFontsAsked', 'facesLoaded'];
-  const editorSource = fs.readFileSync(path.join(DIR, 'frisket-editor.js'), 'utf8');
+  const editorSource = readText(path.join(DIR, 'frisket-editor.js'));
   const topLevel = [...editorSource.matchAll(/^(?:let|var)\s+(\w+)/gm)].map(m => m[1]);
   const strays = topLevel.filter(name => !PAGE_STATE.includes(name));
   check('nothing an editor changes lives at the top of the file, one copy for the page',
         strays.length === 0 && PAGE_STATE.every(name => topLevel.includes(name)),
         strays.length ? 'at the top: ' + strays.join(', ') : topLevel.join(', '));
+}
+
+// --- line endings ------------------------------------------------------------------
+// Asked here rather than trusted: the fault was invisible in the tree the harness was
+// written in, and comes back the day somebody adds one raw read.
+{
+  const crlf = path.join(require('os').tmpdir(), `frisket-crlf-${process.pid}.txt`);
+  fs.writeFileSync(crlf, 'one\r\ntwo\rthree\n');
+  const read = readText(crlf);
+  fs.unlinkSync(crlf);
+  check('a file in CRLF is read with plain line breaks',
+        read === 'one\ntwo\nthree\n', JSON.stringify(read));
+
+  // This file's own reads, all of them: exactly one goes to the disk directly, and it
+  // is readText's own.
+  const direct = (readText(__filename).match(/fs\.readFileSync\(/g) || []).length;
+  check('every file this harness reads, it reads through readText',
+        direct === 1, `${direct - 1} read directly`);
 }
 
 console.log(failures ? `\n${checked} checks, ${failures} FAILED`

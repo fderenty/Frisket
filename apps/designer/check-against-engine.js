@@ -8,6 +8,17 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
+/// Text as this harness reads it: line endings normalised to \n.
+///
+/// A fresh Windows clone hands every file over in CRLF - core.autocrlf, which is git's
+/// own default there - and a pattern written against \n then reads something else. The
+/// palette audit tells a theme's own rule from the last line of a selector list by the
+/// comma before the line break, `(?<!,)\n`; in CRLF the character before \n is \r, so the
+/// list that declares --paper for every room at once was read as a fourth room missing
+/// all twenty-four names, and the run failed on a clone and passed in the tree it was
+/// written in. Every text read goes through here, and the run checks that it does.
+const readText = file => fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n');
+
 const stubEl = () => {
   const kept = [];
   const self = new Proxy({
@@ -85,7 +96,7 @@ const [, , scriptPath, boundPath, bandsPath, templatePath, quotePath,
 // get wrong and - the reason it matters - lets it see the stylesheet too, which a
 // pre-extracted .js file never carried. A .js path still works, minus the palette
 // audit, which then has nothing to read.
-const source = fs.readFileSync(scriptPath, 'utf8');
+const source = readText(scriptPath);
 const isPage = /\.html?$/i.test(scriptPath);
 
 // The repository, found by walking up to the file that marks it - never by counting
@@ -115,7 +126,7 @@ const PARTS = path.join(REPO, 'apps', 'designer');
 // away from checking something the page no longer loads.
 const linked = isPage
   ? [...source.matchAll(/<script src="([^"]+)"><\/script>/g)]
-      .map(m => fs.readFileSync(path.join(path.dirname(scriptPath), m[1]), 'utf8'))
+      .map(m => readText(path.join(path.dirname(scriptPath), m[1])))
   : [];
 
 const inline = isPage
@@ -151,7 +162,7 @@ const bare = t => t.replace(/^\s*\/\*[^\n*]*\.css\s*\*\/\s*/, '').trim();
 const styles = isPage
   ? [...new Map([
       ...fs.readdirSync(PARTS).filter(f => f.endsWith('.css'))
-          .map(f => fs.readFileSync(path.join(PARTS, f), 'utf8')),
+          .map(f => readText(path.join(PARTS, f))),
       ...[...source.replace(/<script>[\s\S]*?<\/script>/g, '')
                 .matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]),
     ].map(t => [bare(t), t]).filter(([k]) => k)).values()].join('\n')
@@ -175,7 +186,7 @@ eval(script +
 // it would be a third copy of a number that already lives in two places, and the check
 // below would then be comparing the harness with itself.
 const engineWatermarkAlpha = (() => {
-  const source = fs.readFileSync('engine/Model/Watermark.cs', 'utf8');
+  const source = readText('engine/Model/Watermark.cs');
   const found = /Color = new Color\(128, 128, 128, (\d+)\)/.exec(source);
   return found ? Number(found[1]) / 255 : NaN;
 })();
@@ -190,8 +201,8 @@ const near = (a, b, tol = 0.01) => Math.abs(a - b) <= tol;
 
 console.log('Designer against the engine');
 
-const bound = JSON.parse(fs.readFileSync(boundPath, 'utf8'));
-const bands = JSON.parse(fs.readFileSync(bandsPath, 'utf8'));
+const bound = JSON.parse(readText(boundPath));
+const bands = JSON.parse(readText(bandsPath));
 const out = sandbox.layout(bound);
 
 check('the engine\'s own report lays out', out.placed.length > 0, out.placed.length + ' items');
@@ -258,14 +269,14 @@ check('the bound values are on the page',
 check('no token left behind', !svg.includes('{Customer.'));
 
 // The unbound template must still load: that is what the designer opens.
-const template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+const template = JSON.parse(readText(templatePath));
 check('the template itself also lays out', sandbox.layout(template).placed.length > 0);
 check('a blank template lays out', sandbox.layout(sandbox.blankReport()).placed.length > 0);
 
 // Fields, if a template holding them was given. The echo has to understand these
 // too, or the designer shows a blank where a form is going to be.
 if (quotePath) {
-  const quote = JSON.parse(fs.readFileSync(quotePath, 'utf8'));
+  const quote = JSON.parse(readText(quotePath));
   const form = sandbox.layout(quote);
   const fields = form.placed.filter(p => p.item.$type === 'FieldItem');
 
@@ -377,8 +388,8 @@ if (quotePath) {
   // Read out of the two sources rather than listed here, the way the watermark's alpha is
   // read out of Watermark.cs: a third list would be a third thing to keep in step.
   {
-    const engineSource = fs.readFileSync(
-      path.join(REPO, 'engine', 'Model', 'TemplateValidator.cs'), 'utf8');
+    const engineSource = readText(
+      path.join(REPO, 'engine', 'Model', 'TemplateValidator.cs'));
 
     const ids = (text, pattern) =>
       new Set([...text.matchAll(pattern)].map(m => m[1]));
@@ -442,8 +453,8 @@ if (quotePath) {
   // reached the engine, the panel and the flow editor and never this file.
   {
     const dir = path.join(path.dirname(templatePath), '..', 'align');
-    const template = JSON.parse(fs.readFileSync(path.join(dir, 'aligned.template.json'), 'utf8'));
-    const wanted = JSON.parse(fs.readFileSync(path.join(dir, 'aligned.frames.json'), 'utf8'));
+    const template = JSON.parse(readText(path.join(dir, 'aligned.template.json')));
+    const wanted = JSON.parse(readText(path.join(dir, 'aligned.frames.json')));
 
     const laid = sandbox.layout(template);
     const mine = {};
@@ -489,8 +500,8 @@ if (quotePath) {
   // to get wrong.
   {
     const dir = path.join(path.dirname(templatePath), '..', 'headings');
-    const numbered = JSON.parse(fs.readFileSync(path.join(dir, 'numbered.template.json'), 'utf8'));
-    const wanted = JSON.parse(fs.readFileSync(path.join(dir, 'numbered.expected.json'), 'utf8'));
+    const numbered = JSON.parse(readText(path.join(dir, 'numbered.template.json')));
+    const wanted = JSON.parse(readText(path.join(dir, 'numbered.expected.json')));
 
     const drawn = [...sandbox.render(numbered, null, 0)
       .matchAll(/<text [^>]*>([^<]*)<\/text>/g)].map(m => m[1]);
@@ -525,7 +536,7 @@ if (quotePath) {
   // --- the picture behind the page ------------------------------------------
   // Section 1 once more, and the half a harness exists for: the model, the panel,
   // the echo and this file all have to say one thing about one type.
-  const backdropSource = fs.readFileSync('engine/Model/Backdrop.cs', 'utf8');
+  const backdropSource = readText('engine/Model/Backdrop.cs');
   const areaBlock = /enum BackdropArea\s*\{([\s\S]*?)^    \}/m.exec(backdropSource);
   const areas = areaBlock
     ? areaBlock[1].split('\n').map(l => l.trim())
@@ -726,7 +737,7 @@ if (quotePath) {
 // moment a document is opened - before any layout ran - and reaching into what is
 // not there threw on the very first template anyone tried to open.
 {
-  const saved = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+  const saved = JSON.parse(readText(templatePath));
   firstDoc(saved).$type = 'Section';
   sandbox.hydrate(firstDoc(saved));
 
@@ -926,7 +937,7 @@ if (linked.length) {
     // each space LineBreaks.Glue names must hold an amount together in both of the
     // echo's breakers. The plain space has to break inside the same amount at the same
     // width first - without that the window proves nothing (section 10b).
-    const glueSource = fs.readFileSync(path.join(REPO, 'engine', 'Text', 'LineBreaks.cs'), 'utf8');
+    const glueSource = readText(path.join(REPO, 'engine', 'Text', 'LineBreaks.cs'));
     const glueLine = (glueSource.match(/const string Glue = "([^"]*)"/) || [])[1] || '';
     const glue = [...glueLine.matchAll(/\\u([0-9A-Fa-f]{4})/g)]
       .map(m => String.fromCharCode(parseInt(m[1], 16)));
@@ -964,7 +975,7 @@ if (linked.length) {
             'no ' + path.relative(REPO, breaksFile) + ' - run dotnet test first');
     } else {
       const engineBreaks = new Set();
-      for (const [from, to] of JSON.parse(fs.readFileSync(breaksFile, 'utf8')).breaks)
+      for (const [from, to] of JSON.parse(readText(breaksFile)).breaks)
         for (let cp = from; cp <= to; cp++) engineBreaks.add(cp);
       const disagree = [];
       for (let cp = 0; cp <= 0xFFFF; cp++)
@@ -980,7 +991,7 @@ if (linked.length) {
     // read out of FlowingHtml rather than trusted; and the face the page declares is
     // what both the drawing and the measuring use - a page that measured in one face
     // and drew in another would wrap every line wrongly.
-    const flowing = fs.readFileSync(path.join(REPO, 'engine', 'Html', 'FlowingHtml.cs'), 'utf8');
+    const flowing = readText(path.join(REPO, 'engine', 'Html', 'FlowingHtml.cs'));
     const engineMailFace = (flowing.match(/IsNullOrWhiteSpace\(family\)\s*\?\s*"([^"]+)"/) || [])[1];
     check('the face mail text names no family in is the engine\'s, not a copy of it',
           engineMailFace && engineMailFace === held.MAIL_FACE,
@@ -1013,7 +1024,7 @@ if (linked.length) {
     // And the server's list read the way the server writes it. The route and its three
     // parameters are read out of the server, so a rename on either side fails here
     // rather than in a browser that quietly draws with a fallback.
-    const server = fs.readFileSync(path.join(REPO, 'apps', 'server', 'Program.cs'), 'utf8');
+    const server = readText(path.join(REPO, 'apps', 'server', 'Program.cs'));
     const route = server.match(/MapGet\("(\/fonts\/file)",\s*\(string (\w+), bool (\w+), bool (\w+)\)/);
     const marks = /IsDefault\s*=/.test(server);
     const got = held.fontsFromServer([
@@ -1412,11 +1423,11 @@ if (styles !== null) {
 // echo reads the very same file: same faults, same count, same severities, or
 // the designer clears a section that will be refused three steps later.
 if (faultyPath && findingsPath) {
-  const faulty = JSON.parse(fs.readFileSync(faultyPath, 'utf8'));
+  const faulty = JSON.parse(readText(faultyPath));
   firstDoc(faulty).$type = 'Section';
   sandbox.hydrate(firstDoc(faulty));
 
-  const expected = JSON.parse(fs.readFileSync(findingsPath, 'utf8'));
+  const expected = JSON.parse(readText(findingsPath));
   const mine = sandbox.validate(faulty);
 
   const tally = list => {
@@ -1450,7 +1461,7 @@ if (faultyPath && findingsPath) {
 // told what is being produced, exactly as the engine is, or it stays silent - and a
 // silent check that looks like agreement is the worst outcome of the three.
 if (flatPath && flatFindingsPath) {
-  const flat = JSON.parse(fs.readFileSync(flatPath, 'utf8'));
+  const flat = JSON.parse(readText(flatPath));
   firstDoc(flat).$type = 'Section';
   sandbox.hydrate(firstDoc(flat));
 
@@ -1458,7 +1469,7 @@ if (flatPath && flatFindingsPath) {
   // written again here. A copy of it in this harness would let the engine change the
   // question while the two went on agreeing about the answers - section 16, and the
   // reason the file carries the question as well as the answer.
-  const cases = JSON.parse(fs.readFileSync(flatFindingsPath, 'utf8'));
+  const cases = JSON.parse(readText(flatFindingsPath));
 
   const tally = list => {
     const counts = {};
@@ -1517,7 +1528,7 @@ if (flatPath && flatFindingsPath) {
                     target: cases[cases.length - 1].target };
 
     const fresh = () => {
-      const copy = JSON.parse(fs.readFileSync(flatPath, 'utf8'));
+      const copy = JSON.parse(readText(flatPath));
       copy.Sections[0].$type = 'Section';
       return copy;
     };
@@ -1633,6 +1644,24 @@ if (flatPath && flatFindingsPath) {
 // one addition away from failing for the wrong reason (section 16); what is wanted is
 // that a reader diffing two runs can SEE the difference, which a printed total gives
 // and a silent one cannot.
+// --- line endings ------------------------------------------------------------------
+// Asked here rather than trusted: the fault was invisible in the tree the harness was
+// written in, and comes back the day somebody adds one raw read.
+{
+  const crlf = path.join(require('os').tmpdir(), `frisket-crlf-${process.pid}.txt`);
+  fs.writeFileSync(crlf, 'one\r\ntwo\rthree\n');
+  const read = readText(crlf);
+  fs.unlinkSync(crlf);
+  check('a file in CRLF is read with plain line breaks',
+        read === 'one\ntwo\nthree\n', JSON.stringify(read));
+
+  // This file's own reads, all of them: exactly one goes to the disk directly, and it
+  // is readText's own.
+  const direct = (readText(__filename).match(/fs\.readFileSync\(/g) || []).length;
+  check('every file this harness reads, it reads through readText',
+        direct === 1, `${direct - 1} read directly`);
+}
+
 console.log(failures ? `\n${checked} checks, ${failures} FAILED`
                      : `\n${checked} checks, all good`);
 process.exit(failures ? 1 : 0);
