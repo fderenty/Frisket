@@ -9,9 +9,10 @@ name: Release
 # CLI on that same machine (CLAUDE.md 8). The one target with no hosted runner, 32-bit ARM,
 # is cross-compiled from x64 and checked inside an ARM container under emulation.
 #
-# Then the three packages, versioned from the tag. nuget.org is reached only on a tag and
-# only once the repository variable NUGET_PUBLISH is 'true': a push there cannot be taken
-# back, and the packages point at a repository that has to be public first.
+# Then the three packages, versioned from the tag, and the GitHub release. nuget.org comes
+# last, after every target, the packages and the release have succeeded - a push there
+# cannot be taken back, so nothing that can still fail may come after it. It is reached
+# only on a tag, and only once the repository variable NUGET_PUBLISH is 'true'.
 
 on:
   push:
@@ -176,11 +177,6 @@ jobs:
     needs: [ci, version]
     runs-on: ubuntu-26.04
     timeout-minutes: 20
-    # id-token lets the job ask GitHub for the signed token that nuget.org's trusted
-    # publishing exchanges for a short-lived key, so no key is stored anywhere.
-    permissions:
-      contents: read
-      id-token: write
     env:
       VERSION: ${{ needs.version.outputs.value }}
 
@@ -207,22 +203,6 @@ jobs:
           name: nuget-packages
           path: ${{ runner.temp }}/packages/*
           if-no-files-found: error
-
-      - name: Log in to nuget.org
-        id: nuget
-        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
-        uses: NuGet/login@v1
-        with:
-          user: fderenty
-
-      # Each .snupkg goes up with its .nupkg.
-      - name: Push to nuget.org
-        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
-        run: >
-          dotnet nuget push "$RUNNER_TEMP/packages/*.nupkg"
-          --source https://api.nuget.org/v3/index.json
-          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
-          --skip-duplicate
 
   release:
     name: GitHub release
@@ -254,3 +234,55 @@ jobs:
             || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
                  --title "$GITHUB_REF_NAME" --generate-notes --verify-tag "${pre[@]+"${pre[@]}"}"
           gh release upload "$GITHUB_REF_NAME" ./* --clobber --repo "$GITHUB_REPOSITORY"
+
+  # Its own job, and the last one. It used to be two steps at the end of the packing job,
+  # which ran beside the five targets: one of them failing - a container image that did not
+  # download is enough - would have left the packages on nuget.org for good and no release
+  # anywhere. Now it waits for all of them and for the release.
+  #
+  # It runs when this workflow is started by hand too, as far as fetching and listing what
+  # it would push, so that the part a tag needs is tried before a tag exists. A release that
+  # was skipped - no tag - does not stop it; one that failed does.
+  nuget:
+    name: nuget.org
+    needs: [native, pack, release]
+    if: >-
+      !cancelled()
+      && needs.native.result == 'success'
+      && needs.pack.result == 'success'
+      && (needs.release.result == 'success' || needs.release.result == 'skipped')
+    runs-on: ubuntu-26.04
+    # id-token lets the job ask GitHub for the signed token that nuget.org's trusted
+    # publishing exchanges for a short-lived key, so no key is stored anywhere.
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: nuget-packages
+          path: packages
+
+      - name: What would go up
+        run: ls -l packages
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Log in to nuget.org
+        id: nuget
+        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
+        uses: NuGet/login@v1
+        with:
+          user: fderenty
+
+      # Each .snupkg goes up with its .nupkg.
+      - name: Push to nuget.org
+        if: github.ref_type == 'tag' && vars.NUGET_PUBLISH == 'true'
+        run: >
+          dotnet nuget push "packages/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
+          --skip-duplicate
