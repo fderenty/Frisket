@@ -8,6 +8,10 @@
          frisket.exe sitting beside Frisket.dll makes the project reference
          ambiguous and restore refuses it. -->
     <AssemblyName>Frisket.Cli</AssemblyName>
+    <!-- Shipped as native binaries on a release, not as a package: a library package of an
+         executable is nothing anybody can use, and a dotnet tool was weighed and declined
+         on 18 October 2026 - it would need a .NET SDK on a machine the AOT binary does not. -->
+    <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>

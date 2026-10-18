@@ -4,6 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Frisket.Server</RootNamespace>
     <AssemblyName>Frisket.Server</AssemblyName>
+    <!-- A preview server for the designer, not something to install from a feed. The web
+         SDK already declines to pack it, and also asks for a warning every time somebody
+         packs the solution - which is how a release build would be made, so it is turned
+         off: a warning that always fires is one nobody reads. -->
+    <IsPackable>false</IsPackable>
+    <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>

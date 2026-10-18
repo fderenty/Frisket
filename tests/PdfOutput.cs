@@ -568,8 +568,17 @@ namespace test
             Console.WriteLine();
         }
 
-        /// <summary>A minimal Cross Industry Invoice, enough to exercise the attachment.</summary>
-        static byte[] FacturXXml() => System.Text.Encoding.UTF8.GetBytes("""
+        /// <summary>
+        /// A minimal Cross Industry Invoice, enough to exercise the attachment.
+        ///
+        /// Its lines end in LF whatever the checkout. A raw string takes the line endings of
+        /// the source file as git wrote it, so a CRLF clone attached 17 more bytes and wrote
+        /// five different PDFs from the same commit - nothing failed, the samples simply stopped
+        /// being the ones committed. Found by building a clone the way a Windows runner does.
+        /// </summary>
+        static byte[] FacturXXml() => System.Text.Encoding.UTF8.GetBytes(FacturXText.ReplaceLineEndings("\n"));
+
+        const string FacturXText = """
             <?xml version="1.0" encoding="UTF-8"?>
             <rsm:CrossIndustryInvoice
                 xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
@@ -588,7 +597,7 @@ namespace test
                 </ram:ApplicableHeaderTradeSettlement>
               </rsm:SupplyChainTradeTransaction>
             </rsm:CrossIndustryInvoice>
-            """);
+            """;
 
         [Fact]
         public void Test25_FacturX()

@@ -820,7 +820,12 @@ namespace test
             AssertEqual(testName, "down to the widths", fromPath.AdvanceOf('H'), taken.AdvanceOf('H'), 1e-9);
 
             // --- and what is not a font is refused, loudly ---------------------------
-            byte[] notAFont = File.ReadAllBytes(Path.Combine(RepositoryRoot(), "README.md"));
+            // Bytes of its own rather than the README's, which it was: those followed the
+            // checkout's line endings and every edit to the README, so the file this test
+            // writes changed with both while the test meant neither.
+            byte[] notAFont = System.Text.Encoding.ASCII.GetBytes(
+                "This is not a font. Test 57 puts it in a directory to show that a scan steps\n"
+                + "over what is not one, while the same bytes named on purpose are refused.\n");
 
             var why = Assert.Throws<InvalidDataException>(() => library.Register(notAFont));
             Console.WriteLine($"    refused: {why.Message}");

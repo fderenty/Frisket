@@ -26,7 +26,12 @@
     <Description>The typefaces Frisket draws with when it is given none: Mulish, the default, then Elms Sans, Noto Sans Display and Glametrix - embedded, each under the SIL Open Font License 1.1, with its licence text.</Description>
     <PackageLicenseExpression>OFL-1.1</PackageLicenseExpression>
     <PackageTags>fonts;typefaces;ofl;pdf;frisket</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!-- Embedded rather than copied beside the executable: an assembly carries them into a
        single-file publish, a native library, a container, wherever it goes, and nothing

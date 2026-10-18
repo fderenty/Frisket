@@ -206,7 +206,10 @@ the directory with one separator, because `\` and `/` do not sort in the same pl
 is NTFS's own order, so Windows output did not move by a byte, and Linux now writes the
 same HTML to the byte and a PDF whose 32 streams are identical once inflated. The
 compressed bytes still differ - Ubuntu's .NET compresses with the system zlib - and that
-is the runtime's, not the engine's. Checked as a function with a shuffled list, because a
+is the runtime's, not the engine's. The same goes for every picture the suite builds for
+itself: a PNG is deflated too, so an HTML or SVG carrying one differs on Linux by exactly
+that line - all 78 changed lines of a fresh Linux clone on 18 October 2026, and nothing
+else. A byte-for-byte check of the tree therefore holds on Windows only. Checked as a function with a shuffled list, because a
 real directory proves nothing on Windows, where NTFS already sorts.
 
 **That the default is Elms Sans *Black* is itself an accident of the alphabet** - `Black`
@@ -1309,6 +1312,15 @@ failed on a clone and passed in the tree it was written in, where the edited fil
 come back LF; found by checking a commit in a worktree of its own, not by any check. Both
 harnesses read text through `readText`, which normalises, and each asks of its own source
 that no read goes round it - the next raw read is how this comes back.
+
+**And a sample can follow the checkout too.** A clone built the way a Windows runner builds
+it - CRLF, then the suite - left six tracked files different from the commit, and nothing
+failed. Five PDFs carried the Factur-X invoice, a C# raw string, and a raw string takes the
+line endings of its source file *as git wrote it*: 17 more bytes attached. The sixth was test
+57's "not a font", which was the README's bytes. Both are fixed at the source, and the check
+that finds the next one is the same run: build a CRLF clone, run everything, ask
+`git diff --exit-code`. Not `git status`, which on that checkout listed 81 files - every
+text file the suite rewrites in LF over a CRLF copy, identical once normalised.
 
 xUnit, one `[Fact]` per test, all in `EngineTests` — so a single collection, run serially: the tests write into the same directories.
 

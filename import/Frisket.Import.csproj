@@ -11,7 +11,15 @@
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591;1573</NoWarn>
+
+    <Description>Reads one page out of an existing PDF and hands it to Frisket, which lays it out like a picture and writes it as a Form XObject. A copy, not a rendering: the page's marks and resources travel as they are.</Description>
+    <PackageTags>pdf;import;frisket</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!-- One direction only, and it is the whole point of this being a separate assembly.
        This project knows Frisket, because it fills in IImportedPage and writes through

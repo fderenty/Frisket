@@ -22,6 +22,12 @@
     <!-- Exceptions must not cross the boundary; every export catches. Nothing here
          is called from C#, so the analyzer's warning about that is the point. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
+
+    <!-- Never a package. What this project makes is a native library per platform, and
+         those go on a release. Packed, it was worse than useless: named "frisket", it
+         wrote frisket.1.0.0.nupkg over the engine's Frisket.1.0.0.nupkg - one file to
+         Windows, and one identifier to nuget.org, which ignores case as well. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <!-- The engine's sources, compiled in rather than referenced. What ships here is

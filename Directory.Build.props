@@ -1,0 +1,41 @@
+<Project>
+
+  <!-- What every package built here says about itself. Read by every project in the
+       repository before its own file, so a project that needs to say something else -
+       Frisket.Fonts' licence, a description - says it there and wins.
+
+       Three packages ship: Frisket, Frisket.Fonts and Frisket.Import. Everything else
+       declares IsPackable=false in its own file, with the reason, because the default is
+       to pack: the native library is called "frisket", and packed beside the engine it
+       wrote frisket.1.0.0.nupkg over Frisket.1.0.0.nupkg - one file to Windows and one
+       identifier to nuget.org, which ignores case too. -->
+  <PropertyGroup>
+    <Authors>Frederic Derenty</Authors>
+    <Copyright>Copyright (c) 2026 Frederic Derenty</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/fderenty/Frisket</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/fderenty/Frisket</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <!-- A build that is not a release says so. The release workflow sets Version from the
+         tag, which replaces both halves; anything packed by hand comes out 0.1.0-dev and
+         cannot be mistaken for a version anybody published. -->
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>dev</VersionSuffix>
+
+    <!-- Symbols in a package of their own, so stepping into the engine works without the
+         main package carrying them. -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- On a CI runner, paths in the binaries are made relative to the repository, so the
+       same commit builds the same assembly whatever directory the runner checked it out
+       into. Not locally: a debugger there wants the real paths. -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

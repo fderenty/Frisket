@@ -21,7 +21,17 @@
          everything else means a comment that points at something which is not there. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591;1573</NoWarn>
+
+    <Description>A document engine with no third-party dependencies: JSON templates and data kept apart, laid out into PDF (PDF/A-3B, PDF/UA-1, Factur-X, fillable forms) or SVG, with its own font measuring, barcodes and template checks.</Description>
+    <PackageTags>pdf;pdf-a;pdf-ua;factur-x;report;invoice;template;layout;svg;barcode;qr</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <!-- What nuget.org shows on the package's page. Its own file rather than the repository's
+       README, which is written for somebody holding the sources and links into them. -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!-- The test project checks the encoders directly. A QR that scans is the proof
        that matters, but a generator polynomial can be compared to a published one,
