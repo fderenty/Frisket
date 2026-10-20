@@ -51,18 +51,23 @@
 
        An A3 landscape sheet still shrinks to fit rather than pushing a scrollbar
        onto the window. */
-    /* The floor is what the TOOLBAR needs, not what the sheet needs, and it was set
-       when the row was shorter. Counted rather than guessed, for the face that ships:
-       nineteen buttons at 28 and the colour chevron at 18 make 550; the two lists about
-       266; six separators at 11 with their margins, 66; the gaps between some thirty
-       items, 60; and 16 of padding. About 960, against a floor of 832 - which is three
-       and a half buttons short, and reported as exactly that.
+    /* The floor is what the TOOLBAR needs, and the toolbar says so itself: the frame is
+       as wide as the row of tools on one line (max-content), never narrower than the
+       paper, never wider than the room. `flex-wrap` on the toolbar stays the last resort
+       for a room that is genuinely narrower than the row - two editors side by side -
+       where nothing is squeezed out of square or cut off; it goes to a second row.
 
-       60rem, so the row fits at any ordinary size. `flex-wrap` on the toolbar stays as
-       the last resort for a genuinely narrow window: nothing is ever squeezed out of
-       square or cut off, it goes to a second row instead. Add controls and this number
-       wants counting again - it is a floor, not a law. */
-    width: min(max(var(--sheet-width, 210mm), 60rem), 100%);
+       It was a number, and a number in the wrong unit. 60rem was the row counted by hand
+       at about 960px - but every control in the row is sized in px, and a rem follows the
+       root font of the DOCUMENT, a shadow root included. A host page at 13.6px made it
+       816px against a row of 820 (the full face) or 896 (the one that ships), and the
+       tools wrapped; at 16px the same number left 140px of desk beside the full face for
+       nothing. Measured in Edge on 20 October 2026, after another project's agent
+       reported it from inside a host page. A count kept beside the thing it counts is
+       the drift this project keeps paying for (CLAUDE.md 16); asking the row is not. */
+    width: max-content;
+    min-width: min(var(--sheet-width, 210mm), 100%);
+    max-width: 100%;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -265,6 +270,10 @@
   #sheet {
     flex: 1; min-height: 0; overflow: auto;
     width: min(var(--sheet-width, 210mm), 100%); margin: 0 auto;
+    /* The text on the paper must not widen the frame: the frame asks its contents how
+       wide they want to be, and a paragraph's answer is its whole length on one line.
+       Its own width is set above; this only stops it voting. */
+    contain: inline-size;
     background: var(--paper);
     padding: var(--sheet-pad, 20mm);
     color: var(--on-paper-text);   /* the sheet's ink, never var(--ink) */

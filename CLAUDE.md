@@ -1242,6 +1242,15 @@ the paper they are written on. The contract written in July was right, and said 
 whatever page embeds this**". *The selector was wrong, and there was nothing to fail in
 until today.* Every rule names `:host` beside `:root` now.
 
+**And a `rem` crosses the boundary that `:root` does not.** It is the root font of the
+*document*, shadow root or not, so the host decides what it measures. The frame's floor was
+`60rem` - the toolbar counted by hand at about 960px - while every control in the row is in
+px: a host page at 13.6px made the frame 816px against a row of 820 or 896, and the tools
+wrapped. Reported on 20 October 2026 by another project's agent, from inside its own page.
+The fix is not a better number: the frame is `max-content`, as wide as its row of tools on
+one line, with the sheet told not to vote (`contain: inline-size`), so a control added
+tomorrow widens it without anybody counting. Measured in Edge, both root sizes, every face.
+
 **A listener registered before a seam is set can never follow it.** `keydown` and
 `selectionchange` were top-level statements, run when `uiRoot` was still `document`.
 `selectionchange` is fired **at** the root of the selection rather than bubbled up to the
