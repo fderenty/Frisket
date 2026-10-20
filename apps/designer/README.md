@@ -92,6 +92,39 @@ Set `subDocuments` again - the same object will do - once what the library holds
 changed: what was found is forgotten and asked again. The call takes it as
 `frisketDesigner({ subDocuments })`, and `setSubDocuments()` on what comes back.
 
+#### The engine's pages, kept up to date
+
+```html
+<frisket-designer server="/api/frisket" live="beside" lang="fr"></frisket-designer>
+```
+
+`server` is the host's engine: a base URL answering what `apps/server` answers - `POST
+/preview` and `POST /pdf` with `{ template, data, showBands, numbers }`, `GET /fonts` and
+`GET /fonts/file` - so `apps/server/Program.cs` is the reference a host backend copies,
+with its own `ISubTemplates` behind it. `"/"` is the page's own origin. **No `server`, no
+engine**: the element never guesses one, and shows nothing that would ask it.
+
+```js
+designer.fetch = (url, init) => fetch(url, { ...init, headers: { ...init.headers, Authorization: token } });
+```
+
+`fetch` is how it gets there, for a host that adds its own credentials - read at every
+request, so it may be set whenever the token is ready. The faces themselves are loaded by
+the browser (`FontFace`), not through it: `/fonts/file` has to answer with the page's own
+cookies at most.
+
+The engine's pages are asked for again half a second after the template stops changing
+(`live-delay` to wait longer for a slow engine), and shown where the person chooses in the
+header: **on the canvas** instead of the approximation, **beside** it, or **in a window**
+of its own on another screen. `live` says where they start; the person's own choice is kept
+over it, since it depends on their screens and not on the document. The newest answer is
+the one shown, an unchanged template is not sent again, and a failure is said in the header.
+
+An element shows none of its host's decisions - the language picker, the room picker and
+the server field are hidden unless `language`, `rooms` or a plain page ask for them; `lang`
+and `theme` declare them instead. The files stay (`files="false"` hides them, `report`
+being the other way in and out).
+
 ## The flow editor
 
 `frisket-editor.html` is the other face. Type and it becomes an `AdvancedTextItem`;

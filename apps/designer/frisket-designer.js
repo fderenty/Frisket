@@ -28,8 +28,24 @@
 //   onChecks     where the findings go, as well as to the panel
 //   subDocuments the host's library of sub-documents - list() and find(reference), either
 //                of which may answer with a promise (see "the host's library" below)
+//   server       where the engine is: a base URL answering what apps/server answers -
+//                POST /preview, POST /pdf, GET /fonts and /fonts/file. Declared, it is the
+//                host's, and the field that types one is not shown; declared null, there is
+//                none, and nothing that would ask it is shown either
+//   fetch        how to reach it, for a host that adds its own authentication - the
+//                browser's fetch otherwise
+//   live         where the engine's pages go at first: "off", "canvas", "beside" or
+//                "window". The person's own choice, once made, wins - it is their screens
+//   liveDelay    how long the template must stay still before the engine is asked, in
+//                milliseconds - half a second unless a slower engine wants longer
+//   lang         the interface's language, which is the page's
+//   shown        what this face shows of its header - files, language, rooms, server
 // ---------------------------------------------------------------------------
+let designersMade = 0;
+
 function frisketDesigner(seams = {}) {
+  // Counted, so each can name the window it opens.
+  const designersMade_ = ++designersMade;
   const uiRoot = seams.root || document;
   let uiHost = seams.host || null;
   const themeTarget = seams.themeTarget || document.documentElement;
@@ -58,7 +74,15 @@ function frisketDesigner(seams = {}) {
   <span class="exact">
     <span class="dot" id="dot" title="état du serveur d'aperçu"></span>
     <input type="text" id="server" value="http://localhost:5080" title="serveur d'aperçu exact">
-    <button id="exact">Aperçu exact</button>
+    <!-- Where the engine's own pages go, kept up to date: the person's choice, since it
+         depends on their screens rather than on the document. -->
+    <select id="live">
+      <option value="off" data-i18n="live.off">Exact preview: off</option>
+      <option value="canvas" data-i18n="live.canvas">Exact preview: on the canvas</option>
+      <option value="beside" data-i18n="live.beside">Exact preview: beside</option>
+      <option value="window" data-i18n="live.window">Exact preview: in a window</option>
+    </select>
+    <span class="stamp" id="live-status"></span>
     <button id="detach" data-i18n="action.detach">Preview window</button>
     <select id="zoom" title="Zoom" style="margin-left:6px">
       <option value="fit" data-i18n="zoom.fit">Fit</option>
@@ -411,7 +435,7 @@ function frisketDesigner(seams = {}) {
       applyTheme();
       // The detached preview holds a copy of the palette, taken when it opened.
       if (previewWindow && !previewWindow.closed) { previewWindow.close(); previewWindow = null; }
-      refresh(true);
+      refresh();
     }
 
     applyTheme();
@@ -442,8 +466,40 @@ function frisketDesigner(seams = {}) {
       dot: byId("dot"),
       onlyFaults: byId("onlyFaults"),
       targetTagged: byId("targetTagged"),
-      targetInteractive: byId("targetInteractive")
+      targetInteractive: byId("targetInteractive"),
+      live: byId("live"),
+      liveStatus: byId("live-status"),
+      stage: byId("stage"),
+      stagePages: byId("stage-pages"),
+      stageSplitter: byId("stage-splitter"),
+      banner: uiRoot.querySelector(".banner")
     };
+
+    // What this face shows of its header. Where the engine is, which language and which
+    // room are decisions a host makes once for its whole application, so an element hides
+    // those unless asked; the plain page is the whole application and keeps the lot.
+    const declaredServer = "server" in seams;
+    const shown = Object.assign(
+      { files: true, language: true, rooms: true, server: !declaredServer }, seams.shown || {});
+    const hide = ids => ids.forEach(id => { const node = byId(id); if (node) node.hidden = true; });
+    if (!shown.files) hide(["new", "open", "save"]);
+    if (!shown.language) hide(["lang"]);
+    if (!shown.rooms) hide(["theme"]);
+    if (!shown.server) hide(["server"]);
+
+    // No engine at all: nothing that would ask it.
+    if (declaredServer && seams.server == null) {
+      for (const node of [ui.dot, ui.live, ui.liveStatus]) if (node) node.hidden = true;
+      hide(["pdf"]);
+    }
+
+    // The interface's language is the page's - one dictionary, in the core. A host may
+    // declare it; otherwise the face holding the picker reads back what was last picked,
+    // which until 20 October 2026 it stored and never read.
+    if (seams.lang) setLang(seams.lang);
+    else if (shown.language) {
+      try { const kept = localStorage.getItem("frisket.lang"); if (kept) setLang(kept); } catch {}
+    }
 
     const zoomSelect = byId("zoom");
     if (zoomSelect) {
@@ -469,16 +525,132 @@ function frisketDesigner(seams = {}) {
     if (detachButton) detachButton.onclick = detachPreview;
 
     if (ui.onlyFaults)
-      ui.onlyFaults.onchange = () => { onlyFaults = ui.onlyFaults.checked; refresh(true); };
+      ui.onlyFaults.onchange = () => { onlyFaults = ui.onlyFaults.checked; refresh(); };
 
     // Both default to ticked, which is the richest output and therefore the one that
     // loses nothing: a designer that warns about a loss nobody asked for teaches people
     // to ignore the panel.
     for (const box of [ui.targetTagged, ui.targetInteractive])
-      if (box) box.onchange = () => refresh(true);
+      if (box) box.onchange = () => refresh();
 
-    // What the engine last returned, or null when the local approximation is showing.
-    let exactPages = null;
+    // --- the engine's pages, kept up to date -----------------------------------------
+    //
+    // Asked for again a moment after the template stops changing, and shown where the person
+    // wants them: on the canvas instead of the approximation, beside it, or in a window of
+    // their own on another screen. Three places for three ways of working - a laptop, a wide
+    // screen, two screens - which is not a property of the document, so it is not the host's
+    // to fix for good either: the host says where it starts, the person's choice is kept.
+    // The approximation stays what is clicked to select; the engine's pages are what the
+    // printer will do.
+    //
+    // A change made while the engine is drawing does not wait for it: the newest request is
+    // the one whose answer is shown, and an older answer arriving later is dropped. A template
+    // that has not changed is not sent again, so a redraw for a font, a room or a piece that
+    // changed nothing costs no round trip. And a failure is said in the header, never in an
+    // alert, which would come up on every pause while the server is down.
+    const LIVE = ["off", "canvas", "beside", "window"];
+    const liveDelay = Number.isFinite(seams.liveDelay) ? seams.liveDelay : 500;
+    const liveOr = (mode, fallback) => LIVE.includes(mode) ? mode : fallback;
+
+    let live = liveOr(seams.live, "off");
+    try { live = liveOr(localStorage.getItem("frisket.live"), live); } catch {}
+
+    let livePages = null;       // the engine's last pages, null before its first answer
+    let liveState = "idle";     // "idle" | "asking" | "failed"
+    let liveFailure = "";
+    let liveTimer = null;
+    let liveGeneration = 0;     // which call to askEngine is the newest
+    let liveAsked = 0;          // which request sent is the newest
+    let liveSent = null;        // the body last sent: an unchanged one is not sent again
+
+    /// Where the engine is, or null when there is none to ask: the host's when it declared
+    /// one - "/" is this page's own origin - and otherwise whatever the field says.
+    function serverBase() {
+      if (declaredServer)
+        return seams.server == null ? null : String(seams.server).trim().replace(/\/+$/, "");
+      const typed = ui.server ? String(ui.server.value || "").trim() : "";
+      return typed ? typed.replace(/\/+$/, "") : null;
+    }
+
+    /// How it is reached: the host's fetch when it gave one, to add its own credentials.
+    const send = (url, init) => seams.fetch ? seams.fetch(url, init) : fetch(url, init);
+
+    const liveOn = () => live !== "off" && serverBase() !== null;
+
+    /// Called on every redraw; sends nothing until the template has been still a moment.
+    function scheduleLive() {
+      if (!liveOn()) return;
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(askEngine, liveDelay);
+    }
+
+    async function askEngine() {
+      const generation = ++liveGeneration;
+      let body;
+      try { body = await payload(); } catch { return; }
+      if (generation !== liveGeneration || !liveOn()) return;
+
+      const key = JSON.stringify(body);
+      if (key === liveSent) return;   // asked already - answered, or on its way
+      liveSent = key;
+      const asked = ++liveAsked;
+      liveState = "asking";
+      showLive();
+
+      try {
+        const result = await (await ask("/preview", body)).json();
+        if (asked !== liveAsked) return;
+        livePages = result.pages || [];
+        liveState = "idle";
+        setServerState(true);
+      } catch (err) {
+        if (asked !== liveAsked) return;
+        liveState = "failed";
+        liveFailure = (err && err.message) || String(err);
+        liveSent = null;              // the same template is worth asking again
+        setServerState(false);
+      }
+      showLive();
+    }
+
+    /// Where the pages go now, and asked for at once rather than after a pause.
+    function setLive(mode) {
+      live = liveOr(mode, "off");
+      try { localStorage.setItem("frisket.live", live); } catch {}
+      if (ui.live) ui.live.value = live;
+      if (live === "window") detachPreview();
+      applyShape();
+      paint();
+      clearTimeout(liveTimer);
+      if (liveOn()) askEngine();
+    }
+
+    function liveStatusText() {
+      if (!liveOn()) return "";
+      if (live === "window" && !(previewWindow && !previewWindow.closed)) return t("live.windowClosed");
+      if (liveState === "failed") return t("live.failed", { message: liveFailure });
+      if (liveState === "asking" || !livePages) return t("live.asking");
+      return t("live.ready", { count: livePages.length });
+    }
+
+    /// The engine's pages as the canvas, the stage and the window all draw them - or what is
+    /// happening instead, since a page that did not come is not a page to show.
+    function enginePages() {
+      if (!livePages || liveState === "failed")
+        return `<p class="stamp">${esc(liveStatusText())}</p>`;
+      return livePages
+        .map((svg, i) => `<figure class="sheet">${svg}<figcaption>`
+                       + esc(t("live.page", { page: i + 1, pages: livePages.length }))
+                       + "</figcaption></figure>")
+        .join("");
+    }
+
+    /// Everything that shows the engine's pages, and the line that says how they stand.
+    function showLive() {
+      if (ui.liveStatus) ui.liveStatus.textContent = liveStatusText();
+      if (live === "canvas") paint();
+      else { fillStage(); applyZoom(); pushPreview(); }
+    }
 
     // --- the host's library -----------------------------------------------------
     //
@@ -527,7 +699,7 @@ function frisketDesigner(seams = {}) {
       // One behind a network answers later, and the page is drawn again when it does -
       // unless the library was replaced meanwhile, in which case this answer is not one.
       entry.promise = Promise.resolve(answer).then(settle, () => settle(null)).then(() => {
-        if (subDocuments === asked && pieces.get(reference) === entry) refresh(true);
+        if (subDocuments === asked && pieces.get(reference) === entry) refresh();
       });
       return undefined;
     }
@@ -584,7 +756,7 @@ function frisketDesigner(seams = {}) {
       let answer;
       try { answer = asked.list(); } catch { return; }
       if (answer && typeof answer.then === "function")
-        Promise.resolve(answer).then(listed => { take(listed); refresh(true); }, () => {});
+        Promise.resolve(answer).then(listed => { take(listed); refresh(); }, () => {});
       else take(answer);
     }
 
@@ -1918,11 +2090,10 @@ function frisketDesigner(seams = {}) {
       return b;
     }
 
-    // Any edit invalidates what the engine last said, so the screen is never a mixture
-    // of the two previews. Only the exact preview itself asks to keep its pages.
-    function refresh(keepExact) {
-      if (!keepExact) exactPages = null;
-
+    // Everything drawn from the template, drawn again. The engine's pages are not thrown away
+    // by an edit: they stay on show until newer ones arrive, which is what keeps a live
+    // preview from flickering back to the approximation on every keystroke.
+    function refresh() {
       normaliseReport(report);
       showSectionCount();
       applyPaper();   // the stock is the template's, so it changes when the template does
@@ -1948,11 +2119,24 @@ function frisketDesigner(seams = {}) {
       drawIssues();
       drawProps();
 
-      if (exactPages) {
-        ui.canvas.innerHTML = exactPages
-          .map((svg, i) => `<figure class="sheet">${svg}`
-                         + `<figcaption>page ${i + 1} / ${exactPages.length} — moteur</figcaption></figure>`)
-          .join("");
+      paint();
+      scheduleLive();
+    }
+
+    /// The canvas, and whatever copies or follows it. The engine's pages on the canvas when
+    /// that is where the person wants them and they have come - and the approximation
+    /// otherwise, including while the engine is failing, so an edit is never invisible.
+    function paint() {
+      if (ui.liveStatus) ui.liveStatus.textContent = liveStatusText();
+
+      // The banner says the canvas is an approximation, which stops being true the moment
+      // the canvas shows the engine's pages - and it went on saying so under the old exact
+      // preview's pages as well.
+      const engineOnCanvas = live === "canvas" && liveOn() && livePages && liveState !== "failed";
+      if (ui.banner) ui.banner.hidden = !!engineOnCanvas;
+
+      if (engineOnCanvas) {
+        ui.canvas.innerHTML = enginePages();
         ui.canvas.classList.add("pages");
         fillStage();
         applyZoom();
@@ -2006,8 +2190,9 @@ function frisketDesigner(seams = {}) {
     }
 
     async function ask(path, body) {
-      const base = ui.server.value.replace(/\/+$/, "");
-      const answer = await fetch(base + path, {
+      const base = serverBase();
+      if (base === null) throw new Error(t("live.noServer"));
+      const answer = await send(base + path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -2020,21 +2205,10 @@ function frisketDesigner(seams = {}) {
       return answer;
     }
 
-    byId("exact").onclick = async () => {
-      try {
-        const answer = await ask("/preview", await payload());
-        const result = await answer.json();
-        exactPages = result.pages;
-        setServerState(true);
-        refresh(true);
-      } catch (err) {
-        setServerState(false);
-        exactPages = null;
-        refresh();
-        alert(t("alert.noPreview") + err.message
-              + "\n\nLancez le serveur avec :  dotnet run --project server");
-      }
-    };
+    if (ui.live) {
+      ui.live.value = live;
+      ui.live.onchange = () => setLive(ui.live.value);
+    }
 
     byId("pdf").onclick = async () => {
       try {
@@ -2048,8 +2222,7 @@ function frisketDesigner(seams = {}) {
         setServerState(true);
       } catch (err) {
         setServerState(false);
-        alert(t("alert.noPdf") + err.message
-              + "\n\nLancez le serveur avec :  dotnet run --project server");
+        alert(t("alert.noPdf") + err.message);
       }
     };
 
@@ -2383,12 +2556,10 @@ function frisketDesigner(seams = {}) {
       const sheet = doc0().Dimension || { Width: 210, Height: 297 };
       ui.canvas.style.setProperty("--sheet", sheet.Width);
 
-      const stage = byId("stage");
-      const stagePages = byId("stage-pages");
-      if (stage && !stage.hidden && stagePages) {
-        stagePages.style.setProperty("--sheet", sheet.Width);
-        stagePages.style.setProperty("--zoom", stageZoom !== "fit"
-          ? stageZoom : fitInto(stagePages, sheet).toFixed(4));
+      if (ui.stage && !ui.stage.hidden && ui.stagePages) {
+        ui.stagePages.style.setProperty("--sheet", sheet.Width);
+        ui.stagePages.style.setProperty("--zoom", stageZoom !== "fit"
+          ? stageZoom : fitInto(ui.stagePages, sheet).toFixed(4));
       }
 
       applyPopupZoom(sheet);
@@ -2429,25 +2600,25 @@ function frisketDesigner(seams = {}) {
     const ULTRAWIDE = window.matchMedia("(min-aspect-ratio: 21/9)");
 
     function applyShape() {
-      const wide = ULTRAWIDE.matches;
+      // A very wide screen gets the stage by itself; any screen gets it for the engine's
+      // pages when the person asked for them beside the canvas.
+      const wide = ULTRAWIDE.matches || (live === "beside" && liveOn());
       uiRoot.querySelector("main").classList.toggle("wide", wide);
 
-      const stage = byId("stage");
-      const bar = byId("stage-splitter");
-      if (stage) stage.hidden = !wide;
-      if (bar) bar.hidden = !wide;
+      if (ui.stage) ui.stage.hidden = !wide;
+      if (ui.stageSplitter) ui.stageSplitter.hidden = !wide;
 
       applyPanels();
       fillStage();
       applyZoom();
     }
 
-    /// The large preview shows the same pages as the small one. Copied rather than laid
-    /// out again: one layout per refresh, and the two cannot disagree.
+    /// The large preview shows the same pages as the small one - copied rather than laid
+    /// out again, so the two cannot disagree - or the engine's, when that is what goes
+    /// beside the canvas.
     function fillStage() {
-      const stage = byId("stage");
-      const stagePages = byId("stage-pages");
-      if (stage && !stage.hidden && stagePages) stagePages.innerHTML = ui.canvas.innerHTML;
+      if (!ui.stage || ui.stage.hidden || !ui.stagePages) return;
+      ui.stagePages.innerHTML = live === "beside" && liveOn() ? enginePages() : ui.canvas.innerHTML;
     }
 
     ULTRAWIDE.addEventListener("change", applyShape);
@@ -2459,6 +2630,10 @@ function frisketDesigner(seams = {}) {
     // often as not, where every window shares the same null origin and BroadcastChannel
     // is no use. A handle to the window works everywhere and needs nothing.
     let previewWindow = null;
+
+    // One window per designer: two designers in one page sharing a name would share the
+    // window, each drawing over the other's pages.
+    const windowName = "frisket-preview" + (designersMade_ > 1 ? "-" + designersMade_ : "");
 
     /// Opens it, or brings it back to the front if it is already there.
     async function detachPreview() {
@@ -2482,7 +2657,7 @@ function frisketDesigner(seams = {}) {
         // Refused or unsupported: a plain window is a perfectly good answer.
       }
 
-      previewWindow = window.open("", "frisket-preview", features);
+      previewWindow = window.open("", windowName, features);
       if (!previewWindow) {
         alert(t("hint.popup"));
         return;
@@ -2518,7 +2693,7 @@ function frisketDesigner(seams = {}) {
         + `<option value="fit">${esc(t("zoom.fit"))}</option>`
         + "<option value=\"0.5\">50 %</option><option value=\"0.75\">75 %</option>"
         + "<option value=\"1\">100 %</option><option value=\"1.5\">150 %</option>"
-        + "<option value=\"2\">200 %</option></select></label></div>"
+        + "<option value=\"2\">200 %</option></select></label><span id=\"status\"></span></div>"
         + "<div id=\"pages\"></div></body></html>");
       previewWindow.document.close();
 
@@ -2527,7 +2702,10 @@ function frisketDesigner(seams = {}) {
       // features above already did.
       try { previewWindow.moveTo(previewWindow.screenX, previewWindow.screenY); } catch {}
 
-      const popupZoomSelect = previewWindow.byId("zoom");
+      // The window's own document - never this designer's root. A rewrite that sent every
+      // lookup to byId() took these three with it on 20 October 2026, and the window came up
+      // empty: previewWindow.byId is not a function, caught and taken for a closed window.
+      const popupZoomSelect = previewWindow.document.getElementById("zoom");
       if (popupZoomSelect) {
         popupZoomSelect.value = popupZoom;
         popupZoomSelect.onchange = () => {
@@ -2552,8 +2730,11 @@ function frisketDesigner(seams = {}) {
       }
 
       try {
-        const pages = previewWindow.byId("pages");
-        if (pages) pages.innerHTML = ui.canvas.innerHTML;
+        const pages = previewWindow.document.getElementById("pages");
+        if (pages)
+          pages.innerHTML = live === "window" && liveOn() ? enginePages() : ui.canvas.innerHTML;
+        const status = previewWindow.document.getElementById("status");
+        if (status) status.textContent = live === "window" ? liveStatusText() : "";
         applyPopupZoom();
       } catch {
         // Navigated away, or closed between the check and the write.
@@ -2569,7 +2750,7 @@ function frisketDesigner(seams = {}) {
       if (!previewWindow || previewWindow.closed) return;
 
       let pages;
-      try { pages = previewWindow.byId("pages"); } catch { return; }
+      try { pages = previewWindow.document.getElementById("pages"); } catch { return; }
       if (!pages) return;
 
       sheet = sheet || doc0().Dimension || { Width: 210, Height: 297 };
@@ -2602,12 +2783,19 @@ function frisketDesigner(seams = {}) {
     }
 
     function applyPanels() {
-      // Half the window the first time, which is what somebody expects of a second
-      // screen; after that, whatever the bar was last dragged to.
-      if (!PANELS.stage)
-        PANELS.stage = Math.round(Math.max(400, (window.innerWidth || 1600) / 2));
-
       const main = uiRoot.querySelector("main");
+
+      // The first time, half of what the two side panels leave, so the canvas and the stage
+      // share it; after that, whatever the bar was last dragged to. It was half the WINDOW,
+      // written for a very wide screen, where it is generous - and when the engine's pages
+      // came beside the canvas on an ordinary one, it left the canvas about 130 pixels of a
+      // 1400-pixel window: a page nobody could click on. Measured on the designer itself
+      // rather than on the window, since an element is as wide as its host makes it.
+      if (!PANELS.stage) {
+        const room = (main && main.clientWidth) || window.innerWidth || 1600;
+        PANELS.stage = Math.round(Math.max(260, (room - PANELS.left - PANELS.right - 12) / 2));
+      }
+
       for (const side of ["left", "right", "stage"])
         main.style.setProperty("--" + side, PANELS[side] + "px");
     }
@@ -2649,7 +2837,7 @@ function frisketDesigner(seams = {}) {
 
     // On "auto", follow the machine while it is open rather than only at load.
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-      if (theme === "auto") refresh(true);
+      if (theme === "auto") refresh();
     });
 
     // The engine's own faces, when the exact-preview server answers: the files it measures
@@ -2658,13 +2846,14 @@ function frisketDesigner(seams = {}) {
     // text in the browser's sans-serif while the PDF has the engine's default. Laid out
     // again once they arrive, since the measurements are taken with them.
     function askServerForFonts() {
-      const base = ui.server.value.replace(/\/+$/, "");
-      fetch(base + "/fonts")
+      const base = serverBase();
+      if (base === null) return;
+      send(base + "/fonts")
         .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
         .then(list => {
           const got = fontsFromServer(list, base);
           if (got.defaultFamily) setDefaultFace(faceOf(got.defaultFamily));
-          if (typeof FontFace !== "function" || !document.fonts) { refresh(true); return; }
+          if (typeof FontFace !== "function" || !document.fonts) { refresh(); return; }
           Promise.all(got.faces.map(d =>
             new FontFace(d.family, `url("${d.url}")`, { weight: d.weight, style: d.style })
               .load().then(face => document.fonts.add(face)).catch(() => {})))
@@ -2673,7 +2862,7 @@ function frisketDesigner(seams = {}) {
               const banner = uiRoot.querySelector('.banner[data-i18n="hint.approximate"]');
               if (banner) banner.dataset.i18n = "hint.approximateEngineFonts";
               applyStaticText();
-              refresh(true);
+              refresh();
             });
         })
         .catch(() => {});
@@ -2683,9 +2872,10 @@ function frisketDesigner(seams = {}) {
     loadLibrary();
     refresh();
     askServerForFonts();
+    if (liveOn()) askEngine();
 
     // @harness - check-against-engine.js plants its handles here, inside, where they can see.
-    api = { loadReport, report: () => forEngine(report), setSubDocuments };
+    api = { loadReport, report: () => forEngine(report), setSubDocuments, setLive };
   }
 
   return {
@@ -2693,6 +2883,8 @@ function frisketDesigner(seams = {}) {
     loadReport: json => { mount(); api.loadReport(json); },
     /// Another library, or the same one once what it holds has changed.
     setSubDocuments: next => { seams.subDocuments = next; if (api) api.setSubDocuments(next); },
+    /// Where the engine's pages go: "off", "canvas", "beside" or "window".
+    setLive: mode => { seams.live = mode; if (api) api.setLive(mode); },
     /// The template as the engine reads it.
     report: () => api ? api.report() : null,
   };

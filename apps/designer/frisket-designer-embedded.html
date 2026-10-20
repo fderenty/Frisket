@@ -43,6 +43,10 @@
      hands over what its author composed last time; the second starts blank. Selecting,
      adding or loading in one does nothing to the other. Their accent comes from this page;
      their paper does not.</p>
+  <p>Both are told where the engine is - <code>server="/"</code>, this page's own server -
+     and keep its pages up to date as the template changes: beside the canvas for the first,
+     which is where this page asks for them, and wherever the person chooses for the second.
+     The choice is in the header, and kept.</p>
   <p>The first is also handed this page's <strong>library</strong> through its
      <code>subDocuments</code> property: pieces the host keeps once - an article of law, the
      recipient's address block, the firm's legal notices - offered under <em>Library</em> in
@@ -52,11 +56,11 @@
 
 <main>
   <h2>A template the host handed over</h2>
-  <frisket-designer id="first"></frisket-designer>
+  <frisket-designer id="first" server="/" live="beside"></frisket-designer>
   <p class="findings" id="firstFindings">No findings yet.</p>
 
   <h2>A blank one</h2>
-  <frisket-designer class="second" id="second"></frisket-designer>
+  <frisket-designer class="second" id="second" server="/"></frisket-designer>
   <p class="findings" id="secondFindings">No findings yet.</p>
 </main>
 

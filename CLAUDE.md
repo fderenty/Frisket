@@ -1325,6 +1325,54 @@ a cached stylesheet long after the fix was in, while Edge showed it working. It 
 Edge and Foxit on §4's list, and it cost the better part of a diagnosis: *the thing that
 disagrees with the others is not always the code.*
 
+## 5c-quinquies. The engine's pages, kept up to date where the person works
+
+The designer asks the engine again half a second after the template stops changing, and
+shows its pages **where the person chose**: on the canvas instead of the approximation,
+beside it (the stage, which used to need a very wide screen), or in a window of its own.
+Three places because the author named three ways of working - a laptop, a wide screen, two
+screens - and that is why the choice is the person's and **is kept over the host's**, the
+other way round from the room: a room is the host application's look, the place of the
+preview is somebody's desk. The host says where it starts (`live`), the select remembers.
+
+The engine is the host's: `server`, a base URL answering what `apps/server` answers, and an
+optional `fetch` for a host that adds its own credentials. On the element, **no `server`
+means no engine**, and nothing that would ask one is shown - never a guess at localhost.
+The newest request is the one whose answer is shown, an unchanged template is not sent
+again, and a failure is said in the header rather than in an alert that would come up on
+every pause while the server is down.
+
+**The detached window had been dead since the designer became a call** (`94e3764`, the same
+day). Sending every lookup to the root had turned `previewWindow.document.getElementById`
+into `previewWindow.byId` - a function a window does not have, the `TypeError` caught and
+taken for a closed window, so the window came up empty. §16's rule word for word: a global
+rewrite must never touch the host's identifiers, and the window's document is the host's.
+§5c-quater even said so for the editor - *the detached preview's own document* was on its
+list of things left alone - and the designer took the road without reading it. Nothing
+caught it because the harness's `window.open` answers `null`; it is handed a window double
+now, and a browser test opens the real one.
+
+What the eye and the new tests found beside it, all older than this:
+
+- **the banner said "approximate preview" over the engine's own pages** - under the old
+  exact preview too. It speaks for the canvas, so it goes when the canvas shows the engine;
+- **the stage took half the window**, written for a 21:9 screen: beside the canvas on an
+  ordinary one it left the canvas 130 pixels of 1,400, a page nobody could click on. It
+  takes half of what the side panels leave, measured on the designer, not the window;
+- **the language picker stored its choice and never read it back** on loading;
+- the PDF alert told people to run `dotnet run --project server`, a path that has not
+  existed since the reorganisation (§6).
+
+**Two checks were vacuous on their first writing, and the watchdog was too.** "An engine
+that fails gives the approximation back" asked only that the engine's pages were gone, and a
+canvas showing the failure message instead passed it. "An edit is asked about by itself"
+was answered by the request mounting makes: it is built after an `await`, by which time the
+next line had loaded the template under test. And one sabotage hung the harness, a held
+answer never released - so a run that has not finished in twenty seconds now fails. The
+first writing of that timer was `unref()`'d, and a check waiting on a promise nothing
+settles then let Node simply **leave, exit code 0, no summary**: a pass to any CI. Seen by
+making a check wait on such a promise; the timer holds the process now.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —

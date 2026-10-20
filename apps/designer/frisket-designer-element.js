@@ -12,9 +12,14 @@
 /// Every element makes a designer of its own - `frisketDesigner(seams)` - so a page may hold
 /// several, each with its template, its selection and its findings. What it hands that call:
 /// the shadow root the markup lives in, the div it is planted in, itself as what carries the
-/// theme, the room a host declared, where the findings go, and the host's library of
-/// sub-documents. What it calls on what comes back: `mount()`, `loadReport()`, `report()`
-/// and `setSubDocuments()`.
+/// theme, the room a host declared, where the findings go, the host's library of
+/// sub-documents, where its engine is and how to reach it, where the engine's pages go at
+/// first, the interface's language, and what of the header to show. What it calls on what
+/// comes back: `mount()`, `loadReport()`, `report()`, `setSubDocuments()` and `setLive()`.
+///
+/// Absent, an attribute means the lean shape, as on <frisket-editor>: an element lives in
+/// somebody else's application, which has already decided its language, its room and its
+/// server. So `server` absent is no engine at all - never a guess at localhost.
 ///
 /// Built on 20 October 2026, when the author decided the designer goes into a host
 /// application's front end - for the few who compose templates, and possibly an AI working
@@ -33,6 +38,11 @@
         return;
       }
 
+      const on = (name, fallback) => this.hasAttribute(name)
+        ? this.getAttribute(name) !== "false"
+        : fallback;
+      const element = this;
+
       const root = this.attachShadow({ mode: "open" });
       root.innerHTML =
         '<link rel="stylesheet" href="' + here + 'frisket-chrome.css">' +
@@ -44,6 +54,28 @@
         host: root.getElementById("frisket-designer-root"),
         themeTarget: this,
         theme: this.getAttribute("theme"),
+
+        // Where the engine is - a base URL answering what apps/server answers, "/" for this
+        // page's own origin - and how to reach it. Read at every request, so a host may set
+        // `fetch` whenever its credentials are ready.
+        server: this.getAttribute("server"),
+        get fetch() { return element._fetch || null; },
+
+        // Where the engine's pages go at first, and after how long a pause. The person's own
+        // choice of place, once made, is kept over this: it is their screens.
+        live: this.getAttribute("live"),
+        liveDelay: this.hasAttribute("live-delay") ? Number(this.getAttribute("live-delay")) : undefined,
+
+        // The interface's language - the page's, since the dictionary is one.
+        lang: this.getAttribute("lang"),
+
+        // The files stay, as on <frisket-editor>: a person may still open or save one. The
+        // language, the room and the server are the host's, and stay hidden unless asked.
+        shown: {
+          files: on("files", true),
+          language: on("language", false),
+          rooms: on("rooms", false),
+        },
 
         // The findings, to whoever embedded this, as well as to the panel. Computed on
         // every redraw: a template its author is building should not reach the engine
@@ -83,6 +115,16 @@
       this._subDocuments = value || null;
       if (this._designer) this._designer.setSubDocuments(this._subDocuments);
     }
+
+    /// How the designer reaches the engine `server` names: a function shaped like the
+    /// browser's fetch, for a host that adds its own credentials to every request. The
+    /// browser's own otherwise.
+    get fetch() { return this._fetch ?? null; }
+
+    set fetch(value) { this._fetch = value || null; }
+
+    /// Where the engine's pages go: "off", "canvas", "beside" or "window".
+    setLive(mode) { if (this._designer) this._designer.setLive(mode); }
 
     /// What the checks found, last time anything was drawn. Also delivered as a `checks`
     /// event, for a host that would rather be told than ask.

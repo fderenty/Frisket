@@ -189,7 +189,8 @@ eval(withHandles(script,
      '\n    sandbox.setSelected = v => { selected = v; }; sandbox.getReport = () => report;' +
      '\n    sandbox.setReport = v => { report = v; };' +
      '\n    sandbox.library = () => library; sandbox.pieceItem = pieceItem;' +
-     '\n    sandbox.addToSelection = addToSelection; sandbox.payload = payload;') +
+     '\n    sandbox.addToSelection = addToSelection; sandbox.payload = payload;' +
+     '\n    sandbox.askEngine = askEngine; sandbox.setLive = setLive;') +
      '\nsandbox.layout = layout; sandbox.render = render; sandbox.blankReport = blankReport;' +
      '\nsandbox.watermarkMarks = watermarkMarks; sandbox.hydrate = hydrate;' +
      '\nsandbox.validate = validate; sandbox.roleOf = roleOf;' +
@@ -1863,6 +1864,17 @@ const childOfBody = template => template.Sections[0].Childs.find(c => c.$type ==
 
 const later = () => new Promise(resolve => setTimeout(resolve, 0));
 
+// The checks below wait on answers, and one that never comes ends a run in one of two ways,
+// neither of them a failure: hanging, if a timer is still pending somewhere, or - with
+// nothing left to wait on - Node simply leaving, exit code 0 and no summary, which a CI job
+// reads as a pass. So a run that has not finished in twenty seconds fails and says so. The
+// timer is not unref()'d: that was its first writing, and it let the second way through -
+// seen by making a check wait on a promise nothing settles.
+setTimeout(() => {
+  console.log(`  ✗ the asynchronous checks never finished, after ${checked} checks`);
+  process.exit(1);
+}, 20000);
+
 (async () => {
   if (typeof sandbox.frisketDesigner === 'function') {
     // A host holding its pieces in memory: answers at once.
@@ -1941,6 +1953,133 @@ const later = () => new Promise(resolve => setTimeout(resolve, 0));
           outer.TemplatePath === '' && deeper && deeper.TemplatePath === '' && !!deeper.TemplateData
           && childOfBody(fresh.report())[0].TemplatePath === 'st://adresse',
           outer.TemplateData ? (deeper && deeper.TemplateData ? 'both carried' : 'the inner one named') : 'named');
+  }
+
+  // --- the engine's pages, kept up to date --------------------------------------
+  // The host's engine is reached through the host's fetch. This one answers with a page
+  // naming the title it was sent, so which answer is on show can be told; it can be held
+  // to answer out of order, and made to fail.
+  if (typeof sandbox.frisketDesigner === 'function') {
+    const sent = [];
+    const held = [];
+    let holding = false, failing = false;
+    const engine = (url, init) => new Promise(resolve => {
+      const title = JSON.parse(JSON.parse(init.body).template).Title;
+      sent.push({ url, method: init.method, title });
+      const answer = failing
+        ? { ok: false, statusText: 'down', json: async () => ({ error: 'the engine is down' }) }
+        : { ok: true, json: async () => ({ pages: [`<svg data-engine="${title}"></svg>`] }) };
+      if (holding) held.push(() => resolve(answer)); else resolve(answer);
+    });
+    const until = async test => { for (let i = 0; i < 50 && !test(); i++) await later(); return test(); };
+    const titled = title => Object.assign(masterNaming(), { Title: title });
+    const alerts = [];
+    const quiet = global.alert;
+    global.alert = message => alerts.push(message);
+
+    // Never on its own while these run: each check asks when it means to.
+    const shown = sandbox.frisketDesigner({ root: document, server: 'http://engine.test/', fetch: engine,
+                                            live: 'canvas', liveDelay: 1e9 });
+    shown.mount();
+    shown.loadReport(titled('Rapport'));
+    await sandbox.askEngine();
+    const last = sent[sent.length - 1] || {};
+    check('the engine is the host\'s, reached through the host\'s fetch',
+          last.url === 'http://engine.test/preview' && last.method === 'POST' && last.title === 'Rapport',
+          `${last.method} ${last.url} (${last.title})`);
+    check('and its pages are on the canvas when that is where they were asked for',
+          sandbox.ui.canvas.innerHTML.includes('data-engine="Rapport"'),
+          sandbox.ui.canvas.innerHTML.slice(0, 60));
+
+    const before = sent.length;
+    await sandbox.askEngine();
+    check('a template that has not changed is not sent again', sent.length === before,
+          `${sent.length - before} request(s)`);
+
+    // Two requests answered the wrong way round: the newer one is what stays. Counted from
+    // here, and every wait bounded, so a fault upstream cannot leave an answer held forever.
+    const bounded = promise => Promise.race([promise, new Promise(r => setTimeout(r, 2000))]);
+    const base = sent.length;
+    holding = true;
+    sandbox.getReport().Title = 'Premier';
+    const first = sandbox.askEngine();
+    await until(() => sent.length === base + 1);
+    sandbox.getReport().Title = 'Second';
+    const second = sandbox.askEngine();
+    await until(() => sent.length === base + 2);
+    holding = false;
+    const [answerFirst, answerSecond] = held.splice(0);
+    if (answerSecond) answerSecond();
+    await bounded(second);
+    if (answerFirst) answerFirst();
+    await bounded(first);
+    check('the newest answer is the one shown, whatever order they come back in',
+          sandbox.ui.canvas.innerHTML.includes('data-engine="Second"')
+          && !sandbox.ui.canvas.innerHTML.includes('data-engine="Premier"'),
+          sent.slice(base).map(s => s.title).join(' then ')
+          + ' - showing ' + (/data-engine="(\w+)"/.exec(sandbox.ui.canvas.innerHTML) || [, 'nothing'])[1]);
+
+    // Down: said in the header, the approximation back on the canvas, no alert.
+    failing = true;
+    sandbox.getReport().Title = 'Panne';
+    await sandbox.askEngine();
+    // The approximation itself, not merely the absence of the engine's pages: a canvas showing
+    // the failure message instead passed that weaker question.
+    check('an engine that fails is said in the header, and the canvas shows the approximation',
+          sandbox.ui.liveStatus.textContent.includes('the engine is down')
+          && sandbox.ui.canvas.innerHTML.includes('class="page"')
+          && !sandbox.ui.canvas.innerHTML.includes('data-engine') && alerts.length === 0,
+          `"${sandbox.ui.liveStatus.textContent}", ${alerts.length} alert(s)`);
+    failing = false;
+
+    // Beside: the canvas keeps the approximation, the stage takes the engine's pages.
+    sandbox.setLive('beside');
+    await until(() => sandbox.ui.stagePages.innerHTML.includes('data-engine'));
+    check('beside, the stage shows the engine\'s pages and the canvas stays the approximation',
+          !sandbox.ui.stage.hidden && sandbox.ui.stagePages.innerHTML.includes('data-engine="Panne"')
+          && !sandbox.ui.canvas.innerHTML.includes('data-engine'),
+          sandbox.ui.stage.hidden ? 'the stage is hidden' : sandbox.ui.stagePages.innerHTML.slice(0, 60));
+
+    // In a window: the window's own document, which a rewrite once sent to byId().
+    const popupNodes = {};
+    const popup = {
+      closed: false, focus() {}, moveTo() {}, addEventListener() {},
+      document: { write() {}, close() {}, getElementById: id => (popupNodes[id] ??= stubEl()) },
+    };
+    const open = window.open;
+    window.open = () => popup;
+    sandbox.setLive('window');
+    await until(() => popupNodes.pages && popupNodes.pages.innerHTML.includes('data-engine'));
+    window.open = open;
+    check('in a window, the window shows the engine\'s pages and says how they stand',
+          !!popupNodes.pages && popupNodes.pages.innerHTML.includes('data-engine="Panne"')
+          && !!popupNodes.status && popupNodes.status.textContent.length > 0
+          && !sandbox.ui.canvas.innerHTML.includes('data-engine'),
+          popupNodes.pages ? popupNodes.pages.innerHTML.slice(0, 60) : 'nothing written to the window');
+
+    // Left alone, an edit is asked about once the template has been still a moment. The edit
+    // comes after the first answer: mounting asks at once, and its request - built after an
+    // await - would otherwise carry the template loaded on the next line and answer for it.
+    const paced = sandbox.frisketDesigner({ root: document, server: 'http://engine.test', fetch: engine,
+                                            live: 'canvas', liveDelay: 10 });
+    paced.mount();
+    paced.loadReport(titled('Tout seul'));
+    await until(() => sent.some(s => s.title === 'Tout seul'));
+    paced.loadReport(titled('Plus tard'));
+    const asked = await until(() => sent.some(s => s.title === 'Plus tard'));
+    check('an edit is asked about by itself, once the template is still', asked,
+          asked ? 'asked' : 'never asked');
+
+    // No engine declared: nothing to ask, nothing that offers to.
+    const count = sent.length;
+    const none = sandbox.frisketDesigner({ root: document, server: null, fetch: engine, live: 'canvas' });
+    none.mount();
+    await sandbox.askEngine();
+    check('with no engine declared, nothing asks and the control is not shown',
+          sent.length === count && sandbox.ui.live.hidden === true,
+          `${sent.length - count} request(s), control ${sandbox.ui.live.hidden ? 'hidden' : 'shown'}`);
+
+    global.alert = quiet;
   }
 
   console.log(failures ? `\n${checked} checks, ${failures} FAILED`
