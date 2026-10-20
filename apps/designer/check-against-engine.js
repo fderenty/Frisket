@@ -1692,6 +1692,19 @@ if (flatPath && flatFindingsPath) {
         direct === 1, `${direct - 1} read directly`);
 }
 
+// --- a key a template may leave out -------------------------------------------------
+// A template writes only what it decides, so a rich text may name no font of its own - and
+// one that did not stopped the designer cold at `item.Font.Wrap`: hydrate filled the font of
+// every text but this one. Asked the way the page asks it, hydrate then layout.
+{
+  const bare = sandbox.blankReport();
+  bare.Sections[0].Childs.find(c => c.$type === 'Body').Childs
+    .push({ $type: 'AdvancedTextItem', Runs: [{ Text: 'sans police' }] });
+  let error = null;
+  try { sandbox.hydrate(bare.Sections[0]); sandbox.layout(bare); } catch (e) { error = e.message; }
+  check('a rich text that names no font of its own lays out', !error, error || 'laid out');
+}
+
 // --- one designer per call --------------------------------------------------------
 // A host application embeds the designer, so a page may hold more than one: each call
 // must be a designer of its own, and its findings must reach whoever made it. Asked of

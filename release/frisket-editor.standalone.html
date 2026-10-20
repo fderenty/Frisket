@@ -1787,8 +1787,14 @@ function hydrate(item) {
   fill(s.Padding ??= {}, edges());
   fill(s.Constraints ??= {}, { MinWidth: 0, MinHeight: 0, MaxWidth: 0, MaxHeight: 0 });
 
-  if (item.$type === "TextItem" || item.$type === "FieldItem" || item.$type === "BarcodeItem")
+  // Rich text too. It was left out, and a template naming no font for one - legal, and what a
+  // hand or an AI writing from the schema produces - stopped the designer at `item.Font.Wrap`
+  // the moment it was loaded. Found on 20 October 2026 by the first browser test that handed
+  // the designer a template it had not written itself.
+  if (item.$type === "TextItem" || item.$type === "FieldItem" || item.$type === "BarcodeItem"
+      || item.$type === "AdvancedTextItem")
     fill(item.Font ??= {}, newFont());
+  if (item.$type === "AdvancedTextItem") item.Runs ??= [];
 
   // Item defaults that are the enum's zero are absent too, and those read as an
   // identity: a field with no Kind is a text field, not a field of no kind.

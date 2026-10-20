@@ -57,6 +57,13 @@ Designer side, **nothing can assume a key is there**. `hydrate()` fills the
 holes on the way into `layout()`; that is safer than guarding every read, because
 a forgotten read does not crash — it is `undefined` and positions at `NaN`.
 
+And when the forgotten read is one level down, it does crash. `hydrate()` filled the font of
+every text but `AdvancedTextItem`, so a template whose rich text named no font - legal, and
+exactly what a hand or an AI writing from the schema produces - stopped the designer at
+`item.Font.Wrap` on loading. Every template the suite feeds it was written by Frisket, which
+always writes that font; the first one that was not came from a browser test, on 20 October
+2026. `check-against-engine.js` asks it now.
+
 ## 2. Rendering is checked three ways, never just one
 
 A text can be "correct" and wrong:
