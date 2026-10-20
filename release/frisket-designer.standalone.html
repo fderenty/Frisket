@@ -2389,7 +2389,6 @@ const STRINGS = {
     "issue.sound.repeatPageBreak": "This breaks once, before the whole repeated run. Repeating clones what is inside the container, so for one page per record the break belongs on the block being repeated.",
     "issue.sound.emptySubTemplate": "This sub-template names nothing and carries nothing, so nothing will ever be inserted here. Give it a path, a st:// reference, or the other template's own JSON.",
     "issue.sound.emptyAdvancedText": "This advanced text has no runs with anything in them, so nothing will ever be drawn here.",
-    "issue.sound.advancedTextPageCount": "This advanced text uses {Pages}, which will not be corrected to the real total the way it would be in a plain text.",
     "issue.sound.justifiedBreak": "This text is justified and holds a line break of its own. A break is stretched to the margin like a wrapped line, which is not what it means - put each paragraph in its own text.",
     "issue.sound.nestedSection": "A section cannot sit inside another. Sections are a list on the report, never nested - a page size means nothing inside a page.",
     "issue.sound.headingNumberNoFormat": "This text asks for a heading number, and the report does not say how one is written. Set the numbering format - \"1.1.1\", \"A.a.1\" - or drop the token; until then it stays on the page as it was typed.",
@@ -2765,7 +2764,6 @@ const STRINGS = {
     "issue.sound.repeatPageBreak": "Ceci coupe une fois, avant toute la série répétée. La répétition clone ce qui est dans le conteneur, donc pour une page par enregistrement le saut se pose sur le bloc répété.",
     "issue.sound.emptySubTemplate": "Ce sous-gabarit ne nomme rien et ne porte rien, donc rien n'y sera jamais inséré. Lui donner un chemin, une référence st:// ou le JSON de l'autre gabarit.",
     "issue.sound.emptyAdvancedText": "Ce texte avancé n'a aucun segment avec quelque chose dedans, donc rien n'y sera jamais dessiné.",
-    "issue.sound.advancedTextPageCount": "Ce texte avancé utilise {Pages}, qui ne sera pas corrigé vers le total réel comme il le serait dans un texte simple.",
     "issue.sound.justifiedBreak": "Ce texte est justifié et contient un saut de ligne. Un saut est étiré jusqu'à la marge comme une ligne repliée, ce qui n'est pas son sens - mettre chaque paragraphe dans son propre texte.",
     "issue.sound.nestedSection": "Une section ne peut pas se trouver dans une autre. Les sections sont une liste sur le rapport, jamais imbriquées - un format de page ne veut rien dire à l'intérieur d'une page.",
     "issue.sound.headingNumberNoFormat": "Ce texte demande un numéro de titre, et le rapport ne dit pas comment on l'écrit. Régler le format de numérotation - \"1.1.1\", \"A.a.1\" - ou retirer le jeton ; en attendant il reste sur la page tel qu'il a été tapé.",
@@ -2976,7 +2974,14 @@ function watermarkSvg(report, page) {
 function render(report, selected, index = 0, show = {}) {
   const { placed, page, band, section } = layout(report, index);
   const out = [];
-  out.push(`<svg class="page" xmlns="http://www.w3.org/2000/svg" width="${page.width}mm" height="${page.height}mm" viewBox="0 0 ${page.width} ${page.height}">`);
+  // white-space:pre on every <text>, as the engine's SvgBackend writes it: a browser
+  // collapses the space a piece of rich text starts with and draws the next character in
+  // its place, touching the word in another style before it. A rule naming the element,
+  // because the browser's own sheet sets nowrap on <text> and that beats anything inherited.
+  // Kerning is left on here, unlike the engine's proof, because this page MEASURES with a
+  // canvas that kerns - drawing without it would disagree with its own ruler.
+  out.push(`<svg class="page" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="${page.width}mm" height="${page.height}mm" viewBox="0 0 ${page.width} ${page.height}">`);
+  out.push(`<style>text{white-space:pre}</style>`);
 
   // First of all, so everything else paints over it - it is the paper.
   if (report.Backdrop)
@@ -3525,10 +3530,8 @@ function walkFor(container, where, profile, add, numbering) {
 
         // Justify was reported here until the resolver learnt to stretch a line
         // assembled from several runs. It does now, so the rule is gone rather than
-        // kept as a reassuring no-op.
-
-        if ((child.Runs || []).some(r => /\{\s*pages\s*(:[^}]*)?\}/i.test(r.Text || "")))
-          add("sound.advancedTextPageCount", "warning", child, here);
+        // kept as a reassuring no-op - and so is the one about {Pages} in a run, since
+        // the resolver fills the real total into rich text as well (20 October 2026).
       }
 
       if (child.$type === "FieldItem" && (child.Name || "").trim()) {

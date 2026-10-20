@@ -62,9 +62,6 @@ namespace test
             advanced.Runs.Add(new TextRun { Text = "" });
             report.Body!.Add(advanced);
 
-            var pageCounted = new AdvancedTextItem();
-            pageCounted.Runs.Add(new TextRun { Text = "Page {Page} sur {Pages}" }); // not corrected on the second pass
-            report.Body!.Add(pageCounted);
 
             // A page break one level out from where it was meant: a repeating run
             // wrapping a single block, with the break on the run. It breaks once,
@@ -161,7 +158,6 @@ namespace test
             AssertEqual(testName, "a grid asking for fewer than one column", true, Has("sound.emptyImageGrid"), 0);
             AssertEqual(testName, "a sub-template naming no file", true, Has("sound.emptySubTemplate"), 0);
             AssertEqual(testName, "an advanced text with nothing in any run", true, Has("sound.emptyAdvancedText"), 0);
-            AssertEqual(testName, "an advanced text using {Pages}", true, Has("sound.advancedTextPageCount"), 0);
             AssertEqual(testName, "a section dropped inside another", true, Has("sound.nestedSection"), 0);
             AssertEqual(testName, "a heading number with no format to write it in",
                 true, Has("sound.headingNumberNoFormat"), 0);
@@ -234,7 +230,6 @@ namespace test
             grid.GridColumns = 3;
             sub.TemplatePath = "fragment.json";
             advanced.Runs[0].Text = "Repaired text.";
-            pageCounted.Runs[0].Text = "Page {Page}.";
 
             // Two levels declared, and both headings sit inside them - so the depth rule
             // has nothing to say either. It is exercised on its own below, where a third

@@ -151,6 +151,25 @@ namespace Frisket
         }
 
         /// <summary>
+        /// Every token but <c>{Pages}</c> and <c>{SectionPages}</c>, which are left where
+        /// they are, escapes and all, for the pass that knows the total. What rich text
+        /// keeps beside each of its pieces, so that pass can find them - see
+        /// <c>LayoutResolver.BreakAdvancedText</c>.
+        /// </summary>
+        internal static string ResolveAllButPageCount(string? text, in TokenContext context)
+        {
+            TokenContext captured = context;
+            return Resolve(text, token =>
+            {
+                ReadOnlySpan<char> name = NameOf(token.AsSpan());
+                return name.Equals(PagesToken, StringComparison.OrdinalIgnoreCase)
+                       || name.Equals(SectionPagesToken, StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : ResolveToken(token, captured);
+            }, unescape: false);
+        }
+
+        /// <summary>
         /// Scans the tokens and hands each one, format and all, to <paramref name="lookup"/>.
         /// Returning null leaves that token where it is, untouched - which is how the
         /// binder can fill in the data and still leave <c>{Page}</c> for the resolver.

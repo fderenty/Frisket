@@ -276,10 +276,33 @@ namespace test
                     !held.Any(l => l.EndsWith("12")) && held.Any(l => l.Contains("12" + glue + "480,00")), 0);
             }
 
+            // {Pages} in a run is filled with the real total, as a plain text's is. It printed
+            // the placeholder - "Page 1 sur 0" - with a validator rule apologising for it,
+            // until 20 October 2026; test 95 holds it across two pages, in a footer.
             var pageCounted = Paragraph(new TextRun { Text = "Page {Page} sur {Pages}" });
-            var pageCountIssues = TemplateValidator.Check(OnePage(pageCounted), TemplateProfile.Sound);
-            AssertEqual(testName, "{Pages} in a run is flagged, not silently wrong", true,
-                pageCountIssues.Any(i => i.Rule == "sound.advancedTextPageCount"), 0);
+            LayoutResult counted = OnePage(pageCounted).Resolve(new FontTextMeasurer(library));
+            string countedLine = string.Concat(counted.Pages[0].Items.Where(p => p.Fragment != null)
+                .OrderBy(p => p.Frame.Left).Select(p => p.Fragment));
+            Console.WriteLine($"    {{Pages}} in a run: {countedLine}");
+            AssertEqual(testName, "{Pages} in a run prints the real total", "Page 1 sur 1", countedLine, 0);
+
+            // And on a justified line, which is placed a word at a time, so the token has to
+            // stay with its own word rather than with the piece. Not the last line: that one
+            // is never stretched, and would go through the other path.
+            var totalStretched = Paragraph(new TextRun { Text = "Ce document compte {Pages} page au total, et la "
+                + "phrase continue assez longtemps pour passer sur une deuxième ligne, puis sur une troisième, "
+                + "afin que celle qui porte le total soit étirée jusqu'à la marge." });
+            totalStretched.Font.HorizontalAlignment = HorizontalAlignment.Justify;
+            LayoutResult totalJustified = OnePage(totalStretched).Resolve(new FontTextMeasurer(library));
+            var totalWords = totalJustified.Pages[0].Items.Where(p => p.Fragment != null).ToList();
+            double firstTop = totalWords.Min(p => p.Frame.Top);
+            string firstLine = string.Join(" ", totalWords.Where(p => Math.Abs(p.Frame.Top - firstTop) < 0.01)
+                .OrderBy(p => p.Frame.Left).Select(p => p.Fragment));
+            Console.WriteLine($"    justified: {firstLine}");
+            AssertEqual(testName, "the line is stretched, so placed word by word",
+                true, totalWords.Count(p => Math.Abs(p.Frame.Top - firstTop) < 0.01) > 3, 0);
+            AssertEqual(testName, "and the total is filled in there too",
+                true, firstLine.StartsWith("Ce document compte 1 page"), 0);
 
             // A picture beside a paragraph: an absolutely laid out container, the
             // picture at a coordinate with a width and the paragraph starting after it.

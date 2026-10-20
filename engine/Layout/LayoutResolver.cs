@@ -725,6 +725,14 @@ namespace Frisket
             public TextStyle Font = null!;
             public string Text = "";
             public double Width;
+
+            /// <summary>
+            /// The same piece with <c>{Pages}</c> and <c>{SectionPages}</c> still tokens,
+            /// when its run used them; null otherwise. <see cref="Text"/> carries the
+            /// placeholder, which is what is measured and has the right number of digits;
+            /// this is what the final pass finds and fills with the real total.
+            /// </summary>
+            public string? Pending;
         }
 
         /// <summary>
@@ -874,7 +882,16 @@ namespace Frisket
                 TextStyle font = ResolveFont(run.Font?.Over(item.Font) ?? item.Font, double.NaN);
                 font = font.Clone();
                 font.HorizontalAlignment = HorizontalAlignment.Left;   // this item places it, not DrawText
-                string text = TextOf(run.Text, page, item);
+                // A run asking for the page total is split with that total still a token:
+                // each word is measured and drawn with the placeholder, as everything is
+                // until the count is known, and keeps the token beside it for the pass
+                // that fills it in. Split resolved, as it was until 20 October 2026, the
+                // pieces carried "0" and nothing came back for them - so a footer written
+                // in the content editor, which writes nothing but rich text, said "page 1
+                // of 0". Every other token is resolved here exactly as before, so word
+                // boundaries are the same either way: the placeholder holds no space.
+                bool pending = _backContext == null && ReportTokens.UsesPageCount(run.Text);
+                string text = pending ? PendingOf(run.Text, page, item) : TextOf(run.Text, page, item);
 
                 string[] paragraphs = text.Split('\n');
                 for (int p = 0; p < paragraphs.Length; p++)
@@ -893,7 +910,8 @@ namespace Frisket
                         while (end < paragraph.Length && LineBreaks.At(paragraph[end]))
                             end++;
 
-                        string word = paragraph[start..end];
+                        string? waiting = pending ? paragraph[start..end] : null;
+                        string word = waiting == null ? paragraph[start..end] : TextOf(waiting, page, item);
                         double wordWidth = _measurer.Measure(word, font, double.PositiveInfinity).Width;
 
                         // Trailing spaces on the word being tested must not be what tips
@@ -907,7 +925,8 @@ namespace Frisket
                         if (wrap && current.Pieces.Count > 0 && currentWidth + checkWidth > width + FitTolerance)
                             CloseLine();
 
-                        current.Pieces.Add(new AdvancedPiece { Font = font, Text = word, Width = wordWidth });
+                        current.Pieces.Add(new AdvancedPiece { Font = font, Text = word, Width = wordWidth,
+                                                               Pending = waiting });
                         currentWidth += wordWidth;
                         start = end;
                     }
@@ -945,6 +964,9 @@ namespace Frisket
 
                 line.Pieces[i - 1].Text += line.Pieces[i].Text;
                 line.Pieces[i - 1].Width += line.Pieces[i].Width;
+                // Pieces of one run share one font and so are pending together or not at all.
+                if (line.Pieces[i - 1].Pending != null)
+                    line.Pieces[i - 1].Pending += line.Pieces[i].Pending;
                 line.Pieces.RemoveAt(i);
             }
 
@@ -955,6 +977,7 @@ namespace Frisket
                 if (trimmed.Length != last.Text.Length)
                 {
                     last.Text = trimmed;
+                    last.Pending = last.Pending?.TrimEnd();
                     last.Width = _measurer.Measure(trimmed, last.Font, double.PositiveInfinity).Width;
                 }
             }
@@ -1015,7 +1038,9 @@ namespace Frisket
                         continue;
                     }
 
-                    var synthetic = new TextItem { Text = piece.Text, Font = piece.Font };
+                    // Drawn as measured; carrying the token, when there is one, so the pass
+                    // that knows the page total finds it as it finds a plain text's.
+                    var synthetic = new TextItem { Text = piece.Pending ?? piece.Text, Font = piece.Font };
                     Place(synthetic, page, x, pieceTop, x + piece.Width, pieceTop + metrics.LineHeight,
                          piece.Text, piece.Font);
                     x += piece.Width;
@@ -1059,6 +1084,11 @@ namespace Frisket
         {
             double spaceWidth = _measurer.Measure(" ", piece.Font, double.PositiveInfinity).Width;
 
+            // The pending words line up with the drawn ones one for one: a token and its
+            // placeholder hold no space, and every other token is resolved in both.
+            string[]? waiting = piece.Pending?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            int drawnWords = 0;
+
             int at = 0;
             while (at < piece.Text.Length)
             {
@@ -1068,7 +1098,9 @@ namespace Frisket
                 if (word.Length > 0)
                 {
                     double width = _measurer.Measure(word, piece.Font, double.PositiveInfinity).Width;
-                    var synthetic = new TextItem { Text = word, Font = piece.Font };
+                    string carried = waiting != null && drawnWords < waiting.Length ? waiting[drawnWords] : word;
+                    drawnWords++;
+                    var synthetic = new TextItem { Text = carried, Font = piece.Font };
                     Place(synthetic, page, x, top, x + width, top + metrics.LineHeight,
                           word, piece.Font);
                     x += width;
@@ -2415,6 +2447,18 @@ namespace Frisket
             // rather than the placeholder the main pass has to iterate on.
             return ReportTokens.Resolve(text,
                 _backContext ?? ContextFor(page.Number, _pageCountPlaceholder));
+        }
+
+        /// <summary>
+        /// <see cref="TextOf(string, Page, BaseItem?)"/> less the page total: every token
+        /// resolved but <c>{Pages}</c> and <c>{SectionPages}</c>, and the escapes kept for
+        /// the resolution that follows - word by word while placing, then once more with
+        /// the real total.
+        /// </summary>
+        private string PendingOf(string source, Page page, BaseItem? owner)
+        {
+            string text = HeadingNumbers.Fill(source, owner, _report.HeadingNumbering);
+            return ReportTokens.ResolveAllButPageCount(text, ContextFor(page.Number, _pageCountPlaceholder));
         }
 
         /// <summary>

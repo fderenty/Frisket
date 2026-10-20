@@ -71,6 +71,22 @@ consistent with itself, and no assertion put them together. A sample rendered in
 both formats, opened side by side, finds what neither reveals alone — hence
 `conformance.pdf` and `conformance.html`.
 
+**It found two more on 20 October 2026, in one line of text.** A sub-document's article,
+"**Art. 1** - the wording", read "**Art. 1**- the wording" in the HTML proof and correctly in
+the PDF. Every geometry the suite measures was right. The browser collapsed the space the
+second piece starts with and drew the dash in its place - its own sheet sets
+`white-space:nowrap` on every `<text>`, which beats `xml:space` and anything inherited, so
+only a rule naming the element holds - and it kerned, which the engine and the PDF never do:
+a bold "Art. 1" 0.2mm wider than measured. `SvgBackend` writes that rule into every page now.
+
+The diagnosis went wrong twice before it went right, and both times for the same reason:
+*a browser's own measuring API answered a question about the text after the browser had
+changed it.* `getStartPositionOfChar` counts characters once the space is gone, so "the
+space" it measured was the dash; and a style that showed in the markup was not the computed
+one. What settled it was the PDF in Edge's reader beside the proof, and `getComputedStyle`.
+No assertion guards it - a test looking for the rule's bytes would prove nothing (below) -
+so the eye is the check, as this section says.
+
 A rule borne out five times: **an assertion that looks for bytes proves nothing**.
 `/Subtype /Widget` present, `/Annots [` present, `/AcroForm` present — and the
 form worked in no reader, because `/Annots` pointed at object 0. Check that the parts
@@ -2147,11 +2163,20 @@ right-aligned ends** — verified to a hundredth of a millimetre (test 50).
 a rule that no longer describes the engine is worse than no rule: it teaches people
 to ignore the panel.
 
-**One owned limitation stays:** `{Pages}` in a run keeps the first pass's guess rather than
-being corrected once the page total is known, because the existing correction
-(`ResolvePageCount`) re-sweeps only those `TextItem` whose text still carries the
-token — already-resolved fragments are never revisited there. It is a validator rule
-(`sound.advancedTextPageCount`) rather than a surprise.
+**The owned limitation is gone since 20 October 2026.** `{Pages}` in a run printed the
+placeholder - "page 1 of 0" - because the correction (`ResolvePageCount`) re-sweeps only
+the `TextItem`s whose text still carries the token, and a run was split into pieces already
+resolved. A validator rule said so, and that was judged enough: a surprise turned into a
+warning. It stopped being enough the day sub-documents were written in the content editor,
+which writes nothing but rich text - a footer saying "page X of Y" is the first thing
+anybody puts in one, and test 95 found it doing exactly that.
+
+Each piece of a run that uses the total now carries the token beside it (`AdvancedPiece.Pending`),
+measured and drawn with the placeholder like everything else, and the synthetic `TextItem`
+holds the token - so the existing pass finds it as it finds a plain text's. Every other token
+is resolved before the split as before, so word boundaries do not move. The rule was deleted
+on both sides, as `sound.advancedTextJustify` was: a rule that no longer describes the engine
+teaches people to ignore the panel.
 
 **The designer's echo dropped `Strikethrough` in `newFont()`, `fontOf()` and `text()` at
 once** — §1's five places seen from the cascade, and found only by comparing the SVG

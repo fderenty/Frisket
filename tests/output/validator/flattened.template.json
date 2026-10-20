@@ -251,16 +251,6 @@
               "Style": {}
             },
             {
-              "$type": "AdvancedTextItem",
-              "Runs": [
-                {
-                  "Text": "Page {Page}."
-                }
-              ],
-              "Font": {},
-              "Style": {}
-            },
-            {
               "$type": "ContainerItem",
               "Layout": "Stack",
               "ColumnCount": 1,

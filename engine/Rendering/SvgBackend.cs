@@ -58,13 +58,31 @@ namespace Frisket
             _pageWidth = page.Frame.Width;
             _pageHeight = page.Frame.Height;
             _current = new StringBuilder(4096);
+            // xml:space="preserve" for viewers that read SVG 1.1; the <style> after this tag is
+            // what a browser honours - see there.
             _current.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" ")
+                    .Append("xml:space=\"preserve\" ")
                     .Append("width=\"").Append(N(page.Frame.Width)).Append("mm\" ")
                     .Append("height=\"").Append(N(page.Frame.Height)).Append("mm\" ")
                     .Append("viewBox=\"0 0 ").Append(N(page.Frame.Width)).Append(' ').Append(N(page.Frame.Height))
                     .Append("\">\n");
 
             _current.Append("  <title>").Append(Escape(_title)).Append(" - page ").Append(page.Number).Append("</title>\n");
+
+            // The text drawn as the PDF draws it. Found on 20 October 2026 by putting a
+            // sub-document's article on screen with the PDF beside it in a real reader; every
+            // number the suite measures was right, and the proof was still wrong twice.
+            //
+            // - The spaces are the text's. A browser collapses the space a piece of rich text
+            //   starts with - " - the wording", after a word in bold - and draws the dash where
+            //   the space should be, touching the word; the PDF draws the space. Its own sheet
+            //   gives every <text> white-space:nowrap, which beats anything inherited from the
+            //   root - xml:space and a style attribute alike were ignored - so this is a rule
+            //   that names the element.
+            // - No kerning and no ligatures, because the engine measures neither and the PDF
+            //   draws neither: one glyph per character, at its advance. A bold "Art. 1" came
+            //   out 11.448mm kerned, against 11.246 in the engine and 11.249 without.
+            _current.Append("  <style>text{white-space:pre;font-kerning:none;font-variant-ligatures:none}</style>\n");
 
             if (PageBackground.A > 0)
             {

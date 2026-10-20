@@ -1342,5 +1342,234 @@ namespace test
 
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// A master document assembled from sub-documents a host program serves by name: a
+        /// legal article in the body, the recipient's address in a block placed on the right
+        /// of the header, a logo taken from the data, and the footer's mentions. Every piece
+        /// arrives through st://, every merge field in it is filled from the master's data,
+        /// and the header and footer pieces are on every page.
+        ///
+        /// Before this only a sub-template in the body was tested. The expander walks the
+        /// header and the footer as well, and a block placed at a coordinate is the path
+        /// CLAUDE.md section 7 says faults sleep in. Written when the author described the
+        /// shape wanted - an expert report whose shared pieces are written once, in the
+        /// content editor, and change everywhere when changed once.
+        /// </summary>
+        [Fact]
+        public void Test95_SubDocumentsAnywhere()
+        {
+            const string testName = "Test 95";
+            Console.WriteLine("Test 95: sub-documents served by name, anywhere in a master");
+            Console.WriteLine();
+
+            // --- the shared pieces, shaped as the content editor writes them ---------------
+            // A Body in Stack, rich text as runs, a run's own Font for the part in bold.
+            static string Piece(params BaseItem[] items)
+            {
+                var piece = new Report { Body = new() { Layout = LayoutMode.Stack } };
+                foreach (BaseItem item in items) piece.Body!.Add(item);
+                piece.Reattach();
+                return piece.ToJson();
+            }
+            static AdvancedTextItem Rich(params (string Text, bool Bold)[] runs)
+            {
+                var item = new AdvancedTextItem();
+                foreach (var (text, bold) in runs)
+                    item.Runs.Add(new TextRun { Text = text, Font = bold ? new TextStyle { Bold = true } : null });
+                return item;
+            }
+            static string Article(string wording) => Piece(Rich(("Art. 1", true), (" - " + wording, false)));
+
+            static ImageItem Logo()
+            {
+                var logo = new ImageItem { SourceField = "Logo", AltText = "Logo du cabinet" };
+                logo.Style.Location.Width = (28, Units.Millimeter);
+                logo.Style.Location.Height = (14, Units.Millimeter);
+                return logo;
+            }
+
+            const string before = "L'expert accomplit sa mission avec conscience, objectivité et impartialité.";
+            const string after = "L'expert remplit personnellement la mission qui lui est confiée.";
+            Shelf Store(string wording) => new(
+                ("loi/art-1", Article(wording)),
+                ("destinataire", Piece(Rich(("{Destinataire.Nom}", true),
+                                            ("\n{Destinataire.Rue}\n{Destinataire.Ville}", false)))),
+                ("logo", Piece(Logo())),
+                ("mentions", Piece(Rich(("Rapport {Dossier.Numero} - page {Page} sur {Pages}", false)))));
+
+            // --- the master, as the template designer lays it out --------------------------
+            static SubTemplateItem Slot(string reference)
+                => new() { TemplatePath = "st://" + reference };
+            static SubTemplateItem PlacedSlot(string reference, double left, double top, double width)
+            {
+                SubTemplateItem slot = Slot(reference);
+                slot.Style.Location.Left = (left, Units.Millimeter);
+                slot.Style.Location.Top = (top, Units.Millimeter);
+                slot.Style.Location.Width = (width, Units.Millimeter);
+                return slot;
+            }
+
+            Report Master()
+            {
+                var master = new Report
+                {
+                    Title = "Rapport d'expertise",
+                    Language = "fr-FR",
+                    GeneratedAt = SampleDate,
+                    Dimension = new() { Width = 210, Height = 297 },
+                    Header = new(),
+                    Footer = new(),
+                    Body = new() { Layout = LayoutMode.Stack }
+                };
+                master.Header!.Style.Location.Height = (40, Units.Millimeter);
+                master.Footer!.Style.Location.Height = (12, Units.Millimeter);
+
+                master.Header.Add(PlacedSlot("logo", 0, 0, 30));
+                master.Header.Add(PlacedSlot("destinataire", 110, 4, 80));
+                SubTemplateItem mentions = Slot("mentions");
+                mentions.Style.Location.Dock = Dock.Left | Dock.Right;
+                master.Footer.Add(mentions);
+
+                Demonstrates(master.Body!, "Sous-documents servis par nom",
+                    "L'adresse à droite, le logo, l'article en gras et le pied de page ne sont pas dans ce "
+                    + "gabarit : chacun est un sous-document que le programme hôte sert par st://, rempli avec "
+                    + "les données du dossier. Changer l'article une fois change tous les rapports qui le citent.");
+                master.Body.Add(T("Le présent rapport répond à la mission confiée par ordonnance du 2 septembre 2026."));
+                master.Body.Add(Slot("loi/art-1"));
+                master.Body.Add(T("Montant des honoraires : {Honoraires}."));
+                for (int i = 1; i <= 45; i++)
+                    master.Body.Add(T($"Constat {i}. Les éléments examinés sur place ont été relevés, photographiés "
+                                      + "et rapprochés des pièces communiquées par les parties."));
+                master.Reattach();
+                return master;
+            }
+
+            // --- the case's data, every value already written the way it prints ------------
+            string nnbsp = ((char)0x202F).ToString(), nbsp = ((char)0x00A0).ToString();
+            string fee = "1" + nnbsp + "235" + nbsp + "F" + nbsp + "CFP";
+            string data = new System.Text.Json.Nodes.JsonObject
+            {
+                ["Dossier"] = new System.Text.Json.Nodes.JsonObject { ["Numero"] = "EXP-2026-0412" },
+                ["Destinataire"] = new System.Text.Json.Nodes.JsonObject
+                {
+                    ["Nom"] = "Maître Jeanne Dupont",
+                    ["Rue"] = "12 rue des Lilas",
+                    ["Ville"] = "98800 Nouméa"
+                },
+                ["Honoraires"] = fee,
+                ["Logo"] = Convert.ToBase64String(
+                    PngEncoder.Rgb(60, 30, (x, y) => ((byte)(30 + x), (byte)(60 + y), 140)))
+            }.ToJsonString();
+
+            // --- composed the way a host does it: expand, bind, lay out --------------------
+            Shelf shelf = Store(before);
+            Report template = Master();
+            template.ExpandSubTemplates(shelf);
+            Report bound = ReportBinder.Bind(template, data);
+            var library = new FontLibrary();
+            LayoutResult layout = bound.Resolve(new FontTextMeasurer(library));
+
+            static string TextOf(PlacedItem p) => p.Fragment ?? (p.Source as TextItem)?.Text ?? "";
+            Console.WriteLine($"    demandé : {string.Join(", ", shelf.Asked)} ; {layout.PageCount} pages");
+
+            AssertEqual(testName, "every piece is asked for by name, once",
+                "destinataire,logo,loi/art-1,mentions",
+                string.Join(",", shelf.Asked.OrderBy(s => s, StringComparer.Ordinal)), 0);
+            AssertEqual(testName, "the body runs onto a second page, so the bands repeat",
+                true, layout.PageCount >= 2, 0);
+
+            foreach (Page page in layout.Pages)
+            {
+                var texts = page.Items.Where(i => i.Source is TextItem).ToList();
+                PlacedItem? Find(string text) => texts.FirstOrDefault(i => TextOf(i).Contains(text));
+                string on = $" (page {page.Number})";
+
+                // The address: filled, inside the block the designer placed, stacked down it.
+                PlacedItem? name = Find("Maître Jeanne Dupont"), city = Find("98800 Nouméa");
+                Console.WriteLine($"    page {page.Number} : adresse à x={name?.Frame.Left:0.0}, "
+                                  + $"ville en dessous à y={city?.Frame.Top:0.0}");
+                AssertEqual(testName, "the recipient's name is printed" + on, true, name != null, 0);
+                AssertEqual(testName, "and the town" + on, true, city != null, 0);
+                if (name == null || city == null) continue;
+                AssertEqual(testName, "where the block was placed, 110mm in" + on, 110, name.Frame.Left, 0.01);
+                AssertEqual(testName, "the town below the name, in the same block" + on,
+                    true, city.Frame.Top > name.Frame.Top && Math.Abs(city.Frame.Left - 110) < 0.01, 0);
+                AssertEqual(testName, "and inside the header" + on, true, city.Frame.Bottom <= 40, 0);
+                AssertEqual(testName, "the name in bold, as the piece says" + on,
+                    true, ((TextItem)name.Source).Font?.Bold == true, 0);
+
+                // The logo: the picture from the data, where its piece was placed.
+                PlacedItem? picture = page.Items.FirstOrDefault(i => i.Source is ImageItem img && img.AltText == "Logo du cabinet");
+                AssertEqual(testName, "the logo comes from the data" + on,
+                    true, picture != null && ((ImageItem)picture.Source).Source.Data.Length > 0, 0);
+                AssertEqual(testName, "at the top left of the header" + on,
+                    true, picture != null && picture.Frame.Left < 0.01 && picture.Frame.Bottom <= 40, 0);
+
+                // The footer: the case number and the page's own number, out of the total.
+                string expected = $"Rapport EXP-2026-0412 - page {page.Number} sur {layout.PageCount}";
+                Console.WriteLine($"    page {page.Number} : pied « {string.Join(" ", texts.Where(i => i.Frame.Top > 280).Select(TextOf))} »");
+                AssertEqual(testName, "the footer's mentions, numbered" + on, true,
+                    string.Join(" ", texts.Where(i => i.Frame.Top > 280).Select(TextOf)).Contains(expected), 0);
+
+                AssertEqual(testName, "and no merge field left unfilled" + on,
+                    "", string.Join(" | ", texts.Select(TextOf).Where(t => t.Contains('{'))), 0);
+            }
+
+            // The article: in the flow, between the paragraphs around it, its label in bold.
+            var first = layout.Pages[0].Items.Where(i => i.Source is TextItem).ToList();
+            PlacedItem? intro = first.FirstOrDefault(i => TextOf(i).StartsWith("Le présent rapport"));
+            PlacedItem? label = first.FirstOrDefault(i => TextOf(i) == "Art. 1");
+            PlacedItem? wording = first.FirstOrDefault(i => TextOf(i).Contains("objectivité"));
+            PlacedItem? fees = first.FirstOrDefault(i => TextOf(i).StartsWith("Montant des honoraires"));
+            AssertEqual(testName, "the article sits where it was named, after the paragraph before it",
+                true, intro != null && label != null && fees != null
+                      && intro.Frame.Top < label.Frame.Top && label.Frame.Top < fees.Frame.Top, 0);
+            AssertEqual(testName, "its label in bold and its wording not",
+                true, label != null && wording != null && ((TextItem)label.Source).Font?.Bold == true
+                      && ((TextItem)wording.Source).Font?.Bold != true, 0);
+
+            // A pre-formatted amount reaches the page exactly as it was written.
+            AssertEqual(testName, "a pre-formatted amount prints as the host wrote it",
+                true, fees != null && TextOf(fees).Contains(fee), 0);
+
+            // --- changed once, printed everywhere -------------------------------------------
+            // Two documents name the same article; the source changes; both print the change.
+            Shelf amended = Store(after);
+            var letter = new Report
+            {
+                Title = "Lettre", Language = "fr-FR",
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack }
+            };
+            letter.Body!.Add(T("Madame, Monsieur,"));
+            letter.Body.Add(Slot("loi/art-1"));
+            letter.Reattach();
+
+            string Printed(Report master)
+            {
+                master.ExpandSubTemplates(amended);
+                LayoutResult again = ReportBinder.Bind(master, data).Resolve(new FontTextMeasurer(library));
+                return string.Join(" ", again.Pages.SelectMany(p => p.Items).Select(TextOf));
+            }
+            string report2 = Printed(Master()), letter2 = Printed(letter);
+            AssertEqual(testName, "the report prints the article as it now reads",
+                true, report2.Contains("personnellement") && !report2.Contains("objectivité"), 0);
+            AssertEqual(testName, "and so does every other document that names it",
+                true, letter2.Contains("personnellement") && !letter2.Contains("objectivité"), 0);
+
+            // --- and the file, for the eye ---------------------------------------------------
+            var pdf = new PdfBackend(library) { Author = "Cabinet d'expertise" };
+            ReportRenderer.Render(bound, layout, pdf);
+            string path = Path.Combine(OutputDirectory("subdocuments"), "expertise.pdf");
+            WriteSamplePdf(path, pdf.ToArray());
+            Console.WriteLine($"    -> {path}");
+
+            // And the proof beside it, to set the two side by side (CLAUDE.md section 2).
+            var proof = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
+            ReportRenderer.Render(bound, layout, proof);
+            File.WriteAllText(Path.Combine(OutputDirectory("subdocuments"), "expertise.html"), proof.ToHtml());
+            Console.WriteLine();
+        }
     }
 }

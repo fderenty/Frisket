@@ -532,15 +532,11 @@ namespace Frisket
                 // kept as a reassuring no-op. A rule that no longer describes the engine
                 // is worse than no rule: it teaches people to ignore the panel.
 
-                // {Pages} needs a second pass once the true total is known, which only a
-                // plain TextItem's fragment is re-swept for; a run keeps whatever guess
-                // was made on the first pass.
-                if (advanced.Runs.Any(r => ReportTokens.UsesPageCount(r.Text)))
-                {
-                    found.Add(new TemplateIssue("sound.advancedTextPageCount", IssueLevel.Warning,
-                        "This advanced text uses {Pages}, which will not be corrected to the "
-                        + "real total the way it would be in a plain text.", item, where));
-                }
+                // {Pages} in a run was reported here too, because only a plain TextItem's
+                // fragment was revisited once the total was known and a run printed the
+                // placeholder - "page 1 of 0". Each piece of a run carries the token beside
+                // it now (BreakAdvancedText, 20 October 2026), so the rule went the way
+                // Justify's did.
             }
 
             // Two fields answering to one name are one field to a reader: filling either
