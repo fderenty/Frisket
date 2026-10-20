@@ -901,20 +901,28 @@ function hydrate(item) {
 
   // Item defaults that are the enum's zero are absent too, and those read as an
   // identity: a field with no Kind is a text field, not a field of no kind.
+  //
+  // And a Layout that is absent is whatever the engine's constructor says, which is Stack for
+  // the four that flow - Body, TableItem, ImageGridItem, SubTemplateItem (CLAUDE.md 7). The
+  // engine writes that Stack, so a file it wrote never showed the difference; a template a
+  // host or an AI writes by hand leaves it out, and its body or its sub-document was laid out
+  // here as Absolute - every child on top of the first - while the engine stacked them.
+  // Found on 20 October 2026 by looking at a sub-document drawn both ways side by side.
   const D = {
     LineItem:      { Orientation: "Horizontal" },
     ImageItem:     { Scaling: "Uniform" },
     ContainerItem: { Layout: "Absolute", ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
     TableRow:      { Layout: "Absolute" },
-    TableItem:     { Layout: "Absolute", RepeatHeader: true },
+    TableItem:     { Layout: "Stack", RepeatHeader: true },
+    ImageGridItem: { Layout: "Stack" },
     Header:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
     Footer:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
-    Body:          { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
+    Body:          { Layout: "Stack", ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
     FieldItem:     { Kind: "Text", Signing: "ByHand", Multiline: false, ReadOnly: false,
                      Required: false, MaxLength: 0 },
     BarcodeItem:   { Value: "", Symbology: "Qr", Correction: "Medium",
                      QuietZone: 0, ShowText: true },
-    SubTemplateItem: { Mode: "Splice", TemplatePath: "", TemplateData: "" },
+    SubTemplateItem: { Layout: "Stack", Mode: "Splice", TemplatePath: "", TemplateData: "" },
     ImportedPageItem: { Data: "", SourcePath: "", Page: 1, Scaling: "Uniform" }
   }[item.$type];
 
@@ -925,44 +933,125 @@ function hydrate(item) {
   return item;
 }
 
-/// Splices in every sub-template that carries its own JSON.
+/// Splices in every sub-template that carries its own JSON, and every st:// reference the
+/// caller can answer for.
 ///
-/// Only that shape. A path needs a file this page does not have and a st:// reference
-/// needs a program it is not - the engine draws exactly the same line, and the panel
-/// says which is which rather than letting the preview pretend.
+/// A path needs a file this page does not have, so it stays empty - the engine draws the same
+/// line, and the panel says which is which rather than letting the preview pretend. A
+/// reference is a program's to answer, and since 20 October 2026 the program can be asked:
+/// `lookup(reference)` returns the referenced template - JSON text or an object - or
+/// undefined while it is not known yet, which draws the block empty until it is. That is
+/// ISubTemplates.Find on the engine's side, answered by the same host from the same store.
+///
+/// What a piece holds is expanded in turn, as the engine expands it, and a reference already
+/// being expanded higher up draws empty rather than looping - the engine's cycle guard,
+/// which throws; a preview has nothing to throw to.
 ///
 /// Before applyHeadingNumbers below, and that is not tidiness: a heading inside a
 /// spliced template has to be counted with the rest of them, which is only possible
 /// because expansion comes first. The engine says so in as many words - "4.1. Method
 /// coming from the sub-template, possible only because expansion precedes everything
 /// else" (CLAUDE.md section 15b).
-function expandCarried(node) {
+function expandCarried(node, lookup = null, chain = new Set()) {
   for (const child of (node.Childs || [])) {
-    if (child.$type === "SubTemplateItem" && (child.TemplateData || "").length) {
+    const carried = child.$type === "SubTemplateItem" && (child.TemplateData || "").length > 0;
+    const reference = child.$type === "SubTemplateItem" ? referenceOf(child) : null;
+
+    if (carried || reference !== null) {
       // Append brings a document, not a block: its sections land after this one, and
       // this canvas shows one section. Splicing its body into the flow here would
       // draw a page that will never exist - which is the fault this function's own
       // comment warns about, met from the other end.
       if (child.Mode === "Append") { child.Childs = []; continue; }
 
+      let inner = null;
       try {
-        const inner = JSON.parse(decodeURIComponent(escape(atob(child.TemplateData))));
-        const body = (inner.Sections || [])
-          .flatMap(s => s.Childs || []).find(c => c.$type === "Body");
-
-        // Replaced rather than appended: layout runs on every keystroke, and appending
-        // would splice the same template in again on each one.
-        child.Childs = (body && body.Childs)
-          ? JSON.parse(JSON.stringify(body.Childs)) : [];
+        inner = carried
+          ? JSON.parse(decodeURIComponent(escape(atob(child.TemplateData))))
+          : chain.has(reference) ? null : asTemplate(lookup ? lookup(reference) : undefined);
       } catch {
         // Not a template, or not base64. Empty is the honest drawing: the panel's
         // check says what is wrong, and a preview that guessed would be worse.
-        child.Childs = [];
+        inner = null;
       }
+
+      const body = inner && (inner.Sections || [])
+        .flatMap(s => s.Childs || []).find(c => c.$type === "Body");
+
+      // Replaced rather than appended: layout runs on every keystroke, and appending
+      // would splice the same template in again on each one.
+      child.Childs = (body && body.Childs) ? JSON.parse(JSON.stringify(body.Childs)) : [];
+
+      const deeper = new Set(chain);
+      if (reference !== null) deeper.add(reference);
+      expandCarried(child, lookup, deeper);
       continue;
     }
-    if (child.Childs) expandCarried(child);
+    if (child.Childs) expandCarried(child, lookup, chain);
   }
+}
+
+/// A sub-template whose children come from somewhere else - its own bytes, or the host's
+/// store - and are therefore drawn here and never edited: they are copied in afresh on
+/// every layout, and dropped again on saving.
+function holdsPiece(item) {
+  return item.$type === "SubTemplateItem"
+      && ((item.TemplateData || "").length > 0 || referenceOf(item) !== null);
+}
+
+/// What a sub-template's st:// reference names - the text after the scheme, trimmed - or null
+/// when it names a file, or nothing. The scheme is looked for at the very start, untrimmed, as
+/// the engine looks for it: " st://x" is a path there, and must not be a reference here.
+function referenceOf(item) {
+  const path = item.TemplatePath || "";
+  return /^st:\/\//i.test(path) ? path.slice(5).trim() : null;
+}
+
+/// A template as a host may hand it over: JSON text, an object, or nothing yet.
+function asTemplate(value) {
+  if (typeof value === "string") return JSON.parse(value);
+  return value && typeof value === "object" ? value : null;
+}
+
+/// The template the exact preview is sent, with every reference it can answer for carried as
+/// bytes instead of named. The engine behind the preview is not the host and cannot resolve a
+/// name; carried, the pieces reach it exactly as this page shows them. What is SAVED keeps the
+/// references - see forEngine - so changing a piece in the host's store changes every document
+/// that names it, which is the whole point of naming it.
+function carryReferences(template, lookup) {
+  const copy = JSON.parse(JSON.stringify(template));
+  const encode = text => btoa(unescape(encodeURIComponent(text)));
+
+  (function carry(node, chain) {
+    for (const child of (node.Childs || [])) {
+      // A piece embedded from a file may itself name pieces of the library.
+      if (child.$type === "SubTemplateItem" && (child.TemplateData || "").length) {
+        try {
+          const inner = JSON.parse(decodeURIComponent(escape(atob(child.TemplateData))));
+          carry({ Childs: inner.Sections || [] }, chain);
+          child.TemplateData = encode(JSON.stringify(inner));
+        } catch { /* not a template: the engine says so, as it would have */ }
+        continue;
+      }
+      const reference = child.$type === "SubTemplateItem" ? referenceOf(child) : null;
+      if (reference !== null && !chain.has(reference)) {
+        let inner = null;
+        try { inner = asTemplate(lookup(reference)); } catch { inner = null; }
+        if (inner) {
+          const deeper = new Set(chain).add(reference);
+          const nested = JSON.parse(JSON.stringify(inner));
+          carry({ Childs: nested.Sections || [] }, deeper);
+          child.TemplateData = encode(JSON.stringify(nested));
+          child.TemplatePath = "";
+          child.Childs = [];
+        }
+        continue;
+      }
+      carry(child, chain);
+    }
+  })({ Childs: copy.Sections || [] }, new Set());
+
+  return copy;
 }
 
 /// The report as the engine should receive it, and as a file should hold it.
@@ -978,10 +1067,12 @@ function forEngine(report) {
 
   // A carried sub-template's children are derived from its bytes, so the file keeps
   // the bytes and not the expansion. Otherwise editing the other template would leave
-  // this one showing what it used to say, and saying it with confidence.
+  // this one showing what it used to say, and saying it with confidence. A referenced one's
+  // are derived from the host's store, for the same reason and more so: keeping them would
+  // freeze the piece into the file, and a changed article would change nothing.
   (function strip(node) {
     for (const child of (node.Childs || [])) {
-      if (child.$type === "SubTemplateItem" && (child.TemplateData || "").length)
+      if (holdsPiece(child))
         child.Childs = [];
       else
         strip(child);
@@ -991,9 +1082,9 @@ function forEngine(report) {
   return copy;
 }
 
-function layout(report, index = 0) {
+function layout(report, index = 0, lookup = null) {
   normaliseReport(report);
-  expandCarried({ Childs: report.Sections || [] });
+  expandCarried({ Childs: report.Sections || [] }, lookup);
 
   // Every section, not just the one being composed: {HeadingNumber} counts across the
   // whole file, so the second section cannot know where it starts without the first
@@ -1102,6 +1193,37 @@ function flow(container, area, placed, report) {
   lay(enough);
 }
 
+/// Where an item's left and right edges fall from what it states - a dock, an edge, a width -
+/// and NaN for an edge nothing decided: the engine's ComputeHorizontal, which is all its Flow
+/// asks before giving the column to whatever is left undecided.
+///
+/// Not computeFrame, which sizes a text to its content. That is right for a text at a
+/// coordinate and wrong in a flow, where the engine breaks the lines at the column and lines
+/// them up against its edges. Until 20 October 2026 the flow took computeFrame's answer, so a
+/// paragraph in a stacked body never wrapped here and ran off the page, and a text aligned
+/// right sat against the end of its own words - while the engine wrapped the one and put the
+/// other against the margin. Found by setting a sub-document's two previews side by side.
+function horizontalOf(item, area) {
+  const loc = item.Style.Location;
+  const a = dockOf(loc);
+  let left = NaN, right = NaN;
+  if (a & DOCK.Left) left = area.left;
+  else if (has(loc.LeftValue)) left = area.left + mm(num(loc.LeftValue), loc.LeftUnit, area.width);
+  if (a & DOCK.Right) right = area.right;
+  else if (has(loc.RightValue)) right = area.right - mm(num(loc.RightValue), loc.RightUnit, area.width);
+
+  const w = has(loc.WidthValue) ? mm(num(loc.WidthValue), loc.WidthUnit, area.width) : NaN;
+  if (!Number.isFinite(w)) return { left, right };
+  if (Number.isFinite(left) && !Number.isFinite(right)) right = left + w;
+  else if (!Number.isFinite(left) && Number.isFinite(right)) left = right - w;
+  else if (!Number.isFinite(left)) {
+    // Nothing pinned it, so the alignment decides - against the left without one.
+    left = alignPlace(area.left, area.width, w, item.Style.AlignHorizontal || "None");
+    right = left + w;
+  }
+  return { left, right };
+}
+
 /// Places children from `start` onwards. Returns the index of the first one it did
 /// not place, which is where the next column picks up.
 function flowColumn(container, area, placed, report, start, stopAtBottom) {
@@ -1128,7 +1250,12 @@ function flowColumn(container, area, placed, report, start, stopAtBottom) {
     const m = child.Style.Margin;
     const column = rect(area.left + m.Left, area.top, area.right - m.Right, area.bottom);
     const top = cursor + m.Top;
-    const probe = computeFrame(child, rect(column.left, top, column.right, area.bottom), report);
+    // A text asks only what it states, as the engine's Flow asks it; everything else keeps
+    // computeFrame, which agrees with that for anything not sized from its content and also
+    // clamps a width to its constraints, as the engine does when it places the item.
+    const probe = child.$type === "TextItem"
+      ? horizontalOf(child, column)
+      : computeFrame(child, rect(column.left, top, column.right, area.bottom), report);
     const left = Number.isFinite(probe.left) ? probe.left : column.left;
     const right = Number.isFinite(probe.right) ? probe.right : column.right;
     const height = intrinsicHeight(child, right - left, report);
@@ -1449,7 +1576,7 @@ const STRINGS = {
     "panel.back": "Back", "panel.data": "Data", "panel.watermark": "Watermark",
     "panel.background": "Background",
 
-    "family.display": "Display", "family.input": "Input",
+    "family.display": "Display", "family.input": "Input", "family.library": "Library",
     "add.text": "Text", "add.rule": "Rule", "add.image": "Image", "add.table": "Table",
     "add.code": "Code", "add.group": "Group", "add.checkbox": "Checkbox",
     "add.signature": "Signature", "add.imageGrid": "Image grid", "add.subTemplate": "Sub-template",
@@ -1473,7 +1600,12 @@ const STRINGS = {
     "richText.newColour": "New colour",
     "field.sourceField": "Data field",
     "hint.sourceField": "A path in the data holding the image, as base64 or a data: URI - for example Signatures.Client. Takes over from the file below once the data provides something; nothing at that path means no image at all, the same way an unsigned quote is left with no signature rather than an empty box.",
-    "hint.subTemplate": "Another template, three ways. A path is resolved next to the file that names it, which only the CLI and the native library can do - this page has no file of its own, so a path shows here as an empty box. st:// names something the calling program looks up. Embedding it puts the other template inside this one, which travels anywhere and is what the preview below can actually splice in.",
+    "hint.subTemplate": "Another template, three ways. A path is resolved next to the file that names it, which only the CLI and the native library can do - this page has no file of its own, so a path shows here as an empty box. st:// names something the calling program looks up, and is drawn here when the program offers its library to this page. Embedding it puts the other template inside this one, which travels anywhere.",
+    "field.libraryPiece": "From the library",
+    "hint.pieceReady": "Drawn from the library: {title}. It is edited there, not here - the file keeps the reference only, so changing the piece changes every document that names it.",
+    "hint.pieceLoading": "Asking the library for {reference}…",
+    "hint.pieceMissing": "The library does not know {reference}, so nothing is drawn here. Whatever composes the document will have to.",
+    "hint.pieceNoLibrary": "This page has no library to ask, so {reference} is drawn as an empty box. The program that composes the document looks it up.",
     "hint.advancedJustify": "Justify does nothing on an advanced text - it stretches the gaps of a plain text's one line, and this places each run's own box instead. Drawn left-aligned.",
     "field.value": "Value", "field.kind": "Kind", "field.correction": "Correction",
     "field.showText": "Readable value", "field.quietZone": "Margin (modules)",
@@ -1745,7 +1877,7 @@ const STRINGS = {
     "panel.back": "Verso", "panel.data": "Données", "panel.watermark": "Filigrane",
     "panel.background": "Fond de page",
 
-    "family.display": "Affichage", "family.input": "Saisie",
+    "family.display": "Affichage", "family.input": "Saisie", "family.library": "Bibliothèque",
     "add.text": "Texte", "add.rule": "Trait", "add.image": "Image", "add.table": "Tableau",
     "add.code": "Code", "add.group": "Groupe", "add.checkbox": "Case",
     "add.signature": "Signature", "add.imageGrid": "Planche images", "add.subTemplate": "Sous-gabarit",
@@ -1769,7 +1901,12 @@ const STRINGS = {
     "richText.newColour": "Nouvelle couleur",
     "field.sourceField": "Champ de données",
     "hint.sourceField": "Un chemin dans les données contenant l’image, en base64 ou en URI data: — par exemple Signatures.Client. Prend le pas sur le fichier ci-dessous dès que les données fournissent quelque chose ; rien à ce chemin veut dire pas d’image du tout, comme un devis non signé reste sans signature plutôt qu’avec un cadre vide.",
-    "hint.subTemplate": "Un autre gabarit, de trois façons. Un chemin est résolu à côté du fichier qui le nomme, ce que seuls le CLI et la bibliothèque native savent faire - cette page n'a pas de fichier propre, donc un chemin s'affiche ici en cadre vide. st:// nomme ce que le programme appelant va chercher. L'embarquer met l'autre gabarit dans celui-ci, ce qui voyage partout et ce que l'aperçu ci-dessous sait réellement insérer.",
+    "hint.subTemplate": "Un autre gabarit, de trois façons. Un chemin est résolu à côté du fichier qui le nomme, ce que seuls le CLI et la bibliothèque native savent faire - cette page n'a pas de fichier propre, donc un chemin s'affiche ici en cadre vide. st:// nomme ce que le programme appelant va chercher, et s'affiche ici quand ce programme ouvre sa bibliothèque à la page. L'embarquer met l'autre gabarit dans celui-ci, ce qui voyage partout.",
+    "field.libraryPiece": "Depuis la bibliothèque",
+    "hint.pieceReady": "Dessiné depuis la bibliothèque : {title}. Il se modifie là-bas, pas ici - le fichier ne garde que la référence, donc changer la pièce change chaque document qui la nomme.",
+    "hint.pieceLoading": "Demande de {reference} à la bibliothèque…",
+    "hint.pieceMissing": "La bibliothèque ne connaît pas {reference}, donc rien n'est dessiné ici. Ce qui compose le document devra le connaître.",
+    "hint.pieceNoLibrary": "Cette page n'a pas de bibliothèque à interroger, donc {reference} s'affiche en cadre vide. Le programme qui compose le document va le chercher.",
     "hint.advancedJustify": "Justifié ne fait rien sur un texte avancé - cela étire les espaces de l'unique ligne d'un texte simple, alors qu'ici chaque segment place sa propre boîte. Dessiné aligné à gauche.",
     "field.value": "Valeur", "field.kind": "Type", "field.correction": "Correction",
     "field.showText": "Valeur lisible", "field.quietZone": "Marge (modules)",
@@ -2169,8 +2306,8 @@ function watermarkSvg(report, page) {
 /// Draws one section as SVG. `show` carries what the viewer asked to see over the
 /// page rather than what the page holds - band tints, element outlines - so this
 /// stays answerable without a checkbox to read.
-function render(report, selected, index = 0, show = {}) {
-  const { placed, page, band, section } = layout(report, index);
+function render(report, selected, index = 0, show = {}, lookup = null) {
+  const { placed, page, band, section } = layout(report, index, lookup);
   const out = [];
   // white-space:pre on every <text>, as the engine's SvgBackend writes it: a browser
   // collapses the space a piece of rich text starts with and draws the next character in
@@ -2455,6 +2592,7 @@ const nameOf = item =>
   item.$type === "FieldItem" ? (item.Name || "champ") + " · " + item.Kind :
   item.$type === "TextItem" ? (item.Text || "").slice(0, 26) || "(vide)" :
   item.$type === "TableRow" ? (item.IsHeader ? "en-tête" : "ligne") :
+  item.$type === "SubTemplateItem" && referenceOf(item) !== null ? "st://" + referenceOf(item) :
   labelOf(item.$type);
 
 /// Whether an absolutely laid out group's children sit beside one another across the

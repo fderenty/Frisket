@@ -187,13 +187,16 @@ eval(withHandles(script,
      '\n    sandbox.ui = ui; sandbox.drawProps = drawProps; sandbox.parentOf = parentOf;' +
      '\n    sandbox.doc0 = doc0; sandbox.setSectionIndex = setSectionIndex; sandbox.reportNode = reportNode;' +
      '\n    sandbox.setSelected = v => { selected = v; }; sandbox.getReport = () => report;' +
-     '\n    sandbox.setReport = v => { report = v; };') +
+     '\n    sandbox.setReport = v => { report = v; };' +
+     '\n    sandbox.library = () => library; sandbox.pieceItem = pieceItem;' +
+     '\n    sandbox.addToSelection = addToSelection; sandbox.payload = payload;') +
      '\nsandbox.layout = layout; sandbox.render = render; sandbox.blankReport = blankReport;' +
      '\nsandbox.watermarkMarks = watermarkMarks; sandbox.hydrate = hydrate;' +
      '\nsandbox.validate = validate; sandbox.roleOf = roleOf;' +
      '\nsandbox.STRINGS = STRINGS; sandbox.THEMES = THEMES; sandbox.themeOrAuto = themeOrAuto;' +
      '\nsandbox.backdropArea = backdropArea; sandbox.WATERMARK_INK = WATERMARK_INK;' +
      '\nsandbox.forEngine = forEngine; sandbox.expandCarried = expandCarried;' +
+     '\nsandbox.carryReferences = carryReferences; sandbox.referenceOf = referenceOf;' +
      '\nsandbox.setData = setData; sandbox.resolvedImageSource = resolvedImageSource;' +
      '\nsandbox.frisketDesigner = typeof frisketDesigner === "function" ? frisketDesigner : undefined;');
 
@@ -201,7 +204,7 @@ eval(withHandles(script,
 // it would be a third copy of a number that already lives in two places, and the check
 // below would then be comparing the harness with itself.
 const engineWatermarkAlpha = (() => {
-  const source = readText('engine/Model/Watermark.cs');
+  const source = readText(path.join(REPO, 'engine/Model/Watermark.cs'));
   const found = /Color = new Color\(128, 128, 128, (\d+)\)/.exec(source);
   return found ? Number(found[1]) / 255 : NaN;
 })();
@@ -551,7 +554,7 @@ if (quotePath) {
   // --- the picture behind the page ------------------------------------------
   // Section 1 once more, and the half a harness exists for: the model, the panel,
   // the echo and this file all have to say one thing about one type.
-  const backdropSource = readText('engine/Model/Backdrop.cs');
+  const backdropSource = readText(path.join(REPO, 'engine/Model/Backdrop.cs'));
   const areaBlock = /enum BackdropArea\s*\{([\s\S]*?)^    \}/m.exec(backdropSource);
   const areas = areaBlock
     ? areaBlock[1].split('\n').map(l => l.trim())
@@ -1733,6 +1736,214 @@ if (typeof sandbox.frisketDesigner === 'function') {
   check('the designer is a call - frisketDesigner(seams)', false, 'not found');
 }
 
-console.log(failures ? `\n${checked} checks, ${failures} FAILED`
-                     : `\n${checked} checks, all good`);
-process.exit(failures ? 1 : 0);
+// --- the host's library of sub-documents ---------------------------------------
+// A document names an article of law or the recipient's address block by st://reference
+// and the host keeps the piece, so changing it once changes every document naming it. The
+// engine asks ISubTemplates as it composes (test 95); the designer asks the same host
+// through `subDocuments`, and has to draw what the engine will - the piece spliced in -
+// while saving only the name, and carrying the piece to the exact preview, whose engine
+// is not the host and cannot look a name up.
+const piece = (text, more = []) => ({
+  Sections: [{ Childs: [{ $type: 'Body', Layout: 'Stack',
+                          Childs: [{ $type: 'TextItem', Text: text }, ...more] }] }]
+});
+const naming = reference => ({ $type: 'SubTemplateItem', Layout: 'Stack', Mode: 'Splice',
+                               TemplatePath: 'st://' + reference, TemplateData: '', Childs: [] });
+const masterNaming = (...items) => ({
+  Title: 'Rapport', Language: 'fr-FR',
+  Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+               Childs: [{ $type: 'Body', Layout: 'Stack', Childs: items }] }]
+});
+const store = {
+  'loi/art-1': piece('Article 1 - Tout fait quelconque'),
+  // As JSON text, the way a host reading its own store hands it over - and naming a
+  // piece in turn, which the engine expands and so must this.
+  'adresse': JSON.stringify(piece('Maitre Dupont, 12 rue Haute', [naming('loi/art-1')])),
+  'boucle': piece('Une boucle', [naming('boucle')]),
+  'logo': piece('Cabinet', [{ $type: 'ImageItem', Source: { Data: '' } }]),
+};
+const textsOf = laid => laid.placed.filter(p => p.item.$type === 'TextItem').map(p => p.item.Text);
+const decoded = item => JSON.parse(Buffer.from(item.TemplateData, 'base64').toString('utf8'));
+const childOfBody = template => template.Sections[0].Childs.find(c => c.$type === 'Body').Childs;
+{
+  const master = masterNaming(naming('adresse'));
+  const unasked = textsOf(sandbox.layout(JSON.parse(JSON.stringify(master))));
+  const drawn = textsOf(sandbox.layout(master, 0, r => store[r]));
+  check('a piece the library knows is drawn where it is named, pieces inside it too',
+        drawn.includes('Maitre Dupont, 12 rue Haute') && drawn.includes('Article 1 - Tout fait quelconque')
+        && !unasked.some(x => x.startsWith('Maitre')),
+        drawn.join(' | ') || 'nothing');
+
+  // Laid out, the live template holds the piece - and the file must not.
+  const saved = childOfBody(sandbox.forEngine(master))[0];
+  check('and saving keeps the name, never the piece',
+        saved.TemplatePath === 'st://adresse' && saved.Childs.length === 0 && !saved.TemplateData,
+        `${saved.TemplatePath}, ${saved.Childs.length} child(ren)`);
+
+  // The exact preview's template: carried as bytes, the inner name carried as well, and
+  // a name the library does not know left as it was.
+  const sent = sandbox.carryReferences(masterNaming(naming('adresse'), naming('inconnu')),
+                                       r => store[r]);
+  const [carried, unknown] = childOfBody(sent);
+  const inner = carried.TemplateData ? childOfBody(decoded(carried)) : [];
+  const nested = inner.find(c => c.$type === 'SubTemplateItem');
+  check('the exact preview is sent the pieces carried, inside one another',
+        carried.TemplatePath === '' && inner[0] && inner[0].Text === 'Maitre Dupont, 12 rue Haute'
+        && nested && nested.TemplatePath === '' && childOfBody(decoded(nested))[0].Text.startsWith('Article 1')
+        && unknown.TemplatePath === 'st://inconnu' && !unknown.TemplateData,
+        JSON.stringify(sent).length + ' bytes');
+
+  // A piece naming itself: the engine throws on the cycle; a preview has nothing to throw
+  // to, so it draws the piece once and stops.
+  let loop = null, once = [];
+  try { once = textsOf(sandbox.layout(masterNaming(naming('boucle')), 0, r => store[r])); }
+  catch (e) { loop = e.message; }
+  let carriedLoop = null;
+  try { sandbox.carryReferences(masterNaming(naming('boucle')), r => store[r]); }
+  catch (e) { carriedLoop = e.message; }
+  check('a piece that names itself is drawn once, and carried once',
+        !loop && !carriedLoop && once.filter(x => x === 'Une boucle').length === 1,
+        loop || carriedLoop || once.join(' | '));
+}
+
+// A Layout left out is the engine constructor's, and four of them say Stack. Read off the
+// engine's sources rather than listed here, so a fifth type that flows is asked about the day
+// it is written: a list kept in the harness is one addition away from checking less (CLAUDE.md
+// 16). Then the case that showed it: a sub-document named by a template written by hand.
+{
+  const flowing = [];
+  for (const file of fs.readdirSync(path.join(REPO, 'engine/Model')).filter(f => f.endsWith('.cs')))
+    for (const m of readText(path.join(REPO, 'engine/Model', file))
+                      .matchAll(/public (\w+)\(\)\s*\{([^}]*)\}/g))
+      if (/Layout\s*=\s*LayoutMode\.Stack/.test(m[2])) flowing.push(m[1]);
+  const wrong = flowing.filter(type => sandbox.hydrate({ $type: type }).Layout !== 'Stack');
+  check('a Layout left out is the engine\'s own: Stack where its constructor says so',
+        flowing.length >= 4 && wrong.length === 0,
+        wrong.length ? wrong.join(', ') + ' read as ' + wrong.map(type => sandbox.hydrate({ $type: type }).Layout).join(', ')
+                     : flowing.join(', '));
+
+  const handWritten = {
+    Title: 'Rapport', Language: 'fr-FR',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+                 Childs: [{ $type: 'Body',
+                            Childs: [{ $type: 'SubTemplateItem', TemplatePath: 'st://loi' }] }] }]
+  };
+  const twoLines = piece('Article 1240 du Code civil',
+                         [{ $type: 'TextItem', Text: 'Tout fait quelconque de l\'homme.' }]);
+  const laid = sandbox.layout(handWritten, 0, () => twoLines).placed
+    .filter(p => p.item.$type === 'TextItem').map(p => p.frame);
+  check('a sub-document in a template written by hand flows, as the engine flows it',
+        laid.length === 2 && laid[1].top >= laid[0].bottom - 1e-9,
+        laid.map(f => f.top.toFixed(2) + '..' + f.bottom.toFixed(2)).join(' then '));
+}
+
+// A text in a flow with no width of its own takes the column, as the engine's Flow gives it:
+// a paragraph wraps there and a text aligned right sits against the margin. The echo sized
+// both to their words, so the paragraph ran off the page.
+{
+  const long = 'Tout fait quelconque de l\'homme, qui cause a autrui un dommage, oblige celui par '
+             + 'la faute duquel il est arrive a le reparer, et ceci sur plusieurs lignes.';
+  const report = {
+    Title: 'Flux', Language: 'fr-FR',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+                 Childs: [{ $type: 'Body', Layout: 'Stack', Childs: [
+                   { $type: 'TextItem', Text: 'A droite', Font: { HorizontalAlignment: 'Right' } },
+                   { $type: 'TextItem', Text: long }] }] }]
+  };
+  const out = sandbox.layout(report);
+  const [right, para] = out.placed.filter(p => p.item.$type === 'TextItem').map(p => p.frame);
+  const oneLine = right ? right.bottom - right.top : NaN;
+  check('a text in a flow takes the column: aligned against its edge, wrapped inside it',
+        right && para && near(right.left, out.band.left) && near(right.right, out.band.right)
+        && near(para.right, out.band.right) && para.bottom - para.top > 1.5 * oneLine,
+        right && para ? `${right.left.toFixed(1)}..${right.right.toFixed(1)} and ${para.left.toFixed(1)}..${para.right.toFixed(1)}`
+                        + ` over ${out.band.left.toFixed(1)}..${out.band.right.toFixed(1)}, ${((para.bottom - para.top) / oneLine).toFixed(1)} lines`
+                      : 'not placed');
+}
+
+const later = () => new Promise(resolve => setTimeout(resolve, 0));
+
+(async () => {
+  if (typeof sandbox.frisketDesigner === 'function') {
+    // A host holding its pieces in memory: answers at once.
+    const told = [];
+    const offered = sandbox.frisketDesigner({
+      root: document,
+      subDocuments: {
+        list: () => [{ reference: 'loi/art-1', title: 'Article 1' }, 'st://adresse', { title: 'nothing' }],
+        find: r => store[r] ?? null,
+      },
+      onChecks: found => told.push(found),
+    });
+    offered.mount();   // the handles now reach this one
+    check('the library the host lists is offered, by reference',
+          sandbox.library().map(e => e.reference + '=' + e.title).join(', ') === 'loi/art-1=Article 1, adresse=adresse',
+          sandbox.library().map(e => e.reference).join(', '));
+
+    offered.loadReport(masterNaming());
+    const body = sandbox.getReport().Sections[0].Childs.find(c => c.$type === 'Body');
+    sandbox.setSelected(body);
+    sandbox.addToSelection(sandbox.pieceItem('adresse'));
+    check('inserted from the library, the piece is drawn on the canvas',
+          sandbox.ui.canvas.innerHTML.includes('Maitre Dupont') && sandbox.ui.canvas.innerHTML.includes('Article 1'),
+          sandbox.ui.canvas.innerHTML.length + ' characters of SVG');
+    const kept = childOfBody(offered.report())[0];
+    check('and the template handed back names it, holding nothing',
+          kept && kept.TemplatePath === 'st://adresse' && kept.Childs.length === 0,
+          kept ? kept.TemplatePath : 'nothing');
+
+    // Selected, the piece is not somewhere to add to: what it holds is dropped on saving.
+    sandbox.setSelected(childOfBody(sandbox.getReport())[0]);
+    sandbox.addToSelection({ $type: 'TextItem', Text: 'apres la piece' });
+    const after = childOfBody(offered.report());
+    check('what is added with a piece selected goes beside it, not into it',
+          after.length === 2 && after[1].Text === 'apres la piece', after.map(c => c.$type).join(', '));
+
+    // The tree names the piece and does not open it: its content is another template's.
+    const tree = wordsIn(sandbox.ui.tree);
+    check('the tree names the piece and does not open it',
+          tree.includes('st://adresse') && !tree.includes('Maitre Dupont'),
+          tree.includes('Maitre Dupont') ? 'its content is listed' : 'closed');
+
+    // A fault inside a piece is the piece's to answer for, and lands on it.
+    sandbox.addToSelection(sandbox.pieceItem('logo'));
+    const lastFindings = told[told.length - 1] || [];
+    const inPiece = lastFindings.filter(i => i.rule === 'ua.altText');
+    check('a fault inside a piece is found, and lands on the piece',
+          inPiece.length === 1 && inPiece[0].item && inPiece[0].item.$type === 'SubTemplateItem',
+          inPiece.map(i => i.item && i.item.$type).join(', ') || 'not found');
+
+    // A host behind a network: answers later, and the page draws again when it does.
+    const slow = sandbox.frisketDesigner({
+      root: document,
+      subDocuments: { list: () => Promise.resolve(['adresse']), find: r => Promise.resolve(store[r] ?? null) },
+    });
+    slow.mount();
+    slow.loadReport(masterNaming(naming('adresse')));
+    const before = sandbox.ui.canvas.innerHTML.includes('Maitre Dupont');
+    await later(); await later();
+    check('a piece that arrives later is drawn when it arrives',
+          !before && sandbox.ui.canvas.innerHTML.includes('Maitre Dupont') && sandbox.library().length === 1,
+          before ? 'drawn before it was found'
+          : sandbox.ui.canvas.innerHTML.includes('Maitre Dupont') ? 'drawn on arrival' : 'not drawn');
+
+    // The exact preview waits for every piece, pieces inside pieces included.
+    const fresh = sandbox.frisketDesigner({
+      root: document,
+      subDocuments: { find: r => new Promise(resolve => setTimeout(() => resolve(store[r] ?? null), 5)) },
+    });
+    fresh.mount();
+    fresh.loadReport(masterNaming(naming('adresse')));
+    const sent = JSON.parse((await sandbox.payload()).template);
+    const outer = childOfBody(sent)[0];
+    const deeper = outer.TemplateData ? childOfBody(decoded(outer)).find(c => c.$type === 'SubTemplateItem') : null;
+    check('the exact preview waits for the pieces, and is sent them carried',
+          outer.TemplatePath === '' && deeper && deeper.TemplatePath === '' && !!deeper.TemplateData
+          && childOfBody(fresh.report())[0].TemplatePath === 'st://adresse',
+          outer.TemplateData ? (deeper && deeper.TemplateData ? 'both carried' : 'the inner one named') : 'named');
+  }
+
+  console.log(failures ? `\n${checked} checks, ${failures} FAILED`
+                       : `\n${checked} checks, all good`);
+  process.exit(failures ? 1 : 0);
+})();

@@ -26,6 +26,8 @@
 //   themeTarget  what carries data-theme and --paper
 //   theme        a room the host declared, over the stored preference
 //   onChecks     where the findings go, as well as to the panel
+//   subDocuments the host's library of sub-documents - list() and find(reference), either
+//                of which may answer with a promise (see "the host's library" below)
 // ---------------------------------------------------------------------------
 function frisketDesigner(seams = {}) {
   const uiRoot = seams.root || document;
@@ -106,6 +108,10 @@ function frisketDesigner(seams = {}) {
         <button data-add="FieldCheckbox" data-i18n="add.checkbox">Checkbox</button>
         <button data-add="FieldSignature" data-i18n="add.signature">Signature</button>
       </div>
+
+      <!-- Filled from the host's library, never typed here; hidden while it is empty. -->
+      <div class="family" id="libraryFamily" data-i18n="family.library" hidden>Library</div>
+      <div class="palette" id="libraryPalette" hidden></div>
 
       <div class="hint" data-i18n="hint.add"></div>
     </div>
@@ -474,6 +480,167 @@ function frisketDesigner(seams = {}) {
     // What the engine last returned, or null when the local approximation is showing.
     let exactPages = null;
 
+    // --- the host's library -----------------------------------------------------
+    //
+    // A sub-document is a template the host keeps - an article of law, the recipient's
+    // address block, a letterhead - and this one names it st://reference, so that changing
+    // it once changes every document that names it. The engine asks ISubTemplates for it
+    // as it composes; this page asks the same host the same two questions:
+    //
+    //   list()           what can be inserted: [{ reference, title }], or a promise of it
+    //   find(reference)  the template - JSON text or an object - or a promise of it; null
+    //                    or undefined for a reference the host does not know
+    //
+    // What was found is kept, so a keystroke does not ask again, and a piece that arrives
+    // later redraws the page. None of it is saved: the file keeps the reference
+    // (forEngine), and the exact preview is sent the pieces carried (carryReferences),
+    // because the engine behind it is not the host and cannot look a name up.
+    let subDocuments = seams.subDocuments || null;
+    let library = [];
+    const pieces = new Map();   // reference -> { state: "asked" | "ready" | "missing", template, promise }
+
+    /// The lookup layout() is handed: the template when it is known, undefined while it is
+    /// not. Asking is a side effect of drawing, once per reference.
+    function lookupPiece(reference) {
+      if (!reference) return undefined;
+      const known = pieces.get(reference);
+      if (known) return known.state === "ready" ? known.template : undefined;
+      if (!subDocuments || typeof subDocuments.find !== "function") return undefined;
+
+      const entry = { state: "asked", template: null, promise: null };
+      const asked = subDocuments;
+      pieces.set(reference, entry);
+      const settle = found => {
+        try { entry.template = asTemplate(found); } catch { entry.template = null; }
+        entry.state = entry.template ? "ready" : "missing";
+      };
+
+      let answer;
+      try { answer = asked.find(reference); } catch { answer = null; }
+
+      // A host holding its pieces in memory answers at once, and is drawn at once.
+      if (!(answer && typeof answer.then === "function")) {
+        settle(answer);
+        return entry.template || undefined;
+      }
+
+      // One behind a network answers later, and the page is drawn again when it does -
+      // unless the library was replaced meanwhile, in which case this answer is not one.
+      entry.promise = Promise.resolve(answer).then(settle, () => settle(null)).then(() => {
+        if (subDocuments === asked && pieces.get(reference) === entry) refresh(true);
+      });
+      return undefined;
+    }
+
+    /// The same, without asking: what the exact preview may carry once the asking is done.
+    const knownPiece = reference => {
+      const known = pieces.get(reference);
+      return known && known.state === "ready" ? known.template : undefined;
+    };
+
+    /// Asks for every piece the template names, pieces inside pieces included, and waits
+    /// for the answers. Before the exact preview: a piece still on its way would reach the
+    /// engine as a name it cannot look up, and the page it drew would be less than this one.
+    async function settlePieces() {
+      for (let round = 0; round < 16; round++) {
+        const named = new Set();
+        const walk = node => {
+          for (const child of node.Childs || []) {
+            const reference = child.$type === "SubTemplateItem" ? referenceOf(child) : null;
+            if (reference) {
+              named.add(reference);
+              const inner = knownPiece(reference);
+              if (inner) walk({ Childs: inner.Sections || [] });
+            } else walk(child);
+          }
+        };
+        walk({ Childs: report.Sections || [] });
+        if (report.BackPage && report.BackPage.Content) walk(report.BackPage.Content);
+
+        named.forEach(lookupPiece);
+        const waiting = [...named].map(r => pieces.get(r)).filter(e => e && e.state === "asked");
+        if (!waiting.length) return;
+        await Promise.all(waiting.map(e => e.promise));
+      }
+    }
+
+    /// Asks the host what it offers, and lays the answer out as buttons.
+    function loadLibrary() {
+      const asked = subDocuments;
+      library = [];
+      const take = listed => {
+        if (subDocuments !== asked) return;
+        library = (Array.isArray(listed) ? listed : []).map(entry => {
+          const raw = typeof entry === "string" ? entry : (entry && entry.reference) || "";
+          const reference = String(raw).trim().replace(/^st:\/\//i, "").trim();
+          const title = (entry && typeof entry === "object" && entry.title) || reference;
+          return { reference, title: String(title) };
+        }).filter(entry => entry.reference);
+        drawLibrary();
+      };
+
+      drawLibrary();
+      if (!asked || typeof asked.list !== "function") return;
+      let answer;
+      try { answer = asked.list(); } catch { return; }
+      if (answer && typeof answer.then === "function")
+        Promise.resolve(answer).then(listed => { take(listed); refresh(true); }, () => {});
+      else take(answer);
+    }
+
+    /// The library family of the palette: one button per piece, hidden while there is none.
+    function drawLibrary() {
+      const family = byId("libraryFamily"), palette = byId("libraryPalette");
+      if (!family || !palette) return;
+      palette.innerHTML = "";
+      for (const entry of library) {
+        const button = document.createElement("button");
+        button.textContent = entry.title;
+        button.title = "st://" + entry.reference;
+        button.onclick = () => addToSelection(pieceItem(entry.reference));
+        palette.appendChild(button);
+      }
+      family.hidden = palette.hidden = library.length === 0;
+    }
+
+    /// A sub-template naming a piece of the library: what its palette button inserts.
+    function pieceItem(reference) {
+      const item = newItem("SubTemplateItem");
+      item.TemplatePath = "st://" + reference;
+      return item;
+    }
+
+    /// Hands over another library, or the same one once its content has changed: what was
+    /// found is forgotten, and asked again as the page is drawn.
+    function setSubDocuments(next) {
+      subDocuments = next || null;
+      pieces.clear();
+      loadLibrary();
+      refresh();
+    }
+
+    /// The outermost sub-template whose content `item` was drawn from, or null. A piece's
+    /// content is copied in afresh on every redraw, so selecting part of it would select a
+    /// copy the next keystroke throws away, and editing it would edit nothing: what is
+    /// selected, flagged or clicked inside a piece is the piece.
+    function pieceHolding(item) {
+      const roots = [...(report.Sections || [])];
+      if (report.BackPage && report.BackPage.Content) roots.push(report.BackPage.Content);
+      const walk = (node, piece) => {
+        for (const child of node.Childs || []) {
+          if (child === item) return piece;
+          const found = walk(child, piece || (holdsPiece(child) ? child : null));
+          if (found !== undefined) return found;
+        }
+        return undefined;
+      };
+      for (const root of roots) {
+        const found = walk(root, null);
+        if (found !== undefined) return found;
+      }
+      return null;
+    }
+
     let report = blankReport();
 
     // The section being edited. A report holds a list of sections - that is what mixes
@@ -574,6 +741,8 @@ function frisketDesigner(seams = {}) {
       faulty = new Map();
       for (const issue of issues) {
         if (!issue.item) continue;
+        // `where` still names the place inside the piece; the item is what can be reached.
+        issue.item = pieceHolding(issue.item) || issue.item;
         const level = faulty.get(issue.item);
         faulty.set(issue.item, level === "error" ? level : issue.level);
       }
@@ -751,7 +920,8 @@ function frisketDesigner(seams = {}) {
                   : item.Childs ? "in" : (third < 0.5 ? "before" : "after");
 
         if (where === "in") {
-          if (!item.Childs || contains(dragging, item)) return null;
+          // A sub-template's content is another template's, and is dropped on saving.
+          if (!item.Childs || item.$type === "SubTemplateItem" || contains(dragging, item)) return null;
           return { where, parent: item, index: item.Childs.length };
         }
 
@@ -789,7 +959,8 @@ function frisketDesigner(seams = {}) {
       };
 
       li.appendChild(row);
-      if (item.Childs && item.Childs.length) {
+      // What a piece holds belongs to another template, and is not offered for editing.
+      if (item.Childs && item.Childs.length && !holdsPiece(item)) {
         const ul = document.createElement("ul");
 
         // With the filter on, a branch is kept only if it leads to a fault. The
@@ -1117,9 +1288,44 @@ function frisketDesigner(seams = {}) {
         if (item.Mode === "Append")
           p.appendChild(field2("", note(t("hint.appendMode"))));
 
-        p.appendChild(field2(t("field.templatePath"), input("text", item.TemplatePath ?? "",
-          v => { item.TemplatePath = v; refresh(); },
-          { placeholder: "fragment.json  |  st://letterhead" })));
+        // Committed whole rather than per keystroke: a reference is one name, and asking
+        // the host for "l", "lo" and "loi" on the way to it is three questions about nothing.
+        const path = input("text", item.TemplatePath ?? "", () => {},
+                           { placeholder: "fragment.json  |  st://letterhead" });
+        path.oninput = null;
+        path.onchange = () => { item.TemplatePath = path.value; refresh(); };
+        p.appendChild(field2(t("field.templatePath"), path));
+
+        if (library.length) {
+          const current = referenceOf(item);
+          const pick = document.createElement("select");
+          for (const entry of [{ reference: "", title: "—" }, ...library]) {
+            const option = document.createElement("option");
+            option.value = entry.reference;
+            option.textContent = entry.title;
+            pick.appendChild(option);
+          }
+          pick.value = library.some(e => e.reference === current) ? current : "";
+          pick.onchange = () => {
+            if (!pick.value) return;
+            item.TemplatePath = "st://" + pick.value;
+            item.TemplateData = "";
+            refresh();
+          };
+          p.appendChild(field2(t("field.libraryPiece"), pick));
+        }
+
+        // What the library said about the reference, since the canvas can only show it.
+        const reference = referenceOf(item);
+        if (reference) {
+          const entry = pieces.get(reference);
+          const listed = library.find(e => e.reference === reference);
+          const args = { reference: "st://" + reference, title: listed ? listed.title : reference };
+          p.appendChild(field2("", note(t(
+            !subDocuments ? "hint.pieceNoLibrary"
+            : !entry || entry.state === "asked" ? "hint.pieceLoading"
+            : entry.state === "ready" ? "hint.pieceReady" : "hint.pieceMissing", args))));
+        }
 
         // Embedding it: the same gesture as embedding an image, and for the same reason.
         // A path is resolved by whoever has the file, which is the CLI and the native
@@ -1730,6 +1936,13 @@ function frisketDesigner(seams = {}) {
       // Before anything is drawn or validated: the preview fills the template from it.
       setData(ui.data && ui.data.value);
 
+      // And the pieces spliced in before the checks read the tree, so what they find is in
+      // what is drawn - the engine checks the composition too (CLAUDE.md 14b) - rather than
+      // in whatever the last redraw left there.
+      expandCarried({ Childs: report.Sections || [] }, lookupPiece);
+      if (report.BackPage && report.BackPage.Content)
+        expandCarried({ Childs: [report.BackPage.Content] }, lookupPiece);
+
       runValidator();
       drawTree();
       drawIssues();
@@ -1756,17 +1969,18 @@ function frisketDesigner(seams = {}) {
       // it is whichever section the Sections dialog left open.
       const shownIndex = shown === report ? sectionIndex : 0;
       ui.canvas.innerHTML = render(shown, selected, shownIndex,
-                                   { bands: ui.showBands.checked, boxes: ui.showBoxes.checked });
+                                   { bands: ui.showBands.checked, boxes: ui.showBoxes.checked },
+                                   lookupPiece);
       const svg = ui.canvas.querySelector("svg");
       if (svg) svg.onclick = e => {
         const pt = svg.getScreenCTM().inverse();
         const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(pt);
-        const laid = layout(shown, shownIndex);
+        const laid = layout(shown, shownIndex, lookupPiece);
         const hit = laid.placed
           .filter(x => Number.isFinite(x.frame.left) && x.item !== laid.section
                        && p.x >= x.frame.left && p.x <= x.frame.right && p.y >= x.frame.top && p.y <= x.frame.bottom)
           .pop();
-        if (hit) { selected = hit.item; refresh(); }
+        if (hit) { selected = pieceHolding(hit.item) || hit.item; refresh(); }
       };
 
       fillStage();
@@ -1775,8 +1989,9 @@ function frisketDesigner(seams = {}) {
     }
 
     // --- the exact preview -----------------------------------------------------
-    function payload() {
-      const copy = forEngine(report);
+    async function payload() {
+      await settlePieces();
+      const copy = carryReferences(forEngine(report), knownPiece);
       const data = ui.data.value.trim();
       return {
         template: JSON.stringify(copy),
@@ -1807,7 +2022,7 @@ function frisketDesigner(seams = {}) {
 
     byId("exact").onclick = async () => {
       try {
-        const answer = await ask("/preview", payload());
+        const answer = await ask("/preview", await payload());
         const result = await answer.json();
         exactPages = result.pages;
         setServerState(true);
@@ -1823,7 +2038,7 @@ function frisketDesigner(seams = {}) {
 
     byId("pdf").onclick = async () => {
       try {
-        const answer = await ask("/pdf", payload());
+        const answer = await ask("/pdf", await payload());
         const blob = await answer.blob();
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -1956,16 +2171,23 @@ function frisketDesigner(seams = {}) {
           if (item.Kind !== "Text") item.Style.Location.HeightValue = item.Kind === "Signature" ? 20 : 5;
           if (item.Kind === "Checkbox") item.Style.Location.WidthValue = 5;
         }
-        // With nothing selected this used to land on the Section, beside the bands
-        // rather than inside one - laid out nowhere and drawn nowhere. Content belongs
-        // in the body; the bands are structure.
-        const host = selected && selected.Childs ? selected
-                   : (parentOf(selected) || bandOf("Body") || doc0());
-        host.Childs.push(item);
-        selected = item;
-        refresh();
+        addToSelection(item);
       };
     });
+
+    /// Puts a new item where the selection says: inside it when it holds things, beside it
+    /// otherwise. What the palette and the library both do.
+    function addToSelection(item) {
+      // With nothing selected this used to land on the Section, beside the bands
+      // rather than inside one - laid out nowhere and drawn nowhere. Content belongs
+      // in the body; the bands are structure. And never inside a sub-template: what it
+      // holds is another template's, and is dropped on saving.
+      const host = selected && selected.Childs && selected.$type !== "SubTemplateItem" ? selected
+                 : (parentOf(selected) || bandOf("Body") || doc0());
+      host.Childs.push(item);
+      selected = item;
+      refresh();
+    }
 
     // Once the field being typed into gives up the focus, the panel can be rebuilt -
     // which is what brings back any field that depends on what was just changed. The
@@ -2458,16 +2680,19 @@ function frisketDesigner(seams = {}) {
     }
 
     applyStaticText();
+    loadLibrary();
     refresh();
     askServerForFonts();
 
     // @harness - check-against-engine.js plants its handles here, inside, where they can see.
-    api = { loadReport, report: () => forEngine(report) };
+    api = { loadReport, report: () => forEngine(report), setSubDocuments };
   }
 
   return {
     mount,
     loadReport: json => { mount(); api.loadReport(json); },
+    /// Another library, or the same one once what it holds has changed.
+    setSubDocuments: next => { seams.subDocuments = next; if (api) api.setSubDocuments(next); },
     /// The template as the engine reads it.
     report: () => api ? api.report() : null,
   };

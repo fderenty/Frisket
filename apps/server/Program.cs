@@ -227,6 +227,15 @@ static Report Build(PreviewRequest request)
 
     Report template = Report.FromJson(request.Template);
 
+    // Every sub-template the template carries, spliced in before binding as the engine
+    // always does it. Until 20 October 2026 this line was missing, so a carried piece the
+    // designer drew was an empty box in the exact preview - the one preview that is
+    // supposed to be exact. This server keeps no library: a st:// reference or a path is
+    // refused with the engine's own message rather than drawn empty. The designer carries
+    // every piece its host's library answers for, so what still arrives here named is a
+    // piece nothing could find, and the host composing it would refuse it too.
+    template.ExpandSubTemplates();
+
     if (string.IsNullOrWhiteSpace(request.Data))
         return template;
 

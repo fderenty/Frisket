@@ -43,6 +43,11 @@
      hands over what its author composed last time; the second starts blank. Selecting,
      adding or loading in one does nothing to the other. Their accent comes from this page;
      their paper does not.</p>
+  <p>The first is also handed this page's <strong>library</strong> through its
+     <code>subDocuments</code> property: pieces the host keeps once - an article of law, the
+     recipient's address block, the firm's legal notices - offered under <em>Library</em> in
+     the palette and named <code>st://reference</code> in the template. They answer after a
+     short delay, the way a backend would; the template keeps only their names.</p>
 </header>
 
 <main>
@@ -60,6 +65,39 @@
 <script src="frisket-designer.js"></script>
 <script src="frisket-designer-element.js"></script>
 <script>
+  // The host's pieces. A real host reads them from its own store - the same one its
+  // ISubTemplates answers from when the engine composes - so a piece changed there changes
+  // every document naming it. Each is an ordinary template; only its Body is spliced in.
+  const pieceOf = (...childs) => ({
+    Sections: [{ Childs: [{ $type: "Body", Layout: "Stack", Childs: childs }] }]
+  });
+  const pieces = {
+    "loi/code-civil-1240": {
+      title: "Code civil, art. 1240",
+      template: pieceOf(
+        { $type: "TextItem", Text: "Article 1240 du Code civil", Font: { Bold: true } },
+        { $type: "TextItem", Text: "Tout fait quelconque de l'homme, qui cause à autrui un dommage, oblige celui par la faute duquel il est arrivé à le réparer." })
+    },
+    "destinataire": {
+      title: "Bloc destinataire",
+      template: pieceOf(
+        { $type: "TextItem", Text: "{Destinataire.Nom}\n{Destinataire.Adresse}\n{Destinataire.CodePostal} {Destinataire.Ville}",
+          Font: { HorizontalAlignment: "Right" } })
+    },
+    "mentions": {
+      title: "Mentions légales",
+      template: pieceOf(
+        { $type: "TextItem", Text: "Cabinet ACME Expertises - SAS au capital de 10 000 EUR - RCS Exemple 000 000 000",
+          Font: { Size: 0.8 } })
+    }
+  };
+  const library = {
+    list: () => Object.entries(pieces).map(([reference, p]) => ({ reference, title: p.title })),
+    find: reference => new Promise(resolve =>
+      setTimeout(() => resolve(pieces[reference] ? pieces[reference].template : null), 150))
+  };
+  document.getElementById("first").subDocuments = library;
+
   // What a host does with the findings is its own business; this one says how many there are.
   for (const id of ["first", "second"]) {
     document.getElementById(id).addEventListener("checks", e => {
@@ -77,8 +115,10 @@
       $type: "Section",
       Dimension: { Width: 210, Height: 297 },
       Childs: [{ $type: "Body", Layout: "Stack", Childs: [
+        { $type: "SubTemplateItem", TemplatePath: "st://destinataire" },
         { $type: "TextItem", Text: "Rapport d'expertise n° {Dossier.Numero}" },
-        { $type: "TextItem", Text: "Le présent rapport répond à la mission confiée par ordonnance." }
+        { $type: "TextItem", Text: "Le présent rapport répond à la mission confiée par ordonnance." },
+        { $type: "SubTemplateItem", TemplatePath: "st://loi/code-civil-1240" }
       ] }]
     }]
   };

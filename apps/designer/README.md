@@ -60,6 +60,38 @@ properties, the paper does not. `frisket-designer-embedded.html` holds two, one 
 template and one blank, to show each is its own. The harness asks the same of the call:
 two designers keep two templates, and the findings reach the host that made one.
 
+#### The host's library of sub-documents
+
+A host keeps pieces once - an article of law, the recipient's address block, the firm's
+legal notices - and a template names them `st://reference`, so changing a piece changes
+every document that names it. The engine asks `ISubTemplates` for them as it composes;
+the designer asks the same host the same two questions:
+
+```js
+designer.subDocuments = {
+  list: () => [{ reference: "loi/code-civil-1240", title: "Code civil, art. 1240" }],
+  find: reference => fetch("/pieces/" + reference).then(r => r.ok ? r.text() : null),
+};
+```
+
+Either may answer at once or with a promise; `find` hands back the template as JSON text
+or an object, or `null` for a reference it does not know. What the library lists appears
+under *Library* in the palette, and inserting one puts a sub-template naming it.
+
+- **The preview draws the pieces** as they arrive, pieces inside pieces too. The tree names
+  a piece and does not open it, and a click on what it drew selects the piece: its content
+  is another template's, edited there.
+- **The file keeps the names only.** `report` hands back `st://reference` and nothing under
+  it, so the host's own store stays the one place a piece is written.
+- **The exact preview is sent the pieces carried**, because the engine behind it is not the
+  host and cannot look a name up. It waits for every piece first; one the library does not
+  know reaches the engine named, and the engine refuses it in its own words - as the host
+  composing it would.
+
+Set `subDocuments` again - the same object will do - once what the library holds has
+changed: what was found is forgotten and asked again. The call takes it as
+`frisketDesigner({ subDocuments })`, and `setSubDocuments()` on what comes back.
+
 ## The flow editor
 
 `frisket-editor.html` is the other face. Type and it becomes an `AdvancedTextItem`;

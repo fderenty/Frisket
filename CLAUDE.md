@@ -64,6 +64,17 @@ exactly what a hand or an AI writing from the schema produces - stopped the desi
 always writes that font; the first one that was not came from a browser test, on 20 October
 2026. `check-against-engine.js` asks it now.
 
+**And an absent value is the engine constructor's, not the enum's zero.** The same evening, a
+sub-document drawn in the designer had its two lines on top of each other while the exact
+preview stacked them. `Body`, `TableItem`, `ImageGridItem` and `SubTemplateItem` set
+`Layout = Stack` in their constructors (§7), the engine writes that `Stack` out, and so no
+file it ever wrote showed `hydrate()` filling `Absolute` - or nothing at all - in its place.
+A body with no `Layout` put every item at `NaN`. Nothing failed: every template in the suite
+was written by Frisket. The harness reads the constructors out of `engine/Model` now and asks
+`hydrate` about each type it finds there, so a fifth type that flows is asked about the day it
+is written. Found by looking at the two previews side by side (§2), after sixteen browser
+tests had passed over the very page.
+
 ## 2. Rendering is checked three ways, never just one
 
 A text can be "correct" and wrong:
@@ -2138,8 +2149,9 @@ Three things found by building it:
 
   The cost, stated: `frisket check` can now refuse a template because of a file its author
   does not control. The message names the element, which is the most that can be done. And
-  the designer validates the *unexpanded* tree, having no file system to resolve anything
-  with - so it checks strictly less, and the panel says so rather than pretending.
+  the designer validates what it can expand - carried pieces and its host's library
+  (§14c) - and never a path, having no file system to resolve one with: so it checks
+  strictly less there, and the panel says so rather than pretending.
 
 `Report.FromFile` is what knows how to resolve a relative path — `FromJson`
 alone cannot, having no idea where the text came from. Wired into `apps/cli`
@@ -2147,6 +2159,64 @@ alone cannot, having no idea where the text came from. Wired into `apps/cli`
 `apps/server/Program.cs` nor the designer's local preview: both receive only JSON as
 text, with no file of their own to resolve anything relative against.
 The panel says so rather than letting the preview pretend it spliced something in.
+What the server *does* call is `ExpandSubTemplates()`, the door for text (§14c).
+
+### 14c. The designer asks the host for its pieces
+
+A host keeps an article of law or a recipient's address block once, and a template names
+it `st://reference`. The engine asks `ISubTemplates` as it composes; the designer asks the
+same host through the `subDocuments` seam - `list()` for the palette, `find(reference)` for
+the piece, either answering at once or with a promise. `layout()` takes the lookup as a
+parameter, so the core still holds no state of the page's, and `expandCarried` splices a
+named piece exactly as it splices a carried one: pieces inside pieces, a cycle drawn once
+rather than thrown, since a preview has nothing to throw to.
+
+**Three answers to "where does a piece live", and only one is the file.** What is saved
+names the piece and holds nothing under it - keeping the expansion would freeze the piece
+into every document and make changing it once change nothing. What the exact preview is
+sent carries it as bytes (`carryReferences`), because the engine behind the preview is not
+the host and cannot look a name up; it waits for every piece first, or a piece still on its
+way would reach the engine as a name. And what is drawn is copied in afresh on every
+redraw, so **selecting part of a piece selects a copy the next keystroke throws away**: the
+tree names a piece and does not open it, a click on what it drew selects the piece, and a
+finding inside it lands on the piece - its `where` still says where inside.
+
+**The server never expanded anything.** `ExpandSubTemplates` documents itself as *the door
+a server comes through*, and the server's `Build` never called it: a carried piece the
+designer drew was an empty box in the exact preview, the one preview meant to be exact.
+Found by asking, before writing a browser test for it, whether the server could pass such a
+test at all. It expands now, with no source, so a piece nothing could find is refused in
+the engine's words rather than drawn empty.
+
+**And the checks read the previous drawing.** `layout()` splices into the live template, and
+`refresh()` validated before it drew - so the panel's findings were about whatever the last
+redraw had spliced in, one keystroke late, for carried pieces since they existed. The pieces
+are expanded before the checks run now.
+
+Two things that would have been easy to leave in. The path field commits on `change` rather
+than per keystroke, or a host behind a network is asked for `l`, `lo` and `loi` on the way to
+one name. And the browser check that a click on a piece selects the piece was **vacuous on
+its first writing**, which a time-out on the click hid: had it passed, it would have proved
+nothing, since the piece was already selected from being inserted. It selects the body
+first now, and clicks at the text's place - the canvas answers a point.
+
+**One sabotage of six went green**: taking out the line by which `<frisket-designer>` hands
+its library to `frisketDesigner()` changed nothing, because the demonstration page sets
+`subDocuments` on an element already mounted and so only ever reaches the setter. A host
+that creates the element, fills it and then inserts it takes the other path, and nothing
+went through it. *A demonstration page exercises the order it was written in*; a test now
+fills an element before connecting it.
+
+**Then the eye, with every test green.** A screenshot of the two previews side by side showed
+the piece's lines on top of each other in the echo - §1's absent `Layout` - and, once that was
+mended, two faults older than any of this: in a stacked body, a text with no width of its own
+**did not wrap** and ran off the page, and a text aligned right sat against the end of its own
+words. The echo's flow took the frame `computeFrame` gives a text at a coordinate, sized to its
+content; the engine's `Flow` asks `ComputeHorizontal` only - what the item states - and gives
+the column to whatever it leaves undecided. `horizontalOf` is that function now, and a check
+asks a flowed text for the column's edges and a second line. The first sabotage of that check
+was free: the single-file page still carried the old core when the harness ran, and failed it
+with exactly the old numbers.
 
 ## 15. `AdvancedTextItem` — the line, not the segment, is the unit
 

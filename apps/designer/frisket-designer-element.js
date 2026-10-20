@@ -12,8 +12,9 @@
 /// Every element makes a designer of its own - `frisketDesigner(seams)` - so a page may hold
 /// several, each with its template, its selection and its findings. What it hands that call:
 /// the shadow root the markup lives in, the div it is planted in, itself as what carries the
-/// theme, the room a host declared, and where the findings go. What it calls on what comes
-/// back: `mount()`, `loadReport()` and `report()`.
+/// theme, the room a host declared, where the findings go, and the host's library of
+/// sub-documents. What it calls on what comes back: `mount()`, `loadReport()`, `report()`
+/// and `setSubDocuments()`.
 ///
 /// Built on 20 October 2026, when the author decided the designer goes into a host
 /// application's front end - for the few who compose templates, and possibly an AI working
@@ -51,6 +52,10 @@
           this._issues = found;
           this.dispatchEvent(new CustomEvent("checks", { detail: found }));
         },
+
+        // The host's own pieces - an article of law, an address block - named st://reference
+        // in the template and looked up by the same host when the engine composes.
+        subDocuments: this._subDocuments || null,
       });
 
       this._designer.mount();
@@ -65,6 +70,18 @@
 
     set report(value) {
       if (this._designer) this._designer.loadReport(value); else this._pending = value;
+    }
+
+    /// The host's library of sub-documents: `{ list(), find(reference) }`, either of which
+    /// may answer with a promise. `list()` gives `[{ reference, title }]` for the palette;
+    /// `find(reference)` the template, as JSON text or an object, or null. Set before the
+    /// element is connected or after, and set again - the same object will do - once what
+    /// the library holds has changed.
+    get subDocuments() { return this._subDocuments ?? null; }
+
+    set subDocuments(value) {
+      this._subDocuments = value || null;
+      if (this._designer) this._designer.setSubDocuments(this._subDocuments);
     }
 
     /// What the checks found, last time anything was drawn. Also delivered as a `checks`
