@@ -2483,6 +2483,84 @@ if (!process.argv[2]) {
         direct === 1, `${direct - 1} read directly`);
 }
 
-console.log(failures ? `\n${checked} checks, ${failures} FAILED`
-                     : `\n${checked} checks, all good`);
-process.exit(failures ? 1 : 0);
+// --- the engine an editor is told of ------------------------------------------------
+// Asked last, since they wait on answers. The address of the font server was one constant
+// at the top of the editor, written for the preview server on this machine: a host could
+// not name its own, and every element asked localhost whatever page it was in. Each editor
+// is told its own now, through the host's fetch, and one told of none asks nobody.
+//
+// A run whose answers never come would hang, or - with nothing left to wait on - let Node
+// leave with exit code 0 and no summary, which reads as a pass. So it fails after twenty
+// seconds and says so; the timer is not unref()'d, which is what allowed the second.
+setTimeout(() => {
+  console.log(`  ✗ the asynchronous checks never finished, after ${checked} checks`);
+  process.exit(1);
+}, 20000);
+
+(async () => {
+  const later = () => new Promise(resolve => setTimeout(resolve, 0));
+  const until = async test => { for (let i = 0; i < 50 && !test(); i++) await later(); return test(); };
+
+  const Editor = customElements.get('frisket-editor');
+  const LIST = [
+    { family: 'House Face', subfamily: 'Regular', bold: false, italic: false, isDefault: true },
+    { family: 'Other Face', subfamily: 'Regular', bold: false, italic: false, isDefault: false },
+  ];
+  const asked = [];
+  const hostFetch = (url, init) => {
+    asked.push(url);
+    return Promise.resolve({ ok: true, json: async () => LIST });
+  };
+
+  // Nobody else may be asked while these run: the browser's own fetch is counted.
+  const pageFetch = global.fetch;
+  let strayed = 0;
+  global.fetch = (...a) => { strayed++; return Promise.reject(new Error('not this one')); };
+
+  const make = attrs => {
+    const kept = held;
+    held = {};
+    const tag = new Editor();
+    for (const [name, value] of Object.entries(attrs)) tag.setAttribute(name, value);
+    tag.fetch = hostFetch;
+    tag.connectedCallback();
+    const made = { tag, held };
+    held = kept;
+    return made;
+  };
+
+  const told = make({ fonts: 'library', server: 'http://engine.test/' });
+  await until(() => told.held.el('family').options.some(o => o.value === 'House Face'));
+  const families = told.held.el('family').options.map(o => o.value).filter(Boolean);
+  check('an editor asks the engine it is told, through the host\'s fetch',
+        asked.includes('http://engine.test/fonts') && families.includes('House Face') && strayed === 0,
+        `${asked.join(', ') || 'nothing asked'} -> ${families.join(', ') || 'no families'}`);
+
+  const before = asked.length;
+  const second = make({ fonts: 'library', server: 'http://engine.test' });
+  await until(() => second.held.el('family').options.some(o => o.value === 'House Face'));
+  check('and a second editor told the same engine does not ask it again',
+        asked.length === before && second.held.el('family').options.some(o => o.value === 'House Face'),
+        `${asked.length - before} more request(s)`);
+
+  const other = make({ fonts: 'library', server: 'https://elsewhere.test' });
+  await until(() => asked.length > before);
+  check('while one told another engine asks that one',
+        asked.includes('https://elsewhere.test/fonts'), asked.slice(before).join(', ') || 'nothing asked');
+
+  const count = asked.length;
+  // What it offers instead is the families the document already names - the lean face has
+  // no hint to read, so the list itself is asked.
+  const none = make({ fonts: 'library' });
+  await later(); await later();
+  const offered = none.held.el('family').options.map(o => o.value).filter(Boolean);
+  check('and an element told of no engine asks nobody - not even this machine',
+        asked.length === count && strayed === 0 && !offered.includes('House Face'),
+        `${asked.length - count + strayed} request(s), offering ${offered.join(', ') || 'the document default alone'}`);
+
+  global.fetch = pageFetch;
+
+  console.log(failures ? `\n${checked} checks, ${failures} FAILED`
+                       : `\n${checked} checks, all good`);
+  process.exit(failures ? 1 : 0);
+})();

@@ -439,7 +439,18 @@ does not read the preference stored by the face that has one: somebody set *from
 server* on the full page, where they could see the control, and letting that decide
 inside a host application means an embedded editor asking a preview server that is not
 there, failing, and offering a poorer list for it - with no way to change its mind. A
-host that really does have a font server writes `fonts="library"`.
+host that really does have a font server writes `fonts="library"`, and says where it is:
+
+```html
+<frisket-editor fonts="library" server="/api/frisket"></frisket-editor>
+```
+
+`server` is a base URL answering `GET /fonts` and `GET /fonts/file` as `apps/server` does,
+`"/"` for the page's own origin; the `fetch` property carries the host's credentials, as on
+`<frisket-designer>`. Each editor is told its own, and a server two editors name is asked
+once. No `server`, no engine: until 20 October 2026 the address was one constant in the
+editor, this machine's preview server, so every host's editor asked `localhost:5080`. The
+plain pages still do, unless the div they hand over says `server=`.
 
 The last three are the engine's own `RenderTarget`, name for name, and their defaults
 are the engine's too: the richest output, so a caller that says nothing is told nothing

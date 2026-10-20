@@ -37,6 +37,7 @@
         this.textContent = "frisket-editor.js has not been loaded.";
         return;
       }
+      const element = this;
 
       // What this host wants shown, before a line of the editor runs. Absent means the
       // lean shape, because an element is by definition inside somebody else's
@@ -76,10 +77,17 @@
         // The room, and the families: what the host declared, if anything. A face with
         // no picker does not read the preference stored by the face that has one, so an
         // editor with no font control gets the web-safe families unless the host says
-        // fonts="library" - it has no preview server to ask and no control to change its
-        // mind with.
+        // fonts="library" - with `server` saying where the engine is, since an element is
+        // told of none it was not given, and it has no control to change its mind with.
         theme: this.getAttribute("theme"),
         fonts: this.getAttribute("fonts"),
+
+        // Where the engine is whose fonts fonts="library" draws with - a base URL answering
+        // what apps/server answers, "/" for this page's own origin - and how to reach it.
+        // Absent, there is none: never a guess at localhost, which is what the editor did
+        // for every host until 20 October 2026.
+        server: this.getAttribute("server"),
+        get fetch() { return element._fetch || null; },
 
         // What is about to be produced. The engine's own defaults - the richest output -
         // for the engine's own reason: a caller that says nothing is told nothing, rather
@@ -129,6 +137,13 @@
     /// What the checks found, last time anything was drawn. Also delivered as a
     /// `checks` event, for a host that would rather be told than ask.
     get issues() { return this._issues || []; }
+
+    /// How the editor reaches the engine `server` names: a function shaped like the
+    /// browser's fetch, for a host that adds its own credentials. The browser's own
+    /// otherwise. Read at every request, so it may be set whenever the token is ready.
+    get fetch() { return this._fetch ?? null; }
+
+    set fetch(value) { this._fetch = value || null; }
   }
 
   if (!customElements.get("frisket-editor"))

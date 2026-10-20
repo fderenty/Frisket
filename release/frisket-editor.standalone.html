@@ -3990,19 +3990,24 @@ let lang0 = "en";
 try { lang0 = localStorage.getItem("frisket.lang") || "en"; } catch {}
 setLang(lang0);
 
-// The preview server's fonts, asked for once per page however many editors ask, and
-// loaded once: a font belongs to the document, so a second editor loading the same
-// files would only add them again. A failed answer is not kept, so an editor switched
-// to the server's list later asks afresh.
-const FONT_SERVER = "http://localhost:5080";
-let serverFontsAsked = null;
-let facesLoaded = false;
+// The engine's fonts, asked of each server once per page however many editors name it,
+// and loaded once: a font belongs to the document, so a second editor loading the same
+// files would only add them again. A failed answer is not kept, so an editor switched to
+// the server's list later asks afresh.
+//
+// Kept by server since 20 October 2026. The address was one constant here, written for the
+// preview server on this machine, so a host could not say where its own engine was - and
+// two editors could not be told two engines. Each editor is told its own now (`server`),
+// and these two remember, per address, what has been asked and what has been loaded.
+let serverFontsAsked = new Map();   // base URL -> the promise of its /fonts list
+let facesLoaded = new Set();        // base URLs whose files are in the document already
 
-function serverFonts() {
-  serverFontsAsked ??= fetch(FONT_SERVER + "/fonts")
-    .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
-    .catch(e => { serverFontsAsked = null; throw e; });
-  return serverFontsAsked;
+function serverFonts(base, send) {
+  if (!serverFontsAsked.has(base))
+    serverFontsAsked.set(base, send(base + "/fonts")
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .catch(e => { serverFontsAsked.delete(base); throw e; }));
+  return serverFontsAsked.get(base);
 }
 
 /// The engine's own files, so the sheet draws with what the PDF will embed rather than
@@ -4010,9 +4015,9 @@ function serverFonts() {
 /// with the browser's default face, which is a serif. Added to the document's set: a
 /// font belongs to the document, and a shadow root draws from the same set. Nothing to
 /// redraw once they arrive - the sheet is laid out by the browser, which repaints.
-function loadFaces(faces) {
-  if (facesLoaded || typeof FontFace !== "function" || !document.fonts) return;
-  facesLoaded = true;
+function loadFaces(base, faces) {
+  if (facesLoaded.has(base) || typeof FontFace !== "function" || !document.fonts) return;
+  facesLoaded.add(base);
   for (const d of faces)
     new FontFace(d.family, `url("${d.url}")`, { weight: d.weight, style: d.style })
       .load().then(face => document.fonts.add(face)).catch(() => {});
@@ -4082,6 +4087,13 @@ function frisketEditor(seams = {}) {
   /// What a page or a host asked for as a margin, in millimetres, or null for "you
   /// decide" - which chooseMargins answers from what this face can show.
   let margins = null;
+
+  /// Where the engine is whose fonts the sheet draws with - a base URL answering GET /fonts
+  /// and /fonts/file as apps/server does, "" for the page's own origin - or null when this
+  /// editor was told of none. And how to reach it: the host's fetch, for a host that adds
+  /// its own credentials, read at every request.
+  let server = null;
+  const send = (url, init) => seams.fetch ? seams.fetch(url, init) : fetch(url, init);
 
   /// What is about to be produced, so the Capable profile can say what the template loses
   /// on the way there. The engine's own `RenderTarget` record, name for name.
@@ -5215,18 +5227,20 @@ function frisketEditor(seams = {}) {
   /// Asks the preview server what it can actually embed. Best effort: the page opens
   /// from a file:// URL as often as not, and saying so is better than an empty list.
   function askServerForFonts() {
-    serverFonts()
+    const offline = () => { libraryFamilies = null; libraryDefault = null; fillFamilies(); applyDefaultFace(); };
+    if (server === null) { offline(); return; }
+    serverFonts(server, send)
       .then(receiveFonts)
-      .catch(() => { libraryFamilies = null; libraryDefault = null; fillFamilies(); applyDefaultFace(); });
+      .catch(offline);
   }
 
   /// What the server answered: the families to offer, the one it gives unnamed text, and
   /// the files themselves to draw with.
   function receiveFonts(list) {
-    const got = fontsFromServer(list, FONT_SERVER);
+    const got = fontsFromServer(list, server ?? "");
     libraryFamilies = got.families;
     libraryDefault = got.defaultFamily;
-    loadFaces(got.faces);
+    loadFaces(server ?? "", got.faces);
     fillFamilies();
     applyDefaultFace();
   }
@@ -6750,6 +6764,9 @@ function frisketEditor(seams = {}) {
   //                answer the rest, and a face without the control ignores the stored
   //                preference of the face that has it
   //   target       what is about to be produced, for the Capable profile
+  //   server       where the engine is whose fonts it draws with, "/" for this page's
+  //                origin; none declared, there is no engine to ask
+  //   fetch        how to reach it, for a host that adds its own credentials
   //   onChecks     where the findings go when there is no panel to paint them on
   //   autofocus    whether mounting takes the focus. A page holding three editors that
   //                each took it would end up scrolled to the last one
@@ -6761,6 +6778,7 @@ function frisketEditor(seams = {}) {
   theme = chooseTheme(seams.theme);
   fontSource = chooseFontSource(seams.fonts);
   if (seams.target) renderTarget = seams.target;
+  server = seams.server == null ? null : String(seams.server).trim().replace(/\/+$/, "");
   onChecks = seams.onChecks || null;
   const autofocus = seams.autofocus !== false;
   applyTheme();
@@ -6799,6 +6817,8 @@ function frisketEditor(seams = {}) {
       margins: said("margins"),
       theme: said("theme"),
       fonts: said("fonts"),
+      // The preview server this page has always asked, unless the page names another.
+      server: said("server") ?? "http://localhost:5080",
       autofocus: on("autofocus", true),
     }).mount();
   }

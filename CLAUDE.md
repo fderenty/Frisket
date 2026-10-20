@@ -1373,6 +1373,15 @@ first writing of that timer was `unref()`'d, and a check waiting on a promise no
 settles then let Node simply **leave, exit code 0, no summary**: a pass to any CI. Seen by
 making a check wait on such a promise; the timer holds the process now.
 
+**The content editor had the same address written in.** Its font server was one constant at
+the top of the file, this machine's preview server, so every host's editor asked
+`localhost:5080` and no host could name its own - and the constant being the page's, two
+editors could not be told two engines. Each editor is told its own `server` and `fetch` now,
+the element knowing of none it was not given; what stays the page's is the cache, kept by
+address, so a server two editors name is asked once and its files added once.
+`check-editor.js`, synchronous until then, gained the same asynchronous end and the same
+watchdog as the designer's harness.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —
