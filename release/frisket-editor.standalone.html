@@ -567,6 +567,21 @@
   }
   /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are
      still one glance. */
+  /* The host's merge fields: placed as the colours' menu is, a list grouped by kind, each
+     entry its label over its token. */
+  #toolbar .fields { position: relative; display: flex; align-items: center; }
+  #toolbar #fieldMenu {
+    position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;
+    display: flex; flex-direction: column; gap: 2px; padding: 6px;
+    min-width: 220px; max-height: 60vh; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow-modal);
+  }
+  #toolbar #fieldMenu .kind { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                              letter-spacing: .06em; margin: 6px 4px 2px; }
+  #toolbar #fieldMenu button { display: flex; flex-direction: column; align-items: flex-start;
+                               width: 100%; height: auto; padding: 4px 6px; text-align: left; }
+  #toolbar #fieldMenu button small { color: var(--muted); font-size: 11px; }
   #toolbar #inkSwatches { display: grid; grid-template-columns: repeat(8, 18px); gap: 4px; }
   /* Never empty now - the "no colour" cell is always in it - so the rule that hid
      it when a document had no colours yet would hide the one cell that is always
@@ -2535,6 +2550,11 @@ const STRINGS = {
 
     "zoom.fit": "Fit", "zoom.label": "Zoom",
     "action.detach": "Preview window", "action.attached": "Preview open",
+    "editor.addField": "Insert a merge field",
+    "editor.fromData": "Picture from the data: {path}",
+    "fieldType.text": "Text", "fieldType.number": "Number", "fieldType.decimal": "Decimal",
+    "fieldType.currency": "Amount", "fieldType.date": "Date", "fieldType.datetime": "Date and time",
+    "fieldType.image": "Picture",
     "live.off": "Exact preview: off", "live.canvas": "Exact preview: on the canvas",
     "live.beside": "Exact preview: beside", "live.window": "Exact preview: in a window",
     "live.asking": "The engine is drawing…",
@@ -2922,6 +2942,11 @@ const STRINGS = {
     "PageScope.Odd": "Impaires", "PageScope.Even": "Paires",
     "zoom.fit": "Ajusté", "zoom.label": "Zoom",
     "action.detach": "Aperçu fenêtré", "action.attached": "Aperçu ouvert",
+    "editor.addField": "Insérer un champ de fusion",
+    "editor.fromData": "Image issue des données : {path}",
+    "fieldType.text": "Texte", "fieldType.number": "Nombre", "fieldType.decimal": "Décimal",
+    "fieldType.currency": "Montant", "fieldType.date": "Date", "fieldType.datetime": "Date et heure",
+    "fieldType.image": "Image",
     "live.off": "Aperçu exact : non", "live.canvas": "Aperçu exact : sur le canevas",
     "live.beside": "Aperçu exact : à côté", "live.window": "Aperçu exact : dans une fenêtre",
     "live.asking": "Le moteur dessine…",
@@ -4265,6 +4290,14 @@ function frisketEditor(seams = {}) {
           <button id="addText" data-i18n-title="editor.addText">
             <svg viewBox="0 0 16 16"><path d="M2 3.5h12M2 7h12M2 10.5h8"/></svg>
           </button>
+          <!-- The host's merge fields. Hidden until a host offers some: a menu of nothing
+               would be a button that does nothing. -->
+          <div class="fields" id="fieldsTool" hidden>
+            <button id="addField" data-i18n-title="editor.addField">
+              <svg viewBox="0 0 16 16"><path d="M6 2.5c-1.6 0-2 .8-2 2.2v1.6c0 1-.6 1.7-1.6 1.7 1 0 1.6.7 1.6 1.7v1.6c0 1.4.4 2.2 2 2.2M10 2.5c1.6 0 2 .8 2 2.2v1.6c0 1 .6 1.7 1.6 1.7-1 0-1.6.7-1.6 1.7v1.6c0 1.4-.4 2.2-2 2.2"/></svg>
+            </button>
+            <div id="fieldMenu" hidden></div>
+          </div>
 
           <span class="sep"></span>
 
@@ -4568,7 +4601,16 @@ function frisketEditor(seams = {}) {
       img.draggable = false;
 
       const source = item.Source;
+      const fromData = (item.SourceField || "").trim();
       if (source && source.Data) img.src = `data:${source.MediaType || "image/png"};base64,${source.Data}`;
+      else if (fromData) {
+        // Filled from the data when the document is printed, so there is nothing to draw
+        // yet: the host's sample when it gave one, otherwise a frame naming where the
+        // picture will come from. Still an <img>, so the grip resizes it like any other.
+        const field = fieldAt(fromData);
+        img.src = field && field.sample ? field.sample : pictureFromData(fromData, item);
+        img.classList.add("from-data");
+      }
 
       const width = item.Style.Location.WidthValue;
       if (Number.isFinite(Number(width))) img.style.width = Number(width) + "mm";
@@ -5835,6 +5877,151 @@ function frisketEditor(seams = {}) {
     focusBlock(at);
   }
 
+  // --- merge fields -----------------------------------------------------------------
+  //
+  // What the host will fill in when it prints: a recipient's name, a case number, an
+  // amount, a date, a signature. The host offers them (`fields`), and a field goes in as
+  // its token - `{Recipient.Name}` - which the engine has always bound from the data.
+  //
+  // The type is for the menu and nothing else: values arrive formatted by the host, the
+  // engine stays neutral, and a document mixing euros, dollars and Pacific francs is the
+  // host's to write - "le métier n'est pas là". The one type that changes what is
+  // inserted is a picture, which is a block of its own filled from the data
+  // (ImageItem.SourceField), not a token in a sentence.
+  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "image"];
+  let fieldSource = seams.fields || null;
+  let fields = [];
+
+  /// A catalogue as a host may hand it over: entries with a path, a label, a kind and a
+  /// sample - a path alone will do, braces or not - and anything else left out.
+  function fieldsFrom(list) {
+    return (Array.isArray(list) ? list : []).map(entry => {
+      const raw = typeof entry === "string" ? entry : (entry && entry.path) || "";
+      const path = String(raw).trim().replace(/^\{\s*|\s*\}$/g, "").trim();
+      const said = entry && typeof entry === "object" ? entry : {};
+      const kind = String(said.type || "text").toLowerCase();
+      return {
+        path,
+        label: String(said.label || path),
+        type: FIELD_KINDS.includes(kind) ? kind : "text",
+        sample: said.sample == null ? "" : String(said.sample),
+      };
+    }).filter(field => field.path);
+  }
+
+  /// Asks for the catalogue - a list, a function returning one, or a promise of either -
+  /// and shows the button once there is something in it.
+  function loadFields() {
+    // Said rather than left to the markup's `hidden`: the button shows the catalogue in
+    // hand - none at first - until the one asked for arrives.
+    wire("fieldsTool", n => { n.hidden = fields.length === 0; });
+    const asked = fieldSource;
+    const take = list => {
+      if (fieldSource !== asked) return;
+      fields = fieldsFrom(list);
+      wire("fieldsTool", n => { n.hidden = fields.length === 0; });
+      draw();                // a picture from the data may have a sample to show now
+    };
+    let answer;
+    try { answer = typeof asked === "function" ? asked() : asked; } catch { answer = []; }
+    if (answer && typeof answer.then === "function") answer.then(take, () => take([]));
+    else take(answer);
+  }
+
+  function fieldAt(path) {
+    return fields.find(field => field.path === path) || null;
+  }
+
+  /// The menu: grouped by kind, each entry its label over its path and, when the host gave
+  /// one, the sample it stands for - which is what tells two similar labels apart.
+  function fillFieldMenu() {
+    const menu = el("fieldMenu");
+    if (!menu) return;
+    menu.innerHTML = "";
+    for (const kind of FIELD_KINDS) {
+      const ofKind = fields.filter(field => field.type === kind);
+      if (!ofKind.length) continue;
+      const heading = document.createElement("div");
+      heading.className = "kind";
+      heading.textContent = t("fieldType." + kind);
+      menu.appendChild(heading);
+      for (const field of ofKind) {
+        const button = document.createElement("button");
+        const label = document.createElement("span");
+        label.textContent = field.label;
+        const detail = document.createElement("small");
+        detail.textContent = "{" + field.path + "}"
+          + (field.sample && kind !== "image" ? " - " + field.sample : "");
+        button.appendChild(label);
+        button.appendChild(detail);
+        // Pressed without taking the focus, so the caret is still where it goes.
+        button.addEventListener("mousedown", e => e.preventDefault());
+        button.onclick = e => { e.stopPropagation(); closeFields(); insertField(field); };
+        menu.appendChild(button);
+      }
+    }
+  }
+
+  function closeFields() { const menu = el("fieldMenu"); if (menu) menu.hidden = true; }
+
+  /// Puts a field where the caret is. Typed in the way a paste is - execCommand, so the
+  /// token lands in the run the caret is in, takes that run's style, and is undone by the
+  /// same Ctrl+Z as a word typed by hand - and read back at once, since execCommand does
+  /// not reliably raise the input event (the lesson the line break paid for).
+  ///
+  /// With no paragraph under the caret it starts one; a picture is a block of its own.
+  function insertField(field) {
+    if (field.type === "image") { insertAfterCurrent(pictureField(field)); return; }
+
+    const token = "{" + field.path + "}";
+    const item = currentItem();
+    const surface = editableIn(current);
+    if (!item || item.$type !== "AdvancedTextItem" || !surface) {
+      const paragraph = emptyParagraph();
+      paragraph.Runs = [{ Text: token, Font: null }];
+      insertAfterCurrent(paragraph);
+      return;
+    }
+
+    // Where the caret was when the menu opened: `cached` kept it, the menu kept the focus
+    // off, and putting it back costs nothing when it never moved.
+    const end = surface.textContent.length;
+    const at = cached || { start: end, end };
+    surface.focus();
+    const sel = selection();
+    sel.removeAllRanges();
+    sel.addRange(rangeAt(surface, at.start, at.end));
+    document.execCommand("insertText", false, token);
+    readSurface();
+  }
+
+  /// A picture the data fills in: no bytes of its own, the field's path to find them by,
+  /// and its label as what a screen reader says - a description the person can change, and
+  /// better than the nothing PDF/UA refuses.
+  function pictureField(field) {
+    const item = newItem("ImageItem");
+    item.SourceField = field.path;
+    item.AltText = field.label;
+    item.Style.Location.WidthValue = Math.min(40, bandWidth());
+    return item;
+  }
+
+  /// The frame shown for a picture from the data with no sample: dashed, in the paper's
+  /// placeholder colours - the ones the designer draws an empty picture in - and saying
+  /// where the picture will come from.
+  function pictureFromData(path, item) {
+    const w = 400;
+    const h = Math.max(60, Math.round(w * (Number(item.NaturalHeight) || 20) / (Number(item.NaturalWidth) || 40)));
+    const words = t("editor.fromData", { path });
+    const size = Math.max(10, Math.min(24, Math.floor(700 / Math.max(1, words.length))));
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`
+      + `<rect x="2" y="2" width="${w - 4}" height="${h - 4}" fill="${ON_PAPER.placeholderFill}"`
+      + ` stroke="${ON_PAPER.placeholderLine}" stroke-width="3" stroke-dasharray="12 8"/>`
+      + `<text x="${w / 2}" y="${h / 2}" text-anchor="middle" dominant-baseline="middle"`
+      + ` font-family="sans-serif" font-size="${size}" fill="${ON_PAPER.placeholderInk}">${esc(words)}</text></svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
   /// Puts the caret in a block. Coming from above it lands at the start and from
   /// below at the end, so arrowing through the document reads as one continuous move
   /// rather than jumping to the same corner of every block.
@@ -6632,6 +6819,18 @@ function frisketEditor(seams = {}) {
 
     el("addTable").onclick = () => insertAfterCurrent(newTable());
 
+    // The fields' menu opens and closes as the colours' does, and its button keeps the
+    // caret where it is while pressed, as every button in this row does.
+    el("addField").addEventListener("mousedown", e => e.preventDefault());
+    el("addField").onclick = e => {
+      e.stopPropagation();
+      const menu = el("fieldMenu");
+      const open = menu.hidden === false;
+      if (!open) fillFieldMenu();
+      menu.hidden = open;
+    };
+    document.addEventListener("click", closeFields);
+
     // A paragraph is the one block that had no button, because it is the one a person
     // usually makes by typing. But a table or a picture at the very top of the sheet
     // leaves nowhere to type: there is no caret above it, and shift+Enter needs one to
@@ -6745,6 +6944,7 @@ function frisketEditor(seams = {}) {
     if (fontSource === "library") askServerForFonts();
     report = blankFlow();
     syncPanel();
+    loadFields();
     draw();
     if (autofocus) focusBlock(0);
   }
@@ -6767,6 +6967,8 @@ function frisketEditor(seams = {}) {
   //   server       where the engine is whose fonts it draws with, "/" for this page's
   //                origin; none declared, there is no engine to ask
   //   fetch        how to reach it, for a host that adds its own credentials
+  //   fields       the host's merge fields - [{ path, label, type, sample }], a function
+  //                returning them, or a promise of either (see "merge fields" above)
   //   onChecks     where the findings go when there is no panel to paint them on
   //   autofocus    whether mounting takes the focus. A page holding three editors that
   //                each took it would end up scrolled to the last one
@@ -6789,6 +6991,8 @@ function frisketEditor(seams = {}) {
     loadReport,
     /// The document as the engine reads it.
     report: () => forEngine(report),
+    /// Another catalogue of merge fields, or the same one changed.
+    setFields: next => { fieldSource = next || null; if (el("fieldsTool")) loadFields(); },
   };
 }
 

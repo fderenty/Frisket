@@ -234,6 +234,21 @@
   }
   /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are
      still one glance. */
+  /* The host's merge fields: placed as the colours' menu is, a list grouped by kind, each
+     entry its label over its token. */
+  #toolbar .fields { position: relative; display: flex; align-items: center; }
+  #toolbar #fieldMenu {
+    position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;
+    display: flex; flex-direction: column; gap: 2px; padding: 6px;
+    min-width: 220px; max-height: 60vh; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow-modal);
+  }
+  #toolbar #fieldMenu .kind { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                              letter-spacing: .06em; margin: 6px 4px 2px; }
+  #toolbar #fieldMenu button { display: flex; flex-direction: column; align-items: flex-start;
+                               width: 100%; height: auto; padding: 4px 6px; text-align: left; }
+  #toolbar #fieldMenu button small { color: var(--muted); font-size: 11px; }
   #toolbar #inkSwatches { display: grid; grid-template-columns: repeat(8, 18px); gap: 4px; }
   /* Never empty now - the "no colour" cell is always in it - so the rule that hid
      it when a document had no colours yet would hide the one cell that is always

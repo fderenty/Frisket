@@ -89,6 +89,10 @@
         server: this.getAttribute("server"),
         get fetch() { return element._fetch || null; },
 
+        // The host's merge fields, to insert at the caret. A property rather than an
+        // attribute, since a catalogue is a list - or a promise of one.
+        fields: this._fields || null,
+
         // What is about to be produced. The engine's own defaults - the richest output -
         // for the engine's own reason: a caller that says nothing is told nothing, rather
         // than warned about a loss that is not happening. `paged="false"` is what a host
@@ -144,6 +148,18 @@
     get fetch() { return this._fetch ?? null; }
 
     set fetch(value) { this._fetch = value || null; }
+
+    /// The host's merge fields: `[{ path, label, type, sample }]` - type one of text,
+    /// number, decimal, currency, date, datetime or image - or a function or promise
+    /// giving them. Values arrive formatted by the host, so the type only sorts the menu,
+    /// except for a picture, which is inserted as a block the data fills. Set before the
+    /// element is connected or after.
+    get fields() { return this._fields ?? null; }
+
+    set fields(value) {
+      this._fields = value || null;
+      if (this._editor) this._editor.setFields(this._fields);
+    }
   }
 
   if (!customElements.get("frisket-editor"))

@@ -65,6 +65,10 @@
      checks found. This page's stylesheet is not the editors', and neither reaches the
      other - they draw in shadow roots. What crosses the boundary is the palette, the
      custom properties set on each element, because that is what a theme is meant to be.</p>
+  <p>The letter is also handed this page's <strong>merge fields</strong> - the button with
+     braces in its toolbar. A field goes in at the caret as its token, which the engine
+     fills from the case data when it prints; a picture field is a block the data fills.
+     The values come formatted by the host, so a field's kind only sorts the menu.</p>
 </header>
 
 <main>
@@ -85,6 +89,18 @@
 <script src="frisket-editor.js"></script>
 <script src="frisket-editor-element.js"></script>
 <script>
+  // The fields this host can fill in when it prints. Formatted by the host, every one of
+  // them: an amount in euros comes as "12 480,00 EUR", with the no-break spaces the
+  // engine never breaks a line at; a date comes written out.
+  document.getElementById("letter").fields = [
+    { path: "Destinataire.Nom", label: "Nom du destinataire", type: "text", sample: "Maître Dupont" },
+    { path: "Destinataire.Adresse", label: "Adresse du destinataire", type: "text", sample: "12 rue Haute, 75004 Paris" },
+    { path: "Dossier.Numero", label: "Numéro du dossier", type: "text", sample: "2026-0417" },
+    { path: "Dossier.Montant", label: "Montant réclamé", type: "currency", sample: "12\u202F480,00\u00A0EUR" },
+    { path: "Dossier.Date", label: "Date du sinistre", type: "date", sample: "21 octobre 2026" },
+    { path: "Cabinet.Signature", label: "Signature de l'expert", type: "image" },
+  ];
+
   // What a host does with the findings is its own business. This one just says how many
   // each editor has, under that editor - which is the point: they arrive separately.
   for (const editor of document.querySelectorAll("frisket-editor")) {

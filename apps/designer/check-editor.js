@@ -2517,11 +2517,12 @@ setTimeout(() => {
   let strayed = 0;
   global.fetch = (...a) => { strayed++; return Promise.reject(new Error('not this one')); };
 
-  const make = attrs => {
+  const make = (attrs, props = {}) => {
     const kept = held;
     held = {};
     const tag = new Editor();
     for (const [name, value] of Object.entries(attrs)) tag.setAttribute(name, value);
+    Object.assign(tag, props);
     tag.fetch = hostFetch;
     tag.connectedCallback();
     const made = { tag, held };
@@ -2559,6 +2560,98 @@ setTimeout(() => {
         `${asked.length - count + strayed} request(s), offering ${offered.join(', ') || 'the document default alone'}`);
 
   global.fetch = pageFetch;
+
+  // --- the host's merge fields ------------------------------------------------------
+  // What the host will fill in when it prints - a name, an amount, a date, a signature -
+  // offered by the host and inserted at the caret as the token the engine has always
+  // bound. A picture is the one kind that is not a token: a block the data fills.
+  const FIELDS = [
+    { path: 'Destinataire.Nom', label: 'Nom du destinataire', type: 'text', sample: 'Maître Dupont' },
+    { path: '{Dossier.Montant}', label: 'Montant', type: 'currency', sample: '12 480,00 EUR' },
+    { path: 'Cabinet.Logo', label: 'Logo du cabinet', type: 'image' },
+    { path: 'Client.Signature', label: 'Signature', type: 'image', sample: 'data:image/png;base64,iVBORw0KGgo=' },
+    'Dossier.Numero',
+    { path: '', label: 'no path, no field' },
+  ];
+  const press = node => node.onclick({ stopPropagation() {} });
+  const entries = ed => ed.held.el('fieldMenu').childNodes.filter(n => n.tagName === 'BUTTON');
+  const entry = (ed, label) => entries(ed).find(b => b.childNodes[0].textContent === label);
+  const bodyOf = ed => ed.tag.report.Sections[0].Childs.find(c => c.$type === 'Body').Childs;
+  const imagesIn = node => [
+    ...(node.tagName === 'IMG' ? [node] : []),
+    ...(node.childNodes || []).flatMap(imagesIn)];
+
+  const plain = make({});
+  check('with no fields offered there is no button to offer them',
+        plain.held.el('fieldsTool').hidden === true, plain.held.el('fieldsTool').hidden ? 'hidden' : 'shown');
+
+  const writer = make({}, { fields: FIELDS });
+  press(writer.held.el('addField'));
+  const menuText = textNodesIn(writer.held.el('fieldMenu')).map(n => n.textContent).join(' | ');
+  check('the fields a host offers are on a menu, by kind, each a label over its token',
+        writer.held.el('fieldsTool').hidden === false && writer.held.el('fieldMenu').hidden === false
+          && entries(writer).length === 5 && menuText.includes('Nom du destinataire')
+          && menuText.includes('{Dossier.Montant}') && !menuText.includes('{{')
+          && menuText.includes('Amount') && menuText.includes('Maître Dupont'),
+        menuText.slice(0, 160));
+
+  // A paragraph with the caret at its end, as typing leaves it.
+  const letter = JSON.parse(JSON.stringify(writer.tag.report));
+  const para = writer.held.newItem('AdvancedTextItem');
+  para.Runs = [{ Text: 'Bonjour ', Font: null }];
+  letter.Sections[0].Childs.find(c => c.$type === 'Body').Childs = [para];
+  writer.tag.report = letter;
+  const block = writer.held.el('sheet').childNodes[0];
+  writer.held.markCurrent(block);
+  currentEditable = surfaceOf(block);
+  press(entry(writer, 'Nom du destinataire'));
+  currentEditable = null;
+  const said = (bodyOf(writer)[0].Runs || []).map(r => r.Text).join('');
+  check('a field goes in where the caret is, as its token, and the document has it at once',
+        said === 'Bonjour {Destinataire.Nom}', JSON.stringify(said));
+
+  // Nowhere to type: a paragraph of its own.
+  writer.held.markCurrent(null);
+  const blocks = bodyOf(writer).length;
+  press(entry(writer, 'Dossier.Numero'));
+  const added = bodyOf(writer)[bodyOf(writer).length - 1];
+  check('with no paragraph under the caret, a field starts one',
+        bodyOf(writer).length === blocks + 1 && added.$type === 'AdvancedTextItem'
+          && added.Runs[0].Text === '{Dossier.Numero}',
+        `${added.$type}: ${JSON.stringify(added.Runs || added.Text)}`);
+
+  // A picture: a block the data fills, described, with nothing of its own to draw.
+  // Looked for in the editor's own document, not in `report`: that hands out a copy, the
+  // findings point at the live items, and a comparison between the two is never true - which
+  // is how this check first passed with the picture's description taken out.
+  press(entry(writer, 'Logo du cabinet'));
+  const liveBody = writer.held.report().Sections[0].Childs.find(c => c.$type === 'Body').Childs;
+  const logo = liveBody.find(c => c.$type === 'ImageItem'
+                                  && (c.SourceField === 'Cabinet.Logo' || c.AltText === 'Logo du cabinet'));
+  const findings = (writer.tag.issues || []).filter(i => i.item === logo).map(i => i.rule);
+  check('a picture field is a picture the data fills, described, and clear of the checks',
+        !!logo && logo.SourceField === 'Cabinet.Logo' && logo.AltText === 'Logo du cabinet'
+          && !(logo.Source && logo.Source.Data) && findings.length === 0,
+        logo ? `${logo.SourceField}, "${logo.AltText}", ${findings.join(', ') || 'no findings'}` : 'not inserted');
+
+  const drawn = imagesIn(writer.held.el('sheet'));
+  const frame = drawn.find(img => String(img.src).startsWith('data:image/svg+xml')
+                                  && decodeURIComponent(img.src).includes('Cabinet.Logo'));
+  press(entry(writer, 'Signature'));
+  const sampled = imagesIn(writer.held.el('sheet')).find(img => img.src === FIELDS[3].sample);
+  check('and it is drawn as a frame naming its path, or as the sample the host gave',
+        !!frame && !!sampled, `${frame ? 'a frame' : 'no frame'}, ${sampled ? 'the sample' : 'no sample'}`);
+
+  // A catalogue that comes later, and one handed over after connecting.
+  const later_ = make({}, { fields: Promise.resolve(['Dossier.Ville']) });
+  const before_ = later_.held.el('fieldsTool').hidden;
+  await later(); await later();
+  check('a catalogue that arrives later shows the button when it does',
+        before_ === true && later_.held.el('fieldsTool').hidden === false,
+        `${before_ ? 'hidden' : 'shown'} then ${later_.held.el('fieldsTool').hidden ? 'hidden' : 'shown'}`);
+  plain.tag.fields = ['Dossier.Ville'];
+  check('and so does one handed over after the editor is in the page',
+        plain.held.el('fieldsTool').hidden === false, plain.held.el('fieldsTool').hidden ? 'hidden' : 'shown');
 
   console.log(failures ? `\n${checked} checks, ${failures} FAILED`
                        : `\n${checked} checks, all good`);

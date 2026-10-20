@@ -397,6 +397,31 @@ without a word. `frisket-editor-embedded.html` puts two side by side.
 (The example used to say `language="fr-FR"`. No such attribute was ever read - the
 document's language is the document's, set in it, not on the tag.)
 
+### Merge fields
+
+What the host fills in when it prints - a recipient's name, a case number, an amount, a
+date, a signature - is offered to the editor as a catalogue, and a button with braces
+appears in its toolbar:
+
+```js
+editor.fields = [
+  { path: "Destinataire.Nom", label: "Nom du destinataire", type: "text", sample: "Maître Dupont" },
+  { path: "Dossier.Montant", label: "Montant réclamé", type: "currency", sample: "12 480,00 EUR" },
+  { path: "Cabinet.Signature", label: "Signature de l'expert", type: "image" },
+];
+```
+
+A list, a function returning one, or a promise of either; `path` alone will do. A field goes
+in at the caret as its token - `{Destinataire.Nom}` - which the engine binds from the data,
+typed the way a paste is so that Ctrl+Z takes it out again. A `type: "image"` field is not a
+token but a picture block the data fills (`ImageItem.SourceField`), described by its label
+and drawn as a frame naming its path, or as `sample` when that is an image.
+
+**The values arrive formatted by the host.** A document may mix euros, dollars and Pacific
+francs, and how each is written is the host's business, not the engine's: so the type sorts
+the menu and changes nothing else, and an amount comes as `12 480,00 EUR` - with U+202F and
+U+00A0 in it, the spaces a line never breaks at (CLAUDE.md 3b).
+
 | attribute | what it decides | page default | element default |
 |---|---|---|---|
 | `chrome` | the header: title, interface language, theme | shown | hidden |

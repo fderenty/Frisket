@@ -1382,6 +1382,35 @@ address, so a server two editors name is asked once and its files added once.
 `check-editor.js`, synchronous until then, gained the same asynchronous end and the same
 watchdog as the designer's harness.
 
+## 5c-sexies. A merge field is the host's name, filled with the host's words
+
+A *champ* here is a **merge field** - `{Recipient.Name}`, filled from the case data when the
+document is printed - never a form field, and the author settled both what it holds and who
+formats it: values **arrive formatted by the host**. A document may carry euros, dollars and
+Pacific francs, each written its own way, and that is the business the host is in, not the
+engine: "le métier n'est pas là". So the editor is handed a catalogue (`fields`: path,
+label, type, sample), and the type sorts the menu and changes nothing else. The one kind that
+changes what is inserted is a picture, which is not a token in a sentence but a block the
+data fills - `ImageItem.SourceField`, which the engine has bound since test 31.
+
+A token goes in the way a paste does, `execCommand("insertText")`: it lands in the run the
+caret is in, takes that run's style, and **Ctrl+Z takes it out again** - a field inserted by
+editing the model and redrawing would be the one thing the browser's undo knew nothing
+about. Read back at once, as the line break is, since `execCommand` does not reliably raise
+the input event (§5c). The browser test proves the undo; the harness cannot.
+
+**Half a check was true for want of matter.** "A picture field is clear of the checks"
+compared the findings' items with an image taken from `element.report` - which hands out a
+**copy** (`forEngine`), while the findings point at the live items. The two never compared
+equal, so the half held whatever the validator said. Seen because the sabotage that took the
+picture's description out failed on the description and still reported *no findings*. It
+asks the editor's own document now, and a picture with no path then shows `sound.emptyImage`.
+
+And the double met twice more what it does not model (§5c): it has no `append()`, and it does
+not reflect a `hidden` written in the markup into the property - so the toolbar's button
+stated nothing until something set it. Both are now said in code: `appendChild`, and the
+button's `hidden` set from the catalogue in hand before any catalogue arrives.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —
