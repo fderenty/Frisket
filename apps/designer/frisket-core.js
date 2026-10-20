@@ -198,28 +198,10 @@ function blankReport() {
   };
 }
 
-// The section being edited. A report holds a list of sections - that is what mixes
-// page sizes in one file - and this page edits the first of them: everything it draws
-// and every control it offers belongs to one section. Reports with several are laid
-// out correctly by the engine and shown here as their first, which is honest about
-// what this preview can and cannot say.
-// Which section the page is showing. Everything - tree, canvas, properties - reads
-// this, so switching section is a matter of what this returns rather than a change at
-// fifteen call sites. Clamped rather than trusted: a section can be removed while it
-// is the one being edited.
-let sectionIndex = 0;
-
-/// Opens a section. Clamped here rather than trusted, for the same reason doc0
-/// clamps: a section can be removed while it is the one being edited.
-function setSectionIndex(at) {
-  sectionIndex = Math.max(0, Math.min(at, report.Sections.length - 1));
-}
-
-function doc0() {
-  if (sectionIndex >= report.Sections.length) sectionIndex = report.Sections.length - 1;
-  if (sectionIndex < 0) sectionIndex = 0;
-  return report.Sections[sectionIndex];
-}
+// The section being edited lived here until 20 October 2026 - doc0, setSectionIndex and
+// sectionIndex - and read the designer's `report` as a free variable, which worked only
+// while that report was a global of the page. It is the designer's, inside
+// frisketDesigner, now: the core knows nothing of the page (CLAUDE.md 5c).
 
 // A file written before sections carries "Section" and "Dimension" at the root. The
 // engine reads both and writes neither; this does the same so an old template opens

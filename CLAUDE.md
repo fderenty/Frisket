@@ -748,14 +748,19 @@ Putting a picture beside a paragraph — a `ContainerItem` in `Absolute`, the pi
 
 ## 5c. Two faces, one core — and the core knows nothing of the page
 
-`apps/designer/` now carries twelve files rather than one:
+`apps/designer/` carries these files rather than one - no count, since a number in the
+prose is a claim that drifts the moment a file is added (5c-quater):
 
 | file | what it holds |
 |---|---|
 | `frisket-core.js` | the model, layout, SVG rendering, binding, validator, wording |
 | `frisket-runs.js` | a list of `TextRun` bound to an editable surface, and back |
 | `frisket-chrome.css` | the palette and the handful of controls both wear |
-| `frisket-designer.html` | the face at coordinates (`LayoutMode.Absolute`) |
+| `frisket-designer.html` | the face at coordinates (`LayoutMode.Absolute`): one call on its own div |
+| `frisket-designer.js` | that face - its markup and behaviour, as `frisketDesigner(seams)` |
+| `frisket-designer.css` | that face's own sheet |
+| `frisket-designer-element.js` | the same face as `<frisket-designer>`, in a shadow root |
+| `frisket-designer-embedded.html` | a host page with two designers, each its own |
 | `frisket-editor.js` | the flow face (`LayoutMode.Stack`), and all of its behaviour |
 | `frisket-editor.css` | that face's own sheet - **not** audited by the palette check |
 | `frisket-editor.html` | the face that **ships**: the editor, no header, no panel, files in the toolbar |
@@ -1278,6 +1283,24 @@ selection. Both are bound in `mount()`.
 **Widening the palette audit meant editing a check in the same pass as its subject**
 (§16), so it was sabotaged afterwards: with `--accent` taken out of the light theme it
 still names `--accent`, `--on-accent` and `--drop` as missing.
+
+**The designer took the same road on 20 October 2026**, when the author decided it goes
+into a host application's front end: CSS and script out of the page, the script wrapped in
+`frisketDesigner(seams)` with its markup, `<frisket-designer>` around it. Run in the order
+it always ran, inside `mount()`, so the 2,000 lines moved without being reordered - every
+`document` lookup redirected to the root, nothing else touched. Three things it showed:
+
+- **The core knew the page after all.** `doc0`, `setSectionIndex` and `sectionIndex` lived
+  in `frisket-core.js` and read the designer's `report` as a free variable - which worked
+  only while that report was a global of the page, so section 5c's "the core touches no
+  element" was true and "knows nothing of the page" was not. Nothing could see it until the
+  page's globals were enclosed. They are the designer's now.
+- **Markup in an HTML page was audited by nothing.** Moved into the script, the palette
+  audit found `value="#000000"` on the rich-text colour picker at once - a literal no check
+  had ever read, and redundant: a colour input is black when it says nothing.
+- **The harness took every linked script for the core**, true while the designer's code was
+  inline. The core is now defined as what BOTH faces load, read off the other face's page,
+  and a split page sharing nothing with it fails rather than skipping four checks.
 
 **And VS Code's integrated browser is not a real reader.** It showed the dark sheet from
 a cached stylesheet long after the fix was in, while Edge showed it working. It joins

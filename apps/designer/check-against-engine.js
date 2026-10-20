@@ -124,10 +124,10 @@ const PARTS = path.join(REPO, 'apps', 'designer');
 // would, in the order written, rather than naming the file here - the page is what
 // decides what it is made of, and a harness that keeps its own list is one rename
 // away from checking something the page no longer loads.
-const linked = isPage
-  ? [...source.matchAll(/<script src="([^"]+)"><\/script>/g)]
-      .map(m => readText(path.join(path.dirname(scriptPath), m[1])))
+const linkedNames = isPage
+  ? [...source.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1])
   : [];
+const linked = linkedNames.map(name => readText(path.join(path.dirname(scriptPath), name)));
 
 const inline = isPage
   ? [...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1])
@@ -168,19 +168,34 @@ const styles = isPage
     ].map(t => [bare(t), t]).filter(([k]) => k)).values()].join('\n')
   : null;
 
+// The designer is a call since 20 October 2026 - frisketDesigner(seams) - so its state is
+// out of reach of anything appended after the file. Its handles are planted at the
+// `@harness` line inside it, as check-editor.js plants the editor's; a missing or doubled
+// mark stops the run rather than letting it reach nothing and say all good. What the core
+// declares is still global and is taken at the end, as before.
+const HARNESS_MARK = '// @harness';
+const withHandles = (code, handles) => {
+  const at = code.indexOf(HARNESS_MARK);
+  if (at < 0 || code.indexOf(HARNESS_MARK, at + 1) >= 0)
+    throw new Error(`the designer needs exactly one "${HARNESS_MARK}" line for the handles`);
+  return code.slice(0, at) + handles + '\n    ' + code.slice(at);
+};
+
 const sandbox = {};
-eval(script +
+eval(withHandles(script,
+     '\n    sandbox.moveChild = moveChild; sandbox.backAsPage = backAsPage;' +
+     '\n    sandbox.ui = ui; sandbox.drawProps = drawProps; sandbox.parentOf = parentOf;' +
+     '\n    sandbox.doc0 = doc0; sandbox.setSectionIndex = setSectionIndex; sandbox.reportNode = reportNode;' +
+     '\n    sandbox.setSelected = v => { selected = v; }; sandbox.getReport = () => report;' +
+     '\n    sandbox.setReport = v => { report = v; };') +
      '\nsandbox.layout = layout; sandbox.render = render; sandbox.blankReport = blankReport;' +
-     '\nsandbox.moveChild = moveChild; sandbox.watermarkMarks = watermarkMarks; sandbox.backAsPage = backAsPage; sandbox.hydrate = hydrate;' +
+     '\nsandbox.watermarkMarks = watermarkMarks; sandbox.hydrate = hydrate;' +
      '\nsandbox.validate = validate; sandbox.roleOf = roleOf;' +
      '\nsandbox.STRINGS = STRINGS; sandbox.THEMES = THEMES; sandbox.themeOrAuto = themeOrAuto;' +
      '\nsandbox.backdropArea = backdropArea; sandbox.WATERMARK_INK = WATERMARK_INK;' +
      '\nsandbox.forEngine = forEngine; sandbox.expandCarried = expandCarried;' +
-     '\nsandbox.ui = ui; sandbox.setData = setData; sandbox.resolvedImageSource = resolvedImageSource;' +
-     '\nsandbox.drawProps = drawProps; sandbox.parentOf = parentOf; sandbox.doc0 = doc0;' +
-     '\nsandbox.setSectionIndex = setSectionIndex; sandbox.reportNode = reportNode;' +
-     '\nsandbox.setSelected = v => { selected = v; }; sandbox.getReport = () => report;' +
-     '\nsandbox.setReport = v => { report = v; };');
+     '\nsandbox.setData = setData; sandbox.resolvedImageSource = resolvedImageSource;' +
+     '\nsandbox.frisketDesigner = typeof frisketDesigner === "function" ? frisketDesigner : undefined;');
 
 // The alpha the engine defaults a watermark to, read from its own source. Typed here
 // it would be a third copy of a number that already lives in two places, and the check
@@ -545,7 +560,7 @@ if (quotePath) {
 
   check('the engine names the areas a backdrop can cover', areas.length === 2, areas.join(', '));
 
-  const offered = [...source.matchAll(/<option value="(\w+)" data-i18n="BackdropArea\.(\w+)"/g)];
+  const offered = [...script.matchAll(/<option value="(\w+)" data-i18n="BackdropArea\.(\w+)"/g)];
   check('the panel offers exactly those, in order',
         offered.length === areas.length
         && offered.every((m, i) => m[1] === areas[i] && m[2] === areas[i]),
@@ -561,7 +576,7 @@ if (quotePath) {
   // Center; the echo has to encode the same choice in its preserveAspectRatio, and
   // xMinYMin against xMidYMin is a picture in the wrong half of the page.
   const scalings = [...backdropSource.matchAll(/ImageScaling\.(\w+)/g)].map(m => m[1]);
-  const offeredFits = [...source.matchAll(/<option value="(\w+)" data-i18n="ImageScaling\.(\w+)"/g)];
+  const offeredFits = [...script.matchAll(/<option value="(\w+)" data-i18n="ImageScaling\.(\w+)"/g)];
   check('the panel offers the fitting modes the engine has',
         offeredFits.length === 3 && offeredFits.every(m => m[1] === m[2]),
         offeredFits.map(m => m[1]).join(', '));
@@ -651,7 +666,7 @@ if (quotePath) {
   check('and one placed bottom-right is drawn bottom-right',
         drawnFit(papered) === 'xMaxYMax meet', drawnFit(papered));
 
-  const offeredPlaces = [...source.matchAll(/<option value="(\w+)" data-i18n="ItemAlign\.(\w+)"/g)];
+  const offeredPlaces = [...script.matchAll(/<option value="(\w+)" data-i18n="ItemAlign\.(\w+)"/g)];
   check('the panel offers three positions on each axis',
         offeredPlaces.length === 6, offeredPlaces.map(m => m[1]).join(', '));
 
@@ -886,12 +901,27 @@ if (quotePath) {
 // harness handed a different shape must check the same things or state plainly that it
 // cannot. Made to run against the merged parts instead, it failed honestly and for the
 // wrong reason, which is a third way of being unhelpful.
+// The core is what BOTH faces load - read off the other face's page, not listed here.
+// Every linked script used to be taken for the core, which was true while the designer's
+// own code sat inline in its page; the day it moved to frisket-designer.js (20 October
+// 2026) the designer's page code was run with no document and the check failed for the
+// wrong reason. A list typed here would be one rename away from checking something the
+// pages no longer load (section 16); what two faces share is the definition of the core.
+const otherFace = readText(path.join(PARTS, 'frisket-editor.html'));
+const shared = new Set([...otherFace.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]));
+const coreParts = linkedNames.map((name, i) => [name, linked[i]]).filter(([name]) => shared.has(name));
+
 if (!linked.length) {
   console.log('  -  the core is separable: not asked, this face is one file - '
             + 'the core and the page are the same script here');
+} else if (!coreParts.length) {
+  // A split page sharing nothing with the other face would skip the block below without
+  // a word - four checks gone and the run still green.
+  check('the core is what both faces load', false,
+        `this page links ${linkedNames.join(', ')}; the editor shares none of them`);
 }
 
-if (linked.length) {
+if (coreParts.length) {
   const context = { console: { log() {}, warn() {}, error() {} } };
   const held = {};
   vm.createContext(context);
@@ -906,7 +936,7 @@ if (linked.length) {
       held.setDefaultFace = setDefaultFace; held.defaultFace = defaultFace;
       held.MAIL_FACE = MAIL_FACE; held.fontsFromServer = fontsFromServer;
     `;
-    vm.runInContext(linked.join('\n') + handles, Object.assign(context, { held }));
+    vm.runInContext(coreParts.map(([, text]) => text).join('\n') + handles, Object.assign(context, { held }));
 
     check('the core loads with no document and no window',
           typeof held.layout === 'function');
@@ -1660,6 +1690,34 @@ if (flatPath && flatFindingsPath) {
   const direct = (readText(__filename).match(/fs\.readFileSync\(/g) || []).length;
   check('every file this harness reads, it reads through readText',
         direct === 1, `${direct - 1} read directly`);
+}
+
+// --- one designer per call --------------------------------------------------------
+// A host application embeds the designer, so a page may hold more than one: each call
+// must be a designer of its own, and its findings must reach whoever made it. Asked of
+// the factory itself, after everything above - mounting plants the handles again, so
+// running this earlier would have moved the sandbox onto the last designer made.
+// The content editor's element went unchecked until two of them on one page shared one
+// document (CLAUDE.md 5c-quater); this is that check, asked before rather than after.
+if (typeof sandbox.frisketDesigner === 'function') {
+  const told = [];
+  const first = sandbox.frisketDesigner({ root: document, onChecks: found => told.push(found) });
+  const second = sandbox.frisketDesigner({ root: document });
+  first.mount();
+  second.mount();
+  first.loadReport({
+    Title: 'Only in the first', Language: 'fr-FR',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+                 Childs: [{ $type: 'Body', Layout: 'Stack', Childs: [] }] }]
+  });
+  check('two designers keep two templates',
+        first.report().Title === 'Only in the first' && second.report().Title !== 'Only in the first',
+        `${first.report().Title} / ${second.report().Title}`);
+  check('and the findings reach the host that made one',
+        told.length > 0 && Array.isArray(told[told.length - 1]),
+        `${told.length} delivery(ies)`);
+} else {
+  check('the designer is a call - frisketDesigner(seams)', false, 'not found');
 }
 
 console.log(failures ? `\n${checked} checks, ${failures} FAILED`

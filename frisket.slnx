@@ -48,6 +48,10 @@
     <File Path="apps/designer/frisket-runs.js" />
     <File Path="apps/designer/frisket-chrome.css" />
     <File Path="apps/designer/frisket-designer.html" />
+    <File Path="apps/designer/frisket-designer.js" />
+    <File Path="apps/designer/frisket-designer.css" />
+    <File Path="apps/designer/frisket-designer-element.js" />
+    <File Path="apps/designer/frisket-designer-embedded.html" />
     <File Path="apps/designer/frisket-editor.html" />
     <File Path="apps/designer/check-against-engine.js" />
     <File Path="apps/designer/check-editor.js" />

@@ -8,6 +8,8 @@ layout modes, and CLAUDE.md §7 says which one the engine is actually built for.
 | file | what it edits | the gesture |
 |---|---|---|
 | `frisket-designer.html` | a template at coordinates | pick a node, set properties |
+| `frisket-designer.js` / `.css` | that face, as `frisketDesigner(seams)` - one designer per call | |
+| `frisket-designer-element.js` | the same face as `<frisket-designer>`, in a shadow root | |
 | `frisket-editor.html` | a flow of blocks | put the caret in it and type |
 | `frisket-core.js` | — | the model, layout, rendering, binding, validation, wording |
 | `frisket-runs.js` | — | a list of `TextRun` bound to an editable surface, and back |
@@ -27,6 +29,36 @@ default, so no caller has to think about it.
 
 `frisket-designer.html`: tree on the left, page preview in the middle, properties on
 the right, editing the very JSON the engine reads and writes.
+
+### In a host application
+
+Since 20 October 2026 the designer is a call, `frisketDesigner(seams)`, and an element,
+`<frisket-designer>` - the arrangement the content editor has had since August, for the
+reason it got it: an application embeds the designer for the few who compose its
+templates, and a page may hold more than one. The plain page is one call on its own div.
+
+```html
+<script src="frisket-core.js"></script>
+<script src="frisket-runs.js"></script>
+<script src="frisket-designer.js"></script>
+<script src="frisket-designer-element.js"></script>
+
+<frisket-designer theme="light" style="height: 80vh"></frisket-designer>
+```
+
+```js
+const designer = document.querySelector("frisket-designer");
+
+designer.report = template;                     // what the author composed last time
+designer.addEventListener("checks", e => show(e.detail));
+store(designer.report);                         // what the engine will read
+designer.issues                                 // the same findings, on demand
+```
+
+Everything it draws is in a shadow root; the palette crosses the boundary as custom
+properties, the paper does not. `frisket-designer-embedded.html` holds two, one handed a
+template and one blank, to show each is its own. The harness asks the same of the call:
+two designers keep two templates, and the findings reach the host that made one.
 
 ## The flow editor
 

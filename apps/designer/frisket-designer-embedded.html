@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frisket — designers inside a host page</title>
+<!-- Deliberately NOT frisket-chrome.css. This page has a look of its own, and the point of
+     the demonstration is that the two do not reach into each other: the designer's rules
+     live in its shadow root, and none of the rules below apply there. -->
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0;
+    font: 16px/1.5 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: #101418;
+    color: #e6e9ee;
+  }
+  header { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid #262d36; }
+  h1 { margin: 0 0 .35rem; font-size: 1.3rem; letter-spacing: -.01em; }
+  h2 { margin: 1.25rem 0 .5rem; font-size: 1rem; font-weight: 600; }
+  p { margin: 0; color: #9aa3ae; max-width: 52rem; }
+  code { font: .88em ui-monospace, Menlo, Consolas, monospace; }
+  main { padding: 0 1.5rem 2rem; }
+  .findings { margin: .5rem 0 0; font-size: .85rem; color: #9aa3ae; }
+  /* Everything a host may say about how the designer looks: the chrome's own names, which
+     inherit through a shadow boundary. */
+  frisket-designer {
+    display: block;
+    height: 78vh;
+    border: 1px solid #262d36;
+    --accent: #b4693f;
+    --on-accent: #ffffff;
+  }
+  frisket-designer.second { --accent: #3f8fb4; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Two template designers in a host page</h1>
+  <p>Each <code>&lt;frisket-designer&gt;</code> is a designer of its own, in a shadow root of its
+     own: the first is handed a template through its <code>report</code> property, as a host
+     hands over what its author composed last time; the second starts blank. Selecting,
+     adding or loading in one does nothing to the other. Their accent comes from this page;
+     their paper does not.</p>
+</header>
+
+<main>
+  <h2>A template the host handed over</h2>
+  <frisket-designer id="first"></frisket-designer>
+  <p class="findings" id="firstFindings">No findings yet.</p>
+
+  <h2>A blank one</h2>
+  <frisket-designer class="second" id="second"></frisket-designer>
+  <p class="findings" id="secondFindings">No findings yet.</p>
+</main>
+
+<script src="frisket-core.js"></script>
+<script src="frisket-runs.js"></script>
+<script src="frisket-designer.js"></script>
+<script src="frisket-designer-element.js"></script>
+<script>
+  // What a host does with the findings is its own business; this one says how many there are.
+  for (const id of ["first", "second"]) {
+    document.getElementById(id).addEventListener("checks", e => {
+      const errors = e.detail.filter(i => i.level === "error").length;
+      document.getElementById(id + "Findings").textContent =
+        `${e.detail.length} finding(s), ${errors} of them error(s) - told to the host by a "checks" event.`;
+    });
+  }
+
+  // A template the host kept from last time: an expert report's opening, in French.
+  document.getElementById("first").report = {
+    Title: "Rapport d'expertise",
+    Language: "fr-FR",
+    Sections: [{
+      $type: "Section",
+      Dimension: { Width: 210, Height: 297 },
+      Childs: [{ $type: "Body", Layout: "Stack", Childs: [
+        { $type: "TextItem", Text: "Rapport d'expertise n° {Dossier.Numero}" },
+        { $type: "TextItem", Text: "Le présent rapport répond à la mission confiée par ordonnance." }
+      ] }]
+    }]
+  };
+</script>
+</body>
+</html>

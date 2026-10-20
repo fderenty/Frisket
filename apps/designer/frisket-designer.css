@@ -1,0 +1,181 @@
+/* The template designer's own rules.
+ *
+ * Lifted out of frisket-designer.html on 20 October 2026, unchanged, so that a shadow root
+ * can be given the same sheet the page gets - the step frisket-editor.css took for the
+ * content editor on 24 August. Every colour here is a custom property from
+ * frisket-chrome.css, which is what lets a host theme the designer without touching it,
+ * and what the palette audit holds it to.
+ */
+
+/* The div the designer is planted in - the page's own, or the one in a shadow root. It
+   takes the room it is given and hands it down to main. In a shadow root there is no
+   body to give it a ground, an ink and a type, so it states them itself, from the same
+   tokens frisket-chrome.css gives body: a designer is a whole application, unlike the
+   content editor, which writes inside somebody else's and takes their type. */
+#frisket-designer-root { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+:host { display: block; }
+:host #frisket-designer-root {
+  height: 100%;
+  background: var(--bg); color: var(--ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+  /* Both side panels are resizable: the properties list is long enough that a
+     horizontal scrollbar kept appearing at the default width, and how much room
+     the tree or the properties deserve depends on what is being edited. */
+  main { flex: 1; display: grid; min-height: 0;
+         grid-template-columns: var(--left, 260px) 4px 1fr 4px var(--right, 300px); }
+  aside { background: var(--panel); overflow: auto; border-right: 1px solid var(--line); }
+  aside.right { border-right: none; border-left: 1px solid var(--line); }
+  /* A screen wide enough - 21:9 and beyond - gets a second, larger preview on the
+     right, and the designer keeps every part of itself exactly where it was. That
+     is what two monitors give, in one window, and the bar between them decides how
+     the room is shared. */
+  main.wide { grid-template-columns:
+                var(--left, 260px) 4px 1fr 4px var(--right, 300px) 4px var(--stage, 50%); }
+
+  /* Hidden means hidden. An id selector setting display beats the browser's own
+     [hidden] { display: none }, so without this the stage kept its flex box on an
+     ordinary screen and the grid wrapped it onto a second row - a large preview
+     underneath everything, on exactly the screens that have no room for one. */
+  #stage[hidden], .splitter[hidden] { display: none }
+
+  #stage { display: flex; flex-direction: column;
+           background: var(--sunken); border-left: 1px solid var(--line); }
+  #stage-bar { flex: none; display: flex; align-items: center; gap: 8px;
+               padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  #stage-pages { overflow: auto; padding: 24px; flex: 1; min-height: 0;
+                 display: flex; flex-flow: row wrap; gap: 16px;
+                 justify-content: safe center; align-content: flex-start; }
+  #stage-pages svg { width: calc(var(--zoom, 1) * var(--sheet, 210) * 1mm); height: auto;
+                     flex: none; background: var(--paper); box-shadow: var(--shadow); }
+  #stage-pages figure.sheet { flex: none; margin: 0; display: flex; flex-direction: column;
+                        align-items: center; gap: 4px }
+  #stage-pages figcaption { color: var(--muted); font-size: 12px }
+
+  .splitter { cursor: col-resize; background: transparent; }
+  .splitter:hover, .splitter.dragging { background: var(--accent); }
+  .section { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .section h2 {
+    margin: 0 0 6px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--muted); font-weight: 600;
+  }
+  /* A column of sheets, centred. The width is what the zoom decides and the height
+     follows from the viewBox, so a page keeps its proportions at any scale and the
+     scrollbars stay honest about what is actually there - which a CSS transform
+     would not do, since it scales the paint and not the box. */
+  /* A row that wraps, not a column. Fitting the sheet uses the height, so on a wide
+     screen the extra width buys nothing at all unless the pages stand beside each
+     other - which is the whole reason for rearranging the panels. */
+  /* "safe center": plain centering leaves half the overflow on the side the
+     scrollbar can never reach - scrollLeft cannot go negative, so a sheet
+     wider than the viewport at 200% zoom is missing its left edge with no
+     way to scroll to it. "safe" falls back to start alignment for exactly
+     the part that would otherwise be unreachable, only where it overflows. */
+  #canvas { overflow: auto; padding: 24px; background: var(--surround);
+            display: flex; flex-flow: row wrap; gap: 16px;
+            justify-content: safe center; align-content: flex-start; }
+  #canvas svg { width: calc(var(--zoom, 1) * var(--sheet, 210) * 1mm); height: auto;
+                flex: none; font-synthesis: none; }
+  svg.page { background: var(--paper); box-shadow: var(--shadow); }
+  /* Each sheet carries its own caption, so a wrap cannot leave a page on one line
+     and the label that names it on the next. */
+  #canvas figure.sheet { flex: none; margin: 0; display: flex; flex-direction: column;
+                         align-items: center; gap: 4px }
+  #canvas figcaption { color: var(--muted); font-size: 12px }
+  ul.tree { list-style: none; margin: 0; padding: 0; }
+  ul.tree ul { list-style: none; margin: 0; padding-left: 14px; }
+  .node {
+    display: flex; align-items: center; gap: 6px; padding: 3px 6px;
+    border-radius: var(--radius); cursor: pointer; white-space: nowrap;
+  }
+  .node:hover { background: var(--control); }
+  .node.sel { background: var(--accent); color: var(--on-accent); }
+  .node .kind { color: var(--muted); font-size: 11px; }
+  .node.dragging { opacity: .4; }
+  /* A filled row means "inside"; a rule on one edge means "beside, this side" -
+     so where a drop lands is never a guess. */
+  .node.drop-in { outline: 1px solid var(--accent); background: var(--drop); }
+  .node.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+  .node.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+  .node.sel .kind { color: var(--on-accent); opacity: .75; }
+  .field { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .field label { flex: 0 0 78px; color: var(--muted); font-size: 12px; }
+  .field .val { flex: 1; display: flex; gap: 4px; }
+  .dock { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .dock label { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); }
+  .edges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .edges input { width: 100%; }
+  .edges span { font-size: 10px; color: var(--muted); display: block; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 6px; }
+  .banner {
+    background: var(--warn-bg); border-bottom: 1px solid var(--warn-line); color: var(--warn);
+    padding: 6px 12px; font-size: 12px;
+  }
+  .tabs { display: flex; border-bottom: 1px solid var(--line); position: sticky; top: 0;
+          background: var(--panel); z-index: 2; }
+  .tab { flex: 1; border: none; border-radius: 0; background: transparent; font-size: 12px;
+         padding: 7px 4px; color: var(--muted); border-bottom: 2px solid transparent; }
+  .tab:hover { color: inherit; }
+  .tab.on { color: inherit; border-bottom-color: var(--accent); }
+  .palette { display: flex; flex-wrap: wrap; gap: 4px; }
+  .palette button { flex: 1 0 auto; font-size: 12px; }
+  /* What the reader looks at, and what the reader fills in: two different jobs, and
+     a "Texte" in each - so the family has to be named rather than guessed at. */
+  .family { font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+            opacity: .55; margin: 10px 0 4px; }
+  .family:first-of-type { margin-top: 4px; }
+  .exact { display: flex; align-items: center; gap: 6px; }
+  .exact input[type=text] { width: 150px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--idle); flex: 0 0 auto; }
+  .dot.on { background: var(--ok); }
+  .dot.off { background: var(--bad); }
+  #data { width: 100%; height: 120px; font: 11px/1.4 ui-monospace, Consolas, monospace;
+          background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+          border-radius: var(--radius); padding: 6px; resize: vertical; }
+  .pages { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .sheet { background: var(--paper); box-shadow: var(--shadow); width: fit-content; }
+  .stamp { color: var(--muted); font-size: 11px; }
+
+/* --- what the checks report ---------------------------------------------- */
+.only-faults { display:block; color:var(--muted); font-size:12px; margin:0 0 6px }
+.issue-count { font-size:12px; margin-bottom:6px }
+.issue-count.good { color:var(--muted) }
+.issue-count.warn { color:var(--caution) }
+.issue-count.bad  { color:var(--error) }
+.issues { list-style:none; margin:0; padding:0; max-height:220px; overflow:auto }
+.issues .issue { display:flex; gap:7px; align-items:flex-start; cursor:pointer;
+                 padding:5px 6px; border-radius: var(--radius); font-size:12px; line-height:1.35 }
+.issues .issue:hover { background:var(--hover-wash) }
+.issues .dot { width:7px; height:7px; border-radius:50%; margin-top:5px; flex:none }
+.issues .error .dot { background:var(--error) }
+.issues .warning .dot { background:var(--caution) }
+/* The same two colours on the tree, so the list and the structure agree. */
+.node .mark { margin-left:6px; font-size:10px }
+.node .cond { margin-left:5px; font-size:10px; color:var(--muted); font-weight:700 }
+.node .mark.error { color:var(--error) }
+.node .mark.warning { color:var(--caution) }
+
+/* --- the rich-text dialog for an AdvancedTextItem's runs ------------------ */
+.modal-overlay { position:fixed; inset:0; background:var(--scrim);
+                 display:flex; align-items:center; justify-content:center; z-index:1000 }
+.modal-overlay[hidden] { display:none }
+.modal { background:var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+         width:min(700px, 92vw); max-height:85vh; display:flex; flex-direction:column;
+         box-shadow:var(--shadow-modal) }
+.modal h2 { margin:0; padding:12px 14px; border-bottom:1px solid var(--line); font-size:14px }
+.modal .toolbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+                  padding:8px 14px; border-bottom:1px solid var(--line) }
+.modal .toolbar button.on { border-color:var(--accent); color:var(--accent) }
+.rich-surface { flex:1; min-height:160px; max-height:45vh; overflow:auto; margin:14px;
+                padding:10px; border:1px solid var(--line); border-radius: var(--radius);
+                background:var(--surround); line-height:1.6; outline:none }
+.modal .actions { display:flex; justify-content:flex-end; gap:8px;
+                  padding:10px 14px; border-top:1px solid var(--line) }
+.modal .hint { margin:0 14px 12px; font-size:12px; color:var(--muted) }
+.section-row { display:flex; justify-content:space-between; align-items:center; gap:12px;
+                padding:8px 10px; border:1px solid var(--line); border-radius: var(--radius);
+                margin-bottom:6px; }
+.section-row.is-current { border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+.section-row .meta { font-size:12px; opacity:.7; margin-top:2px; }
+.section-row button.danger { border-color:var(--danger); color:var(--danger); }
+#sectionList { max-height:50vh; overflow:auto; margin:10px 0; }
