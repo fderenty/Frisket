@@ -23,7 +23,14 @@
      horizontal scrollbar kept appearing at the default width, and how much room
      the tree or the properties deserve depends on what is being edited. */
   main { flex: 1; display: grid; min-height: 0;
-         grid-template-columns: var(--left, 260px) 4px 1fr 4px var(--right, 300px); }
+         grid-template-columns: var(--left, 260px) 4px 1fr 4px var(--right, 300px);
+         grid-template-rows: minmax(0, 1fr); }
+  /* One row, exactly as tall as main - never as tall as what is in it. Left to the
+     implicit auto row, the stage (a flex column, which keeps a content-based minimum)
+     made the row as tall as its sheets; the zoom fitted to the new height drew the sheets
+     taller still, so every redraw - every click - zoomed in, and the designer spilled
+     out of its box over the host page underneath. Only with the stage showing and the
+     height the narrower side, so on a 1920 x 1080 screen and not at 1400 x 1000. */
   aside { background: var(--panel); overflow: auto; border-right: 1px solid var(--line); }
   aside.right { border-right: none; border-left: 1px solid var(--line); }
   /* A screen wide enough - 21:9 and beyond - gets a second, larger preview on the

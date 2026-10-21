@@ -105,9 +105,12 @@
   // What a host does with the findings is its own business; this one says how many there are.
   for (const id of ["first", "second"]) {
     document.getElementById(id).addEventListener("checks", e => {
+      const found = e.detail.length;
       const errors = e.detail.filter(i => i.level === "error").length;
-      document.getElementById(id + "Findings").textContent =
-        `${e.detail.length} finding(s), ${errors} of them error(s) - told to the host by a "checks" event.`;
+      document.getElementById(id + "Findings").textContent = found
+        ? `${found} finding${found > 1 ? "s" : ""}, ${errors} of them ${errors > 1 ? "errors" : "an error"}`
+          + ` - told to the host by a "checks" event.`
+        : `No findings - told to the host by a "checks" event.`;
     });
   }
 

@@ -1363,6 +1363,14 @@ What the eye and the new tests found beside it, all older than this:
 - the PDF alert told people to run `dotnet run --project server`, a path that has not
   existed since the reorganisation (§6).
 
+**And every click zoomed in**, reported by the author the next morning on a 1920 x 1080
+screen. The grid's one row was the implicit `auto`, and the stage - a flex column, which keeps
+a content-based minimum height - made it as tall as its sheets; the fitted zoom measured the
+taller box and drew the sheets taller still, one step per redraw, and the designer spilled
+over the host page beneath it. At 1400 x 1000, the browser tests' viewport, the width decides
+the zoom and none of it shows - so the test that guards it sets the screen it was reported on.
+`grid-template-rows: minmax(0, 1fr)`: the row is main's height, never its content's.
+
 **Two checks were vacuous on their first writing, and the watchdog was too.** "An engine
 that fails gives the approximation back" asked only that the engine's pages were gone, and a
 canvas showing the failure message instead passed it. "An edit is asked about by itself"
