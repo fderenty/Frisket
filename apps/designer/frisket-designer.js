@@ -1750,6 +1750,21 @@ function frisketDesigner(seams = {}) {
         }
       }
 
+      // Filled from a list in the data. The engine has always done it - the ACME invoice's
+      // lines - and this panel never offered it, so a template had to be written by hand to
+      // say so. A group, a table or a grid: what Body, the bands and a row would mean by it
+      // is either a mail merge (CLAUDE.md 8e, done with a group inside the body) or a ragged
+      // row, so they are not offered it.
+      if (item.$type === "ContainerItem" || item.$type === "TableItem" || item.$type === "ImageGridItem") {
+        heading(t("section.repeat"));
+        p.appendChild(field2(t("field.repeatOver"), input("text", item.RepeatOver ?? "",
+          v => { item.RepeatOver = v.trim() || null; refresh(); }, { placeholder: "Lines" })));
+        if ((item.RepeatOver || "").trim())
+          p.appendChild(field2(t("field.emptyText"), input("text", item.EmptyText ?? "",
+            v => { item.EmptyText = v || null; refresh(); })));
+        p.appendChild(field2("", note(t("hint.repeatOver"))));
+      }
+
       // Whether the element appears at all. Any item can say so, so this sits with the
       // general properties: a rule and a label both need to disappear together when the
       // box they belong to has nothing in it.

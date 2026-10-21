@@ -234,6 +234,9 @@
   }
   /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are
      still one glance. */
+  /* A table repeated over a list, said above it - on the paper, so in the paper's ink. */
+  .repeat-mark { color: var(--on-paper-muted); font-size: 11px; margin: 0 0 3px; }
+
   /* The host's merge fields: placed as the colours' menu is, a list grouped by kind, each
      entry its label over its token. */
   #toolbar .fields { position: relative; display: flex; align-items: center; }

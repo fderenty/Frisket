@@ -2164,11 +2164,16 @@ const STRINGS = {
 
     "zoom.fit": "Fit", "zoom.label": "Zoom",
     "action.detach": "Preview window", "action.attached": "Preview open",
+    "section.repeat": "Repeat",
+    "field.repeatOver": "Over the list", "field.emptyText": "When it is empty",
+    "hint.repeatOver": "A list in the data, such as Lines: what this holds is drawn once per entry - a table keeps its header rows and repeats the others, two of them alternating. A token inside reads the entry first, then the whole of the data. With nothing in the list the element goes, header and all, unless it says what to show instead. This page draws it once; the exact preview draws every entry.",
     "editor.addField": "Insert a merge field",
     "editor.fromData": "Picture from the data: {path}",
     "fieldType.text": "Text", "fieldType.number": "Number", "fieldType.decimal": "Decimal",
     "fieldType.currency": "Amount", "fieldType.date": "Date", "fieldType.datetime": "Date and time",
-    "fieldType.image": "Picture",
+    "fieldType.image": "Picture", "fieldType.list": "Lists",
+    "fields.eachLine": "In each line of {list}",
+    "editor.repeats": "\u21BB Repeated for each entry of {list}",
     "live.off": "Exact preview: off", "live.canvas": "Exact preview: on the canvas",
     "live.beside": "Exact preview: beside", "live.window": "Exact preview: in a window",
     "live.asking": "The engine is drawing…",
@@ -2556,11 +2561,16 @@ const STRINGS = {
     "PageScope.Odd": "Impaires", "PageScope.Even": "Paires",
     "zoom.fit": "Ajusté", "zoom.label": "Zoom",
     "action.detach": "Aperçu fenêtré", "action.attached": "Aperçu ouvert",
+    "section.repeat": "Répétition",
+    "field.repeatOver": "Sur la liste", "field.emptyText": "Si elle est vide",
+    "hint.repeatOver": "Une liste des données, par exemple Lignes : ce que contient l'élément est dessiné une fois par entrée - un tableau garde ses lignes d'en-tête et répète les autres, deux d'entre elles en alternance. Un jeton lit d'abord l'entrée, puis l'ensemble des données. Si la liste est vide, l'élément disparaît, en-tête compris, sauf s'il dit quoi montrer à la place. Cette page le dessine une fois ; l'aperçu exact dessine chaque entrée.",
     "editor.addField": "Insérer un champ de fusion",
     "editor.fromData": "Image issue des données : {path}",
     "fieldType.text": "Texte", "fieldType.number": "Nombre", "fieldType.decimal": "Décimal",
     "fieldType.currency": "Montant", "fieldType.date": "Date", "fieldType.datetime": "Date et heure",
-    "fieldType.image": "Image",
+    "fieldType.image": "Image", "fieldType.list": "Listes",
+    "fields.eachLine": "Dans chaque ligne de {list}",
+    "editor.repeats": "\u21BB Répété pour chaque élément de {list}",
     "live.off": "Aperçu exact : non", "live.canvas": "Aperçu exact : sur le canevas",
     "live.beside": "Aperçu exact : à côté", "live.window": "Aperçu exact : dans une fenêtre",
     "live.asking": "Le moteur dessine…",
@@ -2923,6 +2933,24 @@ function render(report, selected, index = 0, show = {}, lookup = null) {
            + ` fill="${ON_PAPER.selection}" fill-opacity=".12"`
            + ` stroke="${ON_PAPER.selection}" stroke-width=".4" stroke-dasharray="1.5 1"/>`);
 
+  // What repeats over a list is drawn once here, as its prototype: the engine stamps it out
+  // per entry, and the exact preview shows the run. Said on the page, at the corner of what
+  // repeats - above it when there is room - so the one row on screen does not read as the
+  // only one there will be.
+  for (const { item, frame } of placed) {
+    const list = (item.RepeatOver || "").trim();
+    if (!list || !Number.isFinite(frame.left) || !Number.isFinite(frame.top)) continue;
+    const words = "\u21BB " + list;
+    const size = 2.4;
+    const width = words.length * size * 0.55 + 1.6;
+    const top = frame.top >= size + 1.4 ? frame.top - size - 1.4 : frame.top + 0.4;
+    out.push(`<g class="repeat-mark"><rect x="${n3(frame.right - width)}" y="${n3(top)}"`
+           + ` width="${n3(width)}" height="${n3(size + 1)}" rx=".6"`
+           + ` fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".15"/>`
+           + `<text x="${n3(frame.right - width + 0.8)}" y="${n3(top + size)}" font-size="${size}"`
+           + ` font-family="sans-serif" fill="${ON_PAPER.placeholderInk}">${esc(words)}</text></g>`);
+  }
+
   if (report.Watermark && report.Watermark.Layer !== "Behind")
     out.push(watermarkSvg(report, page));
 
@@ -3145,6 +3173,7 @@ const nameOf = item =>
   item.$type === "TextItem" ? (item.Text || "").slice(0, 26) || "(vide)" :
   item.$type === "TableRow" ? (item.IsHeader ? "en-tête" : "ligne") :
   item.$type === "SubTemplateItem" && referenceOf(item) !== null ? "st://" + referenceOf(item) :
+  (item.RepeatOver || "").trim() ? "\u21BB " + item.RepeatOver.trim() :
   labelOf(item.$type);
 
 /// Whether an absolutely laid out group's children sit beside one another across the
@@ -5334,6 +5363,21 @@ function frisketDesigner(seams = {}) {
             v => { item.BalanceColumns = v; refresh(); })));
           p.appendChild(field2("", note(t("hint.balance"))));
         }
+      }
+
+      // Filled from a list in the data. The engine has always done it - the ACME invoice's
+      // lines - and this panel never offered it, so a template had to be written by hand to
+      // say so. A group, a table or a grid: what Body, the bands and a row would mean by it
+      // is either a mail merge (CLAUDE.md 8e, done with a group inside the body) or a ragged
+      // row, so they are not offered it.
+      if (item.$type === "ContainerItem" || item.$type === "TableItem" || item.$type === "ImageGridItem") {
+        heading(t("section.repeat"));
+        p.appendChild(field2(t("field.repeatOver"), input("text", item.RepeatOver ?? "",
+          v => { item.RepeatOver = v.trim() || null; refresh(); }, { placeholder: "Lines" })));
+        if ((item.RepeatOver || "").trim())
+          p.appendChild(field2(t("field.emptyText"), input("text", item.EmptyText ?? "",
+            v => { item.EmptyText = v || null; refresh(); })));
+        p.appendChild(field2("", note(t("hint.repeatOver"))));
       }
 
       // Whether the element appears at all. Any item can say so, so this sits with the

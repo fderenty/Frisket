@@ -1411,6 +1411,31 @@ not reflect a `hidden` written in the markup into the property - so the toolbar'
 stated nothing until something set it. Both are now said in code: `appendChild`, and the
 button's `hidden` set from the catalogue in hand before any catalogue arrives.
 
+## 5c-septies. A list is a table the engine repeats, and both faces now ask for one
+
+`RepeatOver` has filled a table from a list in the data since the ACME invoice - header rows
+kept, the other rows stamped out per entry, a token read in the entry first and at the root
+after, a list with nothing in it taking its header with it - and **neither face offered it**:
+a repeating table had to be written by hand. Nothing was added to the engine (§5d); test 96
+asks the binder the three things the editor's shape depends on - tokens inside rich-text runs
+filled per entry, the root found from a row, the empty list - and each was seen failing.
+
+- **The designer** offers it on a group, a table and a grid, with what to show when the list
+  is empty. Its canvas still draws the prototype **once**, as its banner has always said, and
+  marks it - `↻ Lines` at the corner, and in the tree - so one row on screen does not read as
+  the only one; the run is the exact preview's to draw (§5c-quinquies), from the Data tab.
+- **The editor** takes a `list` field from the host's catalogue, with the fields of one
+  entry, and inserts a table repeated over it: their labels in the header, their tokens in the
+  one row. In that row the menu offers the list's own fields first, by their names within an
+  entry; in the header it does not, a header being printed once.
+
+**A sabotage that removes a line can remove more than the line.** Taking out the statement
+that pushed the "in each line" group left its `if` holding the loop beneath, so a different
+check fell and the run read as caught. §5c's rule from the other side: *a sabotage that does
+not reproduce the exact fault proves nothing* - it was redone as an empty statement, and then
+fell where it should. And a check reading a row the fault had never made threw, ending the
+run with no summary; it says "no repeated row" now, which is a failure a person can read.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —
@@ -2133,6 +2158,12 @@ later than its source - expected once, not a fault.
 
 Bash heredocs turn `\n` into a real newline in the middle of a C# string.
 Go through a python file in the scratchpad, or through `Edit`.
+
+**Including a Python program fed through a heredoc.** Git Bash halves the backslashes even in
+a quoted heredoc, so `\\u202F` reaches Python as ` ` and lands in the file as the narrow
+no-break space itself - invisible, working, and unreadable (§2b, §3b). Three times in one day
+on 21 October 2026, each found only by `cat -A`. A heredoc carries no backslash: build one
+from `chr(92)`, or write the script with the Write tool.
 
 **Two habits that cost four and three times in one day.**
 

@@ -99,6 +99,11 @@
     { path: "Dossier.Montant", label: "Montant réclamé", type: "currency", sample: "12\u202F480,00\u00A0EUR" },
     { path: "Dossier.Date", label: "Date du sinistre", type: "date", sample: "21 octobre 2026" },
     { path: "Cabinet.Signature", label: "Signature de l'expert", type: "image" },
+    // A list: inserted as a table repeated over it, one row per entry.
+    { path: "Lignes", label: "Lignes de la facture", type: "list", fields: [
+      { path: "Designation", label: "Désignation", sample: "Expertise sur pièces" },
+      { path: "Quantite", label: "Quantité", type: "number", sample: "2" },
+      { path: "Montant", label: "Montant", type: "currency", sample: "1\u202F200,00\u00A0EUR" } ] },
   ];
 
   // What a host does with the findings is its own business. This one just says how many

@@ -2653,6 +2653,71 @@ setTimeout(() => {
   check('and so does one handed over after the editor is in the page',
         plain.held.el('fieldsTool').hidden === false, plain.held.el('fieldsTool').hidden ? 'hidden' : 'shown');
 
+  // --- a list, inserted as a table repeated over it -----------------------------------
+  const LISTS = [
+    'Dossier.Numero',
+    { path: 'Lignes', label: 'Lignes de la facture', type: 'list', fields: [
+      { path: 'Ref', label: 'Référence' },
+      { path: 'Montant', label: 'Montant', type: 'currency' },
+      { path: 'Photo', label: 'Photo', type: 'image' },
+      { path: 'Sous', label: 'Une liste dans la liste', type: 'list' } ] },
+  ];
+  const lister = make({}, { fields: LISTS });
+  press(lister.held.el('addField'));
+  const listed = textNodesIn(lister.held.el('fieldMenu')).map(n => n.textContent).join(' | ');
+  check('a list is offered with the fields of each entry, and no list inside it',
+        listed.includes('Lists') && listed.includes('Lignes de la facture')
+          && listed.includes('Référence, Montant, Photo') && !listed.includes('Une liste dans la liste'),
+        listed.slice(0, 160));
+
+  lister.held.markCurrent(null);
+  press(entry(lister, 'Lignes de la facture'));
+  const tableLive = lister.held.report().Sections[0].Childs.find(c => c.$type === 'Body').Childs
+    .find(c => c.$type === 'TableItem');
+  const sayOf = cell => cell.$type === 'ImageItem' ? 'picture:' + cell.SourceField
+                     : (cell.Runs || []).map(r => r.Text).join('');
+  const [headRow, lineRow] = tableLive ? tableLive.Childs : [];
+  const heads = headRow ? headRow.Childs.map(sayOf) : [];
+  const lines = lineRow ? lineRow.Childs.map(sayOf) : [];
+  check('inserted, it is a table repeated over the list: labels above, tokens below',
+        !!tableLive && tableLive.RepeatOver === 'Lignes' && tableLive.Columns.length === 3
+          && headRow.IsHeader === true && lineRow.IsHeader === false
+          && heads.join(',') === 'Référence,Montant,Photo'
+          && lines.join(',') === '{Ref},{Montant},picture:Photo',
+        `${tableLive && tableLive.RepeatOver}: ${heads.join(',')} / ${lines.join(',')}`);
+
+  const nodesIn = node => [node, ...(node.childNodes || []).flatMap(nodesIn)];
+  const sheetNodes = () => nodesIn(lister.held.el('sheet'));
+  const mark = sheetNodes().find(n => n.classList && n.classList.contains('repeat-mark'));
+  check('and it says above itself that it repeats, naming the list as the host does',
+        !!mark && mark.textContent.includes('Lignes de la facture'), mark ? mark.textContent : 'no mark');
+
+  // In the repeated row: the list's own fields come first, by their names within an entry.
+  const cellAt = (header, at) => sheetNodes().find(n => n._table === tableLive && n._row
+                                                       && !!n._row.IsHeader === header && n._at === at);
+  const amount = cellAt(false, 1);
+  lister.held.markCurrent(amount || null);
+  press(lister.held.el('addField'));
+  const first = lister.held.el('fieldMenu').childNodes[0];
+  const menuOffers = entries(lister).map(b => b.childNodes[0].textContent);
+  check('in a repeated row the menu offers that list\'s fields first',
+        !!first && first.textContent === 'In each line of Lignes de la facture' && menuOffers[0] === 'Référence',
+        `${first ? first.textContent : 'nothing'}: ${menuOffers.slice(0, 3).join(', ')}`);
+  if (amount && entries(lister)[0]) {
+    currentEditable = surfaceOf(amount);
+    press(entries(lister)[0]);
+    currentEditable = null;
+  }
+  const amountSays = lineRow ? sayOf(lineRow.Childs[1]) : 'no repeated row';
+  check('and puts one in by its name within an entry', amountSays === '{Montant}{Ref}', amountSays);
+
+  lister.held.markCurrent(cellAt(true, 0));
+  press(lister.held.el('addField'));
+  const headFirst = lister.held.el('fieldMenu').childNodes[0];
+  check('but not in the header, which is printed once',
+        !!headFirst && headFirst.textContent !== 'In each line of Lignes de la facture',
+        headFirst ? headFirst.textContent : 'nothing');
+
   console.log(failures ? `\n${checked} checks, ${failures} FAILED`
                        : `\n${checked} checks, all good`);
   process.exit(failures ? 1 : 0);

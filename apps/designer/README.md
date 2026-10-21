@@ -417,6 +417,16 @@ typed the way a paste is so that Ctrl+Z takes it out again. A `type: "image"` fi
 token but a picture block the data fills (`ImageItem.SourceField`), described by its label
 and drawn as a frame naming its path, or as `sample` when that is an image.
 
+A `type: "list"` field carries the fields of one entry, and goes in as a table repeated over
+the list (`RepeatOver`): their labels in the header, their tokens in the one row the engine
+stamps out per entry. In that row the menu offers the list's own fields first.
+
+```js
+{ path: "Lignes", label: "Lignes de la facture", type: "list", fields: [
+  { path: "Designation", label: "Désignation" },
+  { path: "Montant", label: "Montant", type: "currency" } ] }
+```
+
 **The values arrive formatted by the host.** A document may mix euros, dollars and Pacific
 francs, and how each is written is the host's business, not the engine's: so the type sorts
 the menu and changes nothing else, and an amount comes as `12 480,00 EUR` - with U+202F and

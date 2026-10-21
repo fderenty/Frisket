@@ -567,6 +567,9 @@
   }
   /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are
      still one glance. */
+  /* A table repeated over a list, said above it - on the paper, so in the paper's ink. */
+  .repeat-mark { color: var(--on-paper-muted); font-size: 11px; margin: 0 0 3px; }
+
   /* The host's merge fields: placed as the colours' menu is, a list grouped by kind, each
      entry its label over its token. */
   #toolbar .fields { position: relative; display: flex; align-items: center; }
@@ -2550,11 +2553,16 @@ const STRINGS = {
 
     "zoom.fit": "Fit", "zoom.label": "Zoom",
     "action.detach": "Preview window", "action.attached": "Preview open",
+    "section.repeat": "Repeat",
+    "field.repeatOver": "Over the list", "field.emptyText": "When it is empty",
+    "hint.repeatOver": "A list in the data, such as Lines: what this holds is drawn once per entry - a table keeps its header rows and repeats the others, two of them alternating. A token inside reads the entry first, then the whole of the data. With nothing in the list the element goes, header and all, unless it says what to show instead. This page draws it once; the exact preview draws every entry.",
     "editor.addField": "Insert a merge field",
     "editor.fromData": "Picture from the data: {path}",
     "fieldType.text": "Text", "fieldType.number": "Number", "fieldType.decimal": "Decimal",
     "fieldType.currency": "Amount", "fieldType.date": "Date", "fieldType.datetime": "Date and time",
-    "fieldType.image": "Picture",
+    "fieldType.image": "Picture", "fieldType.list": "Lists",
+    "fields.eachLine": "In each line of {list}",
+    "editor.repeats": "\u21BB Repeated for each entry of {list}",
     "live.off": "Exact preview: off", "live.canvas": "Exact preview: on the canvas",
     "live.beside": "Exact preview: beside", "live.window": "Exact preview: in a window",
     "live.asking": "The engine is drawing…",
@@ -2942,11 +2950,16 @@ const STRINGS = {
     "PageScope.Odd": "Impaires", "PageScope.Even": "Paires",
     "zoom.fit": "Ajusté", "zoom.label": "Zoom",
     "action.detach": "Aperçu fenêtré", "action.attached": "Aperçu ouvert",
+    "section.repeat": "Répétition",
+    "field.repeatOver": "Sur la liste", "field.emptyText": "Si elle est vide",
+    "hint.repeatOver": "Une liste des données, par exemple Lignes : ce que contient l'élément est dessiné une fois par entrée - un tableau garde ses lignes d'en-tête et répète les autres, deux d'entre elles en alternance. Un jeton lit d'abord l'entrée, puis l'ensemble des données. Si la liste est vide, l'élément disparaît, en-tête compris, sauf s'il dit quoi montrer à la place. Cette page le dessine une fois ; l'aperçu exact dessine chaque entrée.",
     "editor.addField": "Insérer un champ de fusion",
     "editor.fromData": "Image issue des données : {path}",
     "fieldType.text": "Texte", "fieldType.number": "Nombre", "fieldType.decimal": "Décimal",
     "fieldType.currency": "Montant", "fieldType.date": "Date", "fieldType.datetime": "Date et heure",
-    "fieldType.image": "Image",
+    "fieldType.image": "Image", "fieldType.list": "Listes",
+    "fields.eachLine": "Dans chaque ligne de {list}",
+    "editor.repeats": "\u21BB Répété pour chaque élément de {list}",
     "live.off": "Aperçu exact : non", "live.canvas": "Aperçu exact : sur le canevas",
     "live.beside": "Aperçu exact : à côté", "live.window": "Aperçu exact : dans une fenêtre",
     "live.asking": "Le moteur dessine…",
@@ -3309,6 +3322,24 @@ function render(report, selected, index = 0, show = {}, lookup = null) {
            + ` fill="${ON_PAPER.selection}" fill-opacity=".12"`
            + ` stroke="${ON_PAPER.selection}" stroke-width=".4" stroke-dasharray="1.5 1"/>`);
 
+  // What repeats over a list is drawn once here, as its prototype: the engine stamps it out
+  // per entry, and the exact preview shows the run. Said on the page, at the corner of what
+  // repeats - above it when there is room - so the one row on screen does not read as the
+  // only one there will be.
+  for (const { item, frame } of placed) {
+    const list = (item.RepeatOver || "").trim();
+    if (!list || !Number.isFinite(frame.left) || !Number.isFinite(frame.top)) continue;
+    const words = "\u21BB " + list;
+    const size = 2.4;
+    const width = words.length * size * 0.55 + 1.6;
+    const top = frame.top >= size + 1.4 ? frame.top - size - 1.4 : frame.top + 0.4;
+    out.push(`<g class="repeat-mark"><rect x="${n3(frame.right - width)}" y="${n3(top)}"`
+           + ` width="${n3(width)}" height="${n3(size + 1)}" rx=".6"`
+           + ` fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".15"/>`
+           + `<text x="${n3(frame.right - width + 0.8)}" y="${n3(top + size)}" font-size="${size}"`
+           + ` font-family="sans-serif" fill="${ON_PAPER.placeholderInk}">${esc(words)}</text></g>`);
+  }
+
   if (report.Watermark && report.Watermark.Layer !== "Behind")
     out.push(watermarkSvg(report, page));
 
@@ -3531,6 +3562,7 @@ const nameOf = item =>
   item.$type === "TextItem" ? (item.Text || "").slice(0, 26) || "(vide)" :
   item.$type === "TableRow" ? (item.IsHeader ? "en-tête" : "ligne") :
   item.$type === "SubTemplateItem" && referenceOf(item) !== null ? "st://" + referenceOf(item) :
+  (item.RepeatOver || "").trim() ? "\u21BB " + item.RepeatOver.trim() :
   labelOf(item.$type);
 
 /// Whether an absolutely laid out group's children sit beside one another across the
@@ -4728,6 +4760,17 @@ function frisketEditor(seams = {}) {
   /// cell per column, and Columns is the list of widths. Nothing here is new to the
   /// engine; what was missing was a way to touch it without the designer.
   function fillTable(node, item) {
+    // A table repeated over a list says so above itself, in the block's furniture rather
+    // than in a cell: the one row on the sheet is the one the engine stamps out per entry.
+    const over = (item.RepeatOver || "").trim();
+    if (over) {
+      const list = fields.find(field => field.type === "list" && field.path === over);
+      const mark = document.createElement("div");
+      mark.className = "repeat-mark";
+      mark.textContent = t("editor.repeats", { list: list ? list.label : over });
+      node.appendChild(mark);
+    }
+
     const table = document.createElement("table");
     table.className = "grid";
     const columns = (item.Columns || []).length || 1;
@@ -5888,7 +5931,12 @@ function frisketEditor(seams = {}) {
   // host's to write - "le métier n'est pas là". The one type that changes what is
   // inserted is a picture, which is a block of its own filled from the data
   // (ImageItem.SourceField), not a token in a sentence.
-  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "image"];
+  //
+  // And a list - the lines of an invoice, the parties to a case - which is inserted as a
+  // table repeated over it (RepeatOver): a header of its fields' labels, one row of their
+  // tokens, stamped out by the engine once per entry. Its fields are the host's too, named
+  // relative to an entry, and offered first in the menu while the caret is in that row.
+  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "list", "image"];
   let fieldSource = seams.fields || null;
   let fields = [];
 
@@ -5900,13 +5948,27 @@ function frisketEditor(seams = {}) {
       const path = String(raw).trim().replace(/^\{\s*|\s*\}$/g, "").trim();
       const said = entry && typeof entry === "object" ? entry : {};
       const kind = String(said.type || "text").toLowerCase();
+      const type = FIELD_KINDS.includes(kind) ? kind : "text";
       return {
         path,
         label: String(said.label || path),
-        type: FIELD_KINDS.includes(kind) ? kind : "text",
+        type,
         sample: said.sample == null ? "" : String(said.sample),
+        // A list's own fields, one level down: a list inside a list would be a table in a
+        // cell, which this face does not draw.
+        fields: type === "list" ? fieldsFrom(said.fields).filter(child => child.type !== "list") : [],
       };
     }).filter(field => field.path);
+  }
+
+  /// The list the caret's row repeats over, when it is in a repeated row of a table whose
+  /// list the host described - null anywhere else, the header row included, since a header
+  /// is printed once and a token there would read the whole data, not an entry.
+  function listHere() {
+    const table = current && current._table;
+    const row = current && current._row;
+    const over = table && row && !row.IsHeader ? (table.RepeatOver || "").trim() : "";
+    return over ? fields.find(field => field.type === "list" && field.path === over) || null : null;
   }
 
   /// Asks for the catalogue - a list, a function returning one, or a promise of either -
@@ -5938,20 +6000,31 @@ function frisketEditor(seams = {}) {
     const menu = el("fieldMenu");
     if (!menu) return;
     menu.innerHTML = "";
-    for (const kind of FIELD_KINDS) {
-      const ofKind = fields.filter(field => field.type === kind);
-      if (!ofKind.length) continue;
+
+    // In a repeated row, what that row can say first: its list's fields, by their names
+    // within an entry. They are what belongs there; the rest still follows.
+    const here = listHere();
+    const groups = [];
+    if (here && here.fields.length)
+      groups.push({ heading: t("fields.eachLine", { list: here.label }), entries: here.fields });
+    for (const kind of FIELD_KINDS)
+      groups.push({ heading: t("fieldType." + kind), kind, entries: fields.filter(field => field.type === kind) });
+
+    for (const group of groups) {
+      if (!group.entries.length) continue;
+      const kind = group.kind;
       const heading = document.createElement("div");
       heading.className = "kind";
-      heading.textContent = t("fieldType." + kind);
+      heading.textContent = group.heading;
       menu.appendChild(heading);
-      for (const field of ofKind) {
+      for (const field of group.entries) {
         const button = document.createElement("button");
         const label = document.createElement("span");
         label.textContent = field.label;
         const detail = document.createElement("small");
         detail.textContent = "{" + field.path + "}"
-          + (field.sample && kind !== "image" ? " - " + field.sample : "");
+          + (field.type === "list" ? " - " + field.fields.map(child => child.label).join(", ")
+             : field.sample && field.type !== "image" ? " - " + field.sample : "");
         button.appendChild(label);
         button.appendChild(detail);
         // Pressed without taking the focus, so the caret is still where it goes.
@@ -5972,6 +6045,7 @@ function frisketEditor(seams = {}) {
   /// With no paragraph under the caret it starts one; a picture is a block of its own.
   function insertField(field) {
     if (field.type === "image") { insertAfterCurrent(pictureField(field)); return; }
+    if (field.type === "list") { insertAfterCurrent(listTable(field)); return; }
 
     const token = "{" + field.path + "}";
     const item = currentItem();
@@ -5993,6 +6067,27 @@ function frisketEditor(seams = {}) {
     sel.addRange(rangeAt(surface, at.start, at.end));
     document.execCommand("insertText", false, token);
     readSurface();
+  }
+
+  /// A table repeated over a list: a column per field of the list, its label in the header
+  /// row and its token in the one row the engine stamps out per entry. A list the host gave
+  /// no fields for still makes a table - one column, headed by the list, waiting for tokens.
+  function listTable(field) {
+    const table = newTable();
+    const columns = field.fields.length ? field.fields : [{ path: "", label: field.label, type: "text" }];
+    const text = words => { const cell = emptyCell(); cell.Runs = [{ Text: words, Font: null }]; return cell; };
+
+    table.Columns = columns.map(() => ({ Width: "NaN", WidthUnit: "Millimeter" }));
+    const [head, line] = table.Childs;
+    head.Childs = columns.map(column => text(column.label));
+    line.Childs = columns.map(column => {
+      if (column.type !== "image") return text(column.path ? "{" + column.path + "}" : "");
+      const picture = pictureField(column);
+      picture.Style.Location.WidthValue = Math.min(40, bandWidth() / columns.length);
+      return picture;
+    });
+    table.RepeatOver = field.path;
+    return table;
   }
 
   /// A picture the data fills in: no bytes of its own, the field's path to find them by,

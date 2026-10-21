@@ -756,6 +756,17 @@ function frisketEditor(seams = {}) {
   /// cell per column, and Columns is the list of widths. Nothing here is new to the
   /// engine; what was missing was a way to touch it without the designer.
   function fillTable(node, item) {
+    // A table repeated over a list says so above itself, in the block's furniture rather
+    // than in a cell: the one row on the sheet is the one the engine stamps out per entry.
+    const over = (item.RepeatOver || "").trim();
+    if (over) {
+      const list = fields.find(field => field.type === "list" && field.path === over);
+      const mark = document.createElement("div");
+      mark.className = "repeat-mark";
+      mark.textContent = t("editor.repeats", { list: list ? list.label : over });
+      node.appendChild(mark);
+    }
+
     const table = document.createElement("table");
     table.className = "grid";
     const columns = (item.Columns || []).length || 1;
@@ -1916,7 +1927,12 @@ function frisketEditor(seams = {}) {
   // host's to write - "le métier n'est pas là". The one type that changes what is
   // inserted is a picture, which is a block of its own filled from the data
   // (ImageItem.SourceField), not a token in a sentence.
-  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "image"];
+  //
+  // And a list - the lines of an invoice, the parties to a case - which is inserted as a
+  // table repeated over it (RepeatOver): a header of its fields' labels, one row of their
+  // tokens, stamped out by the engine once per entry. Its fields are the host's too, named
+  // relative to an entry, and offered first in the menu while the caret is in that row.
+  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "list", "image"];
   let fieldSource = seams.fields || null;
   let fields = [];
 
@@ -1928,13 +1944,27 @@ function frisketEditor(seams = {}) {
       const path = String(raw).trim().replace(/^\{\s*|\s*\}$/g, "").trim();
       const said = entry && typeof entry === "object" ? entry : {};
       const kind = String(said.type || "text").toLowerCase();
+      const type = FIELD_KINDS.includes(kind) ? kind : "text";
       return {
         path,
         label: String(said.label || path),
-        type: FIELD_KINDS.includes(kind) ? kind : "text",
+        type,
         sample: said.sample == null ? "" : String(said.sample),
+        // A list's own fields, one level down: a list inside a list would be a table in a
+        // cell, which this face does not draw.
+        fields: type === "list" ? fieldsFrom(said.fields).filter(child => child.type !== "list") : [],
       };
     }).filter(field => field.path);
+  }
+
+  /// The list the caret's row repeats over, when it is in a repeated row of a table whose
+  /// list the host described - null anywhere else, the header row included, since a header
+  /// is printed once and a token there would read the whole data, not an entry.
+  function listHere() {
+    const table = current && current._table;
+    const row = current && current._row;
+    const over = table && row && !row.IsHeader ? (table.RepeatOver || "").trim() : "";
+    return over ? fields.find(field => field.type === "list" && field.path === over) || null : null;
   }
 
   /// Asks for the catalogue - a list, a function returning one, or a promise of either -
@@ -1966,20 +1996,31 @@ function frisketEditor(seams = {}) {
     const menu = el("fieldMenu");
     if (!menu) return;
     menu.innerHTML = "";
-    for (const kind of FIELD_KINDS) {
-      const ofKind = fields.filter(field => field.type === kind);
-      if (!ofKind.length) continue;
+
+    // In a repeated row, what that row can say first: its list's fields, by their names
+    // within an entry. They are what belongs there; the rest still follows.
+    const here = listHere();
+    const groups = [];
+    if (here && here.fields.length)
+      groups.push({ heading: t("fields.eachLine", { list: here.label }), entries: here.fields });
+    for (const kind of FIELD_KINDS)
+      groups.push({ heading: t("fieldType." + kind), kind, entries: fields.filter(field => field.type === kind) });
+
+    for (const group of groups) {
+      if (!group.entries.length) continue;
+      const kind = group.kind;
       const heading = document.createElement("div");
       heading.className = "kind";
-      heading.textContent = t("fieldType." + kind);
+      heading.textContent = group.heading;
       menu.appendChild(heading);
-      for (const field of ofKind) {
+      for (const field of group.entries) {
         const button = document.createElement("button");
         const label = document.createElement("span");
         label.textContent = field.label;
         const detail = document.createElement("small");
         detail.textContent = "{" + field.path + "}"
-          + (field.sample && kind !== "image" ? " - " + field.sample : "");
+          + (field.type === "list" ? " - " + field.fields.map(child => child.label).join(", ")
+             : field.sample && field.type !== "image" ? " - " + field.sample : "");
         button.appendChild(label);
         button.appendChild(detail);
         // Pressed without taking the focus, so the caret is still where it goes.
@@ -2000,6 +2041,7 @@ function frisketEditor(seams = {}) {
   /// With no paragraph under the caret it starts one; a picture is a block of its own.
   function insertField(field) {
     if (field.type === "image") { insertAfterCurrent(pictureField(field)); return; }
+    if (field.type === "list") { insertAfterCurrent(listTable(field)); return; }
 
     const token = "{" + field.path + "}";
     const item = currentItem();
@@ -2021,6 +2063,27 @@ function frisketEditor(seams = {}) {
     sel.addRange(rangeAt(surface, at.start, at.end));
     document.execCommand("insertText", false, token);
     readSurface();
+  }
+
+  /// A table repeated over a list: a column per field of the list, its label in the header
+  /// row and its token in the one row the engine stamps out per entry. A list the host gave
+  /// no fields for still makes a table - one column, headed by the list, waiting for tokens.
+  function listTable(field) {
+    const table = newTable();
+    const columns = field.fields.length ? field.fields : [{ path: "", label: field.label, type: "text" }];
+    const text = words => { const cell = emptyCell(); cell.Runs = [{ Text: words, Font: null }]; return cell; };
+
+    table.Columns = columns.map(() => ({ Width: "NaN", WidthUnit: "Millimeter" }));
+    const [head, line] = table.Childs;
+    head.Childs = columns.map(column => text(column.label));
+    line.Childs = columns.map(column => {
+      if (column.type !== "image") return text(column.path ? "{" + column.path + "}" : "");
+      const picture = pictureField(column);
+      picture.Style.Location.WidthValue = Math.min(40, bandWidth() / columns.length);
+      return picture;
+    });
+    table.RepeatOver = field.path;
+    return table;
   }
 
   /// A picture the data fills in: no bytes of its own, the field's path to find them by,

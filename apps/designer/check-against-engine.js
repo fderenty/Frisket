@@ -1709,6 +1709,44 @@ if (flatPath && flatFindingsPath) {
   check('a rich text that names no font of its own lays out', !error, error || 'laid out');
 }
 
+// --- repeating over a list --------------------------------------------------------
+// The engine has always filled a table from a list in the data; the panel never offered
+// it. A table offers it now, the template keeps it, and the canvas - which draws the
+// prototype once - says on the page that it repeats, as the tree does.
+{
+  const report = sandbox.blankReport();
+  const body = report.Sections[0].Childs.find(c => c.$type === 'Body');
+  const table = {
+    $type: 'TableItem', Layout: 'Stack',
+    Columns: [{ Width: 'NaN', WidthUnit: 'Millimeter' }],
+    Childs: [{ $type: 'TableRow', IsHeader: true, Childs: [{ $type: 'TextItem', Text: 'Ref' }] },
+             { $type: 'TableRow', IsHeader: false, Childs: [{ $type: 'TextItem', Text: '{Ref}' }] }]
+  };
+  body.Childs.push(table);
+  sandbox.hydrate(report.Sections[0]);
+  sandbox.setReport(report);
+  sandbox.setSelected(table);
+  sandbox.drawProps();
+
+  const findIn = (node, test) => !node || typeof node !== 'object' ? null
+    : test(node) ? node : (node.children || []).map(c => findIn(c, test)).find(Boolean) || null;
+  const field = findIn(sandbox.ui.props, n => n.placeholder === 'Lines' && typeof n.oninput === 'function');
+  check('a table offers to repeat over a list',
+        !!field && wordsIn(sandbox.ui.props).includes(sandbox.STRINGS.en['field.repeatOver']),
+        field ? 'offered' : 'no such field');
+  if (field) { field.value = ' Lignes '; field.oninput(); }
+  const saved = sandbox.forEngine(report).Sections[0].Childs.find(c => c.$type === 'Body').Childs[0];
+  check('and the template keeps the list it names', table.RepeatOver === 'Lignes' && saved.RepeatOver === 'Lignes',
+        `${table.RepeatOver} / ${saved.RepeatOver}`);
+
+  const drawn = sandbox.render(report, null, 0, {});
+  check('the canvas says on the page that what it shows once repeats',
+        drawn.includes('class="repeat-mark"') && drawn.includes('\u21BB Lignes'),
+        drawn.includes('repeat-mark') ? 'marked' : 'not marked');
+  check('and so does the tree', wordsIn(sandbox.ui.tree).includes('\u21BB Lignes'),
+        wordsIn(sandbox.ui.tree).includes('\u21BB') ? 'named' : 'not named');
+}
+
 // --- one designer per call --------------------------------------------------------
 // A host application embeds the designer, so a page may hold more than one: each call
 // must be a designer of its own, and its findings must reach whoever made it. Asked of

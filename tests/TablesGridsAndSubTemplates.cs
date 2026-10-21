@@ -1571,5 +1571,102 @@ namespace test
             File.WriteAllText(Path.Combine(OutputDirectory("subdocuments"), "expertise.html"), proof.ToHtml());
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// A table filled from a list in the data, in the shape the content editor writes it:
+        /// rich text in every cell, a header row of labels, one prototype row of tokens, and
+        /// the table repeating over the list. Read back from JSON first, as a host reads what
+        /// the editor saved.
+        ///
+        /// The engine has repeated tables since the ACME invoice, whose cells are plain
+        /// TextItems; what is new is the editor writing them, so this asks the binder the
+        /// three things that shape depends on - tokens inside runs resolved per record, a
+        /// token the record does not hold found at the root, and a list with nothing in it
+        /// taking its header away with it rather than leaving it stranded.
+        /// </summary>
+        [Fact]
+        public void Test96_EditorTableFromAList()
+        {
+            const string testName = "Test 96";
+            Console.WriteLine("Test 96: a table the content editor writes, repeated over a list");
+            Console.WriteLine();
+
+            static AdvancedTextItem Rich(string text)
+            {
+                var item = new AdvancedTextItem();
+                item.Runs.Add(new TextRun { Text = text });
+                return item;
+            }
+            static TableItem ListTable(string list, (string Label, string Token)[] columns)
+            {
+                var table = new TableItem { RepeatOver = list };
+                var head = new TableRow(isHeader: true);
+                var line = new TableRow(isHeader: false);
+                foreach (var (label, token) in columns)
+                {
+                    table.AddAutoColumn();
+                    head.Add(Rich(label));
+                    line.Add(Rich(token));
+                }
+                table.Add(head);
+                table.Add(line);
+                return table;
+            }
+
+            var written = new Report
+            {
+                Title = "Facture",
+                Language = "fr-FR",
+                GeneratedAt = SampleDate,
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack },
+            };
+            written.Body!.Add(Rich("Facture {Dossier.Numero}"));
+            written.Body.Add(ListTable("Lignes", new[] { ("Référence", "{Ref}"), ("Montant", "{Montant} {Devise}") }));
+            written.Body.Add(ListTable("Remises", new[] { ("Remise accordée", "{Libelle}") }));
+            written.Reattach();
+
+            // Formatted by the host, as every value this editor inserts is.
+            string data = new System.Text.Json.Nodes.JsonObject
+            {
+                ["Dossier"] = new System.Text.Json.Nodes.JsonObject { ["Numero"] = "2026-0417" },
+                ["Devise"] = "EUR",
+                ["Lignes"] = new System.Text.Json.Nodes.JsonArray(
+                    new System.Text.Json.Nodes.JsonObject { ["Ref"] = "A-1", ["Montant"] = "1 200,00" },
+                    new System.Text.Json.Nodes.JsonObject { ["Ref"] = "A-2", ["Montant"] = "350,00" },
+                    new System.Text.Json.Nodes.JsonObject { ["Ref"] = "A-3", ["Montant"] = "12 480,00" }),
+                ["Remises"] = new System.Text.Json.Nodes.JsonArray(),
+            }.ToJsonString();
+
+            Report template = Report.FromJson(written.ToJson());
+            Report bound = ReportBinder.Bind(template, data);
+            var library = new FontLibrary();
+            LayoutResult layout = bound.Resolve(new FontTextMeasurer(library));
+
+            static string TextOf(PlacedItem p) => p.Fragment ?? (p.Source as TextItem)?.Text ?? "";
+            var texts = layout.Pages.SelectMany(p => p.Items).Where(i => i.Source is TextItem).ToList();
+            List<PlacedItem> Saying(string text) => texts.Where(i => TextOf(i) == text).ToList();
+            Console.WriteLine($"    {string.Join(" | ", texts.Select(TextOf))}");
+
+            foreach (string reference in new[] { "A-1", "A-2", "A-3" })
+                AssertEqual(testName, $"line {reference} is printed, once", 1, Saying(reference).Count, 0);
+
+            AssertEqual(testName, "the lines come in the list's order, top to bottom", true,
+                Saying("A-1")[0].Frame.Top < Saying("A-2")[0].Frame.Top
+                && Saying("A-2")[0].Frame.Top < Saying("A-3")[0].Frame.Top, 0);
+
+            AssertEqual(testName, "a token the line does not hold is found at the root",
+                1, Saying("12 480,00 EUR").Count, 0);
+
+            AssertEqual(testName, "the header is printed once, above the lines", true,
+                Saying("Référence").Count == 1 && Saying("Référence")[0].Frame.Top < Saying("A-1")[0].Frame.Top, 0);
+
+            AssertEqual(testName, "a list with nothing in it takes its header with it",
+                0, Saying("Remise accordée").Count, 0);
+
+            AssertEqual(testName, "and no merge field is left unfilled",
+                "", string.Join(" | ", texts.Select(TextOf).Where(t => t.Contains('{'))), 0);
+            Console.WriteLine();
+        }
     }
 }
