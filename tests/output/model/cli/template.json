@@ -1,0 +1,5 @@
+{ "Title": "Relevé", "Language": "fr-FR",
+  "Sections": [{ "Childs": [{ "$type": "Body", "Layout": "Stack", "Childs": [
+    { "$type": "TableItem", "RepeatOver": "Désignations", "Columns": [{}], "Childs": [
+      { "$type": "TableRow", "IsHeader": true, "Childs": [{ "$type": "TextItem", "Text": "Libellé" }] },
+      { "$type": "TableRow", "Childs": [{ "$type": "TextItem", "Txt": "{Libelle}", "Text": "{Libellé}" }] } ] } ] }] }] }

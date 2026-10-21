@@ -595,6 +595,16 @@ namespace test
                 $"every enum the schema calls a string is written as one ({string.Join(", ", TemplateSchema.Numbered)})",
                 0, TemplateSchema.Numbered.Count, 0);
 
+            // Every type and every property says what it is for, in the engine's own words -
+            // the /// comment, read from the documentation file rather than typed here. A
+            // schema that names a property and says nothing of it leaves whoever writes a
+            // template, a person or a model, with the name alone; 59 of 386 had a word to
+            // say before this, and those were about the form of a number, not its purpose.
+            Console.WriteLine($"    {TemplateSchema.Undescribed.Count} undescribed: {string.Join(", ", TemplateSchema.Undescribed)}");
+            AssertEqual(testName,
+                $"every type and property is described ({string.Join(", ", TemplateSchema.Undescribed)})",
+                0, TemplateSchema.Undescribed.Count, 0);
+
             AssertEqual(testName, "the report is the root", "#/$defs/Report",
                 root.GetProperty("$ref").GetString()!, 0);
 

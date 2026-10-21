@@ -63,7 +63,20 @@ namespace test
 
         /// <summary>The summary of a property, as HTML, or an empty string.</summary>
         internal string Property(PropertyInfo property)
-            => Summary("P:" + Key(property.DeclaringType!) + "." + property.Name);
+        {
+            // A mirror - LocationJson, written as Location - is described by the property it
+            // mirrors, whose comment says what the value is for; its own says how it maps to
+            // null. The schema reads it the same way (TemplateSchema.Docs): two readers of
+            // one comment that disagree would describe one property twice, differently.
+            string written = TemplateSchema.SerializedName(property);
+            if (written != property.Name)
+            {
+                string mirrored = Summary("P:" + Key(property.DeclaringType!) + "." + written);
+                if (mirrored.Length > 0)
+                    return mirrored;
+            }
+            return Summary("P:" + Key(property.DeclaringType!) + "." + property.Name);
+        }
 
         /// <summary>The summary of a constant or an enum member, as HTML, or an empty string.</summary>
         internal string Field(Type owner, string name) => Summary("F:" + Key(owner) + "." + name);

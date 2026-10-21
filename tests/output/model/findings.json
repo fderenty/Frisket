@@ -1,0 +1,51 @@
+[
+  {
+    "rule": "read.unknownProperty",
+    "level": "warning",
+    "message": "\"Txt\" is not something a TextItem carries, so it is ignored and the document comes out without whatever it was meant to say. Did you mean \"Text\"?",
+    "where": "TextItem › Txt",
+    "pointer": "/Sections/0/Childs/0/Childs/0/Txt"
+  },
+  {
+    "rule": "read.unknownProperty",
+    "level": "warning",
+    "message": "\"text\" is not something a TextItem carries, so it is ignored and the document comes out without whatever it was meant to say. Did you mean \"Text\"?",
+    "where": "TextItem › text",
+    "pointer": "/Sections/0/Childs/0/Childs/1/text"
+  },
+  {
+    "rule": "ua.language",
+    "level": "error",
+    "message": "The section does not say what language it is written in, so a reader announces it with whatever voice it happens to have. Set Language to a tag such as fr-FR.",
+    "where": "Section",
+    "pointer": "/Language"
+  },
+  {
+    "rule": "sound.noPageSize",
+    "level": "error",
+    "message": "This section has no page size, so it is laid out on a sheet of nothing: every column too narrow to divide, one item to a page and the rest thrown away. Give it a Dimension in millimetres - 210 by 297 is A4.",
+    "where": "Section",
+    "pointer": "/Sections/0"
+  },
+  {
+    "rule": "ua.altText",
+    "level": "error",
+    "message": "This is shown rather than read, and has no alternative text. Without one a screen reader announces nothing at all.",
+    "where": "Section › Body › ImageItem",
+    "pointer": "/Sections/0/Childs/0/Childs/3"
+  },
+  {
+    "rule": "fields.unknown",
+    "level": "warning",
+    "message": "\"Destinataire.Nmo\" names nothing in the data the host fills in, so it is printed as written, braces and all. Did you mean \"Destinataire.Nom\"?",
+    "where": "TextItem › Text",
+    "pointer": "/Sections/0/Childs/0/Childs/2/Text"
+  },
+  {
+    "rule": "fields.unknown",
+    "level": "warning",
+    "message": "\"Prix\" names nothing in an entry of Lignes de la facture or in the data the host fills in, so it is printed as written, braces and all.",
+    "where": "TextItem › Text",
+    "pointer": "/Sections/0/Childs/0/Childs/4/Childs/1/Childs/1/Text"
+  }
+]

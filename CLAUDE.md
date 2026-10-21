@@ -1436,6 +1436,62 @@ not reproduce the exact fault proves nothing* - it was redone as an empty statem
 fell where it should. And a check reading a row the fault had never made threw, ending the
 run with no summary; it says "no repeated row" now, which is a failure a person can read.
 
+## 5c-octies. A model writes the template; the engine says where it went wrong
+
+Frisket calls no model - which one, with what key, how many rounds, who approves, is the
+host's. What it owes is a format a model can write and checks a program can act on, so the
+host's loop is *write, check, mend at the pointer, check again, preview*. Test 97 is that
+loop, mending by the pointers alone; `examples/ai/README.md` is for whoever wires it.
+
+**The schema named 386 properties and described 59**, and those 59 were about the form of a
+number ("NaN means undecided"), not what anything was for. The engine is commented
+everywhere; the comments simply never reached the file. They do now, read from the
+documentation file the build writes - never typed into the generator, which would be §1's
+sixth place - and test 47 refuses a type or a property with nothing to say. That took
+fifty-three comments in the engine, `TextItem.Text` and `Report.Title` among them. A mirror
+(`LocationJson`, written as `Location`) is described by what it mirrors, and **the
+reference page had to learn the same rule**: two readers of one comment that look it up
+differently describe one property twice, differently. Test 71's ceiling of undescribed
+cells went from 57 to 0 and was lowered to match, as its comment asks.
+
+**A property the model does not know was skipped in silence**, as System.Text.Json does by
+default - `"Txt"`, or `"text"` in the wrong case, and the document came out without the
+words. `TemplateJson.Check` walks the text with the serializer's own metadata (so native
+AOT keeps it), names every unknown property with its pointer and the name probably meant,
+and passes on the reader's refusal - an unknown `$type`, a value of the wrong shape - with
+the place the reader gave. A family of its own, `read.`, and **not** a validator rule: the
+faces read objects, not text, so there is nothing for the echo to mirror.
+
+**`fields.` checks the template against the host's catalogue**, the array the content
+editor is handed: a token the data will not answer is printed braces and all, which is
+honest and late. Paths resolve as the binder resolves them - an entry's fields first inside
+a repeated container, the root after - and a header row reads outside its list, being
+printed once.
+
+**Every finding carries a JSON Pointer**, computed once at the end of `Check` by walking up
+from the element, rather than at the twenty-odd places a finding is made where the next
+rule would forget it. `TemplateIssue.ToJson` is the one shape: `frisket check --json`, the
+server's `POST /check`, and any host.
+
+**And `sound.noPageSize` should have existed for months.** `DocumentDimension`'s own comment
+said nothing supplies a page size and a section without one is laid out on a sheet of
+nothing - "only ever met by a template built by hand". A model writes templates by hand,
+and forgets the property first. Both validators now say it, and test 42's fixture carries
+the fault and mends it.
+
+Three things that bit:
+
+- **`--json` through `Console` turned "›" into ">"** on Windows, redirected to a file or
+  not: the console's code page, best-fit. Harmless on a screen, wrong in what a program
+  reads. It writes UTF-8 bytes now, and test 98 starts the CLI as a program would. Nothing
+  in the suite had ever started it; the test project now references the CLI for the order
+  of the build only, since a stale binary answers exactly like a fresh one (§6);
+- **a method named `Report` hides the type `Report`**, twice in one day, once as a local
+  function. The compiler said so; a reader would not have;
+- **the nullable mismatch in test 98 passed `dotnet test` and failed `-warnaserror`** - the
+  build CI runs. §4's rule again: a count of nothing from an incremental build is not a
+  count.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —

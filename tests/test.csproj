@@ -25,6 +25,11 @@
     <!-- The PDF reader. Referenced here and nowhere in the engine, which is the whole
          arrangement: a document that imports nothing carries no parser. -->
     <ProjectReference Include="..\import\Frisket.Import.csproj" />
+
+    <!-- The CLI, for the order of the build and nothing else: test 98 runs it as a program
+         would, and a CLI left from an older build answers exactly like an up-to-date one
+         (CLAUDE.md 6). Not linked - the tests do not call into it, they start it. -->
+    <ProjectReference Include="..\apps\cli\Frisket.Cli.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

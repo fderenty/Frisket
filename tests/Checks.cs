@@ -119,6 +119,12 @@ namespace test
             var notAControl = new TextItem { Text = "Sign here", Role = PdfRole.Form };
             report.Body!.Add(notAControl);
 
+            // A second section with no page size, which nothing supplies: laid out on a sheet
+            // of nothing. A person met it only by writing a template by hand; a model writing
+            // one from the schema meets it the first time it leaves the property out.
+            var sizeless = new Section();
+            report.Sections.Add(sizeless);
+
             report.Reattach();
 
             // Written out so the designer's echo can be held to the same findings on
@@ -165,6 +171,8 @@ namespace test
                 true, Has("sound.headingNumberOutsideHeading"), 0);
             AssertEqual(testName, "a role naming a control on something that is not one",
                 true, Has("ua.formRole"), 0);
+            AssertEqual(testName, "a section with no page size", true,
+                issues.Any(i => i.Rule == "sound.noPageSize" && ReferenceEquals(i.Item, sizeless)), 0);
 
             // It points at the element, not merely at the fault: this is what lets the
             // designer light up the offending node instead of printing a list.
@@ -237,6 +245,7 @@ namespace test
             report.HeadingNumbering = "1.1";
             loose.Text = "See {HeadingNumber[1]} below";
             report.Body!.Remove(nested);
+            sizeless.Dimension = new() { Width = 210, Height = 297 };
 
             var header = new TableRow(true);
             for (int i = 0; i < 6; i++) header.Add(new TextItem { Text = $"Col {i + 1}" });

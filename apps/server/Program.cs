@@ -196,6 +196,45 @@ app.MapPost("/mail", (PreviewRequest request) =>
     }
 });
 
+// What a template will not do, for a program to read - a host's model writing templates,
+// first of all, which learns from these and writes again. The text first: what the model
+// will not read (a property misspelt, a text it refuses), then the validator's three
+// profiles against the output named, then every token the host's catalogue does not hold
+// when one is sent. One array of findings, each with a JSON Pointer to where to act -
+// TemplateIssue.ToJson, the shape `frisket check --json` writes too.
+//
+// The reference for a host's own server, as /preview is: a host composing with its own
+// library passes its ISubTemplates to ExpandSubTemplates, which this server cannot - so a
+// st:// piece is refused here in the engine's words, and would not be there.
+app.MapPost("/check", (CheckRequest request) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Template))
+        return Results.BadRequest(new { error = "No template was sent." });
+
+    var issues = new List<TemplateIssue>(TemplateJson.Check(request.Template));
+    if (!issues.Any(i => i.Rule == "read.invalid"))
+    {
+        try
+        {
+            Report report = Report.FromJson(request.Template);
+            report.ExpandSubTemplates();
+            var target = new RenderTarget(Tagged: request.Tagged, Interactive: request.Interactive,
+                                          Paged: request.Paged);
+            issues.AddRange(TemplateValidator.Check(report, TemplateProfile.All, target));
+
+            if (request.Fields is { ValueKind: JsonValueKind.Array } fields)
+                issues.AddRange(TemplateFields.Check(report, fields.GetRawText()));
+        }
+        catch (Exception e) when (e is InvalidOperationException or FileNotFoundException or JsonException)
+        {
+            issues.Add(new TemplateIssue("read.invalid", IssueLevel.Error,
+                "The template cannot be composed: " + e.Message, null, ""));
+        }
+    }
+
+    return Results.Text(TemplateIssue.ToJson(issues), "application/json", System.Text.Encoding.UTF8);
+});
+
 app.MapPost("/pdf", (PreviewRequest request) =>
 {
     try
@@ -278,6 +317,18 @@ internal sealed record PreviewRequest(
     bool ShowBands = false,
     string? Numbers = null,
     bool Archivable = false);
+
+/// <summary>
+/// What /check is asked: the template as text, the host's catalogue of fields when it has one
+/// (the array the content editor is handed as `fields`), and the output aimed at - the
+/// richest by default, which is the engine's own default and loses nothing.
+/// </summary>
+internal sealed record CheckRequest(
+    string Template,
+    JsonElement? Fields = null,
+    bool Tagged = true,
+    bool Interactive = true,
+    bool Paged = true);
 
 [JsonSerializable(typeof(PreviewRequest))]
 internal partial class ServerJson : JsonSerializerContext;

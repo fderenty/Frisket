@@ -45,8 +45,9 @@ namespace Frisket.Cli
                     case "--split-on": options._single["split-on"] = Value("split-on"); break;
                     case "--name": options._single["name"] = Value("name"); break;
                     case "--max-documents": options._single["max-documents"] = Value("max-documents"); break;
+                    case "--fields": options._single["fields"] = Value("fields"); break;
 
-                    case "--tagged" or "--flat" or "--no-subset" or "--bare" or "--accessible":
+                    case "--tagged" or "--flat" or "--no-subset" or "--bare" or "--accessible" or "--json":
                         options._flags.Add(arg.TrimStart('-'));
                         break;
 
@@ -84,6 +85,9 @@ namespace Frisket.Cli
         public bool NoSubset => _flags.Contains("no-subset");
         public bool Bare => _flags.Contains("bare");
         public bool Accessible => _flags.Contains("accessible");
+
+        /// <summary>Findings written for a program rather than a person: TemplateIssue.ToJson.</summary>
+        public bool Json => _flags.Contains("json");
 
         public IEnumerable<string> Formats
             => _single.GetValueOrDefault("format", "pdf")

@@ -17,7 +17,7 @@ cli/bin/Debug/net10.0/Frisket.Cli.exe render \
 | | |
 |---|---|
 | `render` | one document per data file, named after it. With no `-d`, the template is rendered as it stands - which is how a template is looked at while it is being drawn |
-| `check`  | the template validator, with nothing produced. Exits non-zero on an error, so it belongs in a build as much as in a shell |
+| `check`  | the template validator, with nothing produced. Exits non-zero on an error, so it belongs in a build as much as in a shell. It reads the text first: a property no element carries is reported rather than skipped. `--fields catalogue.json` checks every token against what the host's data will hold, and `--json` writes the findings for a program, each with a JSON Pointer to where to act - see [`examples/ai`](../../examples/ai/README.md) |
 | `fonts`  | what the library holds and what the engine measured in it - the typefaces bundled with Frisket unless `--fonts` or `--font` names others. A template names families by name, and a name that does not resolve is refused, with the list of what does |
 
 `-d` takes a file or a directory; a directory stands for the `*.json` inside it.

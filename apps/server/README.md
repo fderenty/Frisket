@@ -62,6 +62,7 @@ What it usually is:
 | `GET /fonts` | what the font library holds |
 | `POST /preview` | template + data → the SVG pages, laid out for real |
 | `POST /pdf` | the same, through the PDF backend |
+| `POST /check` | template (+ the host's `fields`) → the findings, each with a JSON Pointer - for a model writing templates, see `examples/ai/README.md` |
 
 ```json
 {

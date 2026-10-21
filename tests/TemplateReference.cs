@@ -37,8 +37,12 @@ namespace test
         /// the page counts what is on the page, which is the walked types, the properties
         /// each declares, the enum members and the tokens - not every public property in
         /// engine/Model.
+        ///
+        /// Lowered to nothing on 21 October 2026, when the schema began carrying every
+        /// property's comment and test 47 began refusing one without: fifty-three comments
+        /// written in the engine, and the four mirrors read through what they mirror.
         /// </summary>
-        internal const int BlankCeiling = 57;
+        internal const int BlankCeiling = 0;
 
         internal static int Blanks { get; private set; }
 

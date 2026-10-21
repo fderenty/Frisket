@@ -1,0 +1,18 @@
+{
+  "Title": "Facture",
+  "Sections": [{
+    "Childs": [{ "$type": "Body", "Layout": "Stack", "Childs": [
+      { "$type": "TextItem", "Txt": "Facture n° 2026-0417" },
+      { "$type": "TextItem", "text": "Page {Page} sur {Pages}" },
+      { "$type": "TextItem", "Text": "À l'attention de {Destinataire.Nmo}" },
+      { "$type": "ImageItem", "SourceField": "Cabinet.Logo" },
+      { "$type": "TableItem", "RepeatOver": "Lignes", "Columns": [{}, {}], "Childs": [
+        { "$type": "TableRow", "IsHeader": true, "Childs": [
+          { "$type": "TextItem", "Text": "Référence" },
+          { "$type": "TextItem", "Text": "Montant ({Devise})" } ] },
+        { "$type": "TableRow", "Childs": [
+          { "$type": "TextItem", "Text": "{Ref}" },
+          { "$type": "TextItem", "Text": "{Prix} {Devise}" } ] } ] }
+    ] }]
+  }]
+}

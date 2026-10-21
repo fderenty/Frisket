@@ -2,7 +2,10 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Frisket;
 
 namespace test
@@ -57,6 +60,18 @@ namespace test
         /// </summary>
         internal static List<Type> Walked { get; } = new();
 
+        /// <summary>
+        /// Types and properties this pass found with no comment of their own to describe
+        /// them, as "Type" or "Type.Property". Filled by <see cref="Build"/>.
+        ///
+        /// The descriptions are the engine's own /// comments, read from the documentation
+        /// file the build writes beside it - never typed here, which would be the sixth place
+        /// §1 refuses. So a property with no comment arrives in the schema with nothing to
+        /// say, and somebody - or a model - writing a template from it has only the name to
+        /// go on. Collected rather than thrown, so a failure names all of them at once.
+        /// </summary>
+        internal static List<string> Undescribed { get; } = new();
+
         internal static string Build()
         {
             var definitions = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -65,6 +80,7 @@ namespace test
 
             Numbered.Clear();
             Walked.Clear();
+            Undescribed.Clear();
 
             Queue(typeof(Report));
 
@@ -123,9 +139,20 @@ namespace test
             }
 
             foreach (PropertyInfo property in Serialized(type))
-                properties.Add(Text(SerializedName(property)) + ": " + Rule(property, queue));
+            {
+                string rule = Rule(property, queue);
+                string? purpose = Docs.Of(property);
+                if (purpose == null) Undescribed.Add($"{type.Name}.{SerializedName(property)}");
+                properties.Add(Text(SerializedName(property)) + ": " + Described(rule, purpose));
+            }
 
             var body = new StringBuilder("{\n  \"type\": \"object\"");
+
+            // What the kind of thing is, in the engine's own words.
+            if (Docs.Of(type) is { } said)
+                body.Append(",\n  \"description\": ").Append(Text(said));
+            else
+                Undescribed.Add(type.Name);
 
             if (properties.Count > 0)
             {
@@ -355,6 +382,153 @@ namespace test
 
         private static string Text(string value)
             => JsonSerializer.Serialize(value, SourceGenerationContext.Default.String);
+
+        /// <summary>
+        /// A rule with the property's description put in it - first, where an editor shows
+        /// it - and merged with a description the rule already carries, which says what the
+        /// value's form means ("NaN means undecided") rather than what the property is for.
+        /// </summary>
+        private static string Described(string rule, string? said)
+        {
+            if (said == null)
+                return rule;
+
+            JsonObject shape = JsonNode.Parse(rule)!.AsObject();
+            string? already = shape["description"]?.GetValue<string>();
+            shape.Remove("description");
+
+            var described = new JsonObject { ["description"] = already == null ? said : said + " " + already };
+            foreach (var (key, value) in shape.ToList())
+            {
+                shape.Remove(key);
+                described[key] = value;
+            }
+
+            var options = new JsonSerializerOptions(SourceGenerationContext.Default.Options) { WriteIndented = true };
+            return described.ToJsonString(options).Replace("\r\n", "\n");
+        }
+
+        /// <summary>
+        /// The engine's /// comments, read from the documentation file the compiler writes
+        /// beside Frisket.dll, cut to what describes the thing: the first paragraphs, up to a
+        /// length a description can carry. Much of a comment here is history - why a thing
+        /// is the way it is, and what went wrong before - which is the right place for it and
+        /// the wrong place for a schema.
+        /// </summary>
+        private static class Docs
+        {
+            private static readonly Dictionary<string, string> Summaries = Load();
+
+            private const int Room = 600;
+
+            internal static string? Of(Type type)
+                => Find("T:" + XmlName(type));
+
+            internal static string? Of(PropertyInfo property)
+            {
+                Type owner = property.DeclaringType!;
+
+                // A mirror carries the JSON name for a property the serializer skips -
+                // LocationJson for Location - and its own comment is about the mirroring
+                // ("maps to null when empty"), not about what the value is for. The property
+                // it mirrors says that, so it is asked first.
+                string written = SerializedName(property);
+                if (written != property.Name && Find("P:" + XmlName(owner) + "." + written) is { } mirrored)
+                    return mirrored;
+
+                return Find("P:" + XmlName(owner) + "." + property.Name);
+            }
+
+            private static string XmlName(Type type) => type.FullName!.Replace('+', '.');
+
+            private static string? Find(string id)
+                => Summaries.TryGetValue(id, out string? text) && text.Length > 0 ? text : null;
+
+            private static Dictionary<string, string> Load()
+            {
+                string file = Path.Combine(AppContext.BaseDirectory, "Frisket.xml");
+                var found = new Dictionary<string, string>(StringComparer.Ordinal);
+                if (!File.Exists(file))
+                    return found;
+
+                foreach (XElement member in XDocument.Load(file).Descendants("member"))
+                {
+                    XElement? summary = member.Element("summary");
+                    string? id = member.Attribute("name")?.Value;
+                    if (summary != null && id != null)
+                        found[id] = Cut(Plain(summary));
+                }
+                return found;
+            }
+
+            /// <summary>The summary as text: references by their last name, code as code.</summary>
+            private static string Plain(XElement summary)
+            {
+                var text = new StringBuilder();
+                foreach (XNode node in summary.Nodes())
+                    Walk(node, text);
+                return text.ToString();
+
+                static void Walk(XNode node, StringBuilder into)
+                {
+                    switch (node)
+                    {
+                        case XText words:
+                            into.Append(words.Value);
+                            break;
+                        case XElement { Name.LocalName: "see" or "seealso" } see:
+                            string target = (string?)see.Attribute("cref") ?? (string?)see.Attribute("langword")
+                                            ?? (string?)see.Attribute("href") ?? see.Value;
+                            into.Append(see.IsEmpty ? Last(target) : see.Value);
+                            break;
+                        case XElement { Name.LocalName: "paramref" or "typeparamref" } named:
+                            into.Append((string?)named.Attribute("name"));
+                            break;
+                        case XElement { Name.LocalName: "para" } para:
+                            into.Append("\n\n");
+                            foreach (XNode inner in para.Nodes()) Walk(inner, into);
+                            into.Append("\n\n");
+                            break;
+                        case XElement element:
+                            foreach (XNode inner in element.Nodes()) Walk(inner, into);
+                            break;
+                    }
+                }
+
+                // "T:Frisket.Model.TableItem" reads as TableItem, a member as Type.Member.
+                static string Last(string cref)
+                {
+                    string bare = Regex.Replace(cref, @"^[A-Z]:", "");
+                    bare = Regex.Replace(bare, @"\(.*\)$", "");
+                    string[] parts = bare.Split('.');
+                    return parts.Length >= 2 && char.IsUpper(parts[^2][0]) && cref.StartsWith("T:") is false
+                        ? parts[^2] + "." + parts[^1]
+                        : parts[^1];
+                }
+            }
+
+            /// <summary>
+            /// The first paragraphs, whole, while they fit in the room - at least the first,
+            /// however long, since a description cut mid-sentence says less than none.
+            /// </summary>
+            private static string Cut(string text)
+            {
+                string[] paragraphs = Regex.Split(text.Trim(), @"\n\s*\n")
+                    .Select(p => Regex.Replace(p, @"\s+", " ").Trim())
+                    .Where(p => p.Length > 0)
+                    .ToArray();
+
+                var kept = new StringBuilder();
+                foreach (string paragraph in paragraphs)
+                {
+                    if (kept.Length > 0 && kept.Length + paragraph.Length + 1 > Room)
+                        break;
+                    if (kept.Length > 0) kept.Append(' ');
+                    kept.Append(paragraph);
+                }
+                return kept.ToString();
+            }
+        }
 
         private static string Indent(string block, string by)
             => block.Replace("\n", "\n" + by);

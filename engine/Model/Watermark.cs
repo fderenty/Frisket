@@ -73,6 +73,7 @@ namespace Frisket
         /// </summary>
         public string Text { get; set; } = "DRAFT ";
 
+        /// <summary>Tiled across the whole sheet, or written once (Single).</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<WatermarkMode>))]
         public WatermarkMode Mode { get; set; } = WatermarkMode.Tiled;
 

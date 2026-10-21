@@ -50,6 +50,7 @@ namespace Frisket
         private Footer? _footer;
         private Body? _body;
 
+        /// <summary>The document's title: the PDF's /Title and dc:title, what a reader announces on opening it, and what {Title} prints. One per file, whatever the number of sections.</summary>
         public string Title { get; set; } = "";
 
         /// <summary>

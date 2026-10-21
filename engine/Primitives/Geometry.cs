@@ -49,9 +49,13 @@ namespace Frisket
     /// <summary>Straight RGBA colour, so the engine does not depend on System.Drawing.</summary>
     public readonly struct Color
     {
+        /// <summary>Red, from 0 to 255.</summary>
         public byte R { get; }
+        /// <summary>Green, from 0 to 255.</summary>
         public byte G { get; }
+        /// <summary>Blue, from 0 to 255.</summary>
         public byte B { get; }
+        /// <summary>Opacity, from 0 (transparent) to 255 (opaque). Defaults to 255.</summary>
         public byte A { get; }
 
         // A struct has an implicit parameterless constructor, which the serializer would

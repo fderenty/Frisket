@@ -26,6 +26,7 @@ namespace Frisket
         /// <summary>What to encode. Tokens are substituted before it is read.</summary>
         public string Value { get; set; } = "";
 
+        /// <summary>Which code: Qr or Code128.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Symbology>))]
         public Symbology Symbology { get; set; } = Symbology.Qr;
 

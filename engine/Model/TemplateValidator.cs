@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 namespace Frisket
 {
@@ -64,7 +65,59 @@ namespace Frisket
     /// <param name="Item">The element concerned. Null when it is the section itself.</param>
     /// <param name="Where">Readable path to the element, for a list that is not on screen.</param>
     public sealed record TemplateIssue(string Rule, IssueLevel Level, string Message,
-                                       BaseItem? Item, string Where);
+                                       BaseItem? Item, string Where)
+    {
+        /// <summary>
+        /// Where to act in the template's JSON, as a JSON Pointer (RFC 6901) -
+        /// "/Sections/0/Childs/1/Childs/2" for an element, "/Title" for a property of the
+        /// file. What a program correcting the file needs, where <see cref="Where"/> is for a
+        /// person reading a list.
+        ///
+        /// Into the template as it was checked: one read through Report.FromFile has its
+        /// sub-templates spliced in, so a fault inside a piece points into the composition.
+        /// Null when the issue has no single place to go - a document read back from layout,
+        /// or an element no longer in the tree.
+        /// </summary>
+        public string? Pointer { get; init; }
+
+        /// <summary>
+        /// Findings as a program reads them: an array of objects with rule, level, message,
+        /// where and pointer. One shape for `frisket check --json`, the preview server's
+        /// /check and any host writing its own, so a model correcting a template is told the
+        /// same thing whichever door it came through. Written by hand rather than by the
+        /// serializer, so it stays as native AOT builds it.
+        /// </summary>
+        public static string ToJson(IEnumerable<TemplateIssue> issues)
+        {
+            if (issues is null) throw new ArgumentNullException(nameof(issues));
+
+            using var stream = new MemoryStream();
+            using (var json = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions
+            {
+                Indented = true,
+                // One newline whatever the platform, so the same findings are the same bytes
+                // on Windows and on Linux - the default is the machine's.
+                NewLine = "\n",
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            }))
+            {
+                json.WriteStartArray();
+                foreach (TemplateIssue issue in issues)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("rule", issue.Rule);
+                    json.WriteString("level", issue.Level.ToString().ToLowerInvariant());
+                    json.WriteString("message", issue.Message);
+                    json.WriteString("where", issue.Where);
+                    if (issue.Pointer is null) json.WriteNull("pointer");
+                    else json.WriteString("pointer", issue.Pointer);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+            }
+            return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        }
+    }
 
     /// <summary>
     /// Reads a template and says what will go wrong, before any section is produced.
@@ -105,13 +158,90 @@ namespace Frisket
             // Every section, named so a fault in the third one does not read as a fault
             // in the first.
             for (int i = 0; i < report.Sections.Count; i++)
-                Walk(report.Sections[i], report.Sections.Count == 1 ? "Section" : $"Section {i + 1}",
-                     report, profile, found);
+            {
+                string named = report.Sections.Count == 1 ? "Section" : $"Section {i + 1}";
+
+                // Nothing supplies a page size - not the engine, not the CLI, not the native
+                // library - so a section without one is laid out on a sheet of nothing, and
+                // nothing said so. The designer writes A4 into a section that has none, so a
+                // person met this only with a template written by hand; a model writing one
+                // from the schema meets it the first time it forgets the property.
+                if (profile.HasFlag(TemplateProfile.Sound)
+                    && report.Sections[i].Dimension is not { Width: > 0, Height: > 0 })
+                {
+                    found.Add(new TemplateIssue("sound.noPageSize", IssueLevel.Error,
+                        "This section has no page size, so it is laid out on a sheet of nothing: "
+                        + "every column too narrow to divide, one item to a page and the rest "
+                        + "thrown away. Give it a Dimension in millimetres - 210 by 297 is A4.",
+                        report.Sections[i], named));
+                }
+
+                Walk(report.Sections[i], named, report, profile, found);
+            }
 
             if (report.BackPage is { } back)
                 Walk(back.Content, "Verso", report, profile, found);
 
-            return found;
+            // Each finding told where it is in the file, once, here - rather than at the
+            // twenty-odd places a finding is made, where the next rule would forget it.
+            return found.Select(issue => issue with { Pointer = PointerOf(report, issue) }).ToList();
+        }
+
+        /// <summary>
+        /// The JSON Pointer of what an issue is about: its element, found by walking up the
+        /// tree to the section or the back page that holds it, or for an issue about the file
+        /// itself the property it names.
+        /// </summary>
+        internal static string? PointerOf(Report report, TemplateIssue issue)
+        {
+            if (issue.Item is { } item)
+                return PointerOf(report, item);
+
+            return issue.Rule switch
+            {
+                "ua.title" => "/Title",
+                "ua.language" => "/Language",
+                _ => "",
+            };
+        }
+
+        /// <summary>The JSON Pointer of an element, or null when it is in no tree of this report.</summary>
+        public static string? PointerOf(Report report, BaseItem item)
+        {
+            if (report is null) throw new ArgumentNullException(nameof(report));
+            if (item is null) throw new ArgumentNullException(nameof(item));
+
+            var steps = new List<string>();
+            for (BaseItem at = item; ;)
+            {
+                if (at is Section section)
+                {
+                    int index = report.Sections.IndexOf(section);
+                    if (index < 0) return null;
+                    steps.Add("/Sections/" + index.ToString(CultureInfo.InvariantCulture));
+                    break;
+                }
+
+                if (report.BackPage is { } back && ReferenceEquals(back.Content, at))
+                {
+                    steps.Add("/BackPage/Content");
+                    break;
+                }
+
+                ContainerItem? parent = at.Parent;
+                if (parent is null) return null;
+
+                int place = -1;
+                for (int i = 0; i < parent.Childs.Count; i++)
+                    if (ReferenceEquals(parent.Childs[i], at)) { place = i; break; }
+                if (place < 0) return null;
+
+                steps.Add("/Childs/" + place.ToString(CultureInfo.InvariantCulture));
+                at = parent;
+            }
+
+            steps.Reverse();
+            return string.Concat(steps);
         }
 
         /// <summary>

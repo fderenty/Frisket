@@ -21,9 +21,11 @@ namespace Frisket
     /// <summary>A straight rule. With no explicit height it is as thick as its pen.</summary>
     public class LineItem : BaseItem
     {
+        /// <summary>Horizontal, Vertical, or one of the two diagonals of the frame (DiagonalDown, DiagonalUp).</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<LineOrientation>))]
         public LineOrientation Orientation { get; set; } = LineOrientation.Horizontal;
 
+        /// <summary>How the line is drawn: colour, thickness and dash.</summary>
         public PenStyle Pen { get; set; } = new();
 
         protected override BaseItem CreateEmpty() => new LineItem();
@@ -56,6 +58,7 @@ namespace Frisket
     /// </summary>
     public class ImageItem : BaseItem
     {
+        /// <summary>The picture carried in the template. Empty when it comes from the data instead - see SourceField.</summary>
         public ImageSource Source { get; set; } = new();
 
         /// <summary>Natural width in millimeters, NaN when unknown.</summary>
@@ -90,6 +93,7 @@ namespace Frisket
             set => NaturalHeight = value ?? double.NaN;
         }
 
+        /// <summary>How the picture fills its frame: Uniform keeps its proportions, Stretch fills the frame, None draws it at its natural size.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<ImageScaling>))]
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]   // default is not default(T)
         public ImageScaling Scaling { get; set; } = ImageScaling.Uniform;
@@ -314,6 +318,7 @@ namespace Frisket
         }
     }
 
+    /// <summary>Another template brought into this one - its body spliced in where this item sits, or its sections appended after this one. Named by a path, by st://reference for the host to supply, or carried whole in TemplateData.</summary>
     public class SubTemplateItem : ContainerItem
     {
         /// <summary>
@@ -383,6 +388,7 @@ namespace Frisket
     /// </summary>
     public class TableColumn
     {
+        /// <summary>The column's width, in WidthUnit. Unset, the column shares with the others what the fixed ones leave.</summary>
         [JsonIgnore]
         public double Width { get; set; } = double.NaN;
 
@@ -398,6 +404,7 @@ namespace Frisket
             set => Width = value ?? double.NaN;
         }
 
+        /// <summary>Millimeter, or Percentage of the table's width.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units WidthUnit { get; set; } = Units.Millimeter;
 
@@ -454,6 +461,7 @@ namespace Frisket
     /// </summary>
     public class TableItem : ContainerItem
     {
+        /// <summary>The columns, left to right. Every row carries one cell per column.</summary>
         public List<TableColumn> Columns { get; set; } = new();
 
         /// <summary>Repeat the header rows at the top of each page the table continues on.</summary>

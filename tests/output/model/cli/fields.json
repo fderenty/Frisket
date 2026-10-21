@@ -1,0 +1,2 @@
+[ { "path": "Désignations", "type": "list", "label": "Désignations du relevé",
+    "fields": [ { "path": "Libelle" } ] } ]

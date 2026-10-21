@@ -122,6 +122,7 @@ namespace Frisket
         /// </summary>
         public string? HideWhen { get; set; }
 
+        /// <summary>Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.</summary>
         public Style Style { get; set; } = new();
 
 
@@ -273,6 +274,7 @@ namespace Frisket
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]   // default is not default(T)
         public string GroupItems { get; set; } = "Items";
 
+        /// <summary>What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.</summary>
         [JsonIgnore]
         public IReadOnlyList<BaseItem> Childs => _childs;
 
@@ -363,6 +365,7 @@ namespace Frisket
     /// </summary>
     public class TextItem : BaseItem
     {
+        /// <summary>What is printed. Tokens in braces are filled in: {Page}, {Pages} and {Title} by the engine, a path such as {Client.Name} from the data. {{ and }} print a brace, and a line break in the string breaks the line.</summary>
         public string Text { get; set; } = "";
 
         /// <summary>Appearance of the text, and what the resolver measures it with.</summary>
@@ -387,6 +390,7 @@ namespace Frisket
     /// </summary>
     public class TextRun
     {
+        /// <summary>This run's words. Tokens in braces are filled in as in a TextItem, and a line break in the string breaks the line.</summary>
         public string Text { get; set; } = "";
 
         /// <summary>
@@ -408,6 +412,7 @@ namespace Frisket
     /// </summary>
     public class AdvancedTextItem : BaseItem
     {
+        /// <summary>The paragraph's pieces, in reading order, each with its own style over the paragraph's.</summary>
         public List<TextRun> Runs { get; set; } = new();
 
         /// <summary>

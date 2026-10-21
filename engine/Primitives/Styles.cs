@@ -61,9 +61,13 @@ namespace Frisket
         [JsonConverter(typeof(JsonStringEnumConverter<FontSizeUnit>))]
         public FontSizeUnit? SizeUnit { get; set; }
 
+        /// <summary>Bold. Null inherits from the level above; a family with no bold cut is drawn in another of its cuts, never a synthesised bold.</summary>
         public bool? Bold { get; set; }
+        /// <summary>Italic. Null inherits from the level above.</summary>
         public bool? Italic { get; set; }
+        /// <summary>Underlined. Null inherits from the level above.</summary>
         public bool? Underline { get; set; }
+        /// <summary>Struck through. Null inherits from the level above.</summary>
         public bool? Strikethrough { get; set; }
 
         /// <summary>Defaults to black.</summary>
@@ -143,30 +147,37 @@ namespace Frisket
         public double EmSizeInMillimeters => (Size ?? 1) * PointsToMillimeters;
     }
 
+    /// <summary>How a line is drawn: its colour, its thickness and its dash.</summary>
     public sealed class PenStyle
     {
         public PenStyle Clone() => (PenStyle)MemberwiseClone();
 
+        /// <summary>The ink. Defaults to black.</summary>
         public Color Color { get; set; } = Color.Black;
 
         /// <summary>Line thickness in millimeters.</summary>
         public double Width { get; set; } = 0.2;
 
+        /// <summary>Solid, Dash, Dot or DashDot.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<DashStyle>))]
         public DashStyle DashStyle { get; set; } = DashStyle.Solid;
     }
 
+    /// <summary>How an area is filled: one colour.</summary>
     public sealed class BrushStyle
     {
         public BrushStyle Clone() => (BrushStyle)MemberwiseClone();
 
+        /// <summary>The fill. Defaults to white.</summary>
         public Color Color { get; set; } = Color.White;
     }
 
     /// <summary>Raw image bytes; decoding is the backend's responsibility.</summary>
     public sealed class ImageSource
     {
+        /// <summary>The picture's bytes, written in a template as base64; MediaType says what they are.</summary>
         public byte[] Data { get; set; } = Array.Empty<byte>();
+        /// <summary>Where the bytes came from, as a path - kept for whoever loaded them. The engine draws Data and never reads this.</summary>
         public string? SourcePath { get; set; }
 
         /// <summary>MIME type of <see cref="Data"/>, needed by backends that embed it.</summary>

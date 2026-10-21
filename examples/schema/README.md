@@ -54,6 +54,11 @@ exact spellings, and the discriminator that tells one kind from another.
 | serialization names | `LeftValue`, not the C# `Left` behind it |
 | `additionalProperties: false` | a misspelt property is a mistake, not a silent no-op |
 | numbers | `number` **or** the string `"NaN"`, which is how the model says undecided |
+| `description` | on every type and property, the engine's own `///` comment - what it is for |
+
+The descriptions are read from the documentation file the build writes beside the engine,
+never typed here, and test 47 fails on a type or a property that has none. For a model
+writing templates from this schema, see `examples/ai/README.md`.
 
 Nothing is `required`: a template writes only what it decides, so every property may
 be absent.

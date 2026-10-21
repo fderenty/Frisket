@@ -1,0 +1,7 @@
+[
+  { "path": "Destinataire.Nom", "label": "Nom du destinataire" },
+  "Devise",
+  { "path": "Cabinet.Logo", "type": "image" },
+  { "path": "Lignes", "type": "list", "label": "Lignes de la facture",
+    "fields": [ { "path": "Ref" }, { "path": "Montant", "type": "currency" } ] }
+]

@@ -37,6 +37,7 @@ namespace Frisket
         /// <summary>The content itself. Laid out over the whole sheet.</summary>
         public ContainerItem Content { get; set; } = new();
 
+        /// <summary>Which pages get a back: EveryPage, or the LastPage alone.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<BackPageScope>))]
         public BackPageScope Scope { get; set; } = BackPageScope.EveryPage;
 

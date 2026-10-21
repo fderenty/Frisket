@@ -109,7 +109,9 @@ namespace Frisket
     /// </summary>
     public class DocumentDimension
     {
+        /// <summary>Width of the sheet, in millimetres - 210 for A4. Nothing supplies one: a section without a size is laid out on a sheet of nothing.</summary>
         public double Width { get; set; }
+        /// <summary>Height of the sheet, in millimetres - 297 for A4.</summary>
         public double Height { get; set; }
 
     }
@@ -129,6 +131,7 @@ namespace Frisket
     public class FrameDimension
     {
 
+        /// <summary>How far in from the left edge of the space the container gives, in LeftUnit. Absent decides nothing.</summary>
         [JsonIgnore]
         public double LeftValue { get; set; } = double.NaN;
 
@@ -144,9 +147,11 @@ namespace Frisket
             set => LeftValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of LeftValue: Millimeter, or Percentage of the width the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units LeftUnit { get; set; } = Units.Millimeter;
 
+        /// <summary>How far in from the right edge of the space the container gives, in RightUnit. Absent decides nothing.</summary>
         [JsonIgnore]
         public double RightValue { get; set; } = double.NaN;
 
@@ -162,9 +167,11 @@ namespace Frisket
             set => RightValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of RightValue: Millimeter, or Percentage of the width the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units RightUnit { get; set; } = Units.Millimeter;
 
+        /// <summary>The width, in WidthUnit. Absent, it follows from the two edges, or from the content.</summary>
         [JsonIgnore]
         public double WidthValue { get; set; } = double.NaN;
 
@@ -180,10 +187,12 @@ namespace Frisket
             set => WidthValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of WidthValue: Millimeter, or Percentage of the width the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units WidthUnit { get; set; } = Units.Millimeter;
 
 
+        /// <summary>How far down from the top of the space the container gives, in TopUnit. In a stacked container the flow decides the vertical position and this is ignored - Margin.Top moves an item down there.</summary>
         [JsonIgnore]
         public double TopValue { get; set; } = double.NaN;
 
@@ -199,9 +208,11 @@ namespace Frisket
             set => TopValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of TopValue: Millimeter, or Percentage of the height the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units TopUnit { get; set; } = Units.Millimeter;
 
+        /// <summary>How far up from the bottom of the space the container gives, in BottomUnit. Ignored in a stacked container, as TopValue is.</summary>
         [JsonIgnore]
         public double BottomValue { get; set; } = double.NaN;
 
@@ -217,9 +228,11 @@ namespace Frisket
             set => BottomValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of BottomValue: Millimeter, or Percentage of the height the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units BottomUnit { get; set; } = Units.Millimeter;
 
+        /// <summary>The height, in HeightUnit. Absent, it follows from the content.</summary>
         [JsonIgnore]
         public double HeightValue { get; set; } = double.NaN;
 
@@ -235,12 +248,15 @@ namespace Frisket
             set => HeightValue = value ?? double.NaN;
         }
 
+        /// <summary>Unit of HeightValue: Millimeter, or Percentage of the height the container gives.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Units>))]
         public Units HeightUnit { get; set; } = Units.Millimeter;
 
 
 
+        /// <summary>Whether the width is worked out by the engine rather than stated. Set as it lays out; a template has no reason to write it.</summary>
         public bool AutoWidth { get; set; } = false;
+        /// <summary>Whether the height is worked out by the engine rather than stated. Set as it lays out; a template has no reason to write it.</summary>
         public bool AutoHeight { get; set; } = false;
 
         [JsonIgnore]
@@ -262,6 +278,7 @@ namespace Frisket
         [JsonIgnore]
         public (double, Units) Height { get { return (HeightValue, HeightUnit); } set { HeightValue = value.Item1; HeightUnit = value.Item2; } }
 
+        /// <summary>The edges the item is stuck to - Left, Top, Right, Bottom, several joined with a comma, or Fill. An anchoring, not a share of the room: docked children are all handed the same area, none takes it from another.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Dock>))]
         public Dock Dock { get; set; } = Dock.None;
 
@@ -305,9 +322,13 @@ namespace Frisket
     {
         public EdgeSize Clone() => (EdgeSize)MemberwiseClone();
 
+        /// <summary>The left side, in millimetres.</summary>
         public double Left { get; set; }
+        /// <summary>The top side, in millimetres.</summary>
         public double Top { get; set; }
+        /// <summary>The right side, in millimetres.</summary>
         public double Right { get; set; }
+        /// <summary>The bottom side, in millimetres.</summary>
         public double Bottom { get; set; }
 
         /// <summary>Nothing set on any side, so nothing worth writing down.</summary>
@@ -329,9 +350,13 @@ namespace Frisket
     {
         public Constraints Clone() => (Constraints)MemberwiseClone();
 
+        /// <summary>The smallest width the item may be, in millimetres; zero for no bound.</summary>
         public double MinWidth { get; set; }
+        /// <summary>The smallest height the item may be, in millimetres; zero for no bound.</summary>
         public double MinHeight { get; set; }
+        /// <summary>The largest width the item may be, in millimetres; zero for no bound.</summary>
         public double MaxWidth { get; set; }
+        /// <summary>The largest height the item may be, in millimetres; zero for no bound.</summary>
         public double MaxHeight { get; set; }
 
         /// <summary>No bound on any side.</summary>
@@ -379,6 +404,7 @@ namespace Frisket
         // and four empty objects on every item was a third of the file. They map to null
         // when empty, and the serializer drops them.
 
+        /// <summary>Where the item sits in the space its container gives it: edges, width, height and docking.</summary>
         [JsonIgnore]
         public FrameDimension Location { get; set; } = new();
 
@@ -389,6 +415,7 @@ namespace Frisket
             set => Location = value ?? new();
         }
 
+        /// <summary>Room kept outside the item's frame, in millimetres. A section's page margins are its Padding, not its Margin.</summary>
         [JsonIgnore]
         public EdgeSize Margin { get; set; } = new();
 
@@ -399,6 +426,7 @@ namespace Frisket
             set => Margin = value ?? new();
         }
 
+        /// <summary>Room kept inside the item's frame, between its edge and its content, in millimetres. On a section, these are the page margins.</summary>
         [JsonIgnore]
         public EdgeSize Padding { get; set; } = new();
 
@@ -409,6 +437,7 @@ namespace Frisket
             set => Padding = value ?? new();
         }
 
+        /// <summary>Bounds on the size the engine arrives at, in millimetres.</summary>
         [JsonIgnore]
         public Constraints Constraints { get; set; } = new();
 
@@ -422,6 +451,7 @@ namespace Frisket
         [JsonIgnore]
         public ReadOnlyFrameDimension RenderedFrame { get; set; } = new();
 
+        /// <summary>Visible; Invisible, keeping its room; or Gone, taking none.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<Visibility>))]
         public Visibility Visibility { get; set; } = Visibility.Visible;
 

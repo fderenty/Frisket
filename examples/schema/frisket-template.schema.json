@@ -7,238 +7,590 @@
   "$defs": {
     "AdvancedTextItem": {
       "type": "object",
+      "description": "A paragraph of runs, each with its own style - what a plain TextItem cannot say, since it carries exactly one TextStyle for its whole string. Wrapping and pagination both work at the level of a whole *line*, built from pieces of one or more runs, not at the level of a run - see LayoutResolver.FlowAdvancedText.",
       "properties": {
         "$type": {
           "const": "AdvancedTextItem",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Runs": {
-          "type": ["array", "null"],
-          "items": { "$ref": "#/$defs/TextRun" }
+          "description": "The paragraph\u0027s pieces, in reading order, each with its own style over the paragraph\u0027s.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/TextRun"
+          }
         },
-        "Font": { "$ref": "#/$defs/TextStyle" }
+        "Font": {
+          "description": "The paragraph\u0027s own style: family, size, alignment, line spacing. A run overrides pieces of this the way this overrides Report.DefaultFont.",
+          "$ref": "#/$defs/TextStyle"
+        }
       },
       "additionalProperties": false
     },
     "BackPage": {
       "type": "object",
+      "description": "What is printed on the back of a sheet - conditions of sale, most often. It holds ordinary items, so it can be typed text with {tokens}, an image of a page, or any mix. It is laid out on a full page of its own: no header, no footer and no page band, because a back is not part of the document\u0027s flow.",
       "properties": {
-        "Content": { "$ref": "#/$defs/ContainerItem" },
-        "Scope": {
-          "type": "string",
-          "enum": ["EveryPage", "LastPage", "FirstPage"]
+        "Content": {
+          "description": "The content itself. Laid out over the whole sheet.",
+          "$ref": "#/$defs/ContainerItem"
         },
-        "Padding": { "$ref": "#/$defs/EdgeSize" }
+        "Scope": {
+          "description": "Which pages get a back: EveryPage, or the LastPage alone.",
+          "type": "string",
+          "enum": [
+            "EveryPage",
+            "LastPage",
+            "FirstPage"
+          ]
+        },
+        "Padding": {
+          "description": "Margins of the back sheet, independent of the document\u0027s: conditions of sale are usually set closer to the edge than an invoice, being smaller print.",
+          "$ref": "#/$defs/EdgeSize"
+        }
       },
       "additionalProperties": false
     },
     "Backdrop": {
       "type": "object",
+      "description": "A picture behind every page: letterhead, pre-printed stationery, a tinted panel. A sibling of Watermark, deliberately not a mode of it. A mark says something about the document\u0027s standing - DRAFT, COPY - and is drawn to be hard to remove; a backdrop is the paper. One type covering both would have to mean \u0022a word or a picture, a warning or stationery\u0022, which is the vocabulary trap section 16 of CLAUDE.md records, and its properties would then be half-meaningless either way.",
       "properties": {
-        "Source": { "$ref": "#/$defs/ImageSource" },
+        "Source": {
+          "description": "The picture. Nothing is drawn while it carries no bytes.",
+          "$ref": "#/$defs/ImageSource"
+        },
         "Area": {
+          "description": "Sheet by default, because stationery runs under the margins too.",
           "type": "string",
-          "enum": ["Sheet", "Margins"]
+          "enum": [
+            "Sheet",
+            "Margins"
+          ]
         },
         "NaturalWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Natural width in millimeters, NaN when unknown. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "NaturalHeight": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Natural height in millimeters, NaN when unknown. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Scaling": {
+          "description": "How the picture sits in its rectangle. ImageScaling.Stretch here rather than the type\u0027s own ImageScaling.Uniform: filling the page is the plain reading of a background, and stationery is drawn at the paper\u0027s proportions already.",
           "type": "string",
-          "enum": ["Stretch", "Uniform", "None"]
+          "enum": [
+            "Stretch",
+            "Uniform",
+            "None"
+          ]
         },
         "AlignHorizontal": {
+          "description": "Where it sits across its rectangle when it does not fill it - which is only ever the case under ImageScaling.Uniform or ImageScaling.None. Centred by default: a picture smaller than the sheet belongs in the middle of it. ItemAlign rather than a placement enum of its own. Nine named positions would be one vocabulary more to keep in step with a model that already says Start, Center and End on both axes - and section 5d is about exactly the property invented beside the one that was already there.",
           "type": "string",
-          "enum": ["None", "Start", "Center", "End"]
+          "enum": [
+            "None",
+            "Start",
+            "Center",
+            "End"
+          ]
         },
         "AlignVertical": {
+          "description": "Where it sits down its rectangle. Centred, for the same reason.",
           "type": "string",
-          "enum": ["None", "Start", "Center", "End"]
+          "enum": [
+            "None",
+            "Start",
+            "Center",
+            "End"
+          ]
         },
         "Opacity": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "0 to 1. Full strength by default, which is right for stationery meant to be printed on and wrong for a photograph. Fade it here rather than in an image editor: a PNG carrying an alpha channel is refused outright by the PDF backend, so an author has no other way to do it. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "PageScope": {
+          "description": "Pages that carry it. All of them, unless narrowed.",
           "type": "string",
-          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+          "enum": [
+            "All",
+            "First",
+            "Last",
+            "ExceptFirst",
+            "ExceptLast",
+            "Odd",
+            "Even",
+            "Range"
+          ]
         }
       },
       "additionalProperties": false
     },
     "BarcodeItem": {
       "type": "object",
+      "description": "A barcode. Its value goes through the same token and data binding as any text, so a template can carry {InvoiceNumber} and the data decides what is encoded. It is drawn as a grid of rectangles rather than as an image: it stays sharp at any size, costs a few hundred bytes instead of a bitmap, and needs nothing of a backend beyond the rectangle it already draws.",
       "properties": {
         "$type": {
           "const": "BarcodeItem",
           "description": "What kind of element this is."
         },
         "Value": {
-          "type": ["string", "null"]
+          "description": "What to encode. Tokens are substituted before it is read.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Symbology": {
+          "description": "Which code: Qr or Code128.",
           "type": "string",
-          "enum": ["Qr", "Code128"]
+          "enum": [
+            "Qr",
+            "Code128"
+          ]
         },
         "Correction": {
+          "description": "QR only: how much damage the code can take and still read.",
           "type": "string",
-          "enum": ["Low", "Medium", "Quartile", "High"]
+          "enum": [
+            "Low",
+            "Medium",
+            "Quartile",
+            "High"
+          ]
         },
-        "Ink": { "$ref": "#/$defs/Color" },
+        "Ink": {
+          "description": "The bars themselves. Black unless a section wants otherwise.",
+          "$ref": "#/$defs/Color"
+        },
         "QuietZone": {
+          "description": "The margin of clear space around the code, in modules. Zero takes what the symbology asks for, which is not the same number: four for QR, ten each side for Code 128. A code set too close to a rule or to the edge of the page is a code a scanner refuses, and the fault looks like the printer\u0027s rather than the document\u0027s.",
           "type": "integer"
         },
         "ShowText": {
+          "description": "Code 128 only: print the value underneath. Worth keeping - it is the eye\u0027s fallback exactly when a scanner will not read, which is when someone has to type the number in.",
           "type": "boolean"
         },
-        "Font": { "$ref": "#/$defs/TextStyle" },
+        "Font": {
+          "description": "How the value is printed under a linear barcode.",
+          "$ref": "#/$defs/TextStyle"
+        },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "BaseItem": {
       "type": "object",
+      "description": "Anything a template can put on a page. Every element is one of these, and what it declares here is what they all have in common whatever their kind: where the item sits and how it looks (Style), what it is for a reader who cannot see it (Role, AltText), whether it earns its place at all (ShowWhen, HideWhen), and where it lands in the outline (Bookmark).",
       "properties": {
         "$type": {
           "const": "BaseItem",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "Body": {
       "type": "object",
+      "description": "The band between the header and the footer, and the part of a section that flows from one page to the next. Flowing is Layout being Stack, which Body sets for itself in its constructor. Set it to Absolute and the section comes out one page however much is in it: the children are arranged at their coordinates on that single page, whatever falls below the band is drawn off the sheet, and no further page is opened and no issue raised.",
       "properties": {
         "$type": {
           "const": "Body",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -246,30 +598,39 @@
     },
     "BrushStyle": {
       "type": "object",
+      "description": "How an area is filled: one colour.",
       "properties": {
-        "Color": { "$ref": "#/$defs/Color" }
+        "Color": {
+          "description": "The fill. Defaults to white.",
+          "$ref": "#/$defs/Color"
+        }
       },
       "additionalProperties": false
     },
     "Color": {
       "type": "object",
+      "description": "Straight RGBA colour, so the engine does not depend on System.Drawing.",
       "properties": {
         "R": {
+          "description": "Red, from 0 to 255.",
           "type": "integer",
           "minimum": 0,
           "maximum": 255
         },
         "G": {
+          "description": "Green, from 0 to 255.",
           "type": "integer",
           "minimum": 0,
           "maximum": 255
         },
         "B": {
+          "description": "Blue, from 0 to 255.",
           "type": "integer",
           "minimum": 0,
           "maximum": 255
         },
         "A": {
+          "description": "Opacity, from 0 (transparent) to 255 (opaque). Defaults to 255.",
           "type": "integer",
           "minimum": 0,
           "maximum": 255
@@ -279,86 +640,226 @@
     },
     "Constraints": {
       "type": "object",
+      "description": "Lower and upper bounds in millimetres on the size the resolver arrives at. Zero on a side means no bound there, so a Constraints nobody has touched changes nothing. A clamp keeps the edge the item is stuck to and moves the opposite one - and in the flow an item that states no coordinates is stuck to all four. A MaxWidth of 40 in a band of 210 therefore moves the left edge and the item lands against the right margin; a MinHeight grows the box upward, over what is already on the page. The flow cursor hears about neither, so nothing below it moves to match.",
       "properties": {
         "MinWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The smallest width the item may be, in millimetres; zero for no bound. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "MinHeight": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The smallest height the item may be, in millimetres; zero for no bound. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "MaxWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The largest width the item may be, in millimetres; zero for no bound. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "MaxHeight": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The largest height the item may be, in millimetres; zero for no bound. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         }
       },
       "additionalProperties": false
     },
     "ContainerItem": {
       "type": "object",
+      "description": "A group of items, placed either at coordinates of their own or stacked one under the next. Everything in the model that holds children is one of these - the bands, a table and its rows, an image grid, a section.",
       "properties": {
         "$type": {
           "const": "ContainerItem",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -366,165 +867,392 @@
     },
     "DocumentDimension": {
       "type": "object",
+      "description": "The size of a sheet, in millimetres: a width and a height, with neither axis privileged - landscape is nothing more than the larger number written first. Both start at zero and nothing supplies a page size - not the engine, not the CLI, not the native library. A section that leaves them there is laid out on a sheet of nothing: /MediaBox [0 0 0 0], every column too narrow to divide, one item forced onto each page. The designer writes A4 into any section that arrives without one, which is why this is only ever met by a template built by hand.",
       "properties": {
         "Width": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Width of the sheet, in millimetres - 210 for A4. Nothing supplies one: a section without a size is laid out on a sheet of nothing. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Height": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Height of the sheet, in millimetres - 297 for A4. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         }
       },
       "additionalProperties": false
     },
     "EdgeSize": {
       "type": "object",
+      "description": "Four distances in millimetres, one per side, serving both as the margin outside an item frame and as the padding inside it. Which of the two a band reads is settled rather than a matter of taste: the section and the body are handed their rectangle, and the resolver deflates it by their Padding without ever looking at their Margin. Page margins are a section padding; written as a margin, the same four numbers do nothing at all.",
       "properties": {
         "Left": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The left side, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Top": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The top side, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Right": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The right side, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Bottom": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The bottom side, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         }
       },
       "additionalProperties": false
     },
     "FieldItem": {
       "type": "object",
+      "description": "A field the reader can fill in: the interactive half of a quote or an order form. It lays out like any other item - it has a frame, it flows, it fits in a table cell. What changes is what the backend does with it: the PDF backend writes a form widget, the SVG backend draws what it would look like. The value written here is the field\u0027s starting state, and the one drawn when the section is flattened.",
       "properties": {
         "$type": {
           "const": "FieldItem",
           "description": "What kind of element this is."
         },
         "Name": {
-          "type": ["string", "null"]
+          "description": "Name the value is stored and read back under. It must be unique in the section; a field stamped out by a repeat gets an index appended so that a prototype can be repeated without every copy answering to the same name.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Kind": {
+          "description": "What the reader fills in: Text, a Checkbox, or a Signature.",
           "type": "string",
-          "enum": ["Text", "Checkbox", "Signature"]
+          "enum": [
+            "Text",
+            "Checkbox",
+            "Signature"
+          ]
         },
         "Value": {
-          "type": ["string", "null"]
+          "description": "Starting value. For a checkbox, anything but null, empty and \u0022false\u0022 counts as ticked.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Tooltip": {
-          "type": ["string", "null"]
+          "description": "Shown by a reader when the pointer rests on the field.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ReadOnly": {
+          "description": "Shown in the form but not changeable there.",
           "type": "boolean"
         },
         "Required": {
+          "description": "Marked required in the form, so a reader may refuse to submit it empty.",
           "type": "boolean"
         },
         "Multiline": {
+          "description": "Text fields only: accept more than one line.",
           "type": "boolean"
         },
         "MaxLength": {
+          "description": "Text fields only: zero for no limit.",
           "type": "integer"
         },
         "Signing": {
+          "description": "Signature fields only: how the section expects to be signed.",
           "type": "string",
-          "enum": ["ByHand", "Digital"]
+          "enum": [
+            "ByHand",
+            "Digital"
+          ]
         },
-        "Font": { "$ref": "#/$defs/TextStyle" },
-        "Outline": { "$ref": "#/$defs/PenStyle" },
-        "Fill": { "$ref": "#/$defs/BrushStyle" },
+        "Font": {
+          "description": "How the value is drawn. Inherits from the section like any text.",
+          "$ref": "#/$defs/TextStyle"
+        },
+        "Outline": {
+          "description": "Outline of the field itself. Null draws nothing, which is what you want for a field sitting on a printed rule.",
+          "$ref": "#/$defs/PenStyle"
+        },
+        "Fill": {
+          "description": "Fill behind the field, to make it visible on a busy page.",
+          "$ref": "#/$defs/BrushStyle"
+        },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "Footer": {
       "type": "object",
+      "description": "The band across the bottom of every page of its section - page numbers, a notice, the totals. It sizes itself from what it holds, and the body band ends where it begins. Like Header, it does not stack: its constructor sets Dock and never Layout, so a footer left as it was built hands every child that states no coordinates the whole band. A notice and a page number written as two children come out on one line, over one another, and nothing anywhere says so.",
       "properties": {
         "$type": {
           "const": "Footer",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -532,129 +1260,301 @@
     },
     "FrameDimension": {
       "type": "object",
+      "description": "Where an item sits in the space its container gave it: Left and Top measured in from the near edge, Right and Bottom in from the far one, a width and a height beside them, each in millimetres or as a percentage of that same space, and each of the six unset - NaN, never zero - until the template states it.",
       "properties": {
         "LeftValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "How far in from the left edge of the space the container gives, in LeftUnit. Absent decides nothing. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "LeftUnit": {
+          "description": "Unit of LeftValue: Millimeter, or Percentage of the width the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "RightValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "How far in from the right edge of the space the container gives, in RightUnit. Absent decides nothing. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "RightUnit": {
+          "description": "Unit of RightValue: Millimeter, or Percentage of the width the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "WidthValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The width, in WidthUnit. Absent, it follows from the two edges, or from the content. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "WidthUnit": {
+          "description": "Unit of WidthValue: Millimeter, or Percentage of the width the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "TopValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "How far down from the top of the space the container gives, in TopUnit. In a stacked container the flow decides the vertical position and this is ignored - Margin.Top moves an item down there. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "TopUnit": {
+          "description": "Unit of TopValue: Millimeter, or Percentage of the height the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "BottomValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "How far up from the bottom of the space the container gives, in BottomUnit. Ignored in a stacked container, as TopValue is. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BottomUnit": {
+          "description": "Unit of BottomValue: Millimeter, or Percentage of the height the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "HeightValue": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The height, in HeightUnit. Absent, it follows from the content. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "HeightUnit": {
+          "description": "Unit of HeightValue: Millimeter, or Percentage of the height the container gives.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "AutoWidth": {
+          "description": "Whether the width is worked out by the engine rather than stated. Set as it lays out; a template has no reason to write it.",
           "type": "boolean"
         },
         "AutoHeight": {
+          "description": "Whether the height is worked out by the engine rather than stated. Set as it lays out; a template has no reason to write it.",
           "type": "boolean"
         },
         "Dock": {
+          "description": "The edges the item is stuck to - Left, Top, Right, Bottom, several joined with a comma, or Fill. An anchoring, not a share of the room: docked children are all handed the same area, none takes it from another. One of None, Left, Top, Right, Bottom, Fill - or several of them joined with a comma and a space.",
           "type": "string",
-          "pattern": "^(?:None|Left|Top|Right|Bottom|Fill)(?:, (?:None|Left|Top|Right|Bottom|Fill))*$",
-          "description": "One of None, Left, Top, Right, Bottom, Fill - or several of them joined with a comma and a space."
+          "pattern": "^(?:None|Left|Top|Right|Bottom|Fill)(?:, (?:None|Left|Top|Right|Bottom|Fill))*$"
         }
       },
       "additionalProperties": false
     },
     "Header": {
       "type": "object",
+      "description": "The band across the top of every page of its section. It sizes itself from what it holds, and the body band starts where it ends. It does not stack. Its constructor sets Dock and never touches Layout, so a header left as it was built composes in Absolute, where a child that states no coordinates is handed the whole band. Two lines of an address then print one over the other, in a band as tall as one of them, and nothing anywhere says so.",
       "properties": {
         "$type": {
           "const": "Header",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -662,75 +1562,209 @@
     },
     "ImageGridItem": {
       "type": "object",
+      "description": "A contact sheet: its children - ordinarily ImageItem, one per picture - are laid out ImageGridItem.GridColumns to a row, each cell the same width and ImageGridItem.RowHeight tall, the picture fitted inside proportionally (ImageScaling.Uniform, already the type\u0027s default). A row is never split - a picture cannot continue itself onto the next page the way a paragraph or a table row can - so a row that does not fit whole moves there entire.",
       "properties": {
         "$type": {
           "const": "ImageGridItem",
           "description": "What kind of element this is."
         },
         "GridColumns": {
+          "description": "How many pictures sit side by side before a new row starts. One is a valid choice - a single column of full-width photos.",
           "type": "integer"
         },
         "RowHeight": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Height of one row, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Gap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one picture and its neighbours, across and down. Zero - pictures touching - is a real choice, not \u0022not set\u0022, so it is written out like the other two rather than read back as 4. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -738,411 +1772,1018 @@
     },
     "ImageItem": {
       "type": "object",
+      "description": "A picture. The engine decodes nothing - that would mean a graphics dependency - so the natural size is declared by the author, in millimeters. Giving only one of the two lets the other follow from ImageItem.NaturalWidth/ImageItem.NaturalHeight.",
       "properties": {
         "$type": {
           "const": "ImageItem",
           "description": "What kind of element this is."
         },
-        "Source": { "$ref": "#/$defs/ImageSource" },
+        "Source": {
+          "description": "The picture carried in the template. Empty when it comes from the data instead - see SourceField.",
+          "$ref": "#/$defs/ImageSource"
+        },
         "NaturalWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Natural width in millimeters, NaN when unknown. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "NaturalHeight": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Natural height in millimeters, NaN when unknown. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "Scaling": {
+          "description": "How the picture fills its frame: Uniform keeps its proportions, Stretch fills the frame, None draws it at its natural size.",
           "type": "string",
-          "enum": ["Stretch", "Uniform", "None"]
+          "enum": [
+            "Stretch",
+            "Uniform",
+            "None"
+          ]
         },
         "SourceField": {
-          "type": ["string", "null"]
+          "description": "Path in the data the bytes come from, as base64 or a data: URI. This is how a signature drawn on a tablet reaches the page: the browser posts the canvas, and the template says where to look for it rather than carrying it.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "ImageSource": {
       "type": "object",
+      "description": "Raw image bytes; decoding is the backend\u0027s responsibility.",
       "properties": {
         "Data": {
-          "type": ["string", "null"],
+          "description": "The picture\u0027s bytes, written in a template as base64; MediaType says what they are.",
+          "type": [
+            "string",
+            "null"
+          ],
           "contentEncoding": "base64"
         },
         "SourcePath": {
-          "type": ["string", "null"]
+          "description": "Where the bytes came from, as a path - kept for whoever loaded them. The engine draws Data and never reads this.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "MediaType": {
-          "type": ["string", "null"]
+          "description": "MIME type of ImageSource.Data, needed by backends that embed it.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
     },
     "ImportedPageItem": {
       "type": "object",
+      "description": "A page of another PDF, drawn as part of this document. The use it was asked for is a back page of terms somebody else drew, but nothing here is about back pages: it lays out like a picture, in a band or a cell or at a coordinate, and several may sit on one sheet. The engine does not read it. Parsing another producer\u0027s PDF is consuming bytes somebody else chose, and that lives in Frisket.Import, a separate assembly this one never references. A template names the page; ImportedPages.Resolve is where a caller hands over something able to read it, and until then the item knows only where to look.",
       "properties": {
         "$type": {
           "const": "ImportedPageItem",
           "description": "What kind of element this is."
         },
         "Data": {
-          "type": ["string", "null"],
+          "description": "The other PDF, carried here rather than pointed at - so a template can be one file, and can be handed to something with no file system at all. Bytes, and therefore base64 in the file. Which carries this type\u0027s warning, the same one ImageSource.Data has: it only looks like a base64 string when a template is read as JSON, and putting it in a string gives \u0022System.Byte[]\u0022, which travels perfectly well and draws nothing.",
+          "type": [
+            "string",
+            "null"
+          ],
           "contentEncoding": "base64"
         },
         "SourcePath": {
-          "type": ["string", "null"]
+          "description": "Where the other PDF is, resolved relative to the template that names it - never the working directory. Empty when the file travels in ImportedPageItem.Data.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Page": {
+          "description": "Which page, counting from one. From one because a template is written by a person, and the third page of a document is the third page of it. The reader underneath counts from zero, as an index should, and the translation happens once at the seam.",
           "type": "integer"
         },
         "Scaling": {
+          "description": "How it fills the space it is given. ImageScaling.Uniform by default, which keeps the page\u0027s own proportions - the same rule and the same code as a picture, since it is the same question.",
           "type": "string",
-          "enum": ["Stretch", "Uniform", "None"]
+          "enum": [
+            "Stretch",
+            "Uniform",
+            "None"
+          ]
         },
         "Alt": {
-          "type": ["string", "null"]
+          "description": "What a reader should be told is here, since a copied page is a drawing to everything downstream: no text of ours, no structure of ours, and nothing that can be read aloud. PDF/UA asks a figure for one.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "LineItem": {
       "type": "object",
+      "description": "A straight rule. With no explicit height it is as thick as its pen.",
       "properties": {
         "$type": {
           "const": "LineItem",
           "description": "What kind of element this is."
         },
         "Orientation": {
+          "description": "Horizontal, Vertical, or one of the two diagonals of the frame (DiagonalDown, DiagonalUp).",
           "type": "string",
-          "enum": ["Horizontal", "Vertical", "DiagonalDown", "DiagonalUp"]
+          "enum": [
+            "Horizontal",
+            "Vertical",
+            "DiagonalDown",
+            "DiagonalUp"
+          ]
         },
-        "Pen": { "$ref": "#/$defs/PenStyle" },
+        "Pen": {
+          "description": "How the line is drawn: colour, thickness and dash.",
+          "$ref": "#/$defs/PenStyle"
+        },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" }
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        }
       },
       "additionalProperties": false
     },
     "PenStyle": {
       "type": "object",
+      "description": "How a line is drawn: its colour, its thickness and its dash.",
       "properties": {
-        "Color": { "$ref": "#/$defs/Color" },
+        "Color": {
+          "description": "The ink. Defaults to black.",
+          "$ref": "#/$defs/Color"
+        },
         "Width": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Line thickness in millimeters. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "DashStyle": {
+          "description": "Solid, Dash, Dot or DashDot.",
           "type": "string",
-          "enum": ["Solid", "Dash", "Dot", "DashDot"]
+          "enum": [
+            "Solid",
+            "Dash",
+            "Dot",
+            "DashDot"
+          ]
         }
       },
       "additionalProperties": false
     },
     "Report": {
       "type": "object",
+      "description": "The whole template, and the one file that comes out of it: the properties a reader and an archive see - title, author, language - the defaults every item inherits from, the mark and the back printed on every sheet, and the list of sections the content is laid out on.",
       "properties": {
         "Title": {
-          "type": ["string", "null"]
+          "description": "The document\u0027s title: the PDF\u0027s /Title and dc:title, what a reader announces on opening it, and what {Title} prints. One per file, whatever the number of sections.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "RootFontSize": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Reference text size, as a cap height in millimeters. Everything expressed in FontSizeUnit.Rem is a multiple of this, so changing it rescales the whole report at once. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
-        "DefaultFont": { "$ref": "#/$defs/TextStyle" },
+        "DefaultFont": {
+          "description": "The report\u0027s own text style. Anything a TextItem leaves undecided is taken from here, so a template names its typeface once and can be restyled by changing one line. What neither settles falls back to the built-in defaults documented on TextStyle.",
+          "$ref": "#/$defs/TextStyle"
+        },
         "Fields": {
-          "type": ["array", "null"],
+          "description": "Values for the custom tokens a text may use, such as {CustomerName}.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language the document is written in, as a BCP 47 tag - \u0022fr-FR\u0022, \u0022en-GB\u0022. A reader announcing French text with an English voice is unintelligible, and this one line is what prevents it.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HeadingNumbering": {
-          "type": ["string", "null"]
+          "description": "How heading numbers are spelled - \u00221.1.1\u0022, \u0022A.a.1\u0022, \u0022A) a. 1\u0022 - for the {HeadingNumber} and {SectionHeadingNumber} tokens. Null for none, which is the default: a document numbers its headings only if it says so. See HeadingNumbers. It belongs to the file rather than the section, the way Report.Title does - numbering is a convention of the document, not of one page size. If a section ever needs its own, that is an override to add, and adding one later breaks nothing.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Author": {
-          "type": ["string", "null"]
+          "description": "Who the document is from. Written into the file\u0027s properties and its XMP packet, which a reader shows and an archive indexes on.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Subject": {
-          "type": ["string", "null"]
+          "description": "What the document is about, in a line.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Keywords": {
-          "type": ["string", "null"]
+          "description": "Words an archive can search on, comma separated - an invoice number and a customer reference, typically. This is what makes a file findable years later without opening it.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "BackPage": { "$ref": "#/$defs/BackPage" },
-        "Watermark": { "$ref": "#/$defs/Watermark" },
-        "Backdrop": { "$ref": "#/$defs/Backdrop" },
-        "ProofBackground": { "$ref": "#/$defs/Color" },
+        "BackPage": {
+          "description": "What is printed on the back of a sheet - conditions of sale, most often. Null for a single-sided report. Back pages are neither numbered nor counted.",
+          "$ref": "#/$defs/BackPage"
+        },
+        "Watermark": {
+          "description": "A word written across every page - SPECIMEN on a preview, say. Null for none. It is drawn as page content rather than as a background, which is what makes it survive being printed from a browser.",
+          "$ref": "#/$defs/Watermark"
+        },
+        "Backdrop": {
+          "description": "A picture drawn behind every page - letterhead, stationery, a tinted panel. Null for none. A sibling of Report.Watermark rather than a mode of it, and the printed counterpart of Report.ProofBackground, which is only ever shown to whoever is writing the template.",
+          "$ref": "#/$defs/Backdrop"
+        },
+        "ProofBackground": {
+          "description": "The colour of the paper this is meant to be printed on - letterhead, coloured stock - so an editor can show the page against it while the template is being written. Null, and white, unless the template says otherwise.",
+          "$ref": "#/$defs/Color"
+        },
         "Swatches": {
-          "type": ["array", "null"],
-          "items": { "$ref": "#/$defs/Color" }
+          "description": "The colours this document has used, most recent first - what an editor offers back in one click instead of making somebody find the same blue twice. Nothing ever prints it, exactly like Report.ProofBackground: it is a list of choices, not a mark on a page. It lives on the report rather than in an editor\u0027s own settings because it belongs to the document - it survives being saved, travels with the file, and both faces see the same one without either of them owning it.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Color"
+          }
         },
         "GeneratedAt": {
-          "type": ["string", "null"],
+          "description": "Timestamp behind {Date} and {Time}. Left null it is taken at resolve time; set it to make a layout reproducible.",
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "Sections": {
-          "type": ["array", "null"],
-          "items": { "$ref": "#/$defs/Section" }
+          "description": "The sections, in order. One section is the ordinary case; several is what mixes page sizes in one file, and what assembles separate documents into one. A list rather than a chain from the first: there is no principal section with satellites hanging off it, only sections as equals.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Section"
+          }
         }
       },
       "additionalProperties": false
     },
     "Section": {
       "type": "object",
+      "description": "One section of a report: a page setup and the bands laid out on it. A report holds a *list* of these, in order, which is what lets one file mix an A4 portrait body with an A3 landscape appendix - and what lets separate sections be assembled into one. PDF works the same way: the page size is /MediaBox on each page object, not a property of the file.",
       "properties": {
         "$type": {
           "const": "Section",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         },
-        "Dimension": { "$ref": "#/$defs/DocumentDimension" },
+        "Dimension": {
+          "description": "The sheet this section is laid out on. There is no default size, and nothing supplies one: a section that omits this lays out on a sheet of nothing - pages come out 0 by 0, every column is too narrow to divide, and the flow puts one item on each page and drops the rest, silently.",
+          "$ref": "#/$defs/DocumentDimension"
+        },
         "PageLimit": {
-          "type": ["integer", "null"]
+          "description": "How many pages this section is *meant* to take, or null for no expectation. Purely declarative: exceeding it is reported through LayoutResult.Issues and nothing is refused. Whether to go on and produce the section belongs to whoever asked for it, which is why the engine states the fact rather than acting on it - lay out first, decide after, which Report.Resolve has always allowed. Not to be confused with LayoutResolver.MaxPages, which is a runaway guard against a layout that never converges and says so in those words.",
+          "type": [
+            "integer",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
     },
     "Style": {
       "type": "object",
+      "description": "The box every item carries: where it sits and how big it may be, the space around it and inside it, whether it shows, what it does when the page runs out beneath it, and the rule and fill drawn on its frame. What is left unsaid is not left alone. An item with no coordinate, no width and no alignment is anchored to both edges of its band before layout begins, and comes out the full width of the column - so a one-word label given a Background paints a stripe right across the page. The item really is that wide, and nothing says so.",
       "properties": {
-        "Location": { "$ref": "#/$defs/FrameDimension" },
-        "Margin": { "$ref": "#/$defs/EdgeSize" },
-        "Padding": { "$ref": "#/$defs/EdgeSize" },
-        "Constraints": { "$ref": "#/$defs/Constraints" },
+        "Location": {
+          "description": "Where the item sits in the space its container gives it: edges, width, height and docking.",
+          "$ref": "#/$defs/FrameDimension"
+        },
+        "Margin": {
+          "description": "Room kept outside the item\u0027s frame, in millimetres. A section\u0027s page margins are its Padding, not its Margin.",
+          "$ref": "#/$defs/EdgeSize"
+        },
+        "Padding": {
+          "description": "Room kept inside the item\u0027s frame, between its edge and its content, in millimetres. On a section, these are the page margins.",
+          "$ref": "#/$defs/EdgeSize"
+        },
+        "Constraints": {
+          "description": "Bounds on the size the engine arrives at, in millimetres.",
+          "$ref": "#/$defs/Constraints"
+        },
         "Visibility": {
+          "description": "Visible; Invisible, keeping its room; or Gone, taking none.",
           "type": "string",
-          "enum": ["Visible", "Invisible", "Gone"]
+          "enum": [
+            "Visible",
+            "Invisible",
+            "Gone"
+          ]
         },
         "PageBreak": {
+          "description": "Author-requested page break around this item. Declared, but inert until the pagination pass exists.",
           "type": "string",
-          "enum": ["None", "Before", "After", "BeforeAndAfter"]
+          "enum": [
+            "None",
+            "Before",
+            "After",
+            "BeforeAndAfter"
+          ]
         },
         "Splitting": {
+          "description": "What to do when the item does not fit in the space left on the page.",
           "type": "string",
-          "enum": ["Auto", "KeepTogether"]
+          "enum": [
+            "Auto",
+            "KeepTogether"
+          ]
         },
         "KeepWithNext": {
+          "description": "Do not let the page end immediately after this item.",
           "type": "boolean"
         },
         "PageScope": {
+          "description": "Which pages this item shows on. Declared, but inert until the pagination pass exists; PageScope.Range reads Style.PageRange.",
           "type": "string",
-          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+          "enum": [
+            "All",
+            "First",
+            "Last",
+            "ExceptFirst",
+            "ExceptLast",
+            "Odd",
+            "Even",
+            "Range"
+          ]
         },
         "PageRange": {
-          "type": ["array", "null"],
+          "description": "Explicit page numbers, 1-based, used when Style.PageScope is Range.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "integer"
           }
         },
         "AlignHorizontal": {
+          "description": "Where the item sits across the space it was given. Answers the question text alignment cannot: how to centre an image, a table or a field. It applies only when the item has a width of its own and neither an anchor nor a coordinate has already placed it.",
           "type": "string",
-          "enum": ["None", "Start", "Center", "End"]
+          "enum": [
+            "None",
+            "Start",
+            "Center",
+            "End"
+          ]
         },
         "AlignVertical": {
+          "description": "Where the item sits down the space it was given. Only meaningful inside an absolutely arranged container: in a flow the vertical position is the cursor.",
           "type": "string",
-          "enum": ["None", "Start", "Center", "End"]
+          "enum": [
+            "None",
+            "Start",
+            "Center",
+            "End"
+          ]
         },
         "RepeatOnBreak": {
+          "description": "Re-emit this item at the top of the next page when the container holding it runs over. It is what a table\u0027s repeating header does, made available to any stacked container - so a group header stays above its rows when the group spills onto the following page.",
           "type": "boolean"
         },
-        "Border": { "$ref": "#/$defs/PenStyle" },
-        "Background": { "$ref": "#/$defs/BrushStyle" }
+        "Border": {
+          "description": "Outline stroked around the frame. Carried for the backend; the resolver ignores it.",
+          "$ref": "#/$defs/PenStyle"
+        },
+        "Background": {
+          "description": "Fill behind the frame. Carried for the backend; the resolver ignores it.",
+          "$ref": "#/$defs/BrushStyle"
+        }
       },
       "additionalProperties": false
     },
     "SubTemplateItem": {
       "type": "object",
+      "description": "Another template brought into this one - its body spliced in where this item sits, or its sections appended after this one. Named by a path, by st://reference for the host to supply, or carried whole in TemplateData.",
       "properties": {
         "$type": {
           "const": "SubTemplateItem",
           "description": "What kind of element this is."
         },
         "Mode": {
+          "description": "Whether this brings across a block or a document. See SubTemplateMode; SubTemplateMode.Splice is what this element has always done and stays the default.",
           "type": "string",
-          "enum": ["Splice", "Append"]
+          "enum": [
+            "Splice",
+            "Append"
+          ]
         },
         "TemplatePath": {
-          "type": ["string", "null"]
+          "description": "Where the other template comes from. Three shapes, and which one is used is decided by what is filled in rather than by a mode anybody has to set:",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "TemplateData": {
-          "type": ["string", "null"],
+          "description": "The other template\u0027s JSON, carried here rather than pointed at - so a template with sub-templates can be one file, and can be handed to something that has no file system at all. Bytes, and therefore base64 in the file, the same shape as ImageSource.Data. Which carries that type\u0027s warning: this is a byte[] and only looks like a base64 string when a template is read as JSON. Putting it in a string gives \u0022System.Byte[]\u0022, which is valid enough to travel and draws nothing - see CLAUDE.md section 5a-bis, where that cost an afternoon on an image.",
+          "type": [
+            "string",
+            "null"
+          ],
           "contentEncoding": "base64"
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -1150,97 +2791,249 @@
     },
     "TableColumn": {
       "type": "object",
+      "description": "One column of a table. A width in millimeters or in percent of the table is honoured as given; the columns left on TableColumn.Auto share what remains.",
       "properties": {
         "Width": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "The column\u0027s width, in WidthUnit. Unset, the column shares with the others what the fixed ones leave. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "WidthUnit": {
+          "description": "Millimeter, or Percentage of the table\u0027s width.",
           "type": "string",
-          "enum": ["Millimeter", "Percentage"]
+          "enum": [
+            "Millimeter",
+            "Percentage"
+          ]
         },
         "Fit": {
+          "description": "Size the column to its widest cell instead of sharing the leftover space. Only meaningful when no explicit width is given.",
           "type": "boolean"
         },
         "MinWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Floor for a fitted column, in millimeters. Zero means none. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "MaxWidth": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Ceiling for a fitted column, in millimeters. Zero means none. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         }
       },
       "additionalProperties": false
     },
     "TableItem": {
       "type": "object",
+      "description": "A table. Its children are TableRow items, and it splits between rows when it does not fit: a row is never cut in half.",
       "properties": {
         "$type": {
           "const": "TableItem",
           "description": "What kind of element this is."
         },
         "Columns": {
-          "type": ["array", "null"],
-          "items": { "$ref": "#/$defs/TableColumn" }
+          "description": "The columns, left to right. Every row carries one cell per column.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/TableColumn"
+          }
         },
         "RepeatHeader": {
+          "description": "Repeat the header rows at the top of each page the table continues on.",
           "type": "boolean"
         },
-        "Grid": { "$ref": "#/$defs/PenStyle" },
+        "Grid": {
+          "description": "Pen for the cell grid. Carried for the backend, which strokes the placed cell rectangles; the resolver only computes geometry.",
+          "$ref": "#/$defs/PenStyle"
+        },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -1248,67 +3041,195 @@
     },
     "TableRow": {
       "type": "object",
+      "description": "One row. Its children are the cells, one per column, in order; a missing cell simply leaves that column empty on that row.",
       "properties": {
         "$type": {
           "const": "TableRow",
           "description": "What kind of element this is."
         },
         "IsHeader": {
+          "description": "Header rows are repeated at the top of every page the table spans.",
           "type": "boolean"
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Layout": {
+          "description": "Always written, never inferred from its absence. The property starts at LayoutMode.Absolute, and the four containers that have to flow set themselves to LayoutMode.Stack in their constructors: Body, TableItem, ImageGridItem and SubTemplateItem. A Header, a Footer, a Section and a plain group keep the default. That matters because an absolute container hands every child the same box rather than taking room away as it goes, and a child that states no position of its own fills all of it - so two children of a band that says nothing land exactly on top of one another.",
           "type": "string",
-          "enum": ["Absolute", "Stack"]
+          "enum": [
+            "Absolute",
+            "Stack"
+          ]
         },
         "ColumnCount": {
+          "description": "How many columns the children flow into. One by default. Named ColumnCount rather than Columns because a table already has Columns, meaning its list of column widths - and a table is a container. Two different things under one name on the same inheritance chain is a fault waiting for somebody to write the wrong one; the compiler said so and the name changed. Only meaningful in LayoutMode.Stack: absolute children are placed by their own coordinates, and there is nothing for a column to decide.",
           "type": "integer"
         },
         "ColumnGap": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one column and the next. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "BalanceColumns": {
+          "description": "Whether the last page of a column flow is evened out. On by default. Columns fill in order, so the page where the text runs out has its first column full and its last nearly empty, which looks like a mistake. Balancing finds the shallowest height that still holds everything and uses that, so the columns end together. It costs a handful of extra passes over that page alone - pages that overflow have no spare room and are left as they are. Turn it off for a column of items that must start at the very top whatever happens.",
           "type": "boolean"
         },
         "RepeatOver": {
-          "type": ["string", "null"]
+          "description": "Name of the collection in the data this container repeats over, such as \u0022Lines\u0022. The binder stamps its children out once per record; until it runs the container is an ordinary one holding the prototype. In a TableItem the header rows stay put and the remaining rows are the prototypes, cycled - two of them give banded rows for free. In any other container the whole set of children is one prototype block.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "EmptyText": {
-          "type": ["string", "null"]
+          "description": "Shown in place of the children when the collection turns out empty.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupBy": {
-          "type": ["string", "null"]
+          "description": "Groups the collection by the value of this field before repeating, when the data arrives flat. Each pass then sees a synthetic record carrying Key, Count, a Sum of every numeric field - the subtotals - and the rows themselves under ContainerItem.GroupItems, ready for a nested repeat. Leave it null when the data is already grouped.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "GroupItems": {
-          "type": ["string", "null"]
+          "description": "Name the grouped rows are published under. Defaults to \u0022Items\u0022.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Childs": {
-          "type": ["array", "null"],
+          "description": "What this holds, in order. In a stacked container it is the order things come down the page; in an absolute one, the order they are drawn, each over the last. A table holds its rows here, and a row its cells, one per column.",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "oneOf": [{ "$ref": "#/$defs/BaseItem" }, { "$ref": "#/$defs/ContainerItem" }, { "$ref": "#/$defs/TextItem" }, { "$ref": "#/$defs/LineItem" }, { "$ref": "#/$defs/ImageItem" }, { "$ref": "#/$defs/TableItem" }, { "$ref": "#/$defs/TableRow" }, { "$ref": "#/$defs/ImageGridItem" }, { "$ref": "#/$defs/SubTemplateItem" }, { "$ref": "#/$defs/ImportedPageItem" }, { "$ref": "#/$defs/AdvancedTextItem" }, { "$ref": "#/$defs/FieldItem" }, { "$ref": "#/$defs/BarcodeItem" }, { "$ref": "#/$defs/Header" }, { "$ref": "#/$defs/Footer" }, { "$ref": "#/$defs/Body" }, { "$ref": "#/$defs/Section" }]
+            "oneOf": [
+              {
+                "$ref": "#/$defs/BaseItem"
+              },
+              {
+                "$ref": "#/$defs/ContainerItem"
+              },
+              {
+                "$ref": "#/$defs/TextItem"
+              },
+              {
+                "$ref": "#/$defs/LineItem"
+              },
+              {
+                "$ref": "#/$defs/ImageItem"
+              },
+              {
+                "$ref": "#/$defs/TableItem"
+              },
+              {
+                "$ref": "#/$defs/TableRow"
+              },
+              {
+                "$ref": "#/$defs/ImageGridItem"
+              },
+              {
+                "$ref": "#/$defs/SubTemplateItem"
+              },
+              {
+                "$ref": "#/$defs/ImportedPageItem"
+              },
+              {
+                "$ref": "#/$defs/AdvancedTextItem"
+              },
+              {
+                "$ref": "#/$defs/FieldItem"
+              },
+              {
+                "$ref": "#/$defs/BarcodeItem"
+              },
+              {
+                "$ref": "#/$defs/Header"
+              },
+              {
+                "$ref": "#/$defs/Footer"
+              },
+              {
+                "$ref": "#/$defs/Body"
+              },
+              {
+                "$ref": "#/$defs/Section"
+              }
+            ]
           }
         }
       },
@@ -1316,122 +3237,275 @@
     },
     "TextItem": {
       "type": "object",
+      "description": "A piece of text in one style - a label, a paragraph, a cell of a table. Where it breaks into lines is settled at layout and never at drawing: the backends split on newlines and wrap nothing. A stacked flow hands the text its column and it wraps to that; pinned to coordinates it wraps only to a width the author stated - a Width, or both edges - and a text given a left mark and nothing else is measured at infinite width and drawn as one line, across whatever sits beside it and off the sheet, unclipped and unremarked.",
       "properties": {
         "$type": {
           "const": "TextItem",
           "description": "What kind of element this is."
         },
         "Bookmark": {
-          "type": ["string", "null"]
+          "description": "Puts an entry in the document\u0027s outline, pointing at wherever this item lands. Null for none. Tokens are filled from the data like any text, so a group heading reading {Customer.Name} gives one bookmark per customer - which is what makes a file holding two hundred invoices usable at all.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "BookmarkLevel": {
+          "description": "How deep the entry sits: zero at the top, one nested under the last entry above it at zero, and so on. A level that skips a step is pulled back to one more than its predecessor, since an outline with a hole in it is not a tree.",
           "type": "integer"
         },
         "Language": {
-          "type": ["string", "null"]
+          "description": "The language of this element and everything under it, as a BCP 47 tag (\u0022de-DE\u0022, \u0022fr\u0022). Null - the usual case - means the file\u0027s, which is Report.Language. PDF/UA 7.2 asks that a passage in a language other than the document\u0027s be marked as such, because a reader announcing German words with English phonemes is not a cosmetic fault: it is unintelligible. It reaches the file as /Lang on this element\u0027s structure entry, which is where PDF puts it, and costs nothing when it says the same as the file.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Role": {
+          "description": "What this element is, for a reader that cannot see it. Declared rather than guessed; see PdfRole.",
           "type": "string",
-          "enum": ["Auto", "Section", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Paragraph", "Caption", "List", "ListItem", "Table", "TableRow", "TableHeader", "TableCell", "Figure", "Form", "Artifact"]
+          "enum": [
+            "Auto",
+            "Section",
+            "Heading1",
+            "Heading2",
+            "Heading3",
+            "Heading4",
+            "Heading5",
+            "Heading6",
+            "Paragraph",
+            "Caption",
+            "List",
+            "ListItem",
+            "Table",
+            "TableRow",
+            "TableHeader",
+            "TableCell",
+            "Figure",
+            "Form",
+            "Artifact"
+          ]
         },
         "AltText": {
-          "type": ["string", "null"]
+          "description": "What to say in place of something that cannot be read - a logo, a barcode, a chart. Without it such an element is announced as nothing at all, which is worse than the picture being missing: the reader is not told anything is there.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ShowWhen": {
-          "type": ["string", "null"]
+          "description": "A path in the data. The item is dropped - Visibility.Gone, so it takes no room and nothing beneath it moves - unless the value at that path is worth showing: present, and not an empty string, not zero, not false. Wanted the first time a form was reproduced faithfully. A box that only a credit note fills, a label for a number that is not always there, a line under an address line that may not exist: without this the choice is a rule drawn through empty space or a template per case.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "HideWhen": {
-          "type": ["string", "null"]
+          "description": "The other way round: dropped when the value is there. Both may be given, and either one hiding the item is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Style": { "$ref": "#/$defs/Style" },
+        "Style": {
+          "description": "Where the item sits and how much room it takes: position and size, margin and padding, size bounds, visibility, page breaks and alignment.",
+          "$ref": "#/$defs/Style"
+        },
         "Text": {
-          "type": ["string", "null"]
+          "description": "What is printed. Tokens in braces are filled in: {Page}, {Pages} and {Title} by the engine, a path such as {Client.Name} from the data. {{ and }} print a brace, and a line break in the string breaks the line.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Font": { "$ref": "#/$defs/TextStyle" }
+        "Font": {
+          "description": "Appearance of the text, and what the resolver measures it with.",
+          "$ref": "#/$defs/TextStyle"
+        }
       },
       "additionalProperties": false
     },
     "TextRun": {
       "type": "object",
+      "description": "One piece of an AdvancedTextItem, in the item\u0027s own base style except where TextRun.Font says otherwise. Null there means every property is inherited - the common case, a run of plain text between two styled words.",
       "properties": {
         "Text": {
-          "type": ["string", "null"]
+          "description": "This run\u0027s words. Tokens in braces are filled in as in a TextItem, and a line break in the string breaks the line.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "Font": { "$ref": "#/$defs/TextStyle" }
+        "Font": {
+          "description": "Overrides on top of the item\u0027s own AdvancedTextItem.Font, which is itself a normal cascade onto Report.DefaultFont - the same three-level resolution a plain TextItem already goes through, with one more level on top. A run does not set alignment, wrapping or line spacing: those describe the paragraph, not a piece of it.",
+          "$ref": "#/$defs/TextStyle"
+        }
       },
       "additionalProperties": false
     },
     "TextStyle": {
       "type": "object",
+      "description": "Text appearance. TextStyle.Size is read through TextStyle.SizeUnit; the resolver converts it to points before anything measures or draws it.",
       "properties": {
         "Family": {
-          "type": ["string", "null"]
+          "description": "Typeface name; unset, then empty, resolves to the measurer\u0027s default family.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Size": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Size expressed in TextStyle.SizeUnit. Defaults to 1. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "SizeUnit": {
-          "type": ["string", "null"],
-          "enum": ["Point", "Millimeter", "Rem", "PercentOfFrame"]
+          "description": "Defaults to FontSizeUnit.Rem.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Point",
+            "Millimeter",
+            "Rem",
+            "PercentOfFrame"
+          ]
         },
         "Bold": {
-          "type": ["boolean", "null"]
+          "description": "Bold. Null inherits from the level above; a family with no bold cut is drawn in another of its cuts, never a synthesised bold.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "Italic": {
-          "type": ["boolean", "null"]
+          "description": "Italic. Null inherits from the level above.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "Underline": {
-          "type": ["boolean", "null"]
+          "description": "Underlined. Null inherits from the level above.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "Strikethrough": {
-          "type": ["boolean", "null"]
+          "description": "Struck through. Null inherits from the level above.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
-        "Color": { "$ref": "#/$defs/Color" },
+        "Color": {
+          "description": "Defaults to black.",
+          "$ref": "#/$defs/Color"
+        },
         "HorizontalAlignment": {
-          "type": ["string", "null"],
-          "enum": ["Left", "Center", "Right", "Justify"]
+          "description": "Defaults to HorizontalAlignment.Left.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Left",
+            "Center",
+            "Right",
+            "Justify"
+          ]
         },
         "VerticalAlignment": {
-          "type": ["string", "null"],
-          "enum": ["Top", "Middle", "Bottom"]
+          "description": "Defaults to VerticalAlignment.Top.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Top",
+            "Middle",
+            "Bottom"
+          ]
         },
         "Wrap": {
-          "type": ["boolean", "null"]
+          "description": "Defaults to true.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "LineSpacing": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Distance from one baseline to the next, as a multiple of the text\u0027s own size - that is, of its cap height, the thing a size in millimetres actually pins. Defaults to 1.5. Deliberately not a multiple of the em, and deliberately not the font\u0027s own line height: both vary by half from one typeface to the next, so a table row would change height simply because the section was restyled. Here the section decides the leading and every font obeys. A face with unusually long ascenders - a script, say - needs this raised, and the page shows it at once. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         }
       },
       "additionalProperties": false
     },
     "Watermark": {
       "type": "object",
+      "description": "A word written across every page - SPECIMEN, BROUILLON, COPIE. It is drawn as ordinary page content, not as a background. That distinction is the whole point: a browser drops background graphics when printing unless the reader goes and turns them back on, so a mark drawn as a background is exactly absent from the one artefact that matters - the printout someone might pass off as an original. The engine draws it and takes no view on whether a given section needs one.",
       "properties": {
         "Text": {
-          "type": ["string", "null"]
+          "description": "DRAFT rather than SPECIMEN. Both are marks, and the repository\u0027s samples had said DRAFT since the day the watermark folder was made to name its modes rather than its words - while this line went on proposing the other one, so a mark made in the designer never matched a mark made anywhere else.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "Mode": {
+          "description": "Tiled across the whole sheet, or written once (Single).",
           "type": "string",
-          "enum": ["Tiled", "Single"]
+          "enum": [
+            "Tiled",
+            "Single"
+          ]
         },
         "Layer": {
+          "description": "In front by default. Behind, the mark is at the mercy of whatever the content paints over it: a filled title bar or a shaded table header erases it exactly there, which is the failure every report library has - and it clears the areas worth tampering with. In front it is translucent instead, so both stay legible.",
           "type": "string",
-          "enum": ["Behind", "InFront"]
+          "enum": [
+            "Behind",
+            "InFront"
+          ]
         },
         "Angle": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Degrees anticlockwise from horizontal. 45 by default: a diagonal crosses both the lines of text and the rules of a table, so no part of the page is left with a clean horizontal band to work in. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
-        "Font": { "$ref": "#/$defs/TextStyle" },
+        "Font": {
+          "description": "How the word is drawn. Its size is a cap height in millimetres like any other text, so the mark scales with the section rather than with the paper. Mid grey at thirty percent on purpose: it shifts white paper and a black title bar by the same amount, so the mark reads over both. A light grey looks better on white and vanishes on anything dark - which is where it is needed.",
+          "$ref": "#/$defs/TextStyle"
+        },
         "Spacing": {
-          "type": ["number", "string"],
-          "description": "A number; the string \u0022NaN\u0022 means undecided."
+          "description": "Millimetres between one copy and the next, along the diagonal and across it. Ignored in WatermarkMode.Single. Zero means \u0022from the text\u0022: a gap of half the word\u0027s own length, which stays right whatever the size. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
         },
         "PageScope": {
+          "description": "Pages that carry the mark. All of them, unless narrowed.",
           "type": "string",
-          "enum": ["All", "First", "Last", "ExceptFirst", "ExceptLast", "Odd", "Even", "Range"]
+          "enum": [
+            "All",
+            "First",
+            "Last",
+            "ExceptFirst",
+            "ExceptLast",
+            "Odd",
+            "Even",
+            "Range"
+          ]
         }
       },
       "additionalProperties": false

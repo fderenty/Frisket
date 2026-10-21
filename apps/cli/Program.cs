@@ -334,7 +334,19 @@ namespace Frisket.Cli
         /// </summary>
         private static int Check(Options options)
         {
-            Report report = LoadTemplate(options.Require("template"));
+            string path = options.Require("template");
+            if (!File.Exists(path))
+                throw new CliError($"no template at '{path}'");
+
+            // What the text says that the model will not read, before anything else: a
+            // property misspelt - which the reader skips, so the document comes out without
+            // it and nothing says so - or a text it refuses outright, which has nothing more
+            // to say once refused.
+            var issues = new List<TemplateIssue>(TemplateJson.Check(File.ReadAllText(path)));
+            if (issues.Any(i => i.Rule == "read.invalid"))
+                return Tell(issues, options);
+
+            Report report = LoadTemplate(path);
 
             // Capable is always on, and is not what --accessible turns on: the two answer
             // different questions. --accessible asks whether the template is fit for a
@@ -350,7 +362,39 @@ namespace Frisket.Cli
             // saying so is the whole point.
             var target = new RenderTarget(Tagged: options.Tagged, Interactive: !options.Flat,
                                           Paged: options.Paged);
-            IReadOnlyList<TemplateIssue> issues = TemplateValidator.Check(report, profile, target);
+            issues.AddRange(TemplateValidator.Check(report, profile, target));
+
+            // Every token and every path into the data that the host's data will not answer,
+            // when the host says what it holds - the catalogue the content editor is handed.
+            if (options.Maybe("fields") is { } catalogue)
+            {
+                if (!File.Exists(catalogue))
+                    throw new CliError($"no field catalogue at '{catalogue}'");
+                issues.AddRange(TemplateFields.Check(report, File.ReadAllText(catalogue)));
+            }
+
+            return Tell(issues, options);
+        }
+
+        /// <summary>
+        /// The findings, for a person or - with --json - for a program, and the exit code
+        /// a build reads either way.
+        /// </summary>
+        private static int Tell(IReadOnlyList<TemplateIssue> issues, Options options)
+        {
+            int errors = issues.Count(i => i.Level == IssueLevel.Error);
+
+            if (options.Json)
+            {
+                // As UTF-8 bytes, straight onto standard output. Through Console it went by the
+                // console's code page, which on Windows turns "›" into ">" - redirected to a
+                // file or not - and would do the same to an accented label: harmless on a
+                // screen, wrong in what a program reads. The console's own code page is left
+                // alone, since changing it outlives this process in the window it ran in.
+                using Stream stdout = Console.OpenStandardOutput();
+                stdout.Write(System.Text.Encoding.UTF8.GetBytes(TemplateIssue.ToJson(issues) + "\n"));
+                return errors > 0 ? 3 : 0;
+            }
 
             foreach (TemplateIssue issue in issues)
             {
@@ -358,7 +402,6 @@ namespace Frisket.Cli
                 Console.WriteLine($"        {issue.Message}");
             }
 
-            int errors = issues.Count(i => i.Level == IssueLevel.Error);
             Console.WriteLine(issues.Count == 0
                 ? "nothing to report"
                 : $"{errors} error(s), {issues.Count - errors} warning(s)");
@@ -502,7 +545,7 @@ namespace Frisket.Cli
             frisket - applies a template to data and writes the document
 
               frisket render -t <template.json> [options]
-              frisket check  -t <template.json> [--accessible] [--tagged] [--flat]
+              frisket check  -t <template.json> [--accessible] [--tagged] [--flat] [--fields <catalogue.json>] [--json]
               frisket fonts  [--fonts <dir>]
 
             Choosing what goes in

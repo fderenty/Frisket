@@ -59,6 +59,7 @@ namespace Frisket
         /// </summary>
         public string Name { get; set; } = "";
 
+        /// <summary>What the reader fills in: Text, a Checkbox, or a Signature.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<FieldKind>))]
         public FieldKind Kind { get; set; } = FieldKind.Text;
 
@@ -71,7 +72,9 @@ namespace Frisket
         /// <summary>Shown by a reader when the pointer rests on the field.</summary>
         public string? Tooltip { get; set; }
 
+        /// <summary>Shown in the form but not changeable there.</summary>
         public bool ReadOnly { get; set; }
+        /// <summary>Marked required in the form, so a reader may refuse to submit it empty.</summary>
         public bool Required { get; set; }
 
         /// <summary>Text fields only: accept more than one line.</summary>

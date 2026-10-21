@@ -2261,6 +2261,7 @@ const STRINGS = {
     "issue.sound.importedPageNumber": "Pages are counted from one.",
     "issue.sound.emptyImageGrid": "This image grid asks for fewer than one column, which draws as a single column rather than what was set here.",
     "issue.sound.repeatPageBreak": "This breaks once, before the whole repeated run. Repeating clones what is inside the container, so for one page per record the break belongs on the block being repeated.",
+    "issue.sound.noPageSize": "This section has no page size, so it is laid out on a sheet of nothing: every column too narrow to divide, one item to a page and the rest thrown away. Give it a page size - 210 by 297 is A4.",
     "issue.sound.emptySubTemplate": "This sub-template names nothing and carries nothing, so nothing will ever be inserted here. Give it a path, a st:// reference, or the other template's own JSON.",
     "issue.sound.emptyAdvancedText": "This advanced text has no runs with anything in them, so nothing will ever be drawn here.",
     "issue.sound.justifiedBreak": "This text is justified and holds a line break of its own. A break is stretched to the margin like a wrapped line, which is not what it means - put each paragraph in its own text.",
@@ -2659,6 +2660,7 @@ const STRINGS = {
     "issue.sound.importedPageNumber": "Les pages se comptent à partir de un.",
     "issue.sound.emptyImageGrid": "Cette planche d'images demande moins d'une colonne, ce qui se dessine en une seule colonne plutôt que ce qui est réglé ici.",
     "issue.sound.repeatPageBreak": "Ceci coupe une fois, avant toute la série répétée. La répétition clone ce qui est dans le conteneur, donc pour une page par enregistrement le saut se pose sur le bloc répété.",
+    "issue.sound.noPageSize": "Cette section n'a pas de format de page : elle est mise en page sur une feuille de rien, chaque colonne trop étroite pour être divisée, un élément par page et le reste perdu. Lui donner un format - 210 par 297 pour l'A4.",
     "issue.sound.emptySubTemplate": "Ce sous-gabarit ne nomme rien et ne porte rien, donc rien n'y sera jamais inséré. Lui donner un chemin, une référence st:// ou le JSON de l'autre gabarit.",
     "issue.sound.emptyAdvancedText": "Ce texte avancé n'a aucun segment avec quelque chose dedans, donc rien n'y sera jamais dessiné.",
     "issue.sound.justifiedBreak": "Ce texte est justifié et contient un saut de ligne. Un saut est étiré jusqu'à la marge comme une ligne repliée, ce qui n'est pas son sens - mettre chaque paragraphe dans son propre texte.",
@@ -3262,9 +3264,19 @@ function validate(rep, profile) {
   sections.forEach(hydrate);
   if (rep.BackPage && rep.BackPage.Content) hydrate(rep.BackPage.Content);
 
-  sections.forEach((section, i) =>
-    walkFor(section, sections.length === 1 ? t("panel.section") : `${t("panel.section")} ${i + 1}`,
-            profile, add, rep.HeadingNumbering));
+  sections.forEach((section, i) => {
+    const named = sections.length === 1 ? t("panel.section") : `${t("panel.section")} ${i + 1}`;
+
+    // A section with no page size is laid out on a sheet of nothing. This page writes A4
+    // into one that has no Dimension at all, but an empty one - which is what the engine
+    // writes for a section built without a size - stays empty, and so does a file read
+    // straight from somewhere else.
+    const size = section.Dimension;
+    if (profile.sound && !(size && Number(size.Width) > 0 && Number(size.Height) > 0))
+      add("sound.noPageSize", "error", section, named);
+
+    walkFor(section, named, profile, add, rep.HeadingNumbering);
+  });
   if (rep.BackPage) walkFor(rep.BackPage.Content, t("panel.back"), profile, add, rep.HeadingNumbering);
 
   // The third profile, and the only one that has to be told what is about to be

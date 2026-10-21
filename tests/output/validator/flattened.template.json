@@ -418,6 +418,19 @@
         }
       ],
       "Style": {}
+    },
+    {
+      "Dimension": {
+        "Width": 210,
+        "Height": 297
+      },
+      "Layout": "Absolute",
+      "ColumnCount": 1,
+      "ColumnGap": 6,
+      "BalanceColumns": true,
+      "GroupItems": "Items",
+      "Childs": [],
+      "Style": {}
     }
   ]
 }
