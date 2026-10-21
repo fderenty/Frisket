@@ -7,7 +7,8 @@
 #   ./bindings/native/build.sh linux-arm       # 32-bit ARM - an older Pi, embedded boards
 #
 # A third argument, after the configuration, is the version fk_version reports - a
-# release passes its tag; left out, the build carries Directory.Build.props' 0.1.0-dev:
+# release passes its tag; left out, the build carries Directory.Build.props' version,
+# with a -dev suffix:
 #
 #   ./bindings/native/build.sh linux-x64 Release 1.2.3
 #

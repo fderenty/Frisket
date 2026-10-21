@@ -33,7 +33,7 @@
 
 .PARAMETER Version
     The version the library reports through fk_version - a release passes its tag.
-    Left out, the build carries Directory.Build.props' 0.1.0-dev.
+    Left out, the build carries Directory.Build.props' version, with a -dev suffix.
 
 .EXAMPLE
     ./bindings/native/build.ps1 -Target win-x64

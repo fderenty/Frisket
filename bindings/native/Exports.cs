@@ -31,8 +31,9 @@ namespace Frisket.Native
         public static IntPtr LastError() => Interop.LastError();
 
         /// <summary>
-        /// The version this library was built as - the release's tag, or 0.1.0-dev for a build
-        /// that is not one - without the commit the build metadata appends.
+        /// The version this library was built as - the release's tag, or Directory.Build.props'
+        /// version with a -dev suffix for a build that is not one - without the commit the build
+        /// metadata appends.
         ///
         /// It answered a literal "1.0.0" until the first release was being prepared, which
         /// every build would have gone on saying; and it allocated a fresh copy on every call

@@ -50,7 +50,7 @@ typedef void* fk_token;
 /* The last failure on this thread, UTF-8, or NULL. Valid until the next call. */
 const char* FK_CALL fk_last_error(void);
 
-/* The library's own version - "1.2.3", or "0.1.0-dev" for a build that is not a
+/* The library's own version - "1.2.3", or "1.2.3-dev" for a build that is not a
    release. Yours to free? No - it is a static string. */
 const char* FK_CALL fk_version(void);
 

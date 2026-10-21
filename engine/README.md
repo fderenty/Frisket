@@ -33,6 +33,29 @@ Given the same template, data and date, the output is the same file byte for byt
   row one cell short. Told what is about to be produced, it also says what that output
   will lose - a form flattened into a picture of one, a role dropped from untagged output.
 
+## Templates written by a program
+
+A template can come from a program or a language model as well as from a person. The JSON
+Schema in the repository describes every type and property, and the checks say what is wrong
+and where, so a program can correct the template and check it again:
+
+```csharp
+var issues = new List<TemplateIssue>(TemplateJson.Check(json));  // names the reader skips
+if (!issues.Any(i => i.Rule == "read.invalid"))
+{
+    Report template = Report.FromJson(json);
+    issues.AddRange(TemplateValidator.Check(template));
+    issues.AddRange(TemplateFields.Check(template, catalogueJson)); // tokens the data lacks
+}
+string findings = TemplateIssue.ToJson(issues);   // each with a JSON Pointer into the template
+```
+
+`TemplateJson.Check` names a property the engine does not read, which would otherwise be
+skipped in silence, along with the name probably meant. `TemplateFields.Check` holds every
+token to the host's catalogue of fields, the array the content editor is handed.
+[examples/ai](https://github.com/fderenty/Frisket/tree/main/examples/ai) is the guide for
+wiring a model to these checks.
+
 ## Fonts
 
 A `FontLibrary` nobody fills draws with the typefaces in

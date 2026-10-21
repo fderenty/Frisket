@@ -22,7 +22,7 @@ on:
       version:
         description: Version stamped on what is built
         required: false
-        default: 0.1.0-dev
+        default: 0.2.0-dev
 
 permissions:
   contents: read
@@ -48,7 +48,7 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=${REQUESTED:-0.1.0-dev}" >> "$GITHUB_OUTPUT"
+            echo "value=${REQUESTED:-0.2.0-dev}" >> "$GITHUB_OUTPUT"
           fi
 
   native:
@@ -213,6 +213,12 @@ jobs:
       contents: write
 
     steps:
+      # For the notes alone: .github/release-notes/<tag>.md, written by hand for the release.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/release-notes
+          path: source
+
       - uses: actions/download-artifact@v8
         with:
           path: dist
@@ -230,9 +236,15 @@ jobs:
           # call it Latest. v0.1.0-rc.1 was, because this line did not exist yet.
           pre=()
           case "$GITHUB_REF_NAME" in *-*) pre=(--prerelease) ;; esac
+          # Notes written for the release go first, and GitHub's own - a link to every
+          # commit since the last tag - after them. With none, GitHub's alone, as for v0.1.0.
+          notes=()
+          written="$GITHUB_WORKSPACE/source/.github/release-notes/$GITHUB_REF_NAME.md"
+          if [ -f "$written" ]; then notes=(--notes-file "$written"); fi
           gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                 --title "$GITHUB_REF_NAME" --generate-notes --verify-tag "${pre[@]+"${pre[@]}"}"
+                 --title "$GITHUB_REF_NAME" --generate-notes --verify-tag \
+                 "${notes[@]+"${notes[@]}"}" "${pre[@]+"${pre[@]}"}"
           gh release upload "$GITHUB_REF_NAME" ./* --clobber --repo "$GITHUB_REPOSITORY"
 
   # Its own job, and the last one. It used to be two steps at the end of the packing job,

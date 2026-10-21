@@ -19,9 +19,11 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
     <!-- A build that is not a release says so. The release workflow sets Version from the
-         tag, which replaces both halves; anything packed by hand comes out 0.1.0-dev and
-         cannot be mistaken for a version anybody published. -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+         tag, which replaces both halves; anything packed by hand comes out 0.2.0-dev and
+         cannot be mistaken for a version anybody published. The prefix is the version being
+         worked towards - raised as a release is prepared, together with the default a
+         by-hand run of release.yml stamps; nothing else carries the number. -->
+    <VersionPrefix>0.2.0</VersionPrefix>
     <VersionSuffix>dev</VersionSuffix>
 
     <!-- Symbols in a package of their own, so stepping into the engine works without the
