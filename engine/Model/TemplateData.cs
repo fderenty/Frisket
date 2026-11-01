@@ -44,7 +44,7 @@ namespace Frisket
             // Field by field: the bound copies are clones, and what they share with the template
             // is the name they were filled from.
             var named = new Dictionary<string, ImageItem>();
-            foreach (ImageItem written in template.AllItems.OfType<ImageItem>())
+            foreach (ImageItem written in PicturesOf(template))
             {
                 if (!string.IsNullOrWhiteSpace(written.SourceField))
                     named.TryAdd(written.SourceField.Trim(), written);
@@ -65,7 +65,7 @@ namespace Frisket
                 });
             }
 
-            foreach (ImageItem image in bound.AllItems.OfType<ImageItem>())
+            foreach (ImageItem image in PicturesOf(bound))
             {
                 if (string.IsNullOrWhiteSpace(image.SourceField))
                     continue;
@@ -80,6 +80,27 @@ namespace Frisket
             }
 
             return found;
+        }
+
+        /// <summary>Every picture of a report, the back page's as well as the sections'.</summary>
+        private static IEnumerable<ImageItem> PicturesOf(Report report)
+        {
+            foreach (ImageItem image in report.AllItems.OfType<ImageItem>())
+                yield return image;
+
+            if (report.BackPage is not { } back)
+                yield break;
+
+            var waiting = new Stack<BaseItem>(back.Content.Childs);
+            while (waiting.Count > 0)
+            {
+                BaseItem item = waiting.Pop();
+                if (item is ImageItem image)
+                    yield return image;
+                else if (item is ContainerItem container)
+                    foreach (BaseItem child in container.Childs)
+                        waiting.Push(child);
+            }
         }
     }
 }

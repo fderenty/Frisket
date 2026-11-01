@@ -761,5 +761,131 @@ namespace test
 
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// A report is a list of sections, and the binder filled the first. Everything after it
+        /// went out with its tokens as typed and its lists unrepeated, in a document that drew
+        /// without a word: reported by an application with a portrait section and a landscape
+        /// one, and in the engine since sections existed, because every sample that had two of
+        /// them had no data and every sample with data had one.
+        ///
+        /// The back page, which its own comment says holds tokens and which TemplateFields walks,
+        /// was not filled either. Asked of what is drawn, every place a template can hold a token.
+        /// </summary>
+        [Fact]
+        public void Test106_EverySectionIsFilled()
+        {
+            const string testName = "Test 106";
+            Console.WriteLine("Test 106: the data reaches every section, not only the first");
+            Console.WriteLine();
+
+            const string well = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'>";
+            static string Coded(string text) => Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(text));
+
+            const string piece = """
+                { "Title": "Piece", "Sections": [ { "Dimension": { "Width": 210, "Height": 297 },
+                  "Childs": [ { "$type": "Body", "Layout": "Stack", "Childs": [ { "$type": "TextItem", "Text": "Appended {Client}" } ] } ] } ] }
+                """;
+
+            string template = """
+                { "Title": "Dossier {Client}", "Language": "fr-FR",
+                  "BackPage": { "Content": { "Layout": "Stack", "Childs": [
+                      { "$type": "TextItem", "Text": "Back {Client}" },
+                      { "$type": "ImageItem", "SourceField": "BackChart", "AltText": "x", "NaturalWidth": 40, "NaturalHeight": 20 } ] } },
+                  "Sections": [
+                    { "Dimension": { "Width": 210, "Height": 297 }, "Childs": [ { "$type": "Body", "Layout": "Stack", "Childs": [
+                        { "$type": "TextItem", "Text": "One {Client}" },
+                        { "$type": "TextItem", "Text": "One scoped {Client}", "Style": { "PageScope": "First" } },
+                        { "$type": "SubTemplateItem", "Mode": "Append", "TemplateData": "@PIECE@" } ] } ] },
+                    { "Dimension": { "Width": 297, "Height": 210 }, "Childs": [
+                        { "$type": "Header", "Style": { "Location": { "HeightValue": 10 } }, "Layout": "Stack", "Childs": [
+                            { "$type": "TextItem", "Text": "Head {Client}" } ] },
+                        { "$type": "Footer", "Style": { "Location": { "HeightValue": 10 } }, "Layout": "Stack", "Childs": [
+                            { "$type": "TextItem", "Text": "Foot {Client}" } ] },
+                        { "$type": "Body", "Layout": "Stack", "Childs": [
+                          { "$type": "TextItem", "Text": "Two {Client}" },
+                          { "$type": "TextItem", "Text": "Two scoped {Client}", "Style": { "PageScope": "First" } },
+                          { "$type": "AdvancedTextItem", "Runs": [ { "Text": "Rich {Client}" } ] },
+                          { "$type": "TableItem", "RepeatOver": "Lines", "Columns": [{}], "Childs": [
+                            { "$type": "TableRow", "Childs": [ { "$type": "TextItem", "Text": "Row {Name}" } ] } ] },
+                          { "$type": "ImageItem", "SourceField": "Chart", "AltText": "x", "NaturalWidth": 40, "NaturalHeight": 20 },
+                          { "$type": "ImageItem", "SourceField": "Nothing", "AltText": "x", "NaturalWidth": 40, "NaturalHeight": 20 },
+                          { "$type": "TextItem", "Text": "Only if there is nothing", "ShowWhen": "Nothing" } ] } ] }
+                  ] }
+                """.Replace("@PIECE@", Coded(piece));
+
+            string Data(string chart, string back) => new System.Text.Json.Nodes.JsonObject
+            {
+                ["Client"] = "ACME",
+                ["Chart"] = Coded(chart),
+                ["BackChart"] = Coded(back),
+                ["Lines"] = new System.Text.Json.Nodes.JsonArray(
+                    new System.Text.Json.Nodes.JsonObject { ["Name"] = "a" },
+                    new System.Text.Json.Nodes.JsonObject { ["Name"] = "b" },
+                    new System.Text.Json.Nodes.JsonObject { ["Name"] = "c" })
+            }.ToJsonString();
+
+            string drawing = well + "<rect width='100' height='50' fill='#123456'/></svg>";
+            string onTheBack = well + "<rect width='100' height='50' fill='#654321'/></svg>";
+            string good = Data(drawing, onTheBack);
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            Report loaded = Report.FromJson(template);
+            loaded.ExpandSubTemplates();
+            AssertEqual(testName, "three sections once the piece is appended", 3, loaded.Sections.Count, 0);
+
+            var proof = new SvgBackend(new FontTextMeasurer(library));
+            ReportRenderer.Render(ReportBinder.Bind(loaded, good), proof);
+
+            List<string> words = proof.Pages
+                .SelectMany(page => System.Text.RegularExpressions.Regex.Matches(page, "<text[^>]*>([^<]*)</text>"))
+                .Select(m => m.Groups[1].Value)
+                .ToList();
+            Console.WriteLine("    " + string.Join(" | ", words.Distinct()));
+
+            AssertEqual(testName, "no token is left anywhere", string.Empty,
+                string.Join(", ", words.Where(w => w.Contains('{'))), 0);
+
+            foreach (string expected in new[]
+            {
+                "One ACME", "Appended ACME", "Two ACME", "Head ACME", "Foot ACME", "Rich ACME", "Back ACME",
+                "Row a", "Row b", "Row c"
+            })
+            {
+                AssertEqual(testName, $"{expected} is drawn", true, words.Contains(expected), 0);
+            }
+
+            AssertEqual(testName, "what the data leaves out stays out in the second section too", false,
+                words.Contains("Only if there is nothing"), 0);
+
+            // The same item says the same thing in either section. A body item takes part in the
+            // flow, so its page scope cannot remove it afterwards, and only the first section's
+            // body was known to be one: the item vanished from the second, its room left empty.
+            AssertEqual(testName, "a body item with a page scope stays in the first section", true, words.Contains("One scoped ACME"), 0);
+            AssertEqual(testName, "and in the second", true, words.Contains("Two scoped ACME"), 0);
+
+            // A picture the data brings, drawn where it is named, and asked about beforehand.
+            AssertEqual(testName, "the second section's picture is drawn", true,
+                proof.Pages.Any(page => page.Contains("#123456")), 0);
+            AssertEqual(testName, "and the back page's", true,
+                proof.Pages.Any(page => page.Contains("#654321")), 0);
+
+            string refused = well + "<script>boom()</script></svg>";
+            IReadOnlyList<TemplateIssue> second = TemplateData.Check(loaded, Data(refused, onTheBack));
+            AssertEqual(testName, "a chart refused in the second section is found", 1,
+                second.Count(i => i.Rule == "sound.unreadablePicture"), 0);
+            AssertEqual(testName, "and its pointer is that section's", true,
+                second[0].Pointer?.StartsWith("/Sections/2/") == true, 0);
+
+            IReadOnlyList<TemplateIssue> back = TemplateData.Check(loaded, Data(drawing, refused));
+            AssertEqual(testName, "and one on the back page", 1, back.Count(i => i.Rule == "sound.unreadablePicture"), 0);
+            AssertEqual(testName, "with a pointer to the back page", true,
+                back[0].Pointer?.StartsWith("/BackPage/") == true, 0);
+
+            Console.WriteLine();
+        }
     }
 }

@@ -2616,6 +2616,21 @@ It is also the shape of the PDF, which makes the choice right and not merely con
 
 A `Section` inside a `Body` means nothing and does not draw; the typing allows it, so `sound.nestedSection` refuses it.
 
+**`report.Section` is a trap, and it caught the binder for as long as sections have existed.**
+`ReportBinder.Bind` filled `report.Section`, the first. Everything after it - bands, body, an appended
+sub-document - went out with its tokens as typed and its lists unrepeated, and drew without a word.
+Found on 1 November 2026 by another application with a portrait section and a landscape one, not by
+the 105 tests here: every sample with two sections had no data, and every sample with data had one
+section. *A shape nothing combines is a shape nothing checks.* The designer could not have shown it
+either, since it fills tokens as it draws: its canvas was right and the exact preview was not, the
+comparison §2 asks for, on a sample nobody had. `SubTemplateExpander` had the very same line (§14b)
+and was mended without anybody asking who else had it.
+
+Asking found two more. `ApplyPageScope` knew the first section's body alone as being in the flow, so a
+body item with a page scope stayed in the first section and vanished from any other, its room left
+empty. And the back page, whose own comment says it holds tokens and which `TemplateFields` walks as
+though it were filled, never was. Test 106 asks of what is drawn, every place a template can hold a token.
+
 Three traps met, all silent:
 
 - **old templates** put `Document` and `Dimension` at the root. Two properties read them back without ever writing them again — and `Dimension` must be **set aside then applied in `Reattach`**, because the two arrive in file order and `Dimension` before `Document` set the size on an object the next line replaced;

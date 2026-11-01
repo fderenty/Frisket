@@ -140,7 +140,17 @@ namespace Frisket
             if (ReportTokens.HasTokens(report.Keywords))
                 report.Keywords = Fill(report.Keywords!, data, null, options);
 
-            BindContainer(report.Section, data, null, options);
+            // Every section, and not only the first. This read `report.Section` - the convenience
+            // over Sections[0], from before a report had several - so everything after the first
+            // went out with its tokens as typed and its lists unrepeated, and drew without a word.
+            // SubTemplateExpander had the same line and the same fault (CLAUDE.md 14b).
+            foreach (Section section in report.Sections)
+                BindContainer(section, data, null, options);
+
+            // And the back page, whose own comment says it holds tokens.
+            if (report.BackPage is { } back)
+                BindContainer(back.Content, data, null, options);
+
             report.Reattach();
             return report;
         }

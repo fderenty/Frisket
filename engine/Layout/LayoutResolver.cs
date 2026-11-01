@@ -2518,8 +2518,14 @@ namespace Frisket
         {
             int total = result.PageCount;
             var flowed = new HashSet<BaseItem>();
-            if (_report.Body != null)
-                CollectFlowItems(_report.Body, flowed);
+
+            // Every section's body: known only for the first, a body item with a page scope stayed
+            // there and was taken off the page in any other, its room left empty.
+            foreach (Section section in _report.Sections)
+            {
+                foreach (Body body in section.Childs.OfType<Body>())
+                    CollectFlowItems(body, flowed);
+            }
 
             foreach (Page page in result.Pages)
                 page.RemoveAll(placed => !flowed.Contains(placed.Source)
