@@ -52,9 +52,12 @@ namespace Frisket
     }
 
     /// <summary>
-    /// A picture. The engine decodes nothing - that would mean a graphics dependency -
-    /// so the natural size is declared by the author, in millimeters. Giving only one of
-    /// the two lets the other follow from <see cref="NaturalWidth"/>/<see cref="NaturalHeight"/>.
+    /// A picture: a JPEG, a PNG, or a drawing in SVG. A bitmap's pixels are not read - that
+    /// would mean a graphics dependency - so its natural size is declared by the author, in
+    /// millimeters, and giving only one of the two lets the other follow from
+    /// <see cref="NaturalWidth"/>/<see cref="NaturalHeight"/>. A drawing states its own
+    /// proportions, which serve when the author declares none. It is a limited SVG, and what is
+    /// outside the limit is refused by name rather than skipped: https://github.com/fderenty/Frisket/tree/main/examples/charts lists what is taken.
     /// </summary>
     public class ImageItem : BaseItem
     {
@@ -100,16 +103,20 @@ namespace Frisket
 
         /// <summary>
         /// Path in the data the bytes come from, as base64 or a data: URI. This is how a
-        /// signature drawn on a tablet reaches the page: the browser posts the canvas,
-        /// and the template says where to look for it rather than carrying it.
+        /// signature drawn on a tablet reaches the page, the browser posting the canvas, and
+        /// how a chart does, the host drawing one per case: the template says where to look
+        /// rather than carrying it. An SVG is its text in UTF-8, encoded in the same way.
         /// </summary>
         public string? SourceField { get; set; }
 
-        /// <summary>Width over height, NaN when either natural dimension is missing.</summary>
+        /// <summary>
+        /// Width over height: the natural dimensions if both are declared, what a drawing says
+        /// of itself otherwise, and NaN when there is neither.
+        /// </summary>
         [JsonIgnore]
         public double AspectRatio => NaturalWidth > 0 && NaturalHeight > 0
             ? NaturalWidth / NaturalHeight
-            : double.NaN;
+            : Source.Reading()?.Drawing?.Ratio ?? double.NaN;
 
         protected override BaseItem CreateEmpty() => new ImageItem();
 

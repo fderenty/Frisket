@@ -119,6 +119,27 @@ namespace test
             var notAControl = new TextItem { Text = "Sign here", Role = PdfRole.Form };
             report.Body!.Add(notAControl);
 
+            // Two pictures nothing could draw, of the two kinds there are. The proof drew both,
+            // the validator passed both and the PDF stopped at the end - a drawing outside what
+            // is taken, and a PNG with a palette.
+            var badDrawing = new ImageItem
+            {
+                Source = new ImageSource
+                {
+                    Data = System.Text.Encoding.UTF8.GetBytes("<svg viewBox='0 0 9 9'><script>boom()</script></svg>"),
+                    MediaType = "image/svg+xml"
+                },
+                AltText = "A drawing"
+            };
+            report.Body!.Add(badDrawing);
+
+            var badBitmap = new ImageItem
+            {
+                Source = new ImageSource { Data = PngEncoder.WithHeader(PngEncoder.Rgb(8, 8, (x, y) => (1, 2, 3)), colourType: 3) },
+                AltText = "A bitmap"
+            };
+            report.Body!.Add(badBitmap);
+
             // A second section with no page size, which nothing supplies: laid out on a sheet
             // of nothing. A person met it only by writing a template by hand; a model writing
             // one from the schema meets it the first time it leaves the property out.
@@ -221,6 +242,12 @@ namespace test
             report.Language = "en-GB";
             logo.AltText = "Logo ACME";
             logo.SourceField = "Logo";       // was empty: neither a picture nor a path to one
+            badDrawing.Source = new ImageSource
+            {
+                Data = System.Text.Encoding.UTF8.GetBytes("<svg viewBox='0 0 9 9'><rect width='3' height='3'/></svg>"),
+                MediaType = "image/svg+xml"
+            };
+            badBitmap.Source = new ImageSource { Data = PngEncoder.WithAlpha(8, 8, (x, y) => (1, 2, 3, 200)) };
             code.Value = "ACME-001";
 
             // A barcode is shown, not read: filling it in leaves it as silent as the logo
@@ -348,6 +375,8 @@ namespace test
                 flat.Any(i => i.Rule == "can.flattenedSignature"), 0);
             AssertEqual(testName, "and a group with no page to be placed on", true,
                 flat.Any(i => i.Rule == "can.absoluteInFlow"), 0);
+            AssertEqual(testName, "a mail cannot show a drawing, and only the drawing", 1,
+                flat.Count(i => i.Rule == "can.drawingInFlow"), 0);
 
             // Silent about the output when there is none named: with nothing to compare
             // the template against, warning about a loss that is not happening is worse

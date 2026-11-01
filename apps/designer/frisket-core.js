@@ -658,7 +658,10 @@ function intrinsicHeight(item, boxWidth, report) {
     const lines = item.Kind === "Signature" || item.Multiline ? 3 : 1;
     height = lines * lineHeight(item.Font, report) + 1;
   }
-  else if (item.$type === "ImageItem") height = item.NaturalWidth > 0 ? content * item.NaturalHeight / item.NaturalWidth : 0;
+  else if (item.$type === "ImageItem") {
+    const ratio = pictureRatio(item);
+    height = ratio > 0 ? content / ratio : 0;
+  }
   else if (item.$type === "ImageGridItem") {
     const columns = Math.max(1, item.GridColumns || 1);
     const gap = Math.max(0, item.Gap ?? 0);
@@ -1869,6 +1872,9 @@ const STRINGS = {
     "issue.can.flattenedFieldAltText": "This field will be drawn rather than left fillable, so it is a figure in the structure tree - and a figure with nothing to say for it is refused by PDF/UA. Give it an alternative text, or leave the fields fillable.",
     "issue.can.flattenedSignature": "A signature field flattened is a picture of a place to sign. Nobody can sign it.",
     "issue.can.absoluteInFlow": "This group's children overlap one another across the band, and the output being aimed at has no pages to place them on. They will be written one under the next instead.",
+    "issue.can.drawingInFlow": "This picture is a drawing, and a mail reader does not draw SVG. Its alternative text will be written in its place; a bitmap of it, if the reader should see it, is the host's to provide.",
+    "issue.sound.unreadablePicture": "This picture cannot be drawn. {reason}",
+    "canvas.refusedPicture": "picture refused",
     "panel.report": "Report",
     "sections.open": "Sections…", "sections.title": "Sections",
     "sections.hint": "A report is a list of sections, each with its own page size. This page edits one of them at a time; everything else stays exactly where it is.",
@@ -2183,6 +2189,9 @@ const STRINGS = {
     "issue.can.flattenedFieldAltText": "Ce champ sera dessiné au lieu de rester remplissable, donc c'est une figure dans l'arbre de structure - et une figure qui n'a rien à dire d'elle-même est refusée par PDF/UA. Lui donner un texte alternatif, ou laisser les champs remplissables.",
     "issue.can.flattenedSignature": "Une signature aplatie est une image d'un endroit où signer. Personne ne peut la signer.",
     "issue.can.absoluteInFlow": "Les enfants de ce groupe se chevauchent dans la largeur, et la sortie visée n'a pas de pages où les poser. Ils seront écrits l'un sous l'autre.",
+    "issue.can.drawingInFlow": "Cette image est un dessin, et un lecteur de courrier ne dessine pas le SVG. Son texte de remplacement sera écrit à sa place ; une version bitmap, si le lecteur doit la voir, revient à l'hôte.",
+    "issue.sound.unreadablePicture": "Cette image ne peut pas être dessinée. {reason}",
+    "canvas.refusedPicture": "image refusée",
     "panel.report": "Rapport",
     "sections.open": "Sections…", "sections.title": "Sections",
     "sections.hint": "Un rapport est une liste de sections, chacun avec son propre format. Cette page en modifie un à la fois ; tout le reste ne bouge pas.",
@@ -2311,6 +2320,12 @@ function backdropSvg(report, area) {
                          Style: { AlignHorizontal: b.AlignHorizontal || "Center",
                                   AlignVertical: b.AlignVertical || "Center" } });
 
+  const reading = readingOf(b.Source.Data);
+  if (reading) {
+    const r = rect(area.x, area.y, area.x + area.w, area.y + area.h);
+    return reading.drawing ? drawingSvg(reading.drawing, r, fit, opacity, (report.DefaultFont || {}).Family) : refusedPicture(r);
+  }
+
   return `<image x="${n3(area.x)}" y="${n3(area.y)}" width="${n3(area.w)}"`
        + ` height="${n3(area.h)}" preserveAspectRatio="${fit}"`
        + `${opacity < 1 ? ` opacity="${n3(opacity)}"` : ""}`
@@ -2345,6 +2360,8 @@ function watermarkSvg(report, page) {
 /// page rather than what the page holds - band tints, element outlines - so this
 /// stays answerable without a checkbox to read.
 function render(report, selected, index = 0, show = {}, lookup = null) {
+  drawingClips = 0;
+  drawingFamily = (report.DefaultFont || {}).Family;
   const { placed, page, band, section } = layout(report, index, lookup);
   const out = [];
   // white-space:pre on every <text>, as the engine's SvgBackend writes it: a browser
@@ -2621,6 +2638,15 @@ function imageFit(item) {
 
 function image(item, r) {
   const fit = imageFit(item);
+
+  // A drawing is read here and drawn from the reading, in the page's own typefaces: handed to
+  // the browser in an <image> it would use neither, and would draw what the PDF refuses.
+  const reading = readingOf(pictureData(item));
+  if (reading)
+    return reading.drawing
+      ? drawingSvg(reading.drawing, r, item.Scaling === "Stretch" ? "none" : fit, 1, drawingFamily)
+      : refusedPicture(r);
+
   const bytes = resolvedImageSource(item);
   if (bytes)
     return `<image x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" preserveAspectRatio="${fit}" href="data:${bytes.mediaType};base64,${bytes.data}"/>`;
@@ -2630,6 +2656,1425 @@ function image(item, r) {
 
   return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".2"/>` +
          `<text x="${n3((r.left + r.right) / 2)}" y="${n3((r.top + r.bottom) / 2)}" text-anchor="middle" font-size="3" fill="${ON_PAPER.placeholderInk}">image</text>`;
+}
+
+// ---------------------------------------------------------------------------
+// Pictures and drawings - the echo of engine/Vector and of Pictures.
+//
+// A browser would draw any SVG it is handed, and that is exactly why this page cannot simply
+// hand it one: it would show a chart the PDF refuses, in a typeface the PDF does not use. So
+// the bytes are read here by the same rules, to the same list of shapes, and drawn from that.
+// check-against-engine.js holds this reader to the engine's on every sample test 100 writes,
+// to the rule and to the point.
+//
+// The words of a refusal are this page's own; what has to agree is that it is refused.
+// ---------------------------------------------------------------------------
+
+const SVG_LARGEST = 1e9;
+const SVG_MAX_DEPTH = 64;
+const SVG_MOST_ISSUES = 20;
+
+const SVG_NOT_DRAWN = ["title", "desc", "metadata"];
+const SVG_SHAPES = ["path", "rect", "circle", "ellipse", "line", "polyline", "polygon"];
+const SVG_PROPERTIES = [
+  "color", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-opacity", "stroke-width",
+  "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit",
+  "opacity", "clip-path", "clip-rule", "font-family", "font-size", "font-weight", "font-style",
+  "text-anchor", "display", "visibility"
+];
+const SVG_IGNORED = [
+  "id", "class", "lang", "tabindex", "role", "focusable", "xmlns", "shape-rendering",
+  "text-rendering", "color-rendering", "image-rendering", "color-interpolation",
+  "pointer-events", "cursor", "font-kerning", "font-variant-ligatures"
+];
+const SVG_OWN = {
+  svg: ["viewBox", "width", "height", "x", "y", "preserveAspectRatio", "version", "baseProfile"],
+  g: [], defs: [],
+  path: ["d"],
+  rect: ["x", "y", "width", "height", "rx", "ry"],
+  circle: ["cx", "cy", "r"],
+  ellipse: ["cx", "cy", "rx", "ry"],
+  line: ["x1", "y1", "x2", "y2"],
+  polyline: ["points"], polygon: ["points"],
+  text: ["x", "y", "dx", "dy"], tspan: ["x", "y", "dx", "dy"],
+  clipPath: ["clipPathUnits"]
+};
+const SVG_GENERIC_FAMILIES = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui",
+                              "ui-sans-serif", "ui-serif", "ui-monospace", "ui-rounded"];
+
+// The names as numbers: this file carries no colour of a chart's choosing, only the means of
+// reading one. The palette audit is about what the chrome wears.
+const SVG_COLOUR_NAMES = {
+  aliceblue: 0xF0F8FF, antiquewhite: 0xFAEBD7, aqua: 0x00FFFF, aquamarine: 0x7FFFD4, azure: 0xF0FFFF,
+  beige: 0xF5F5DC, bisque: 0xFFE4C4, black: 0x000000, blanchedalmond: 0xFFEBCD, blue: 0x0000FF,
+  blueviolet: 0x8A2BE2, brown: 0xA52A2A, burlywood: 0xDEB887, cadetblue: 0x5F9EA0, chartreuse: 0x7FFF00,
+  chocolate: 0xD2691E, coral: 0xFF7F50, cornflowerblue: 0x6495ED, cornsilk: 0xFFF8DC, crimson: 0xDC143C,
+  cyan: 0x00FFFF, darkblue: 0x00008B, darkcyan: 0x008B8B, darkgoldenrod: 0xB8860B, darkgray: 0xA9A9A9,
+  darkgreen: 0x006400, darkgrey: 0xA9A9A9, darkkhaki: 0xBDB76B, darkmagenta: 0x8B008B, darkolivegreen: 0x556B2F,
+  darkorange: 0xFF8C00, darkorchid: 0x9932CC, darkred: 0x8B0000, darksalmon: 0xE9967A, darkseagreen: 0x8FBC8F,
+  darkslateblue: 0x483D8B, darkslategray: 0x2F4F4F, darkslategrey: 0x2F4F4F, darkturquoise: 0x00CED1, darkviolet: 0x9400D3,
+  deeppink: 0xFF1493, deepskyblue: 0x00BFFF, dimgray: 0x696969, dimgrey: 0x696969, dodgerblue: 0x1E90FF,
+  firebrick: 0xB22222, floralwhite: 0xFFFAF0, forestgreen: 0x228B22, fuchsia: 0xFF00FF, gainsboro: 0xDCDCDC,
+  ghostwhite: 0xF8F8FF, gold: 0xFFD700, goldenrod: 0xDAA520, gray: 0x808080, green: 0x008000,
+  greenyellow: 0xADFF2F, grey: 0x808080, honeydew: 0xF0FFF0, hotpink: 0xFF69B4, indianred: 0xCD5C5C,
+  indigo: 0x4B0082, ivory: 0xFFFFF0, khaki: 0xF0E68C, lavender: 0xE6E6FA, lavenderblush: 0xFFF0F5,
+  lawngreen: 0x7CFC00, lemonchiffon: 0xFFFACD, lightblue: 0xADD8E6, lightcoral: 0xF08080, lightcyan: 0xE0FFFF,
+  lightgoldenrodyellow: 0xFAFAD2, lightgray: 0xD3D3D3, lightgreen: 0x90EE90, lightgrey: 0xD3D3D3, lightpink: 0xFFB6C1,
+  lightsalmon: 0xFFA07A, lightseagreen: 0x20B2AA, lightskyblue: 0x87CEFA, lightslategray: 0x778899, lightslategrey: 0x778899,
+  lightsteelblue: 0xB0C4DE, lightyellow: 0xFFFFE0, lime: 0x00FF00, limegreen: 0x32CD32, linen: 0xFAF0E6,
+  magenta: 0xFF00FF, maroon: 0x800000, mediumaquamarine: 0x66CDAA, mediumblue: 0x0000CD, mediumorchid: 0xBA55D3,
+  mediumpurple: 0x9370DB, mediumseagreen: 0x3CB371, mediumslateblue: 0x7B68EE, mediumspringgreen: 0x00FA9A, mediumturquoise: 0x48D1CC,
+  mediumvioletred: 0xC71585, midnightblue: 0x191970, mintcream: 0xF5FFFA, mistyrose: 0xFFE4E1, moccasin: 0xFFE4B5,
+  navajowhite: 0xFFDEAD, navy: 0x000080, oldlace: 0xFDF5E6, olive: 0x808000, olivedrab: 0x6B8E23,
+  orange: 0xFFA500, orangered: 0xFF4500, orchid: 0xDA70D6, palegoldenrod: 0xEEE8AA, palegreen: 0x98FB98,
+  paleturquoise: 0xAFEEEE, palevioletred: 0xDB7093, papayawhip: 0xFFEFD5, peachpuff: 0xFFDAB9, peru: 0xCD853F,
+  pink: 0xFFC0CB, plum: 0xDDA0DD, powderblue: 0xB0E0E6, purple: 0x800080, rebeccapurple: 0x663399,
+  red: 0xFF0000, rosybrown: 0xBC8F8F, royalblue: 0x4169E1, saddlebrown: 0x8B4513, salmon: 0xFA8072,
+  sandybrown: 0xF4A460, seagreen: 0x2E8B57, seashell: 0xFFF5EE, sienna: 0xA0522D, silver: 0xC0C0C0,
+  skyblue: 0x87CEEB, slateblue: 0x6A5ACD, slategray: 0x708090, slategrey: 0x708090, snow: 0xFFFAFA,
+  springgreen: 0x00FF7F, steelblue: 0x4682B4, tan: 0xD2B48C, teal: 0x008080, thistle: 0xD8BFD8,
+  tomato: 0xFF6347, turquoise: 0x40E0D0, violet: 0xEE82EE, wheat: 0xF5DEB3, white: 0xFFFFFF,
+  whitesmoke: 0xF5F5F5, yellow: 0xFFFF00, yellowgreen: 0x9ACD32
+};
+
+// ---- bytes -----------------------------------------------------------------
+
+/// A template carries a picture as base64, and this file has no atob: the core runs where
+/// there is no browser (section 5c). Null when it is not base64, which reads as "not a picture".
+function bytesOfBase64(text) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const clean = String(text).replace(/[\s=]+/g, "");
+  const out = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  let bits = 0, held = 0, at = 0;
+
+  for (let i = 0; i < clean.length; i++) {
+    const value = alphabet.indexOf(clean[i]);
+    if (value < 0) return null;
+    bits = (bits << 6) | value;
+    held += 6;
+    if (held >= 8) {
+      held -= 8;
+      out[at++] = (bits >> held) & 255;
+    }
+  }
+
+  return out.subarray(0, at);
+}
+
+/// Strict UTF-8, as the engine reads it. Null on anything malformed: no replacement characters
+/// quietly standing in for bytes that were never text.
+function textOfUtf8(bytes) {
+  const units = [];
+  let out = "";
+
+  for (let i = 0; i < bytes.length;) {
+    const lead = bytes[i++];
+    let code, more;
+    if (lead < 0x80) { code = lead; more = 0; }
+    else if (lead >= 0xC2 && lead <= 0xDF) { code = lead & 0x1F; more = 1; }
+    else if (lead >= 0xE0 && lead <= 0xEF) { code = lead & 0x0F; more = 2; }
+    else if (lead >= 0xF0 && lead <= 0xF4) { code = lead & 0x07; more = 3; }
+    else return null;
+
+    for (let k = 0; k < more; k++) {
+      const next = bytes[i++];
+      if (next === undefined || (next & 0xC0) !== 0x80) return null;
+      code = (code << 6) | (next & 0x3F);
+    }
+
+    if ((more === 2 && code < 0x800) || (more === 3 && code < 0x10000)
+        || (code >= 0xD800 && code <= 0xDFFF) || code > 0x10FFFF) return null;
+
+    units.push(code);
+    if (units.length >= 4096) { out += String.fromCodePoint(...units); units.length = 0; }
+  }
+
+  return out + String.fromCodePoint(...units);
+}
+
+/// What the bytes open with, as the engine asks it: a tag, after a mark and white space.
+function looksLikeDrawing(bytes) {
+  let at = bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF ? 3 : 0;
+  while (at < bytes.length && (bytes[at] === 32 || bytes[at] === 9 || bytes[at] === 10 || bytes[at] === 13)) at++;
+  return at < bytes.length && bytes[at] === 60;
+}
+
+// ---- markup ----------------------------------------------------------------
+
+function svgFail(text, at, what) {
+  let line = 1;
+  for (let i = 0; i < at && i < text.length; i++) if (text[i] === "\n") line++;
+  throw { svgMalformed: `Line ${line}: ${what}.` };
+}
+
+function svgDecode(run, text, at) {
+  let amp = run.indexOf("&");
+  if (amp < 0) return run;
+
+  let decoded = "", from = 0;
+  while (amp >= 0) {
+    decoded += run.slice(from, amp);
+    const semi = run.indexOf(";", amp);
+    if (semi < 0) svgFail(text, at, "an & that starts no entity");
+
+    const name = run.slice(amp + 1, semi);
+    const known = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[name];
+    if (known !== undefined) {
+      decoded += known;
+    } else {
+      const hexa = name.startsWith("#x");
+      const digits = hexa ? name.slice(2) : name.startsWith("#") ? name.slice(1) : "";
+      const code = (hexa ? /^[0-9a-fA-F]+$/ : /^[0-9]+$/).test(digits) ? parseInt(digits, hexa ? 16 : 10) : 0;
+      if (!(code > 0) || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF) || code === 0xFFFE || code === 0xFFFF
+          || (code < 0x20 && code !== 9 && code !== 10 && code !== 13))
+        svgFail(text, at, `the entity &${name}; which SVG does not know`);
+      decoded += String.fromCodePoint(code);
+    }
+
+    from = semi + 1;
+    amp = run.indexOf("&", from);
+  }
+
+  return decoded + run.slice(from);
+}
+
+/// The markup into elements, by the rules of engine/Vector/SvgMarkup.cs: nothing is ever
+/// fetched, an internal subset is refused, and so no entity exists but the five XML knows.
+function svgParse(text) {
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if ((c < 32 && c !== 9 && c !== 10 && c !== 13) || c === 0xFFFE || c === 0xFFFF)
+      svgFail(text, i, "a character XML does not allow");
+  }
+
+  const isSpace = c => c === " " || c === "\t" || c === "\n" || c === "\r";
+  const nameChar = /[\p{L}\p{Nd}_\-.:]/u;
+  let at = text.charCodeAt(0) === 0xFEFF ? 1 : 0;
+  const open = [];
+  let root = null;
+
+  const after = (from, closer, fault) => {
+    const found = text.indexOf(closer, from);
+    if (found < 0) svgFail(text, from, fault);
+    return found + closer.length;
+  };
+  const skipSpace = () => { while (at < text.length && isSpace(text[at])) at++; };
+  const readName = () => {
+    const start = at;
+    while (at < text.length && nameChar.test(text[at])) at++;
+    if (at === start) svgFail(text, at, "a name was expected");
+    return text.slice(start, at);
+  };
+
+  while (at < text.length) {
+    if (text[at] !== "<") {
+      let stop = text.indexOf("<", at);
+      if (stop < 0) stop = text.length;
+      const run = text.slice(at, stop);
+      if (open.length) open[open.length - 1].children.push(svgDecode(run, text, at));
+      else if (run.trim()) svgFail(text, at, "text outside the root element");
+      at = stop;
+      continue;
+    }
+
+    if (text.startsWith("<!--", at)) { at = after(at + 4, "-->", "a comment never closed"); continue; }
+    if (text.startsWith("<?", at)) { at = after(at + 2, "?>", "a processing instruction never closed"); continue; }
+
+    if (text.startsWith("<![CDATA[", at)) {
+      if (!open.length) svgFail(text, at, "CDATA outside the root element");
+      const end = after(at + 9, "]]>", "a CDATA section never closed");
+      open[open.length - 1].children.push(text.slice(at + 9, end - 3));
+      at = end;
+      continue;
+    }
+
+    if (text.startsWith("<!DOCTYPE", at)) {
+      if (root) svgFail(text, at, "a DOCTYPE after the root element");
+      let quote = "", i = at + 9, done = false;
+      for (; i < text.length; i++) {
+        const c = text[i];
+        if (quote) { if (c === quote) quote = ""; }
+        else if (c === '"' || c === "'") quote = c;
+        else if (c === "[") svgFail(text, i, "a DOCTYPE with an internal subset, which is where entities are declared");
+        else if (c === ">") { done = true; break; }
+      }
+      if (!done) svgFail(text, at, "a DOCTYPE never closed");
+      at = i + 1;
+      continue;
+    }
+
+    if (text.startsWith("<!", at)) svgFail(text, at, "a declaration SVG does not need");
+
+    if (text.startsWith("</", at)) {
+      at += 2;
+      const closing = readName();
+      skipSpace();
+      if (at >= text.length || text[at] !== ">") svgFail(text, at, "an end tag not closed");
+      if (!open.length || open[open.length - 1].name !== closing) svgFail(text, at, `</${closing}> with no matching start tag`);
+      open.pop();
+      at++;
+      continue;
+    }
+
+    at++;
+    const element = { name: readName(), attributes: [], children: [] };
+    let shut = false;
+
+    for (;;) {
+      const before = at;
+      skipSpace();
+      if (at >= text.length) svgFail(text, at, `<${element.name}> is never finished`);
+      if (text[at] === ">") { at++; break; }
+      if (text[at] === "/") {
+        if (text[at + 1] !== ">") svgFail(text, at, `<${element.name}> is badly closed`);
+        at += 2;
+        shut = true;
+        break;
+      }
+      if (at === before) svgFail(text, at, `<${element.name}> needs a space before its next attribute`);
+
+      const name = readName();
+      skipSpace();
+      if (text[at] !== "=") svgFail(text, at, `the attribute ${name} has no value`);
+      at++;
+      skipSpace();
+      if (text[at] !== '"' && text[at] !== "'") svgFail(text, at, `the value of ${name} is not in quotes`);
+      const quote = text[at++];
+      const stop = text.indexOf(quote, at);
+      if (stop < 0) svgFail(text, at, `the value of ${name} is never closed`);
+      const raw = text.slice(at, stop);
+      if (raw.includes("<")) svgFail(text, at, `a < inside the value of ${name}`);
+      if (element.attributes.some(pair => pair[0] === name)) svgFail(text, at, `the attribute ${name} given twice`);
+      element.attributes.push([name, svgDecode(raw, text, at)]);
+      at = stop + 1;
+    }
+
+    if (open.length >= SVG_MAX_DEPTH) svgFail(text, at, `elements nested deeper than ${SVG_MAX_DEPTH}`);
+
+    if (open.length) open[open.length - 1].children.push(element);
+    else if (!root) root = element;
+    else svgFail(text, at, "a second root element");
+
+    if (!shut) open.push(element);
+  }
+
+  if (open.length) throw { svgMalformed: `<${open[open.length - 1].name}> is never closed.` };
+  if (!root) throw { svgMalformed: "There is no element in this file." };
+  return root;
+}
+
+const svgAttr = (element, name) => {
+  const pair = element.attributes.find(p => p[0] === name);
+  return pair ? pair[1] : null;
+};
+
+// ---- values ----------------------------------------------------------------
+
+const SVG_SEPARATORS = " \t\n\r,";
+
+function svgSkip(text, cursor) {
+  while (cursor.at < text.length && SVG_SEPARATORS.includes(text[cursor.at])) cursor.at++;
+}
+
+/// One number off the front, stopping where it stops: "1.5.5-2" is three.
+function svgReadNumber(text, cursor) {
+  const digit = c => c >= "0" && c <= "9";
+  let i = cursor.at;
+  if (text[i] === "+" || text[i] === "-") i++;
+
+  let digits = 0;
+  while (i < text.length && digit(text[i])) { i++; digits++; }
+  if (text[i] === ".") {
+    i++;
+    while (i < text.length && digit(text[i])) { i++; digits++; }
+  }
+  if (!digits) return null;
+
+  if (text[i] === "e" || text[i] === "E") {
+    let j = i + 1;
+    if (text[j] === "+" || text[j] === "-") j++;
+    if (j < text.length && digit(text[j])) {
+      while (j < text.length && digit(text[j])) j++;
+      i = j;
+    }
+  }
+
+  const value = Number(text.slice(cursor.at, i));
+  if (!Number.isFinite(value) || Math.abs(value) > SVG_LARGEST) return null;
+  cursor.at = i;
+  return value;
+}
+
+function svgNumber(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim(), cursor = { at: 0 };
+  const read = svgReadNumber(trimmed, cursor);
+  return read !== null && cursor.at === trimmed.length ? read : null;
+}
+
+function svgLength(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim(), cursor = { at: 0 };
+  const read = svgReadNumber(trimmed, cursor);
+  if (read === null) return null;
+  const scale = { "": 1, px: 1, pt: 96 / 72, pc: 16, mm: 96 / 25.4, cm: 96 / 2.54, in: 96 }[trimmed.slice(cursor.at)];
+  return scale === undefined ? null : read * scale;
+}
+
+function svgLengthOrEm(value, fontSize) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim();
+  if (trimmed.endsWith("em")) {
+    const ems = svgNumber(trimmed.slice(0, -2));
+    return ems === null ? null : ems * fontSize;
+  }
+  return svgLength(trimmed);
+}
+
+function svgOpacity(value) {
+  const trimmed = value.trim(), percent = trimmed.endsWith("%");
+  const read = svgNumber(percent ? trimmed.slice(0, -1) : trimmed);
+  return read === null ? null : Math.min(1, Math.max(0, percent ? read / 100 : read));
+}
+
+function svgNumbers(value) {
+  const numbers = [], cursor = { at: 0 };
+  svgSkip(value, cursor);
+  while (cursor.at < value.length) {
+    const read = svgReadNumber(value, cursor);
+    if (read === null) return null;
+    numbers.push(read);
+    svgSkip(value, cursor);
+  }
+  return numbers;
+}
+
+/// Rounds a half to the even neighbour, as Math.Round does in the engine: 76.5 is a channel of
+/// 76 there, and Math.round here would make it 77.
+function svgRound(value) {
+  const down = Math.floor(value), rest = value - down;
+  if (rest < 0.5) return down;
+  if (rest > 0.5) return down + 1;
+  return down % 2 === 0 ? down : down + 1;
+}
+
+function svgColour(value) {
+  const text = value.trim().toLowerCase();
+
+  if (text.startsWith("#")) {
+    const h = text.slice(1);
+    if (!/^[0-9a-f]*$/.test(h)) return null;
+    const short = i => parseInt(h[i], 16) * 17;
+    const long = i => parseInt(h.slice(i, i + 2), 16);
+    if (h.length === 3) return { r: short(0), g: short(1), b: short(2), a: 255 };
+    if (h.length === 4) return { r: short(0), g: short(1), b: short(2), a: short(3) };
+    if (h.length === 6) return { r: long(0), g: long(2), b: long(4), a: 255 };
+    if (h.length === 8) return { r: long(0), g: long(2), b: long(4), a: long(6) };
+    return null;
+  }
+
+  if (text.startsWith("rgb(") || text.startsWith("rgba(")) {
+    if (!text.endsWith(")")) return null;
+    const parts = text.slice(text.indexOf("(") + 1, -1).split(/[ ,\/\t\n\r]+/).filter(Boolean);
+    if (parts.length !== 3 && parts.length !== 4) return null;
+
+    const channels = [];
+    for (let i = 0; i < 3; i++) {
+      const percent = parts[i].endsWith("%");
+      const read = svgNumber(percent ? parts[i].slice(0, -1) : parts[i]);
+      if (read === null) return null;
+      channels.push(svgRound(Math.min(255, Math.max(0, percent ? read * 2.55 : read))));
+    }
+
+    const alpha = parts.length === 4 ? svgOpacity(parts[3]) : 1;
+    if (alpha === null) return null;
+    return { r: channels[0], g: channels[1], b: channels[2], a: svgRound(alpha * 255) };
+  }
+
+  const packed = Object.prototype.hasOwnProperty.call(SVG_COLOUR_NAMES, text) ? SVG_COLOUR_NAMES[text] : null;
+  return packed === null ? null : { r: (packed >> 16) & 255, g: (packed >> 8) & 255, b: packed & 255, a: 255 };
+}
+
+const svgTimes = (m, n) => [
+  m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+  m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+  m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]
+];
+const SVG_IDENTITY = [1, 0, 0, 1, 0, 0];
+
+function svgTransform(value) {
+  let matrix = SVG_IDENTITY;
+  const cursor = { at: 0 };
+  svgSkip(value, cursor);
+
+  while (cursor.at < value.length) {
+    const open = value.indexOf("(", cursor.at);
+    const shut = open < 0 ? -1 : value.indexOf(")", open);
+    if (shut < 0) return null;
+    const a = svgNumbers(value.slice(open + 1, shut));
+    if (!a) return null;
+
+    const name = value.slice(cursor.at, open).trim();
+    const radians = (a[0] || 0) * Math.PI / 180;
+    let step = null;
+
+    if (name === "matrix" && a.length === 6) step = a;
+    else if (name === "translate" && (a.length === 1 || a.length === 2)) step = [1, 0, 0, 1, a[0], a.length === 2 ? a[1] : 0];
+    else if (name === "scale" && (a.length === 1 || a.length === 2)) step = [a[0], 0, 0, a.length === 2 ? a[1] : a[0], 0, 0];
+    else if (name === "rotate" && (a.length === 1 || a.length === 3)) {
+      const turn = [Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0];
+      step = a.length === 1 ? turn : svgTimes(svgTimes([1, 0, 0, 1, a[1], a[2]], turn), [1, 0, 0, 1, -a[1], -a[2]]);
+    }
+    else if (name === "skewX" && a.length === 1) step = [1, 0, Math.tan(radians), 1, 0, 0];
+    else if (name === "skewY" && a.length === 1) step = [1, Math.tan(radians), 0, 1, 0, 0];
+
+    if (!step) return null;
+    matrix = svgTimes(matrix, step);
+    cursor.at = shut + 1;
+    svgSkip(value, cursor);
+  }
+
+  return matrix;
+}
+
+// A path is [verb, numbers...] pieces, verbs M L C Z in absolute coordinates.
+const svgPath = () => ({ verbs: [], points: [] });
+const svgMove = (p, x, y) => { p.verbs.push("M"); p.points.push(x, y); };
+const svgLine = (p, x, y) => { p.verbs.push("L"); p.points.push(x, y); };
+const svgCubic = (p, a, b, c, d, e, f) => { p.verbs.push("C"); p.points.push(a, b, c, d, e, f); };
+const svgClose = p => p.verbs.push("Z");
+
+function svgTransformed(path, m) {
+  const moved = { verbs: path.verbs.slice(), points: [] };
+  for (let i = 0; i + 1 < path.points.length; i += 2) {
+    moved.points.push(m[0] * path.points[i] + m[2] * path.points[i + 1] + m[4],
+                      m[1] * path.points[i] + m[3] * path.points[i + 1] + m[5]);
+  }
+  return moved;
+}
+
+function svgArc(path, x1, y1, rx, ry, turn, large, sweep, x2, y2) {
+  if (x1 === x2 && y1 === y2) return;
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
+  if (rx === 0 || ry === 0) { svgLine(path, x2, y2); return; }
+
+  const phi = turn * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
+  const dx = (x1 - x2) / 2, dy = (y1 - y2) / 2;
+  const xp = cos * dx + sin * dy, yp = -sin * dx + cos * dy;
+
+  const lambda = xp * xp / (rx * rx) + yp * yp / (ry * ry);
+  if (lambda > 1) { rx *= Math.sqrt(lambda); ry *= Math.sqrt(lambda); }
+
+  const top = rx * rx * ry * ry - rx * rx * yp * yp - ry * ry * xp * xp;
+  const bottom = rx * rx * yp * yp + ry * ry * xp * xp;
+  const factor = (large === sweep ? -1 : 1) * Math.sqrt(Math.max(0, top / bottom));
+  const cxp = factor * rx * yp / ry, cyp = -factor * ry * xp / rx;
+  const cx = cos * cxp - sin * cyp + (x1 + x2) / 2, cy = sin * cxp + cos * cyp + (y1 + y2) / 2;
+
+  const from = Math.atan2((yp - cyp) / ry, (xp - cxp) / rx);
+  const to = Math.atan2((-yp - cyp) / ry, (-xp - cxp) / rx);
+  let span = to - from;
+  if (!sweep && span > 0) span -= 2 * Math.PI;
+  else if (sweep && span < 0) span += 2 * Math.PI;
+
+  const pieces = Math.max(1, Math.ceil(Math.abs(span) / (Math.PI / 2) - 1e-9));
+  const step = span / pieces, k = 4 / 3 * Math.tan(step / 4);
+  const out = (px, py) => [cx + rx * cos * px - ry * sin * py, cy + rx * sin * px + ry * cos * py];
+
+  for (let i = 0; i < pieces; i++) {
+    const a = from + i * step, b = a + step;
+    const [c1x, c1y] = out(Math.cos(a) - k * Math.sin(a), Math.sin(a) + k * Math.cos(a));
+    const [c2x, c2y] = out(Math.cos(b) + k * Math.sin(b), Math.sin(b) - k * Math.cos(b));
+    const [ex, ey] = i === pieces - 1 ? [x2, y2] : out(Math.cos(b), Math.sin(b));
+    svgCubic(path, c1x, c1y, c2x, c2y, ex, ey);
+  }
+}
+
+/// Path data down to moves, lines, cubics and closes; null at the first thing wrong.
+function svgPathData(d) {
+  const path = svgPath(), cursor = { at: 0 };
+  let x = 0, y = 0, startX = 0, startY = 0, lastX = 0, lastY = 0;
+  let command = "", previous = "";
+
+  const read = () => { svgSkip(d, cursor); return svgReadNumber(d, cursor); };
+  const readMany = n => {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const value = read();
+      if (value === null) return null;
+      out.push(value);
+    }
+    return out;
+  };
+  const flag = () => {
+    svgSkip(d, cursor);
+    const c = d[cursor.at];
+    if (c !== "0" && c !== "1") return null;
+    cursor.at++;
+    return c === "1";
+  };
+  const quadratic = (x0, y0, qx, qy, ex, ey) =>
+    svgCubic(path, x0 + 2 / 3 * (qx - x0), y0 + 2 / 3 * (qy - y0), ex + 2 / 3 * (qx - ex), ey + 2 / 3 * (qy - ey), ex, ey);
+
+  svgSkip(d, cursor);
+  while (cursor.at < d.length) {
+    if (/[A-Za-z]/.test(d[cursor.at])) command = d[cursor.at++];
+    else if (!command || command === "Z" || command === "z") return null;
+
+    if (!path.verbs.length && command !== "M" && command !== "m") return null;
+
+    const relative = command === command.toLowerCase();
+    const ox = relative ? x : 0, oy = relative ? y : 0;
+    const upper = command.toUpperCase();
+    let v;
+
+    switch (upper) {
+      case "M":
+        if (!(v = readMany(2))) return null;
+        x = startX = ox + v[0];
+        y = startY = oy + v[1];
+        svgMove(path, x, y);
+        command = relative ? "l" : "L";
+        previous = "M";
+        svgSkip(d, cursor);
+        continue;
+      case "L":
+        if (!(v = readMany(2))) return null;
+        x = ox + v[0]; y = oy + v[1];
+        svgLine(path, x, y);
+        break;
+      case "H":
+        if (!(v = readMany(1))) return null;
+        x = ox + v[0];
+        svgLine(path, x, y);
+        break;
+      case "V":
+        if (!(v = readMany(1))) return null;
+        y = oy + v[0];
+        svgLine(path, x, y);
+        break;
+      case "C":
+        if (!(v = readMany(6))) return null;
+        lastX = ox + v[2]; lastY = oy + v[3];
+        svgCubic(path, ox + v[0], oy + v[1], lastX, lastY, ox + v[4], oy + v[5]);
+        x = ox + v[4]; y = oy + v[5];
+        break;
+      case "S": {
+        if (!(v = readMany(4))) return null;
+        const after = previous === "C" || previous === "S";
+        const x1 = after ? 2 * x - lastX : x, y1 = after ? 2 * y - lastY : y;
+        lastX = ox + v[0]; lastY = oy + v[1];
+        svgCubic(path, x1, y1, lastX, lastY, ox + v[2], oy + v[3]);
+        x = ox + v[2]; y = oy + v[3];
+        break;
+      }
+      case "Q":
+        if (!(v = readMany(4))) return null;
+        lastX = ox + v[0]; lastY = oy + v[1];
+        quadratic(x, y, lastX, lastY, ox + v[2], oy + v[3]);
+        x = ox + v[2]; y = oy + v[3];
+        break;
+      case "T": {
+        if (!(v = readMany(2))) return null;
+        const after = previous === "Q" || previous === "T";
+        lastX = after ? 2 * x - lastX : x;
+        lastY = after ? 2 * y - lastY : y;
+        quadratic(x, y, lastX, lastY, ox + v[0], oy + v[1]);
+        x = ox + v[0]; y = oy + v[1];
+        break;
+      }
+      case "A": {
+        if (!(v = readMany(3))) return null;
+        const large = flag(), sweep = flag();
+        if (large === null || sweep === null) return null;
+        const end = readMany(2);
+        if (!end) return null;
+        svgArc(path, x, y, v[0], v[1], v[2], large, sweep, ox + end[0], oy + end[1]);
+        x = ox + end[0]; y = oy + end[1];
+        break;
+      }
+      case "Z":
+        svgClose(path);
+        x = startX; y = startY;
+        break;
+      default:
+        return null;
+    }
+
+    previous = upper;
+    svgSkip(d, cursor);
+  }
+
+  return path;
+}
+
+// ---- the reader ------------------------------------------------------------
+
+const SVG_KAPPA = 0.5522847498307936;
+
+function svgRectangle(path, x, y, w, h, rx, ry) {
+  if (rx <= 0 || ry <= 0) {
+    svgMove(path, x, y);
+    svgLine(path, x + w, y);
+    svgLine(path, x + w, y + h);
+    svgLine(path, x, y + h);
+    svgClose(path);
+    return;
+  }
+
+  const kx = rx * SVG_KAPPA, ky = ry * SVG_KAPPA, right = x + w, bottom = y + h;
+  svgMove(path, x + rx, y);
+  svgLine(path, right - rx, y);
+  svgCubic(path, right - rx + kx, y, right, y + ry - ky, right, y + ry);
+  svgLine(path, right, bottom - ry);
+  svgCubic(path, right, bottom - ry + ky, right - rx + kx, bottom, right - rx, bottom);
+  svgLine(path, x + rx, bottom);
+  svgCubic(path, x + rx - kx, bottom, x, bottom - ry + ky, x, bottom - ry);
+  svgLine(path, x, y + ry);
+  svgCubic(path, x, y + ry - ky, x + rx - kx, y, x + rx, y);
+  svgClose(path);
+}
+
+function svgEllipse(path, cx, cy, rx, ry) {
+  const kx = rx * SVG_KAPPA, ky = ry * SVG_KAPPA;
+  svgMove(path, cx + rx, cy);
+  svgCubic(path, cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
+  svgCubic(path, cx - kx, cy + ry, cx - rx, cy + ky, cx - rx, cy);
+  svgCubic(path, cx - rx, cy - ky, cx - kx, cy - ry, cx, cy - ry);
+  svgCubic(path, cx + kx, cy - ry, cx + rx, cy - ky, cx + rx, cy);
+  svgClose(path);
+}
+
+const svgInitialPaint = () => ({
+  fill: { r: 0, g: 0, b: 0, a: 255 }, fillIsCurrent: false, fillOpacity: 1, fillEvenOdd: false,
+  stroke: null, strokeIsCurrent: false, strokeOpacity: 1, strokeWidth: 1, dash: [], dashOffset: 0,
+  cap: 0, join: 0, miter: 4, current: { r: 0, g: 0, b: 0, a: 255 }, clipEvenOdd: false,
+  family: null, fontSize: 16, bold: false, italic: false, anchor: 0, visible: true, preserve: false, opacity: 1
+});
+
+/// What the engine's SvgReader makes of text, as { drawing, rules, reasons }.
+function readSvgText(text) {
+  const rules = [], reasons = [], clips = new Map();
+
+  const refuse = (where, what) => {
+    if (rules.length < SVG_MOST_ISSUES) {
+      rules.push("svg.unsupported");
+      reasons.push(`${where}: ${what}`);
+    }
+  };
+  const ignored = name => {
+    if (SVG_IGNORED.includes(name) || name.startsWith("aria-") || name.startsWith("data-")) return true;
+    const colon = name.indexOf(":");
+    if (colon <= 0) return false;
+    const prefix = name.slice(0, colon);
+    return prefix === "xmlns" || name === "xml:lang" || (prefix !== "xml" && prefix !== "xlink");
+  };
+
+  const declare = (element, paint, where) => {
+    const said = new Map();
+    const own = SVG_OWN[element.name];
+
+    for (const [name, value] of element.attributes) {
+      if (SVG_PROPERTIES.includes(name)) said.set(name, value);
+      else if (name === "xml:space") paint.preserve = value === "preserve";
+      else if (name === "transform" || name === "style") continue;
+      else if (own && own.includes(name)) continue;
+      else if (!ignored(name)) refuse(where, `the attribute ${name} is not taken`);
+    }
+
+    const style = svgAttr(element, "style");
+    if (style !== null) {
+      for (const declaration of style.split(";").filter(s => s.length)) {
+        const colon = declaration.indexOf(":");
+        if (colon <= 0) {
+          if (declaration.trim()) refuse(where, `"${declaration.trim()}" in a style attribute is not a property and a value`);
+          continue;
+        }
+        const name = declaration.slice(0, colon).trim();
+        const value = declaration.slice(colon + 1).split("!important").join("").trim();
+        if (SVG_PROPERTIES.includes(name)) said.set(name, value);
+        else if (!ignored(name)) refuse(where, `the style property ${name} is not taken`);
+      }
+    }
+
+    const get = name => said.has(name) ? said.get(name).trim() : null;
+    apply(get, paint, where);
+
+    return {
+      get,
+      has: name => { const v = get(name); return v !== null && v !== "none"; },
+      isNone: name => get(name) === "none"
+    };
+  };
+
+  const apply = (get, paint, where) => {
+    const bad = (name, value, takes) => refuse(where, `${name}="${value}" is not taken: ${takes}`);
+    const stated = name => { const v = get(name); return v !== null && v !== "inherit" ? v : null; };
+    const isCurrent = v => v.toLowerCase() === "currentcolor";
+    let v, read;
+
+    if ((v = stated("color")) !== null) {
+      if ((read = svgColour(v))) paint.current = read;
+      else if (!isCurrent(v)) bad("color", v, "a colour");
+    }
+
+    for (const [name, is, slot] of [["fill", "fillIsCurrent", "fill"], ["stroke", "strokeIsCurrent", "stroke"]]) {
+      if ((v = stated(name)) === null) continue;
+      paint[is] = isCurrent(v);
+      if (paint[is]) continue;
+      if (v === "none" || v === "transparent") paint[slot] = null;
+      else if ((read = svgColour(v))) paint[slot] = read;
+      else bad(name, v, "none, or a colour");
+    }
+
+    for (const [name, set] of [["fill-opacity", x => { paint.fillOpacity = x; }],
+                               ["stroke-opacity", x => { paint.strokeOpacity = x; }],
+                               ["opacity", x => { paint.opacity *= x; }]]) {
+      if ((v = stated(name)) === null) continue;
+      if ((read = svgOpacity(v)) !== null) set(read);
+      else bad(name, v, "a number or a percentage");
+    }
+
+    if ((v = stated("fill-rule")) !== null) {
+      if (v === "nonzero" || v === "evenodd") paint.fillEvenOdd = v === "evenodd";
+      else bad("fill-rule", v, "nonzero or evenodd");
+    }
+
+    if ((v = stated("clip-rule")) !== null) {
+      if (v === "nonzero" || v === "evenodd") paint.clipEvenOdd = v === "evenodd";
+      else bad("clip-rule", v, "nonzero or evenodd");
+    }
+
+    if ((v = stated("stroke-width")) !== null) {
+      read = svgLength(v);
+      if (read !== null && read >= 0) paint.strokeWidth = read;
+      else bad("stroke-width", v, "a length of zero or more");
+    }
+
+    if ((v = stated("stroke-dasharray")) !== null) {
+      if (v === "none") paint.dash = [];
+      else {
+        read = svgNumbers(v);
+        if (!read || !read.length || read.some(n => n < 0)) bad("stroke-dasharray", v, "none, or plain lengths");
+        else paint.dash = read.reduce((sum, n) => sum + n, 0) > 0 ? read : [];
+      }
+    }
+
+    if ((v = stated("stroke-dashoffset")) !== null) {
+      if ((read = svgLength(v)) !== null) paint.dashOffset = read;
+      else bad("stroke-dashoffset", v, "a plain length");
+    }
+
+    for (const [name, slot, words] of [["stroke-linecap", "cap", ["butt", "round", "square"]],
+                                       ["stroke-linejoin", "join", ["miter", "round", "bevel"]],
+                                       ["text-anchor", "anchor", ["start", "middle", "end"]]]) {
+      if ((v = stated(name)) === null) continue;
+      const found = words.indexOf(v);
+      if (found >= 0) paint[slot] = found;
+      else bad(name, v, words.join(", "));
+    }
+
+    if ((v = stated("stroke-miterlimit")) !== null) {
+      read = svgNumber(v);
+      if (read !== null && read >= 1) paint.miter = read;
+      else bad("stroke-miterlimit", v, "a number of one or more");
+    }
+
+    if ((v = stated("font-family")) !== null) {
+      const first = v.split(",")[0].trim().replace(/^["']+|["']+$/g, "").trim();
+      paint.family = !first || SVG_GENERIC_FAMILIES.includes(first.toLowerCase()) ? null : first;
+    }
+
+    if ((v = stated("font-size")) !== null) {
+      read = svgLength(v);
+      if (read !== null && read >= 0) paint.fontSize = read;
+      else bad("font-size", v, "a plain length");
+    }
+
+    if ((v = stated("font-weight")) !== null) {
+      read = svgNumber(v);
+      if (v === "bold" || (read !== null && read >= 600 && read <= 1000)) paint.bold = true;
+      else if (v === "normal" || (read !== null && read >= 1 && read < 600)) paint.bold = false;
+      else bad("font-weight", v, "normal, bold or a number");
+    }
+
+    if ((v = stated("font-style")) !== null) {
+      if (v === "italic" || v === "oblique") paint.italic = true;
+      else if (v === "normal") paint.italic = false;
+      else bad("font-style", v, "normal, italic or oblique");
+    }
+
+    if ((v = stated("visibility")) !== null) {
+      if (v === "visible" || v === "hidden" || v === "collapse") paint.visible = v === "visible";
+      else bad("visibility", v, "visible or hidden");
+    }
+
+    v = get("display");
+    if (v !== null && !["inline", "block", "none", "inherit"].includes(v)) bad("display", v, "inline or none");
+  };
+
+  const matrixOf = (element, where) => {
+    const value = svgAttr(element, "transform");
+    if (value === null) return SVG_IDENTITY;
+    const read = svgTransform(value);
+    if (!read) refuse(where, `the transform "${value}" is not one this reader takes`);
+    return read || SVG_IDENTITY;
+  };
+
+  const frame = (node, element, said, where) => {
+    node.m = matrixOf(element, where);
+    node.clip = null;
+
+    const clip = said.get("clip-path");
+    if (clip === null || clip === "none" || clip === "inherit") return;
+
+    const inner = clip.trim();
+    if (inner.startsWith("url(") && inner.endsWith(")")) {
+      const reference = inner.slice(4, -1).trim().replace(/^["']+|["']+$/g, "");
+      if (reference.startsWith("#")) {
+        if (clips.has(reference.slice(1))) node.clip = clips.get(reference.slice(1));
+        else refuse(where, `clip-path names "${reference}", and no usable clipPath has that id`);
+        return;
+      }
+    }
+
+    refuse(where, `clip-path="${clip}" is not taken: only url(#id)`);
+  };
+
+  const geometry = (element, where) => {
+    const length = name => {
+      const value = svgAttr(element, name);
+      if (value === null) return 0;
+      const read = svgLength(value);
+      if (read === null) refuse(where, `${name}="${value}" is not a length this reader takes`);
+      return read;
+    };
+    const radius = name => {
+      const read = length(name);
+      if (read !== null && read < 0) { refuse(where, `${name} is negative`); return null; }
+      return read;
+    };
+
+    const path = svgPath();
+
+    switch (element.name) {
+      case "path": {
+        const d = svgAttr(element, "d") ?? "";
+        const read = svgPathData(d);
+        if (!read) refuse(where, `the path data "${d.slice(0, 40)}" is not well formed`);
+        return read;
+      }
+      case "rect": {
+        const x = length("x"), y = length("y"), w = radius("width"), h = radius("height"), rx = radius("rx"), ry = radius("ry");
+        if (x === null || y === null || w === null || h === null || rx === null || ry === null) return null;
+        if (w > 0 && h > 0) {
+          const across = svgAttr(element, "rx") === null ? ry : rx;
+          const down = svgAttr(element, "ry") === null ? rx : ry;
+          svgRectangle(path, x, y, w, h, Math.min(across, w / 2), Math.min(down, h / 2));
+        }
+        return path;
+      }
+      case "circle": {
+        const cx = length("cx"), cy = length("cy"), r = radius("r");
+        if (cx === null || cy === null || r === null) return null;
+        if (r > 0) svgEllipse(path, cx, cy, r, r);
+        return path;
+      }
+      case "ellipse": {
+        const cx = length("cx"), cy = length("cy"), rx = radius("rx"), ry = radius("ry");
+        if (cx === null || cy === null || rx === null || ry === null) return null;
+        if (rx > 0 && ry > 0) svgEllipse(path, cx, cy, rx, ry);
+        return path;
+      }
+      case "line": {
+        const x1 = length("x1"), y1 = length("y1"), x2 = length("x2"), y2 = length("y2");
+        if (x1 === null || y1 === null || x2 === null || y2 === null) return null;
+        svgMove(path, x1, y1);
+        svgLine(path, x2, y2);
+        return path;
+      }
+      default: {
+        const points = svgAttr(element, "points") ?? "";
+        const read = svgNumbers(points);
+        if (!read || read.length % 2 !== 0) {
+          refuse(where, `the points "${points.slice(0, 40)}" are not pairs of numbers`);
+          return null;
+        }
+        for (let i = 0; i + 1 < read.length; i += 2) {
+          if (i === 0) svgMove(path, read[i], read[i + 1]);
+          else svgLine(path, read[i], read[i + 1]);
+        }
+        if (element.name === "polygon" && path.verbs.length) svgClose(path);
+        return path;
+      }
+    }
+  };
+
+  const collectClip = (clip, where) => {
+    const id = svgAttr(clip, "id") ?? "";
+    const units = svgAttr(clip, "clipPathUnits");
+    if (units !== null && units !== "userSpaceOnUse") refuse(where, `clipPathUnits="${units}" is not taken`);
+
+    const paint = svgInitialPaint();
+    const said = declare(clip, paint, where);
+    if (said.has("clip-path")) refuse(where, "a clip on a clipPath is not taken");
+
+    const own = matrixOf(clip, where);
+    const shapes = [];
+    for (const child of clip.children) {
+      if (typeof child === "string") { if (child.trim()) refuse(where, "a clipPath holds shapes, and this one holds text"); }
+      else if (!SVG_NOT_DRAWN.includes(child.name)) shapes.push(child);
+    }
+
+    if (shapes.length !== 1) {
+      refuse(where, `a clipPath must hold exactly one shape, and this one holds ${shapes.length}`);
+      return;
+    }
+
+    const shape = shapes[0], inside = where + " › " + shape.name;
+    if (!SVG_SHAPES.includes(shape.name)) {
+      refuse(inside, `<${shape.name}> in a clipPath is not taken`);
+      return;
+    }
+
+    const shapePaint = Object.assign({}, paint);
+    const shapeSaid = declare(shape, shapePaint, inside);
+    if (shapeSaid.has("clip-path")) refuse(inside, "a clip on a clipPath's shape is not taken");
+
+    const path = geometry(shape, inside);
+    if (!path) return;
+
+    const whole = svgTimes(own, matrixOf(shape, inside));
+    if (id.length && !clips.has(id)) clips.set(id, { path: svgTransformed(path, whole), evenOdd: shapePaint.clipEvenOdd });
+  };
+
+  const collectClips = (element, where) => {
+    for (const child of element.children) {
+      if (typeof child === "string") continue;
+      const here = where + " › " + child.name;
+      if (child.name === "clipPath") collectClip(child, here);
+      else if (child.name !== "metadata") collectClips(child, here);
+    }
+  };
+
+  const hex2 = c => "#" + [c.r, c.g, c.b].map(v => v.toString(16).toUpperCase().padStart(2, "0")).join("");
+
+  const shapeNode = (element, inherited, into, where) => {
+    const paint = Object.assign({}, inherited);
+    const said = declare(element, paint, where);
+    const holder = {};
+    frame(holder, element, said, where);
+
+    const path = geometry(element, where);
+    if (!path || !path.verbs.length || said.isNone("display") || !paint.visible) return;
+
+    let fill = element.name === "line" ? null : paint.fillIsCurrent ? paint.current : paint.fill;
+    let stroke = paint.strokeWidth > 0 ? (paint.strokeIsCurrent ? paint.current : paint.stroke) : null;
+    const fillAlpha = (fill ? fill.a : 255) / 255 * paint.fillOpacity * paint.opacity;
+    const strokeAlpha = (stroke ? stroke.a : 255) / 255 * paint.strokeOpacity * paint.opacity;
+    if (fillAlpha <= 0) fill = null;
+    if (strokeAlpha <= 0) stroke = null;
+    if (!fill && !stroke) return;
+
+    into.push({
+      kind: "shape", m: holder.m, clip: holder.clip, path,
+      fill: fill ? hex2(fill) : null, fillAlpha: fill ? fillAlpha : 0, evenOdd: paint.fillEvenOdd,
+      stroke: stroke ? hex2(stroke) : null, strokeAlpha: stroke ? strokeAlpha : 0,
+      strokeWidth: paint.strokeWidth, dash: paint.dash, dashOffset: paint.dashOffset,
+      cap: paint.cap, join: paint.join, miter: paint.miter
+    });
+  };
+
+  const textNode = (element, inherited, into, where) => {
+    const paint = Object.assign({}, inherited);
+    const said = declare(element, paint, where);
+    const node = { kind: "text", runs: [] };
+    frame(node, element, said, where);
+
+    // White space across the pieces, and where the next piece starts: engine's Collapser.
+    let pending = null, preserve = false, words = null, wordsPaint = null, offsets = null;
+    let seen = false, lastSpace = false, wordsWhere = "";
+    const isDefault = o => o.x === null && o.y === null && o.dx === 0 && o.dy === 0;
+
+    const flush = () => {
+      if (words === null) return;
+      const written = words;
+      words = null;
+      if (!written.length) return;
+
+      const p = wordsPaint;
+      if ((p.strokeIsCurrent ? p.current : p.stroke) && p.strokeWidth > 0)
+        refuse(wordsWhere, "a stroked text is not taken: a text is filled");
+
+      const fill = p.fillIsCurrent ? p.current : p.fill;
+      const alpha = (fill ? fill.a : 255) / 255 * p.fillOpacity * p.opacity;
+      if (!fill || alpha <= 0 || p.fontSize <= 0 || !p.visible) return;
+
+      node.runs.push({
+        text: written, x: offsets.x, y: offsets.y, dx: offsets.dx, dy: offsets.dy, anchor: p.anchor,
+        family: p.family, size: p.fontSize, bold: p.bold, italic: p.italic, fill: hex2(fill), alpha
+      });
+    };
+
+    const addWords = (text, p, here) => {
+      if (words !== null && ((pending && !isDefault(pending)) || p !== wordsPaint)) flush();
+      preserve = p.preserve;
+
+      for (let i = 0; i < text.length; i++) {
+        const raw = text[i];
+        const c = raw === "\n" || raw === "\r" || raw === "\t" ? " " : raw;
+
+        if (c === " " && !preserve) {
+          if (lastSpace || !seen) continue;
+          lastSpace = true;
+        } else {
+          lastSpace = false;
+        }
+
+        if (words === null) {
+          words = "";
+          wordsPaint = p;
+          offsets = pending || { x: null, y: null, dx: 0, dy: 0 };
+          pending = null;
+          wordsWhere = here;
+        }
+
+        words += c;
+        seen = true;
+      }
+    };
+
+    const position = (span, p, here) => {
+      const absolute = name => {
+        const value = svgAttr(span, name);
+        if (value === null) return null;
+        const read = svgLength(value);
+        if (read === null) refuse(here, `${name}="${value}" is not taken: one position, as a plain length`);
+        return read;
+      };
+      const relative = name => {
+        const value = svgAttr(span, name);
+        if (value === null) return 0;
+        const read = svgLengthOrEm(value, p.fontSize);
+        if (read === null) refuse(here, `${name}="${value}" is not taken: one shift`);
+        return read ?? 0;
+      };
+      return { x: absolute("x"), y: absolute("y"), dx: relative("dx"), dy: relative("dy") };
+    };
+
+    const spans = (span, p, here) => {
+      const at = position(span, p, here);
+      const held = pending || { x: null, y: null, dx: 0, dy: 0 };
+      pending = { x: at.x ?? held.x, y: at.y ?? held.y, dx: held.dx + at.dx, dy: held.dy + at.dy };
+
+      for (const child of span.children) {
+        if (typeof child === "string") {
+          addWords(child, p, here);
+        } else {
+          const inner = here + " › " + child.name;
+          if (child.name === "tspan") {
+            const own = Object.assign({}, p);
+            const ownSaid = declare(child, own, inner);
+            if (ownSaid.has("clip-path") || svgAttr(child, "transform") !== null)
+              refuse(inner, "a clip or a transform on a tspan is not taken");
+            spans(child, own, inner);
+          } else if (!SVG_NOT_DRAWN.includes(child.name)) {
+            refuse(inner, `<${child.name}> is not taken`);
+          }
+        }
+      }
+    };
+
+    spans(element, paint, where);
+
+    if (words !== null && lastSpace && !preserve && words.endsWith(" ")) words = words.slice(0, -1);
+    flush();
+
+    if (node.runs.length && !said.isNone("display")) into.push(node);
+  };
+
+  const children = (parent, paint, into, where) => {
+    for (const child of parent.children) {
+      if (typeof child === "string") {
+        if (child.trim()) refuse(where, `<${parent.name}> holds text, which only a <text> draws`);
+      } else {
+        element(child, paint, into, where + " › " + child.name);
+      }
+    }
+  };
+
+  const element = (node, inherited, into, where) => {
+    const name = node.name;
+    if (SVG_NOT_DRAWN.includes(name) || name === "clipPath") return;
+
+    if (name === "defs") {
+      declare(node, Object.assign({}, inherited), where);
+      for (const child of node.children) {
+        if (typeof child !== "string" && child.name !== "clipPath" && !SVG_NOT_DRAWN.includes(child.name))
+          refuse(where + " › " + child.name, `<${child.name}> is not taken: only a clipPath in defs`);
+      }
+      return;
+    }
+
+    if (name === "g") {
+      const paint = Object.assign({}, inherited);
+      const said = declare(node, paint, where);
+      const group = { kind: "group", children: [] };
+      frame(group, node, said, where);
+      children(node, paint, group.children, where);
+      if (!said.isNone("display")) into.push(group);
+      return;
+    }
+
+    if (SVG_SHAPES.includes(name)) { shapeNode(node, inherited, into, where); return; }
+    if (name === "text") { textNode(node, inherited, into, where); return; }
+
+    refuse(where, `<${name}> is not taken`);
+  };
+
+  try {
+    const root = svgParse(text);
+    if (root.name !== "svg") throw { svgMalformed: `The root element is <${root.name}>, not <svg>.` };
+
+    collectClips(root, "svg");
+
+    let box = null;
+    const stated = svgAttr(root, "viewBox");
+    if (stated !== null) {
+      const read = svgNumbers(stated);
+      if (read && read.length === 4 && read[2] > 0 && read[3] > 0) box = read;
+      else refuse("svg", `the viewBox "${stated}" is not four numbers with a width and a height above zero`);
+    } else {
+      const w = svgLength(svgAttr(root, "width")), h = svgLength(svgAttr(root, "height"));
+      if (w > 0 && h > 0) box = [0, 0, w, h];
+      else refuse("svg", "this drawing has no viewBox and no width and height in plain lengths");
+    }
+
+    const paint = svgInitialPaint();
+    const said = declare(root, paint, "svg");
+    const group = { kind: "group", children: [] };
+    frame(group, root, said, "svg");
+    children(root, paint, group.children, "svg");
+
+    const drawing = box && !rules.length ? { box, nodes: [group], ratio: box[2] / box[3] } : null;
+    return { drawing, rules, reasons };
+  } catch (e) {
+    if (e && e.svgMalformed) return { drawing: null, rules: ["svg.invalid"], reasons: [e.svgMalformed] };
+    throw e;
+  }
+}
+
+// A redraw comes at every keystroke and a chart does not change with it. Keyed on the text
+// itself; a handful, because a report holds a handful and the base64 is a long key.
+const drawingsRead = new Map();
+
+/// A picture's base64 as a drawing's reading; null when the bytes are not a drawing at all.
+function readingOf(base64) {
+  if (!base64) return null;
+  if (drawingsRead.has(base64)) return drawingsRead.get(base64);
+
+  const bytes = bytesOfBase64(base64);
+  let reading = null;
+  if (bytes && looksLikeDrawing(bytes)) {
+    const text = textOfUtf8(bytes);
+    reading = text === null
+      ? { drawing: null, rules: ["svg.invalid"], reasons: ["This file is not UTF-8."] }
+      : readSvgText(text);
+  }
+
+  if (drawingsRead.size >= 16) drawingsRead.clear();
+  drawingsRead.set(base64, reading);
+  return reading;
+}
+
+/// The echo of Pictures.Refusal and of PngImage's header: why a picture cannot be drawn, or
+/// null if it can. Nothing at all is not a refusal.
+function pictureRefusal(base64) {
+  if (!base64) return null;
+
+  const reading = readingOf(base64);
+  if (reading) return reading.rules.length ? reading.reasons.join(" ") : null;
+
+  const b = bytesOfBase64(base64);
+  if (!b || !b.length) return "These bytes are not a JPEG, a PNG or an SVG drawing.";
+
+  if (b.length > 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return null;
+
+  if (!(b.length >= 8 && b[0] === 137 && b[1] === 80 && b[2] === 78 && b[3] === 71))
+    return "These bytes are not a JPEG, a PNG or an SVG drawing.";
+
+  const unreadable = "This PNG could not be read.";
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (b.length < 33 || signature.some((v, i) => b[i] !== v)) return unreadable;
+
+  const word = at => ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >> 0;
+  let width = 0, height = 0, depth = 0, colour = -1, data = 0;
+
+  for (let at = 8; at + 8 <= b.length;) {
+    const length = word(at);
+    if (length < 0 || length > b.length - at - 12) return unreadable;
+    const type = String.fromCharCode(b[at + 4], b[at + 5], b[at + 6], b[at + 7]);
+    const body = at + 8;
+
+    if (type === "IHDR") {
+      if (length < 13) return unreadable;
+      width = word(body);
+      height = word(body + 4);
+      depth = b[body + 8];
+      colour = b[body + 9];
+      if (b[body + 10] !== 0) return unreadable;
+      if (b[body + 12] !== 0) return "This PNG is interlaced: save it without interlacing.";
+    } else if (type === "IDAT") {
+      data += length;
+    } else if (type === "IEND") {
+      break;
+    }
+
+    at += 12 + length;
+  }
+
+  if (width <= 0 || height <= 0 || data === 0) return unreadable;
+  if (![0, 2, 4, 6].includes(colour)) return "This PNG has a palette: save it as RGB, with or without alpha.";
+  if (depth !== 8) return `This PNG has ${depth} bits to a channel, and 8 are taken.`;
+
+  if (colour === 4 || colour === 6) {
+    const decoded = height * (1 + width * (colour === 4 ? 2 : 4));
+    if (decoded > 512 * 1024 * 1024) return "This PNG is too large to take apart.";
+    if (decoded > data * 1032) return "This PNG claims to be far larger than its data could hold.";
+  }
+
+  return null;
+}
+
+const pictureIsDrawing = base64 => !!readingOf(base64);
+
+/// A picture's bytes, whichever way they come: the data's if it brings them, the template's.
+function pictureData(item) {
+  const bytes = resolvedImageSource(item);
+  return bytes ? bytes.data : (item.Source && item.Source.Data) || null;
+}
+
+/// Width over height, as ImageItem.AspectRatio answers: what is declared, then what a drawing
+/// says of itself. Zero when there is neither.
+function pictureRatio(item) {
+  if (item.NaturalWidth > 0 && item.NaturalHeight > 0) return item.NaturalWidth / item.NaturalHeight;
+  const reading = readingOf(pictureData(item));
+  return reading && reading.drawing ? reading.drawing.ratio : 0;
+}
+
+// ---- drawing it ------------------------------------------------------------
+
+const n5 = v => Number.isFinite(v) ? Math.round(v * 100000) / 100000 : 0;
+
+function drawnPathData(path) {
+  let d = "", at = 0;
+  for (const verb of path.verbs) {
+    const count = verb === "C" ? 6 : verb === "Z" ? 0 : 2;
+    d += verb;
+    for (let i = 0; i < count; i++) d += (i ? " " : "") + n5(path.points[at++]);
+  }
+  return d;
+}
+
+/// Where each piece of a text goes, as VectorText.Place works it out, with this page's ruler.
+function placedRuns(text, documentFamily) {
+  const placed = [];
+  let penX = 0, penY = 0;
+
+  const widthOf = (run, family) => {
+    const font = `${run.italic ? "italic " : ""}${run.bold ? "700 " : ""}100px ${family || unnamedFace}`;
+    return measureRun(run.text, font) * run.size / 100;
+  };
+
+  for (let start = 0; start < text.runs.length;) {
+    let end = start + 1;
+    while (end < text.runs.length && text.runs[end].x === null && text.runs[end].y === null) end++;
+
+    const widths = [];
+    let total = 0;
+    for (let i = start; i < end; i++) {
+      const width = widthOf(text.runs[i], text.runs[i].family || documentFamily);
+      widths.push(width);
+      total += text.runs[i].dx + width;
+    }
+
+    const first = text.runs[start];
+    let x = (first.x ?? penX) + (first.anchor === 1 ? -total / 2 : first.anchor === 2 ? -total : 0);
+    let y = first.y ?? penY;
+
+    for (let i = start; i < end; i++) {
+      const run = text.runs[i];
+      x += run.dx;
+      y += run.dy;
+      placed.push({ x, y, run, family: run.family || documentFamily || "" });
+      x += widths[i - start];
+    }
+
+    penX = x;
+    penY = y;
+    start = end;
+  }
+
+  return placed;
+}
+
+/// A drawing as markup, from the list and never from the file, as SvgBackend writes it. The
+/// clip ids are made here: every page of a designer sits in one document, and a file's own
+/// "plot" would be the first such id's, for every chart after it.
+let drawingClips = 0;
+let drawingFamily = null;
+
+function drawingSvg(drawing, r, preserve, opacity, documentFamily) {
+  const nodes = list => list.map(node => {
+    let around = "", before = "";
+
+    if (node.m.some((v, i) => v !== SVG_IDENTITY[i])) around += ` transform="matrix(${node.m.map(n5).join(" ")})"`;
+    if (node.clip) {
+      const id = "fk-clip-" + ++drawingClips;
+      before = `<clipPath id="${id}"><path d="${drawnPathData(node.clip.path)}"${node.clip.evenOdd ? ' clip-rule="evenodd"' : ""}/></clipPath>`;
+      around += ` clip-path="url(#${id})"`;
+    }
+
+    let inner = "";
+    if (node.kind === "group") {
+      inner = nodes(node.children);
+    } else if (node.kind === "shape") {
+      inner = `<path d="${drawnPathData(node.path)}" fill="${node.fill || "none"}"`;
+      if (node.fill && node.fillAlpha * opacity < 1) inner += ` fill-opacity="${n3(node.fillAlpha * opacity)}"`;
+      if (node.fill && node.evenOdd) inner += ' fill-rule="evenodd"';
+      if (node.stroke) {
+        inner += ` stroke="${node.stroke}" stroke-width="${n5(node.strokeWidth)}"`;
+        if (node.strokeAlpha * opacity < 1) inner += ` stroke-opacity="${n3(node.strokeAlpha * opacity)}"`;
+        if (node.cap) inner += ` stroke-linecap="${node.cap === 1 ? "round" : "square"}"`;
+        if (node.join) inner += ` stroke-linejoin="${node.join === 1 ? "round" : "bevel"}"`;
+        if (node.miter !== 4) inner += ` stroke-miterlimit="${n5(node.miter)}"`;
+        if (node.dash.length) {
+          inner += ` stroke-dasharray="${node.dash.map(n5).join(" ")}"`;
+          if (node.dashOffset) inner += ` stroke-dashoffset="${n5(node.dashOffset)}"`;
+        }
+      }
+      inner += "/>";
+    } else {
+      inner = placedRuns(node, documentFamily).map(({ x, y, run, family }) =>
+        `<text x="${n5(x)}" y="${n5(y)}" font-family="${esc(family || unnamedFace)}" font-size="${n5(run.size)}" fill="${run.fill}"`
+        + (run.alpha * opacity < 1 ? ` fill-opacity="${n3(run.alpha * opacity)}"` : "")
+        + (run.bold ? ' font-weight="bold"' : "") + (run.italic ? ' font-style="italic"' : "")
+        + `>${esc(run.text)}</text>`).join("");
+    }
+
+    return before + (around ? `<g${around}>${inner}</g>` : inner);
+  }).join("");
+
+  return `<svg x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}"`
+       + ` viewBox="${drawing.box.map(n5).join(" ")}" preserveAspectRatio="${preserve}">${nodes(drawing.nodes)}</svg>`;
+}
+
+/// A rectangle saying a picture was refused, where the PDF would stop. What the rule says is
+/// in the panel; this is so the place is not mistaken for an empty frame.
+function refusedPicture(r) {
+  return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".2"/>` +
+         `<text x="${n3((r.left + r.right) / 2)}" y="${n3((r.top + r.bottom) / 2)}" text-anchor="middle" font-size="3" fill="${ON_PAPER.placeholderInk}">${esc(t("canvas.refusedPicture"))}</text>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -2783,6 +4228,11 @@ function validate(rep, profile) {
       // finding carrying a count cannot be told from one carrying a different count.
       for (const group of pinned)
         add("can.absoluteInFlow", "warning", group, t("panel.report"));
+
+      // One per drawing, for the same reason. Only what the template carries can be seen
+      // from here: a chart the data brings is known when it is bound.
+      for (const drawing of items.filter(i => i.$type === "ImageItem" && i.Source && pictureIsDrawing(i.Source.Data)))
+        add("can.drawingInFlow", "warning", drawing, t("panel.report"));
     }
 
     if (!profile.target.Interactive) {
@@ -2888,6 +4338,13 @@ function walkFor(container, where, profile, add, numbering) {
       if (child.$type === "ImageItem" && !(child.Source && child.Source.Data)
           && !(child.SourceField || "").trim())
         add("sound.emptyImage", "error", child, here);
+
+      // A picture no output could draw: without this the panel said nothing, the proof
+      // drew it and the PDF stopped at the end.
+      if (child.$type === "ImageItem" && child.Source && child.Source.Data) {
+        const reason = pictureRefusal(child.Source.Data);
+        if (reason) add("sound.unreadablePicture", "error", child, here, { reason });
+      }
 
       // The same fault in a new element: neither a PDF of its own nor a path to one.
       if (child.$type === "ImportedPageItem") {

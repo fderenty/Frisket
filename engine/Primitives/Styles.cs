@@ -172,15 +172,33 @@ namespace Frisket
         public Color Color { get; set; } = Color.White;
     }
 
-    /// <summary>Raw image bytes; decoding is the backend's responsibility.</summary>
+    /// <summary>A picture's bytes: a JPEG, a PNG or a drawing in a limited SVG, told apart by what they hold. https://github.com/fderenty/Frisket/tree/main/examples/charts lists what a drawing may contain.</summary>
     public sealed class ImageSource
     {
-        /// <summary>The picture's bytes, written in a template as base64; MediaType says what they are.</summary>
+        /// <summary>The picture's bytes, written in a template as base64. A drawing is its SVG text in UTF-8, encoded in the same way.</summary>
         public byte[] Data { get; set; } = Array.Empty<byte>();
         /// <summary>Where the bytes came from, as a path - kept for whoever loaded them. The engine draws Data and never reads this.</summary>
         public string? SourcePath { get; set; }
 
-        /// <summary>MIME type of <see cref="Data"/>, needed by backends that embed it.</summary>
+        /// <summary>What to call <see cref="Data"/> where it is embedded, as in a mail. What the bytes are is read from the bytes, so this does not change what is drawn.</summary>
         public string MediaType { get; set; } = "image/png";
+
+        private SvgReading? _reading;
+
+        /// <summary>
+        /// What these bytes come to as a drawing, read once; null when they are not one. One
+        /// field, assigned whole, so two renders sharing a template cannot see half of it.
+        /// </summary>
+        internal SvgReading? Reading()
+        {
+            if (!Pictures.LooksLikeDrawing(Data))
+                return null;
+
+            SvgReading? held = _reading;
+            if (held == null || !ReferenceEquals(held.Data, Data))
+                _reading = held = SvgReader.Read(Data);
+
+            return held;
+        }
     }
 }

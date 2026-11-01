@@ -999,11 +999,11 @@ namespace test
                 Console.WriteLine($"    outline: {new string(' ', entry.Level * 2)}{entry.Title} -> sheet {entry.Sheet + 1}");
 
             // The report, then one per demonstration: Summary, Measurements, Readings,
-            // Site photographs, Appendix, References, Sign-off, Not visible. Counted
+            // Site photographs, Appendix, References, Sign-off, Chart, Not visible. Counted
             // rather than sampled, so a heading silently losing its bookmark shows up
             // here as a number rather than as nothing at all.
-            AssertEqual(testName, "the section carries: an outline", 9, layout.Outline.Count, 0);
-            AssertEqual(testName, "and all but the first sit under it", 8,
+            AssertEqual(testName, "the section carries: an outline", 10, layout.Outline.Count, 0);
+            AssertEqual(testName, "and all but the first sit under it", 9,
                 layout.Outline.Count(e => e.Level == 1), 0);
             AssertEqual(testName, "every entry points at a page that exists", true,
                 layout.Outline.All(e => e.Sheet >= 0 && e.Sheet < layout.SheetCount), 0);

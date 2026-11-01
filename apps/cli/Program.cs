@@ -373,6 +373,15 @@ namespace Frisket.Cli
                 issues.AddRange(TemplateFields.Check(report, File.ReadAllText(catalogue)));
             }
 
+            // What only the data can say: a chart it brings, which the template knows only by
+            // name. Each file named, when there are several, since the finding is about one.
+            List<string> data = options.DataFiles();
+            foreach (string file in data)
+            {
+                foreach (TemplateIssue issue in TemplateData.Check(report, File.ReadAllText(file), target))
+                    issues.Add(data.Count > 1 ? issue with { Where = Path.GetFileName(file) + " \u203A " + issue.Where } : issue);
+            }
+
             return Tell(issues, options);
         }
 

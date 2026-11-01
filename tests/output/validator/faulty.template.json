@@ -240,6 +240,26 @@
               "Font": {},
               "Role": "Form",
               "Style": {}
+            },
+            {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "PHN2ZyB2aWV3Qm94PScwIDAgOSA5Jz48c2NyaXB0PmJvb20oKTwvc2NyaXB0Pjwvc3ZnPg==",
+                "MediaType": "image/svg\u002Bxml"
+              },
+              "Scaling": "Uniform",
+              "AltText": "A drawing",
+              "Style": {}
+            },
+            {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAEUlEQVR42mNgZGLGihiGlgQAlkgBgQ5C0EYAAAAASUVORK5CYII=",
+                "MediaType": "image/png"
+              },
+              "Scaling": "Uniform",
+              "AltText": "A bitmap",
+              "Style": {}
             }
           ],
           "Style": {

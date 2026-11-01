@@ -1772,7 +1772,7 @@
     },
     "ImageItem": {
       "type": "object",
-      "description": "A picture. The engine decodes nothing - that would mean a graphics dependency - so the natural size is declared by the author, in millimeters. Giving only one of the two lets the other follow from ImageItem.NaturalWidth/ImageItem.NaturalHeight.",
+      "description": "A picture: a JPEG, a PNG, or a drawing in SVG. A bitmap\u0027s pixels are not read - that would mean a graphics dependency - so its natural size is declared by the author, in millimeters, and giving only one of the two lets the other follow from ImageItem.NaturalWidth/ImageItem.NaturalHeight. A drawing states its own proportions, which serve when the author declares none. It is a limited SVG, and what is outside the limit is refused by name rather than skipped: https://github.com/fderenty/Frisket/tree/main/examples/charts lists what is taken.",
       "properties": {
         "$type": {
           "const": "ImageItem",
@@ -1806,7 +1806,7 @@
           ]
         },
         "SourceField": {
-          "description": "Path in the data the bytes come from, as base64 or a data: URI. This is how a signature drawn on a tablet reaches the page: the browser posts the canvas, and the template says where to look for it rather than carrying it.",
+          "description": "Path in the data the bytes come from, as base64 or a data: URI. This is how a signature drawn on a tablet reaches the page, the browser posting the canvas, and how a chart does, the host drawing one per case: the template says where to look rather than carrying it. An SVG is its text in UTF-8, encoded in the same way.",
           "type": [
             "string",
             "null"
@@ -1885,10 +1885,10 @@
     },
     "ImageSource": {
       "type": "object",
-      "description": "Raw image bytes; decoding is the backend\u0027s responsibility.",
+      "description": "A picture\u0027s bytes: a JPEG, a PNG or a drawing in a limited SVG, told apart by what they hold. https://github.com/fderenty/Frisket/tree/main/examples/charts lists what a drawing may contain.",
       "properties": {
         "Data": {
-          "description": "The picture\u0027s bytes, written in a template as base64; MediaType says what they are.",
+          "description": "The picture\u0027s bytes, written in a template as base64. A drawing is its SVG text in UTF-8, encoded in the same way.",
           "type": [
             "string",
             "null"
@@ -1903,7 +1903,7 @@
           ]
         },
         "MediaType": {
-          "description": "MIME type of ImageSource.Data, needed by backends that embed it.",
+          "description": "What to call ImageSource.Data where it is embedded, as in a mail. What the bytes are is read from the bytes, so this does not change what is drawn.",
           "type": [
             "string",
             "null"

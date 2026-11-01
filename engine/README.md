@@ -28,6 +28,10 @@ Given the same template, data and date, the output is the same file byte for byt
 - **Type** - cap heights measured from the glyph outline rather than taken from the font's
   own claims, so 3 mm capitals are 3 mm in every typeface; fonts are subset into the file.
 - **Codes** - QR and Code 128, generated here.
+- **Pictures** - JPEG, PNG with or without an alpha channel, and charts drawn by your application
+  as SVG, written into the PDF as vector marks and real text. What is taken is
+  [listed](https://github.com/fderenty/Frisket/tree/main/examples/charts), and the rest is refused
+  by name rather than skipped.
 - **Checks** - `TemplateValidator.Check(report)` says what will go wrong before any
   document exists: a figure with no alternative text, two fields sharing a name, a table
   row one cell short. Told what is about to be produced, it also says what that output
@@ -49,6 +53,9 @@ if (!issues.Any(i => i.Rule == "read.invalid"))
 }
 string findings = TemplateIssue.ToJson(issues);   // each with a JSON Pointer into the template
 ```
+
+`TemplateData.Check(template, dataJson)` asks the same of what the data brings, such as a chart the
+template knows only by name, and `SvgDrawing.Check(svg, fonts)` of one drawing on its own.
 
 `TemplateJson.Check` names a property the engine does not read, which would otherwise be
 skipped in silence, along with the name probably meant. `TemplateFields.Check` holds every

@@ -8,8 +8,10 @@ namespace Frisket
     /// engine free of an image library, and costs nothing in quality since no pixel is
     /// ever recompressed.
     ///
-    /// Interlaced images, palettes and alpha channels are out: they would need real
-    /// decoding, and an alpha channel needs splitting into a separate soft mask.
+    /// An alpha channel is the exception, since PDF keeps it apart in a soft mask: such an
+    /// image is decoded once and split, by <see cref="Planes"/>. It needs nothing beyond the
+    /// framework's zlib, which writing a PDF already leans on. Interlaced images and palettes
+    /// stay out, for want of anybody who has needed them.
     /// </summary>
     internal readonly struct PngImage
     {
@@ -24,9 +26,29 @@ namespace Frisket
 
         private static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
-        public static bool TryRead(byte[] data, out PngImage image)
+        /// <summary>
+        /// The most decoded bytes one image may come to: a little over a hundred megapixels
+        /// with their alpha. Past that the memory is the hazard, whoever's fault it is.
+        /// </summary>
+        private const long MostDecoded = 512L * 1024 * 1024;
+
+        /// <summary>
+        /// How far Deflate can shrink anything, by its own format. An image claiming to hold
+        /// more than this over its data is lying about its size, and believing the size is
+        /// exactly what section 8c says a parser has no right to do.
+        /// </summary>
+        private const long MostInflation = 1032;
+
+        /// <summary>The second plane exists: gray or RGB with alpha, which is split on the way in.</summary>
+        public bool HasAlpha { get; init; }
+
+        public static bool TryRead(byte[] data, out PngImage image) => TryRead(data, out image, out _);
+
+        /// <summary>Reads the header. <paramref name="reason"/> says what stopped it, in a sentence someone can act on.</summary>
+        public static bool TryRead(byte[] data, out PngImage image, out string reason)
         {
             image = default;
+            reason = "This is not a PNG that could be read.";
 
             if (data.Length < 8 + 25)
                 return false;
@@ -68,8 +90,13 @@ namespace Frisket
                         height = ReadInt(data, body + 4);
                         bitDepth = data[body + 8];
                         colourType = data[body + 9];
-                        if (data[body + 10] != 0 || data[body + 12] != 0)
-                            return false;                       // compression or interlacing we cannot pass through
+                        if (data[body + 10] != 0)
+                            return false;
+                        if (data[body + 12] != 0)
+                        {
+                            reason = "This PNG is interlaced, which is not taken: save it without interlacing.";
+                            return false;
+                        }
                         break;
 
                     case "IDAT":
@@ -89,17 +116,25 @@ namespace Frisket
             if (width <= 0 || height <= 0 || payload.Count == 0)
                 return false;
 
-            // Grayscale and truecolour only: a palette or an alpha channel would have to
-            // be taken apart, which means decoding.
+            // Gray and RGB pass through untouched; with alpha they are split, later.
             (int colors, string space) = colourType switch
             {
-                0 => (1, "/DeviceGray"),
-                2 => (3, "/DeviceRGB"),
+                0 or 4 => (1, "/DeviceGray"),
+                2 or 6 => (3, "/DeviceRGB"),
                 _ => (0, string.Empty)
             };
 
-            if (colors == 0 || bitDepth != 8)
+            if (colors == 0)
+            {
+                reason = "This PNG has a palette, which is not taken: save it as RGB, with or without alpha.";
                 return false;
+            }
+
+            if (bitDepth != 8)
+            {
+                reason = $"This PNG has {bitDepth} bits to a channel, and 8 are taken.";
+                return false;
+            }
 
             int total = payload.Sum(p => p.Length);
             var joined = new byte[total];
@@ -110,6 +145,23 @@ namespace Frisket
                 offset += chunk.Length;
             }
 
+            bool alpha = colourType is 4 or 6;
+            if (alpha)
+            {
+                long decoded = height * (1L + width * (colors + 1L));
+                if (decoded > MostDecoded)
+                {
+                    reason = $"This PNG is {width} by {height} with alpha, too large to take apart.";
+                    return false;
+                }
+
+                if (decoded > total * MostInflation)
+                {
+                    reason = "This PNG claims to be far larger than its data could hold.";
+                    return false;
+                }
+            }
+
             image = new PngImage
             {
                 Width = width,
@@ -117,9 +169,99 @@ namespace Frisket
                 BitDepth = bitDepth,
                 Colors = colors,
                 ColorSpace = space,
-                Data = joined
+                Data = joined,
+                HasAlpha = alpha
             };
+            reason = string.Empty;
             return true;
+        }
+
+        /// <summary>
+        /// The colours and the alpha apart, uncompressed. The alpha is null when every pixel is
+        /// opaque, which is what a canvas exports more often than not: an image with nothing to
+        /// mask should not carry a mask. Spoiled data throws
+        /// <see cref="InvalidDataException"/>, like everything else a bad file does here.
+        /// </summary>
+        public (byte[] Colour, byte[]? Alpha) Planes()
+        {
+            int channels = Colors + 1;
+            int stride = Width * channels;
+            var raw = new byte[Height * (1L + stride)];
+
+            using (var zlib = new System.IO.Compression.ZLibStream(
+                new MemoryStream(Data), System.IO.Compression.CompressionMode.Decompress))
+            {
+                int filled = 0;
+                while (filled < raw.Length)
+                {
+                    int got = zlib.Read(raw, filled, raw.Length - filled);
+                    if (got == 0)
+                        throw new InvalidDataException("This PNG holds fewer pixels than it says.");
+                    filled += got;
+                }
+            }
+
+            Unfilter(raw, stride, channels);
+
+            var colour = new byte[Height * (long)(Width * Colors)];
+            var alpha = new byte[Height * (long)Width];
+            bool opaque = true;
+            int c = 0, a = 0;
+
+            for (int y = 0; y < Height; y++)
+            {
+                int at = y * (stride + 1) + 1;
+                for (int x = 0; x < Width; x++, at += channels)
+                {
+                    for (int k = 0; k < Colors; k++)
+                        colour[c++] = raw[at + k];
+
+                    byte value = raw[at + Colors];
+                    alpha[a++] = value;
+                    opaque &= value == 255;
+                }
+            }
+
+            return (colour, opaque ? null : alpha);
+        }
+
+        /// <summary>Undoes PNG's five row filters, in place.</summary>
+        private void Unfilter(byte[] raw, int stride, int channels)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                int row = y * (stride + 1);
+                byte filter = raw[row];
+                int at = row + 1;
+                int above = at - (stride + 1);          // only read when y > 0
+
+                for (int i = 0; i < stride; i++)
+                {
+                    int left = i >= channels ? raw[at + i - channels] : 0;
+                    int up = y > 0 ? raw[above + i] : 0;
+                    int corner = y > 0 && i >= channels ? raw[above + i - channels] : 0;
+
+                    raw[at + i] += filter switch
+                    {
+                        0 => (byte)0,
+                        1 => (byte)left,
+                        2 => (byte)up,
+                        3 => (byte)((left + up) / 2),
+                        4 => Paeth(left, up, corner),
+                        _ => throw new InvalidDataException($"This PNG has a row filter numbered {filter}.")
+                    };
+                }
+            }
+        }
+
+        private static byte Paeth(int left, int up, int corner)
+        {
+            int estimate = left + up - corner;
+            int toLeft = Math.Abs(estimate - left);
+            int toUp = Math.Abs(estimate - up);
+            int toCorner = Math.Abs(estimate - corner);
+
+            return (byte)(toLeft <= toUp && toLeft <= toCorner ? left : toUp <= toCorner ? up : corner);
         }
 
         private static int ReadInt(byte[] data, int at)

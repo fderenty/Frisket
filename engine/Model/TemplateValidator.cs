@@ -136,6 +136,11 @@ namespace Frisket
                                                          TemplateProfile profile = TemplateProfile.All)
             => Check(report, profile, null);
 
+        /// <summary>What a mail costs a drawing, in one set of words wherever the drawing came from.</summary>
+        internal const string DrawingInFlow =
+            "This picture is a drawing, and a mail reader does not draw SVG. Its alternative text will "
+            + "be written in its place; a bitmap of it, if the reader should see it, is the host's to provide.";
+
         /// <summary>
         /// The same, told what is about to be produced. Only
         /// <see cref="TemplateProfile.Capable"/> reads <paramref name="target"/>; the
@@ -177,6 +182,12 @@ namespace Frisket
                 }
 
                 Walk(report.Sections[i], named, report, profile, found);
+            }
+
+            if (profile.HasFlag(TemplateProfile.Sound) && report.Backdrop is { } paper
+                && Pictures.Refusal(paper.Source) is { } badPaper)
+            {
+                found.Add(new TemplateIssue("sound.unreadablePicture", IssueLevel.Error, badPaper, null, "Report"));
             }
 
             if (report.BackPage is { } back)
@@ -315,6 +326,19 @@ namespace Frisket
                         "This group's children overlap one another across the band, and the "
                         + "output being aimed at has no pages to place them on. They will be "
                         + "written one under the next instead.", group, "Report"));
+                }
+            }
+
+            if (!target.Paged)
+            {
+                // One per drawing, each being a different place to go and put right. Only
+                // what the template carries can be seen from here: a chart the data brings
+                // is known when it is bound, and this asks the bound report as well as the
+                // template, whichever the caller holds.
+                foreach (ImageItem drawing in items.OfType<ImageItem>()
+                             .Where(i => Pictures.LooksLikeDrawing(i.Source.Data)))
+                {
+                    found.Add(new TemplateIssue("can.drawingInFlow", IssueLevel.Warning, DrawingInFlow, drawing, "Report"));
                 }
             }
 
@@ -554,6 +578,13 @@ namespace Frisket
                 found.Add(new TemplateIssue("sound.emptyImage", IssueLevel.Error,
                     "This image has neither a picture of its own nor a path to one in the "
                     + "data, so nothing will ever be drawn here.", item, where));
+            }
+
+            // A picture no output could draw. Without this, the panel said nothing and the
+            // PDF stopped at the end, and the exact preview, which had drawn it, was no help.
+            if (item is ImageItem drawn && Pictures.Refusal(drawn.Source) is { } refused)
+            {
+                found.Add(new TemplateIssue("sound.unreadablePicture", IssueLevel.Error, refused, item, where));
             }
 
             // The same fault as an empty image, in a new element: neither a PDF of its

@@ -42,7 +42,9 @@ checks return, checks again and composes the document. Its material is left in
    - text goes in a `Body` whose `Layout` is `Stack`;
    - a token is a path in braces, such as `{Destinataire.Nom}`;
    - a table repeats over a list with `RepeatOver`: a header row with `IsHeader: true`,
-     then one row naming the fields of an entry.
+     then one row naming the fields of an entry;
+   - a chart is a picture: an `ImageItem` whose `SourceField` names where the data holds it,
+     with an `AltText` saying what the chart shows. See [Charts](#charts).
 
 ## The loop
 
@@ -74,16 +76,37 @@ template tends to fix one thing and break another. Repeat until there are no err
 warnings are for a person to judge. Then preview the template with `POST /preview` and show
 it to someone before it is used.
 
-The rules come in four families:
+The rules come in families:
 
 | prefix | read from | example |
 |---|---|---|
 | `read.` | the template's text | a property the model does not know; a text that cannot be read |
 | `sound.` | the template | a section with no page size; a table whose rows disagree |
 | `ua.` `can.` | the template, for a reader and for the output aimed at | a picture with no alternative text |
+| `svg.` | a drawing, asked of `SvgDrawing.Check` by whoever generates one | a `<style>` sheet in a chart |
+| `data.` | the data that will fill the template, when it is at hand | data that is not JSON |
 | `fields.` | the template, against the catalogue | `{Destinataire.Nmo}` where `Destinataire.Nom` was meant |
 
-`read.` and `fields.` exist only on the engine's side. The template designer and the content
-editor read an object rather than text, and only the host knows its catalogue. The other
-three families are also checked in the designer, by an echo of the validator held to the
-engine's findings.
+`read.`, `svg.`, `data.` and `fields.` exist only on the engine's side. The template designer and
+the content editor read an object rather than text, only the host knows its catalogue, and they
+draw what they can with the data they are given. `sound.`, `ua.` and `can.` are also checked in the
+designer, by an echo of the validator held to the engine's findings.
+
+## Charts
+
+Frisket does not draw charts: the application that has the numbers draws one as an SVG, and hands it
+over in the data. A model can write that SVG as well as a program can, under the same rules.
+
+1. **Give it the list.** [`examples/charts/README.md`](../charts/README.md) is what the engine takes
+   and what it refuses, with what to write instead. A browser would draw far more, so a file that
+   looks right on screen can still be refused, and the schema cannot help: to it the picture is a
+   string. [`examples/charts/attendance.svg`](../charts/attendance.svg) is a complete example.
+2. **Check the drawing.** `SvgDrawing.Check(svg, fonts)` returns findings of the same shape, rule
+   `svg.unsupported` or `svg.invalid`, naming the element and what to do. Its `where` is a path inside
+   the SVG, such as `svg › g › image`, and it has no `pointer`, since the template is not concerned.
+3. **Check the document.** `frisket check -t template.json -d data.json --json`, `POST /check` with
+   `data`, or `TemplateData.Check(template, dataJson)`: a refused chart comes back as
+   `sound.unreadablePicture`, with a pointer to the `ImageItem` that names its field.
+4. **Write the `AltText` from what the chart shows**, not from what it is: "Visitors rose from 300 to
+   1,500 over the first half of the year" rather than "Chart". A screen reader reads that and not the
+   labels.

@@ -1,0 +1,67 @@
+[
+  {
+    "name": "RGB",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR42mNgZGLGihiGlgQAlkgBgQ5C0EYAAAAASUVORK5CYII=",
+    "refused": false
+  },
+  {
+    "name": "RGB with alpha",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAJElEQVR42mNgZGI\u002BgReDCAY8gImBAGAGGpGCTwELIRMYaO9IAGxGDvImxiX1AAAAAElFTkSuQmCC",
+    "refused": false
+  },
+  {
+    "name": "gray with alpha",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAQAAABuBnYAAAAAIElEQVR42mNgPIEGGU8woAAmBjTAzJiCKsCCroKBdEMBv7EOlfqbITQAAAAASUVORK5CYII=",
+    "refused": false
+  },
+  {
+    "name": "a palette",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAEUlEQVR42mNgZGLGihiGlgQAlkgBgQ5C0EYAAAAASUVORK5CYII=",
+    "refused": true
+  },
+  {
+    "name": "interlacing",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAAE8ahlKAAAAEUlEQVR42mNgZGLGihiGlgQAlkgBgQ5C0EYAAAAASUVORK5CYII=",
+    "refused": true
+  },
+  {
+    "name": "16 bits",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIEAIAAAAb/fWfAAAAEUlEQVR42mNgZGLGihiGlgQAlkgBgQ5C0EYAAAAASUVORK5CYII=",
+    "refused": true
+  },
+  {
+    "name": "a size its data cannot hold",
+    "base64": "iVBORw0KGgoAAAANSUhEUn8AAAgAAAAICAYAAADED76LAAAAJElEQVR42mNgZGI\u002BgReDCAY8gImBAGAGGpGCTwELIRMYaO9IAGxGDvImxiX1AAAAAElFTkSuQmCC",
+    "refused": true
+  },
+  {
+    "name": "a file cut short",
+    "base64": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQQ==",
+    "refused": true
+  },
+  {
+    "name": "a JPEG, by its opening",
+    "base64": "/9j/4AAQSkZJRg==",
+    "refused": false
+  },
+  {
+    "name": "bytes that are nothing",
+    "base64": "AQIDBAUGBwgJ",
+    "refused": true
+  },
+  {
+    "name": "a refused drawing",
+    "base64": "PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgNTAnPjxzY3JpcHQvPjwvc3ZnPg==",
+    "refused": true
+  },
+  {
+    "name": "a drawing that is not UTF-8",
+    "base64": "PHP/Pg==",
+    "refused": true
+  },
+  {
+    "name": "a drawing",
+    "base64": "PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgNTAnPjwvc3ZnPg==",
+    "refused": false
+  }
+]

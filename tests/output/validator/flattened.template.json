@@ -309,6 +309,26 @@
               "Style": {}
             },
             {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "PHN2ZyB2aWV3Qm94PScwIDAgOSA5Jz48cmVjdCB3aWR0aD0nMycgaGVpZ2h0PSczJy8+PC9zdmc+",
+                "MediaType": "image/svg\u002Bxml"
+              },
+              "Scaling": "Uniform",
+              "AltText": "A drawing",
+              "Style": {}
+            },
+            {
+              "$type": "ImageItem",
+              "Source": {
+                "Data": "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAJElEQVR42mNgZGI+gReDCAY8gImBAGAGGpGCTwELIRMYaO9IAGxGDvImxiX1AAAAAElFTkSuQmCC",
+                "MediaType": "image/png"
+              },
+              "Scaling": "Uniform",
+              "AltText": "A bitmap",
+              "Style": {}
+            },
+            {
               "$type": "FieldItem",
               "Name": "approval",
               "Kind": "Signature",

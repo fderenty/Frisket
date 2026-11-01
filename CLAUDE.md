@@ -422,7 +422,7 @@ report handed straight to the renderer never proves that.
 **The document now says what it demonstrates.** It was a handsome report that said
 nothing about itself: a split table row, a translucent watermark and a signature look
 like a table, a tint and a frame — as long as nothing says **what you are supposed to
-see, and what would be wrong**. Seven demonstrations, each with a heading, a
+see, and what would be wrong**. Eight demonstrations, each with a heading, a
 full-width rule and a sentence: what it does, and what to observe. The rule is *drawn*
 and not typed, so that it spans the page whatever its width.
 
@@ -665,7 +665,7 @@ A rule only counts if it **falls silent once the fault is mended**: the test men
 
 ### The third profile does not read the template alone
 
-`Sound` and `Accessible` answer from the template. `Capable` needs to be told **what is about to be produced** (`RenderTarget`), because the same template is faultless for one output and half-lost in another: a form is a form until it is flattened; a role and an alternative text reach the file only if it is tagged. Five rules — `can.untagged`, `can.flattenedFields`, `can.flattenedSignature`, `can.flattenedFieldAltText` and `can.absoluteInFlow`.
+`Sound` and `Accessible` answer from the template. `Capable` needs to be told **what is about to be produced** (`RenderTarget`), because the same template is faultless for one output and half-lost in another: a form is a form until it is flattened; a role and an alternative text reach the file only if it is tagged. Six rules — `can.untagged`, `can.flattenedFields`, `can.flattenedSignature`, `can.flattenedFieldAltText`, `can.absoluteInFlow` and `can.drawingInFlow`.
 
 It is the only class of fault where **the document looks exactly right**. A flattened signature is a picture of a place to sign; nothing says so, and the page is identical. Hence test 42 writing a **second** pair of files — the template once *mended*, so with no fault at all, and what the engine finds in it — which the harness confronts like the first.
 
@@ -2399,6 +2399,108 @@ asks a flowed text for the column's edges and a second line. The first sabotage 
 was free: the single-file page still carried the old core when the harness ran, and failed it
 with exactly the old numbers.
 
+### 14d. A chart is the host's drawing, and the engine reads it
+
+Asked for by another application, whose attendance report wants curves on two axes. The author
+had thought of a chart engine inside this one and settled on **SVG as a generic input**: axes,
+scales and legends are a second product, and a chart from the data would want raw numbers where
+values arrive formatted by the host (§5c-sexies). So the host draws, and a drawing is a picture:
+an `ImageItem`, through `SourceField` or its own bytes, which needed **no property in the model**
+(§5d). Told apart by what the bytes open with, as a JPEG is, since a bare base64 string from the
+data says nothing of what it is.
+
+**It began as a defect, measured on the published 0.2.0.** Handed an SVG, the validator said
+nothing, the proof recopied the bytes and the browser drew them, the mail did the same, and the
+PDF stopped at the end with a message about palettes and alpha channels. The exact preview - the
+one preview meant to be exact - showed what the PDF would refuse. A PNG with alpha took the same
+road. `Pictures.Refusal` is one answer now, for the PDF, the proof and the validator, in the same
+words, and test 100 asks all three of each fault.
+
+**One list for two outputs.** `SvgReader` makes a `VectorDrawing`; both backends draw that and
+neither ever sees the file. A proof that recopied the bytes would be two readers of one file, and
+it is also what keeps it safe: a script or a stray attribute was refused on the way in and has no
+road onto the page. Test 102 reads both outputs back through an interpreter with a transform stack
+and compares every mark in millimetres on the page - points, clips, colour, opacity, thickness,
+dashes - then works some of the same numbers out by hand, since two outputs fed by one list can
+agree on being wrong.
+
+**The file is somebody else's, so §8b and §8c apply.** No `System.Xml`, for what it cannot do: an
+XML parser is built to fetch and to expand, and its defence is options somebody must remember to
+set. `SvgMarkup` has neither to switch off - a DOCTYPE with an internal subset is refused, no entity
+exists but the five XML knows, nothing is ever loaded, so XXE and billion laughs have no door. Depth
+is bounded because a stack overflow is the one failure no catch answers (§8g). Test 60 spoils the
+sample chart too, by text rather than by word: a blind byte is refused as bad UTF-8 and the reader
+never runs, which is §8c's own lesson about signatures.
+
+**Refused by name, never skipped**, with a closed list on each side: what is drawn, and what cannot
+change the picture (`id`, `class`, `aria-*`, a foreign namespace). What is on neither list is
+refused, so the day SVG grows a word it stays refused until somebody has decided what it means here -
+§3's reasoning about weights, seen from another list. A chart with a piece missing and nobody told
+is the worst output there is. `examples/charts/README.md` is the contract with whoever generates the
+file, and test 101 holds it to the reader's lists in both directions.
+
+**A chart through the data is invisible to the validator**, which reads the template. So the refusal
+comes from the reader as the document is drawn, `SvgDrawing.Check` is public for the generator's own
+tests, and `TemplateData.Check` asks of a template and its data together, for `frisket check -d` and
+`POST /check`. Its findings are the validator's own rules with a pointer into the **template** - the
+item naming the field, found by that name - and never into the bound copy, whose rows have been
+multiplied, so the pointer would lead a program nowhere. A list of a thousand with one fault says so
+once. `can.drawingInFlow` is the mail's: no reader draws SVG and this engine cannot make a bitmap, so
+the alternative text is written in its place, as a barcode's is.
+
+**And the schema could not say any of it.** Asked "does an application know how to use this?" once
+everything passed, the answer was no: a feature nobody can find is not finished, and a green suite
+does not ask. The schema called it "a drawing in SVG" and never that it was limited or where the
+limit was written, `MediaType` read as though it decided the format, and the guide for a model had
+one line. To the schema a picture is a string, so what it can do is point: test 101 asks that every
+door names the contract. A relative path in an engine comment is no use to whoever holds only the
+package, so those carry the whole address.
+
+Five things that would have been wrong without being looked at:
+
+- **`font-size` means the em**, not the cap height a size means everywhere else here (§3): the same
+  file then reads the same on the host's screen. A label naming no family takes the document's, or
+  a chart in a report set in something else looks pasted in;
+- **the first name of a `font-family` and not the first found.** A fallback list is a browser looking
+  for something near enough, and this engine does not take near enough;
+- **`text-anchor` is worked out here**, with the engine's metrics, and the proof is handed the start.
+  Left to the browser, the same label sits a little differently in each output;
+- **an id is the file's only until it is drawn.** An HTML proof holds every page in one document, so
+  two charts calling their plot area `plot` would both be clipped by the first one's rectangle, with
+  no error anywhere. The backend makes its own;
+- **fill and stroke are two paintings.** `B` is shorter, and with a translucent stroke it composes a
+  knockout group: the stroke replaces the fill beneath it instead of lying over it.
+
+**A PNG with alpha is taken apart**, which `ZLibStream` allows without a dependency: the native
+library already links the zlib the PDF writer compresses with. The colours and a soft mask, and no
+mask at all if every pixel is opaque, which is what a canvas usually exports. `MostInflation` is the
+guard: Deflate shrinks at most 1032 to 1, so an image claiming more than that over its data is lying
+about its size (§8c). The sample uses all five row filters and says so, or Paeth could be wrong.
+
+**The echo is a reader too**, since a browser would draw anything: `frisket-core.js` holds a port of
+all of it, and the harness confronts the two on every sample test 100 writes, to the rule and to the
+point - which is how `Math.round` against `Math.Round` showed up, 76.5 being a channel of 77 here and
+76 there. It draws from its list in the page's own typefaces; in an `<image>`, SVG cannot reach them.
+
+**The PDF was looked at**, in Edge's reader beside the proof (§2). `msedge --headless --screenshot`
+gives nothing for a PDF; `Page.captureScreenshot` over the DevTools protocol does, and shows the viewer.
+
+**Fifty-four sabotages, four green, and each one taught something else.**
+
+- *Paeth's left against above.* Swapping them changed no pixel, and the green was right: equally near
+  and different, the corner is nearer still, so that tie cannot decide anything. The sabotage was the
+  thing at fault (§5c). What can decide is above against the corner, which a smooth ramp never reaches -
+  so the sample is a few levels now, and a test asks that it holds such a tie;
+- *the order of a clip and a transform*, which proved nothing because no element in the sample had both;
+- *a text's position reaching its tspan*, the commonest way a label is written, which no sample wrote;
+- *the editor's size for a drawing.* Chromium answers 300 by 150 for an SVG with only a viewBox, and the
+  test's chart happened to be two to one, so the wrong size had the right proportions. §10c once more:
+  a sample has to differ from the fault.
+
+**And twice in that hour a sabotage "caught" a fault on a test that was already red**, since a new
+assertion had failed before it ran. The driver now takes a green run first, and stops without one. The
+same family as §13's *read the run*: a failure proves something only against a run that passed.
+
 ## 15. `AdvancedTextItem` — the line, not the segment, is the unit
 
 Mixed-style text (bold, italic, underline, strikethrough, colour, size within one
@@ -2490,7 +2592,7 @@ A number must also be set **before measurement**, because it widens the heading 
 
 **What has no answer stays visible.** No format, no level, or nothing reached at that level — a page header is composed before the body it heads: the token stays on the page as it was typed. A `0.` in front of a heading is a fault nobody sees; `{HeadingNumber}` on the page is a fault nobody misses. Three rules of both validators say so beforehand: `sound.headingNumberNoFormat`, `sound.headingNumberOutsideHeading`, `sound.headingNumberDepth`.
 
-**The conformance document revealed that its H1 was in the wrong place.** Its seven sections were **H2** under the title: `{HeadingNumber}` gave `1.1 Summary` there, structurally right and visibly absurd. The fault was not in the numbering — it only made legible that **a document's title is not a section of that document**. The title is no longer a heading at all (it remains the `/Title`, which the reader announces on opening), the sections are the H1s, and veraPDF passes both profiles. The document numbers itself: `1.` to `7.`, `4.1. Method` coming from the sub-template — possible only because expansion precedes everything else (§14) — and `5.1. QR code`, `5.2. Code 128`. **No number is typed anywhere.**
+**The conformance document revealed that its H1 was in the wrong place.** Its seven sections were **H2** under the title: `{HeadingNumber}` gave `1.1 Summary` there, structurally right and visibly absurd. The fault was not in the numbering — it only made legible that **a document's title is not a section of that document**. The title is no longer a heading at all (it remains the `/Title`, which the reader announces on opening), the sections are the H1s, and veraPDF passes both profiles. The document numbers itself: `1.` to `8.`, `4.1. Method` coming from the sub-template — possible only because expansion precedes everything else (§14) — and `5.1. QR code`, `5.2. Code 128`. **No number is typed anywhere.**
 
 **And the harness check was vacuous at first**: its sample went `H1 H2 H3 H2 H1`, where every displayed number is the same with or without the deeper levels being reset, so removing the reset from the echo left the pass green — it takes `H1 H2 H3 H1 H2 H2`, where Epsilon reads `B) b` instead of `B) a` (§10c again, seen from a sample rather than a calibre).
 

@@ -50,6 +50,9 @@ namespace Frisket
         {
             _pages.Clear();
             _usedFamilies.Clear();
+            _accepted.Clear();
+            _clips = 0;
+            _documentFamily = report.DefaultFont?.Family;
             _title = report.Title ?? string.Empty;
         }
 
@@ -323,6 +326,19 @@ namespace Frisket
             if (image.Data.Length == 0 || opacity <= 0)
                 return;
 
+            if (image.Reading() is { } reading)
+            {
+                DrawDrawing(frame, reading.Require(), opacity);
+                return;
+            }
+
+            // The same refusal as the PDF, in the same words. This wrote whatever it was
+            // given, and the browser drew whatever it could: a proof meant to show exactly
+            // what the printer will do showed a picture the PDF then refused. Once per source,
+            // since a hundred rows share one.
+            if (_accepted.Add(image) && Pictures.Refusal(image) is { } refused)
+                throw new NotSupportedException(refused);
+
             _current.Append("  <image x=\"").Append(N(frame.Left)).Append("\" y=\"").Append(N(frame.Top))
                     .Append("\" width=\"").Append(N(frame.Width)).Append("\" height=\"").Append(N(frame.Height));
 
@@ -339,6 +355,173 @@ namespace Frisket
                     .Append(Escape(image.MediaType)).Append(";base64,")
                     .Append(Convert.ToBase64String(image.Data))
                     .Append("\"/>\n");
+        }
+
+        private readonly HashSet<ImageSource> _accepted = new();
+
+        /// <summary>The family text naming none is set in, for a drawing's labels.</summary>
+        private string? _documentFamily;
+
+        /// <summary>
+        /// The same list the PDF draws, written out afresh, and never the bytes it came from.
+        /// That is what keeps the proof honest and what keeps it safe: a script or a stray
+        /// attribute in the file was refused on the way in and has no way onto the page. A
+        /// nested svg gives the mapping onto the frame and the clip to it, in one tag.
+        /// </summary>
+        private void DrawDrawing(Rect frame, VectorDrawing drawing, double opacity)
+        {
+            if (frame.Width <= 0 || frame.Height <= 0)
+                return;
+
+            _current.Append("  <svg x=\"").Append(N(frame.Left)).Append("\" y=\"").Append(N(frame.Top))
+                    .Append("\" width=\"").Append(N(frame.Width)).Append("\" height=\"").Append(N(frame.Height))
+                    .Append("\" viewBox=\"").Append(V(drawing.X)).Append(' ').Append(V(drawing.Y)).Append(' ')
+                    .Append(V(drawing.Width)).Append(' ').Append(V(drawing.Height))
+                    .Append("\" preserveAspectRatio=\"none\">\n");
+
+            foreach (VectorNode node in drawing.Nodes)
+                DrawNode(node, opacity);
+
+            _current.Append("  </svg>\n");
+        }
+
+        private static string V(double value) => VectorDrawing.N(value);
+
+        /// <summary>
+        /// An id for a clip, of this backend's own making. The file's ids stay behind: an HTML
+        /// proof holds every page in one document, so two charts each calling their plot area
+        /// "plot" would both be clipped by the first one's rectangle, with no error anywhere.
+        /// </summary>
+        private int _clips;
+
+        private void DrawNode(VectorNode node, double opacity)
+        {
+            string around = string.Empty;
+
+            if (!node.Transform.IsIdentity)
+            {
+                VectorMatrix m = node.Transform;
+                around += $" transform=\"matrix({V(m.A)} {V(m.B)} {V(m.C)} {V(m.D)} {V(m.E)} {V(m.F)})\"";
+            }
+
+            if (node.Clip is { } clip)
+            {
+                string id = "fk-clip-" + ++_clips;
+                _current.Append("  <clipPath id=\"").Append(id).Append("\"><path d=\"").Append(PathData(clip.Path))
+                        .Append(clip.EvenOdd ? "\" clip-rule=\"evenodd\"" : "\"").Append("/></clipPath>\n");
+                around += $" clip-path=\"url(#{id})\"";
+            }
+
+            bool framed = around.Length > 0;
+            if (framed)
+                _current.Append("  <g").Append(around).Append(">\n");
+
+            switch (node)
+            {
+                case VectorGroup group:
+                    foreach (VectorNode child in group.Children)
+                        DrawNode(child, opacity);
+                    break;
+
+                case VectorShape shape:
+                    Paint(shape, opacity);
+                    break;
+
+                case VectorText text:
+                    foreach (PlacedRun run in text.Place(Measurer, _documentFamily))
+                        Label(run, opacity);
+                    break;
+            }
+
+            if (framed)
+                _current.Append("  </g>\n");
+        }
+
+        private void Paint(VectorShape shape, double opacity)
+        {
+            _current.Append("  <path d=\"").Append(PathData(shape.Path)).Append("\" fill=\"");
+
+            if (shape.Fill is { } fill)
+            {
+                _current.Append(Hex(fill)).Append('"');
+                if (shape.FillAlpha * opacity < 1)
+                    _current.Append(" fill-opacity=\"").Append(N(shape.FillAlpha * opacity)).Append('"');
+                if (shape.EvenOdd)
+                    _current.Append(" fill-rule=\"evenodd\"");
+            }
+            else
+            {
+                _current.Append("none\"");
+            }
+
+            if (shape.Stroke is { } stroke)
+            {
+                _current.Append(" stroke=\"").Append(Hex(stroke)).Append("\" stroke-width=\"").Append(V(shape.StrokeWidth)).Append('"');
+                if (shape.StrokeAlpha * opacity < 1)
+                    _current.Append(" stroke-opacity=\"").Append(N(shape.StrokeAlpha * opacity)).Append('"');
+                if (shape.Cap != 0)
+                    _current.Append(shape.Cap == 1 ? " stroke-linecap=\"round\"" : " stroke-linecap=\"square\"");
+                if (shape.Join != 0)
+                    _current.Append(shape.Join == 1 ? " stroke-linejoin=\"round\"" : " stroke-linejoin=\"bevel\"");
+                if (shape.MiterLimit != 4)
+                    _current.Append(" stroke-miterlimit=\"").Append(V(shape.MiterLimit)).Append('"');
+                if (shape.Dash.Length > 0)
+                {
+                    _current.Append(" stroke-dasharray=\"").Append(string.Join(' ', shape.Dash.Select(V))).Append('"');
+                    if (shape.DashOffset != 0)
+                        _current.Append(" stroke-dashoffset=\"").Append(V(shape.DashOffset)).Append('"');
+                }
+            }
+
+            _current.Append("/>\n");
+        }
+
+        private static string PathData(VectorPath path)
+        {
+            var d = new StringBuilder(path.Points.Count * 6);
+            int at = 0;
+
+            foreach (VectorVerb verb in path.Verbs)
+            {
+                d.Append(verb switch
+                {
+                    VectorVerb.Move => 'M',
+                    VectorVerb.Line => 'L',
+                    VectorVerb.Cubic => 'C',
+                    _ => 'Z'
+                });
+
+                int count = verb switch { VectorVerb.Cubic => 6, VectorVerb.Close => 0, _ => 2 };
+                for (int i = 0; i < count; i++)
+                    d.Append(i == 0 ? "" : " ").Append(V(path.Points[at++]));
+            }
+
+            return d.ToString();
+        }
+
+        /// <summary>
+        /// A piece of a drawing's text at the place the engine worked out, so it starts where
+        /// the PDF's does whatever the browser would have made of a text-anchor. The family by
+        /// the name the library knows it under, since that is what the proof embeds.
+        /// </summary>
+        private void Label(PlacedRun run, double opacity)
+        {
+            string family = Measurer.ResolveFamily(run.Style);
+            _usedFamilies.Add(family);
+
+            _current.Append("  <text x=\"").Append(V(run.X)).Append("\" y=\"").Append(V(run.Y))
+                    .Append("\" font-family=\"").Append(Escape(family))
+                    .Append("\" font-size=\"").Append(V(run.Style.EmSizeInMillimeters))
+                    .Append("\" fill=\"").Append(Hex(run.Style.Color ?? Color.Black)).Append('"');
+
+            if (run.Alpha * opacity < 1)
+                _current.Append(" fill-opacity=\"").Append(N(run.Alpha * opacity)).Append('"');
+            if (run.Style.Bold == true)
+                _current.Append(" font-weight=\"bold\"");
+            if (run.Style.Italic == true)
+                _current.Append(" font-style=\"italic\"");
+
+            _current.Append('>').Append(Escape(run.Text)).Append("</text>\n");
         }
 
         public void Dispose() { }

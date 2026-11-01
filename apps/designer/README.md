@@ -25,6 +25,13 @@ all. Its one declared dependency is a way to measure text - `setTextRuler`, the 
 boundary the engine draws and calls `ITextMeasurer`. A browser gets a canvas by
 default, so no caller has to think about it.
 
+## Pictures and drawings
+
+A picture is a JPEG, a PNG, or a drawing in SVG. The faces do not hand a drawing to the browser: the
+core reads it by the engine's rules (`readingOf`) and draws what it read, so the canvas cannot show
+what the PDF refuses, and the labels are in the page's own typefaces. A refused one is a frame saying
+so, and `sound.unreadablePicture` in the panel. `examples/charts/README.md` lists what is taken.
+
 ## The designer
 
 `frisket-designer.html`: tree on the left, page preview in the middle, properties on

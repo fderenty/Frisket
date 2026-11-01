@@ -33,6 +33,7 @@ every stream inflated, which is the comparison that means something there.
 | **PDF** | PDF/A-3B and PDF/UA-1, both validated; tagged structure down to `Table`/`TR`/`TH`/`TD`; Factur-X attachments; outlines; interactive forms that work in real readers |
 | **Marks** | watermarks drawn as content, so a browser cannot drop them when printing |
 | **Codes** | QR and Code 128, generated here |
+| **Pictures** | JPEG, PNG with or without alpha, and [charts your application draws as SVG](examples/charts/README.md), written as vector marks and real text |
 | **Checks** | a template validator that reports what will go wrong before any document exists |
 
 ## The pieces
@@ -44,7 +45,7 @@ every stream inflated, which is the comparison that means something there.
 | [`apps/`](apps) | what is built on it: the [CLI](apps/cli/README.md), the [preview server](apps/server/README.md), and the [content editor and template designer](apps/designer/README.md) — one in the flow, one at coordinates |
 | [`release/`](release) | the content editor as a single HTML file, generated from its parts by the test suite |
 | [`bindings/`](bindings/native/README.md) | the same engine as a shared library behind a flat C interface, with wrappers for C++, Pascal and Python |
-| [`examples/`](examples) | the showcase template and data, and the [JSON Schema](examples/schema/README.md) generated from the model |
+| [`examples/`](examples) | the showcase template and data, the [JSON Schema](examples/schema/README.md) generated from the model, [what a chart may hold](examples/charts/README.md), and [how to let a model write templates](examples/ai/README.md) |
 | [`tests/`](tests/README_TESTS.md) | the test suite, and everything it renders under `tests/output/` |
 | [`tools/`](tools) | the typeface specimen sheet, for choosing what to ship |
 

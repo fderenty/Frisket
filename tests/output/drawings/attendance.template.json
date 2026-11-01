@@ -1,0 +1,10 @@
+{
+  "Title": "Attendance", "Language": "en-GB",
+  "Sections": [ { "Dimension": { "Width": 210, "Height": 297 },
+    "Childs": [ { "$type": "Body", "Layout": "Stack", "Childs": [
+      { "$type": "ImageItem", "SourceField": "Charts.Attendance", "AltText": "Visitors over the year" },
+      { "$type": "TextItem", "Text": "Under the chart" },
+      { "$type": "ImageItem", "SourceField": "Charts.Other", "AltText": "Another" },
+      { "$type": "ImageItem", "SourceField": "Charts.Absent", "AltText": "Nothing today" }
+    ] } ] } ]
+}

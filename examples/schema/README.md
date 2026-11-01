@@ -56,6 +56,11 @@ exact spellings, and the discriminator that tells one kind from another.
 | numbers | `number` **or** the string `"NaN"`, which is how the model says undecided |
 | `description` | on every type and property, the engine's own `///` comment - what it is for |
 
+**A picture is a string to the schema.** It can say that an `ImageItem` carries base64 and cannot
+look inside: a chart in SVG with a `<style>` sheet in it is a valid template, and is refused when it
+is drawn. What a drawing may hold is in [`examples/charts`](../charts/README.md), and `SvgDrawing.Check`
+is what asks.
+
 The descriptions are read from the documentation file the build writes beside the engine,
 never typed here, and test 47 fails on a type or a property that has none. For a model
 writing templates from this schema, see `examples/ai/README.md`.

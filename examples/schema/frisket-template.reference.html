@@ -166,10 +166,10 @@ section.type{scroll-margin-top:1rem}
 </section>
 <section class="type" id="t-ImageSource">
 <h3>ImageSource</h3>
-<p>Raw image bytes; decoding is the backend's responsibility.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
-<tr id="p-ImageSource.Data"><td><code>Data</code></td><td><code>Byte[]</code></td><td><i>empty</i></td><td><p>The picture's bytes, written in a template as base64; MediaType says what they are.</p></td></tr>
+<p>A picture's bytes: a JPEG, a PNG or a drawing in a limited SVG, told apart by what they hold. https://github.com/fderenty/Frisket/tree/main/examples/charts lists what a drawing may contain.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
+<tr id="p-ImageSource.Data"><td><code>Data</code></td><td><code>Byte[]</code></td><td><i>empty</i></td><td><p>The picture's bytes, written in a template as base64. A drawing is its SVG text in UTF-8, encoded in the same way.</p></td></tr>
 <tr id="p-ImageSource.SourcePath"><td><code>SourcePath</code></td><td><code>text</code></td><td><i>null</i></td><td><p>Where the bytes came from, as a path - kept for whoever loaded them. The engine draws Data and never reads this.</p></td></tr>
-<tr id="p-ImageSource.MediaType"><td><code>MediaType</code></td><td><code>text</code></td><td><code>image/png</code></td><td><p>MIME type of<a href="#p-ImageSource.Data"><code>ImageSource.Data</code></a>, needed by backends that embed it.</p></td></tr>
+<tr id="p-ImageSource.MediaType"><td><code>MediaType</code></td><td><code>text</code></td><td><code>image/png</code></td><td><p>What to call<a href="#p-ImageSource.Data"><code>ImageSource.Data</code></a>where it is embedded, as in a mail. What the bytes are is read from the bytes, so this does not change what is drawn.</p></td></tr>
 </tbody></table>
 </section>
 <section class="type" id="t-Style">
@@ -223,12 +223,12 @@ section.type{scroll-margin-top:1rem}
 </section>
 <section class="type" id="t-ImageItem">
 <h3>ImageItem <span class="tag">"$type": "ImageItem"</span></h3>
-<p>A picture. The engine decodes nothing - that would mean a graphics dependency - so the natural size is declared by the author, in millimeters. Giving only one of the two lets the other follow from<a href="#p-ImageItem.NaturalWidth"><code>ImageItem.NaturalWidth</code></a>/<a href="#p-ImageItem.NaturalHeight"><code>ImageItem.NaturalHeight</code></a>.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
+<p>A picture: a JPEG, a PNG, or a drawing in SVG. A bitmap's pixels are not read - that would mean a graphics dependency - so its natural size is declared by the author, in millimeters, and giving only one of the two lets the other follow from</p><p><a href="#p-ImageItem.NaturalWidth"><code>ImageItem.NaturalWidth</code></a>/<a href="#p-ImageItem.NaturalHeight"><code>ImageItem.NaturalHeight</code></a>. A drawing states its own proportions, which serve when the author declares none. It is a limited SVG, and what is outside the limit is refused by name rather than skipped: https://github.com/fderenty/Frisket/tree/main/examples/charts lists what is taken.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
 <tr id="p-ImageItem.Source"><td><code>Source</code></td><td><code>ImageSource</code></td><td><i>an object</i></td><td><p>The picture carried in the template. Empty when it comes from the data instead - see SourceField.</p></td></tr>
 <tr id="p-ImageItem.NaturalWidth"><td><code>NaturalWidth</code></td><td><code>a number?</code></td><td><i>null</i></td><td><p>Natural width in millimeters, NaN when unknown.</p></td></tr>
 <tr id="p-ImageItem.NaturalHeight"><td><code>NaturalHeight</code></td><td><code>a number?</code></td><td><i>null</i></td><td><p>Natural height in millimeters, NaN when unknown.</p></td></tr>
 <tr id="p-ImageItem.Scaling"><td><code>Scaling</code></td><td><code>ImageScaling</code></td><td><code>Uniform</code></td><td><p>How the picture fills its frame: Uniform keeps its proportions, Stretch fills the frame, None draws it at its natural size.</p></td></tr>
-<tr id="p-ImageItem.SourceField"><td><code>SourceField</code></td><td><code>text</code></td><td><i>null</i></td><td><p>Path in the data the bytes come from, as base64 or a data: URI. This is how a signature drawn on a tablet reaches the page: the browser posts the canvas, and the template says where to look for it rather than carrying it.</p></td></tr>
+<tr id="p-ImageItem.SourceField"><td><code>SourceField</code></td><td><code>text</code></td><td><i>null</i></td><td><p>Path in the data the bytes come from, as base64 or a data: URI. This is how a signature drawn on a tablet reaches the page, the browser posting the canvas, and how a chart does, the host drawing one per case: the template says where to look rather than carrying it. An SVG is its text in UTF-8, encoded in the same way.</p></td></tr>
 </tbody></table>
 <p class="inherited">Also carries <a href="#t-BaseItem">BaseItem</a>'s 8.</p>
 </section>

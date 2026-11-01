@@ -1,0 +1,11 @@
+{
+  "Title": "Dossier", "Language": "fr-FR",
+  "Sections": [ { "Dimension": { "Width": 210, "Height": 297 },
+    "Childs": [ { "$type": "Body", "Layout": "Stack", "Childs": [
+      { "$type": "TextItem", "Text": "Rapport" },
+      { "$type": "ImageItem", "SourceField": "Charts.Attendance", "AltText": "Fréquentation" },
+      { "$type": "ContainerItem", "Layout": "Stack", "RepeatOver": "Sites", "Childs": [
+        { "$type": "ImageItem", "SourceField": "Plan", "AltText": "Plan du site" }
+      ] }
+    ] } ] } ]
+}

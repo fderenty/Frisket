@@ -304,6 +304,7 @@ namespace test
 
             int fonts = corpus.Count;
             corpus.Add(PngEncoder.Rgb(8, 8, (x, y) => ((byte)(x * 30), (byte)(y * 30), 0)));
+            corpus.Add(PngEncoder.WithAlpha(8, 8, (x, y) => ((byte)(x * 30), (byte)(y * 30), 0, (byte)(x * y))));
             int images = corpus.Count;
 
             // And a PDF, because the reader that opens one is the third thing here that
@@ -337,7 +338,13 @@ namespace test
                 try
                 {
                     if (pick < fonts) FontFile.Load(sample);
-                    else if (pick < images) PngImage.TryRead(sample, out _);
+                    else if (pick < images)
+                    {
+                        // The planes as well: the header is what a size is believed from, and
+                        // the decoding is where believing it would hurt.
+                        if (PngImage.TryRead(sample, out PngImage opened) && opened.HasAlpha)
+                            opened.Planes();
+                    }
                     else Frisket.Import.PdfPageSource.Read(sample, 0).WriteInto(new Collected());
                 }
                 catch (InvalidDataException) { }                  // how a reader says no
@@ -357,7 +364,111 @@ namespace test
                             + $"seed {seed}, slowest {worst} ms");
             AssertEqual(testName, "nothing escaped and nothing hung", null!, complaint!, 0);
 
+            // A drawing is text, so spoiling words of it reaches nothing: the first bad byte is
+            // refused as bad UTF-8 and the reader never runs. It takes edits a text would
+            // survive, and whatever still reads goes on to both backends, which is where a
+            // number nobody should have believed would surface.
+            string svg = File.ReadAllText(Path.Combine(RepositoryRoot(), "examples", "charts", "attendance.svg"));
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            int refused = 0, drawn = 0;
+            worst = 0;
+
+            for (int round = 0; round < rounds / 4 && complaint == null; round++)
+            {
+                byte[] sample = System.Text.Encoding.UTF8.GetBytes(SpoilText(svg, rng));
+
+                clock.Restart();
+                try
+                {
+                    var image = new ImageItem { Source = new ImageSource { Data = sample }, AltText = "x" };
+                    image.Style.Location.WidthValue = 100;
+                    image.Style.Location.HeightValue = 50;
+                    var report = new Report { Title = "x", Language = "en-GB", GeneratedAt = SampleDate,
+                                              Dimension = new() { Width = 210, Height = 297 },
+                                              Body = new() { Layout = LayoutMode.Absolute } };
+                    report.Body!.Add(image);
+                    report.Reattach();
+
+                    if (SvgDrawing.Check(sample).Count > 0)
+                    {
+                        refused++;
+                    }
+                    else
+                    {
+                        ReportRenderer.Render(report, new SvgBackend(new FontTextMeasurer(library)));
+                        var pdf = new PdfBackend(library);
+                        ReportRenderer.Render(report, pdf);
+                        pdf.ToArray();
+                        drawn++;
+                    }
+                }
+                catch (FontNotFoundException) { }                  // a spoiled font-family, refused as it should be
+                catch (Exception e)
+                {
+                    complaint = $"{e.GetType().Name} escaped a drawing at seed {seed}, round {round}: {e.Message}";
+                }
+                clock.Stop();
+
+                worst = Math.Max(worst, (int)clock.ElapsedMilliseconds);
+                if (clock.ElapsedMilliseconds > 400 && complaint == null)
+                    complaint = $"one drawing took {clock.ElapsedMilliseconds} ms at seed {seed}, round {round}";
+            }
+
+            Console.WriteLine($"    {rounds / 4} spoiled drawings, {refused} refused and {drawn} drawn, slowest {worst} ms");
+            AssertEqual(testName, "no drawing escaped or hung", null!, complaint!, 0);
+            AssertEqual(testName, "the spoiling reaches the refusals", true, refused > rounds / 40, 0);
+            AssertEqual(testName, "and reaches the backends", true, drawn > rounds / 80, 0);
+
             Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Spoils a drawing the way its own format can be spoiled: numbers made enormous, absurd
+        /// or negative, a piece of markup cut or doubled, one attribute's value put on another.
+        /// </summary>
+        private static string SpoilText(string svg, Random rng)
+        {
+            string[] numbers =
+            {
+                "1e308", "-1e308", "1e400", "NaN", "Infinity", "0", "-1", "1e-320", "99999999999", ".", "-", "1e", "0x10"
+            };
+            var spots = System.Text.RegularExpressions.Regex.Matches(svg, @"-?\d+(?:\.\d+)?");
+            var text = new System.Text.StringBuilder(svg);
+
+            for (int i = 0, edits = 1 + rng.Next(3); i < edits; i++)
+            {
+                switch (rng.Next(5))
+                {
+                    case 0:
+                    case 1:
+                    {
+                        var spot = spots[rng.Next(spots.Count)];
+                        if (spot.Index + spot.Length <= text.Length)
+                            text.Remove(spot.Index, spot.Length).Insert(spot.Index, numbers[rng.Next(numbers.Length)]);
+                        break;
+                    }
+                    case 2:
+                    {
+                        int at = rng.Next(text.Length);
+                        text.Remove(at, Math.Min(rng.Next(1, 40), text.Length - at));
+                        break;
+                    }
+                    case 3:
+                    {
+                        int at = rng.Next(text.Length);
+                        int length = Math.Min(rng.Next(1, 200), text.Length - at);
+                        text.Insert(rng.Next(text.Length), text.ToString(at, length));
+                        break;
+                    }
+                    case 4:
+                        text.Replace("stroke-width", "stroke-dasharray", 0, Math.Min(text.Length, 2000));
+                        text.Replace("r=\"3.5\"", "r=\"0\"");
+                        break;
+                }
+            }
+
+            return text.ToString();
         }
 
         /// <summary>

@@ -199,6 +199,7 @@ eval(withHandles(script,
      '\nsandbox.forEngine = forEngine; sandbox.expandCarried = expandCarried;' +
      '\nsandbox.carryReferences = carryReferences; sandbox.referenceOf = referenceOf;' +
      '\nsandbox.setData = setData; sandbox.resolvedImageSource = resolvedImageSource;' +
+     '\nsandbox.readingOf = readingOf; sandbox.pictureRefusal = pictureRefusal; sandbox.setTextRuler = setTextRuler;' +
      '\nsandbox.frisketDesigner = typeof frisketDesigner === "function" ? frisketDesigner : undefined;');
 
 // The alpha the engine defaults a watermark to, read from its own source. Typed here
@@ -217,6 +218,7 @@ const check = (name, ok, detail = '') => {
   checked++; if (!ok) failures++;
 };
 const near = (a, b, tol = 0.01) => Math.abs(a - b) <= tol;
+let passedDrawings = 0;
 
 console.log('Designer against the engine');
 
@@ -1487,6 +1489,134 @@ if (faultyPath && findingsPath) {
   const aboutItems = mine.filter(i => i.rule !== 'ua.title' && i.rule !== 'ua.language');
   check('and each one names its element', aboutItems.every(i => i.item),
         aboutItems.filter(i => i.item).length + ' of ' + aboutItems.length);
+}
+
+// --- and they must read a drawing as one reader ---------------------------------
+// A browser would draw any SVG it is handed, so a preview that handed it one could only ever
+// be wrong in the direction that matters: showing what the PDF refuses. The echo reads the
+// bytes itself instead, and has to come to what the engine comes to, on every sample test 100
+// wrote: the same refusals in the same number, and the same shapes to the same numbers.
+{
+  const folder = path.join(REPO, 'tests', 'output', 'drawings');
+  const readings = JSON.parse(readText(path.join(folder, 'readings.json')));
+  const pictures = JSON.parse(readText(path.join(folder, 'pictures.json')));
+  const base64 = text => Buffer.from(text, 'utf8').toString('base64');
+
+  // The same shape the test writes, from what this side holds.
+  const pathData = p => {
+    let d = '', at = 0;
+    for (const verb of p.verbs) {
+      const count = verb === 'C' ? 6 : verb === 'Z' ? 0 : 2;
+      d += verb + Array.from({ length: count }, () => p.points[at++]).join(' ');
+    }
+    return d;
+  };
+  const described = node => {
+    const out = { m: node.m, clip: node.clip ? { d: pathData(node.clip.path), evenOdd: node.clip.evenOdd } : null, kind: node.kind };
+    if (node.kind === 'group') out.children = node.children.map(described);
+    else if (node.kind === 'shape') {
+      Object.assign(out, { d: pathData(node.path), fill: node.fill, fillAlpha: node.fillAlpha, evenOdd: node.evenOdd,
+                           stroke: node.stroke, strokeAlpha: node.strokeAlpha, strokeWidth: node.strokeWidth,
+                           dash: node.dash, dashOffset: node.dashOffset, cap: node.cap, join: node.join, miter: node.miter });
+    } else {
+      out.runs = node.runs;
+    }
+    return out;
+  };
+
+  // Numbers to within what the test rounds to, in a path as anywhere: two languages' sines
+  // need not agree in the last place, and the reader is what is in question, not the libm.
+  const numbersOf = d => (d.match(/-?[\d.]+(?:[eE][-+]?\d+)?/g) || []).map(Number);
+  const differs = (a, b, where) => {
+    if (typeof a === 'number' && typeof b === 'number')
+      return Math.abs(a - b) <= 0.0002 ? null : `${where}: ${a} against ${b}`;
+    if (typeof a === 'string' && typeof b === 'string' && where.endsWith('.d')) {
+      if (a.replace(/[^A-Z]/g, '') !== b.replace(/[^A-Z]/g, '')) return `${where}: other verbs`;
+      const x = numbersOf(a), y = numbersOf(b);
+      if (x.length !== y.length) return `${where}: ${x.length} numbers against ${y.length}`;
+      for (let i = 0; i < x.length; i++)
+        if (Math.abs(x[i] - y[i]) > 0.0002) return `${where}, number ${i}: ${x[i]} against ${y[i]}`;
+      return null;
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return `${where}: ${a.length} long against ${b.length}`;
+      for (let i = 0; i < a.length; i++) {
+        const d = differs(a[i], b[i], `${where}[${i}]`);
+        if (d) return d;
+      }
+      return null;
+    }
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        const d = differs(a[key] ?? null, b[key] ?? null, `${where}.${key}`);
+        if (d) return d;
+      }
+      return null;
+    }
+    return a === b ? null : `${where}: ${JSON.stringify(a)} against ${JSON.stringify(b)}`;
+  };
+
+  check('there are drawings to confront', readings.length > 80, readings.length + ' samples');
+  check('some of them are refused, and some drawn',
+        readings.some(r => r.rules.length) && readings.some(r => r.drawing),
+        `${readings.filter(r => r.rules.length).length} refused`);
+
+  for (const { name, svg, rules, drawing } of readings) {
+    const mine = sandbox.readingOf(base64(svg));
+    const said = mine ? mine.rules : ['not read as a drawing'];
+    const agreed = JSON.stringify(said) === JSON.stringify(rules);
+    const shapes = !mine ? 'no reading'
+                 : !drawing && !mine.drawing ? null
+                 : !drawing || !mine.drawing ? `${drawing ? 'the engine' : 'this side'} alone draws it`
+                 : differs(drawing, { box: mine.drawing.box, nodes: mine.drawing.nodes.map(described) }, 'drawing');
+
+    // A line per sample only when it says something: there are a hundred of them.
+    if (!agreed) check(`${name}: the same refusals`, false, `${said.join(',') || 'none'} here, ${rules.join(',') || 'none'} in the engine`);
+    if (shapes) check(`${name}: the same drawing`, false, shapes);
+    checked += 1;
+    if (agreed && !shapes) passedDrawings += 1;
+  }
+  check('and every one of them reads the same on both sides', passedDrawings === readings.length,
+        `${passedDrawings} of ${readings.length}`);
+
+  check('there are pictures to confront', pictures.length >= 8, pictures.length + ' samples');
+  for (const { name, base64: bytes, refused } of pictures)
+    check(`${name}: ${refused ? 'refused' : 'taken'} as the engine says`, !!sandbox.pictureRefusal(bytes) === refused,
+          sandbox.pictureRefusal(bytes) || 'taken');
+
+  // And what comes of it on the page: the shapes, and never the file.
+  sandbox.setTextRuler(text => String(text).length * 7);
+  const chart = readings.find(r => r.name === 'the sample chart').svg;
+  const twoClips = '<svg viewBox="0 0 100 50"><clipPath id="plot"><rect width="10" height="10"/></clipPath>'
+                 + '<rect clip-path="url(#plot)" width="100" height="50"/><script>boom()</script></svg>';
+  const clean = twoClips.replace('<script>boom()</script>', '');
+  const sheet = (...data) => ({
+    Title: 'Chart', Language: 'en-GB',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+      Childs: [{ $type: 'Body', Layout: 'Stack', Childs: data.map(svg => ({
+        $type: 'ImageItem', AltText: 'x', Source: { Data: base64(svg), MediaType: 'image/svg+xml' } })) }] }]
+  });
+
+  const drawn = sandbox.render(sheet(chart, clean));
+  const ids = [...drawn.matchAll(/<clipPath id="([^"]+)"/g)].map(m => m[1]);
+  check('a drawing is not handed to the browser as an image', !drawn.includes('<image'), drawn.includes('<image') ? 'an <image> on the page' : 'no <image>');
+  check('it is drawn from its shapes', drawn.includes('<path') && drawn.includes('>Fréquentation 2026</text>'), 'its title is text');
+  check('two drawings calling a clip the same keep their own', ids.length === 2 && new Set(ids).size === 2, ids.join(', '));
+  check('and nothing of the file\'s own ids remains', !drawn.includes('"plot"') && !drawn.includes('#plot'));
+
+  const placed = sandbox.layout(sheet(chart)).placed.find(p => p.item.$type === 'ImageItem');
+  check('with no size declared, the height comes from the drawing',
+        Math.abs(placed.frame.width / 2 - placed.frame.height) < 0.01,
+        `${placed.frame.width} by ${placed.frame.height}`);
+
+  const refused = sandbox.render(sheet(twoClips));
+  check('a refused drawing is not drawn', !refused.includes('boom') && !refused.includes('clip-path'), 'neither its shapes nor its script');
+
+  const faults = sandbox.validate(sheet(twoClips), { sound: true }).filter(i => i.rule === 'sound.unreadablePicture');
+  check('and the panel says why', faults.length === 1 && faults[0].message.includes('script'), faults[0] ? faults[0].message : 'nothing');
+
+  const fine = sandbox.validate(sheet(clean), { sound: true }).filter(i => i.rule === 'sound.unreadablePicture');
+  check('and says nothing of one it can draw', fine.length === 0, fine.length + ' finding(s)');
 }
 
 // --- and they must agree about the output, not only about the template -------

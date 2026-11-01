@@ -160,6 +160,7 @@ namespace Frisket
 
         public void BeginDocument(Report report)
         {
+            _documentFamily = report.DefaultFont?.Family;
             _title = report.Title ?? string.Empty;
             _author = Author ?? report.Author;
             _subject = Subject ?? report.Subject;
@@ -934,6 +935,12 @@ namespace Frisket
             if (image.Data.Length == 0 || opacity <= 0)
                 return;
 
+            if (image.Reading() is { } reading)
+            {
+                DrawDrawing(frame, reading.Require(), opacity);
+                return;
+            }
+
             EmbeddedImage embedded = Use(image);
 
             // The unit square is placed with its top-left at the frame's top-left; the
@@ -978,6 +985,154 @@ namespace Frisket
                     .Append(PdfWriter.N(frame.Bottom)).Append(" cm\n")
                     .Append('/').Append(name).Append(" Do\nQ\n");
         }
+
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// A drawing in the page's own content stream, in marks and real text: sharp at any
+        /// size, its labels selectable and searchable, and inside whatever element is open, so
+        /// a figure's alternative text covers it like any other picture's.
+        ///
+        /// Its own coordinates are mapped onto the frame and clipped to it, as an SVG's viewport
+        /// clips. Stretched if the frame's proportions are not the drawing's: Fit has already
+        /// decided that, for this and for a bitmap alike.
+        /// </summary>
+        private void DrawDrawing(Rect frame, VectorDrawing drawing, double opacity)
+        {
+            if (frame.Width <= 0 || frame.Height <= 0)
+                return;
+
+            double sx = frame.Width / drawing.Width, sy = frame.Height / drawing.Height;
+
+            _content.Append("q\n")
+                    .Append(PdfWriter.N(frame.Left)).Append(' ').Append(PdfWriter.N(frame.Top)).Append(' ')
+                    .Append(PdfWriter.N(frame.Width)).Append(' ').Append(PdfWriter.N(frame.Height)).Append(" re W n\n");
+            Matrix(new VectorMatrix(sx, 0, 0, sy, frame.Left - drawing.X * sx, frame.Top - drawing.Y * sy));
+
+            foreach (VectorNode node in drawing.Nodes)
+                DrawNode(node, opacity);
+
+            _content.Append("Q\n");
+        }
+
+        /// <summary>The family text naming none is set in, for a drawing's labels.</summary>
+        private string? _documentFamily;
+
+        private void Matrix(VectorMatrix m)
+        {
+            _content.Append(VectorDrawing.N(m.A)).Append(' ').Append(VectorDrawing.N(m.B)).Append(' ')
+                    .Append(VectorDrawing.N(m.C)).Append(' ').Append(VectorDrawing.N(m.D)).Append(' ')
+                    .Append(VectorDrawing.N(m.E)).Append(' ').Append(VectorDrawing.N(m.F)).Append(" cm\n");
+        }
+
+        private void DrawNode(VectorNode node, double opacity)
+        {
+            // The transform before the clip: a clipPath is read in the coordinates of the
+            // element naming it, its own transform included.
+            bool framed = !node.Transform.IsIdentity || node.Clip != null;
+            if (framed)
+            {
+                _content.Append("q\n");
+                if (!node.Transform.IsIdentity)
+                    Matrix(node.Transform);
+
+                if (node.Clip is { } clip)
+                {
+                    Trace(clip.Path);
+                    _content.Append(clip.EvenOdd ? "W* n\n" : "W n\n");
+                }
+            }
+
+            switch (node)
+            {
+                case VectorGroup group:
+                    foreach (VectorNode child in group.Children)
+                        DrawNode(child, opacity);
+                    break;
+
+                case VectorShape shape:
+                    Paint(shape, opacity);
+                    break;
+
+                case VectorText text:
+                    foreach (PlacedRun run in text.Place(Measurer, _documentFamily))
+                        Label(run, opacity);
+                    break;
+            }
+
+            if (framed)
+                _content.Append("Q\n");
+        }
+
+        /// <summary>
+        /// Fill, then stroke, as two paintings. B would be shorter, and where the stroke is
+        /// translucent it composes the two as a knockout group: the stroke would replace the
+        /// fill beneath it instead of lying over it, which is not what SVG draws.
+        /// </summary>
+        private void Paint(VectorShape shape, double opacity)
+        {
+            if (shape.Fill is { } fill)
+            {
+                _content.Append("q\n").Append(AlphaState(shape.FillAlpha * opacity))
+                        .Append(Rgb(fill)).Append(" rg\n");
+                Trace(shape.Path);
+                _content.Append(shape.EvenOdd ? "f*\nQ\n" : "f\nQ\n");
+            }
+
+            if (shape.Stroke is { } stroke)
+            {
+                _content.Append("q\n").Append(AlphaState(shape.StrokeAlpha * opacity))
+                        .Append(Rgb(stroke)).Append(" RG\n")
+                        .Append(VectorDrawing.N(shape.StrokeWidth)).Append(" w ")
+                        .Append(shape.Cap).Append(" J ")
+                        .Append(shape.Join).Append(" j ")
+                        .Append(VectorDrawing.N(shape.MiterLimit)).Append(" M [");
+
+                for (int i = 0; i < shape.Dash.Length; i++)
+                    _content.Append(i == 0 ? "" : " ").Append(VectorDrawing.N(shape.Dash[i]));
+
+                _content.Append("] ").Append(VectorDrawing.N(shape.DashOffset)).Append(" d\n");
+                Trace(shape.Path);
+                _content.Append("S\nQ\n");
+            }
+        }
+
+        private void Trace(VectorPath path)
+        {
+            int at = 0;
+            foreach (VectorVerb verb in path.Verbs)
+            {
+                int count = verb switch { VectorVerb.Cubic => 6, VectorVerb.Close => 0, _ => 2 };
+                for (int i = 0; i < count; i++)
+                    _content.Append(VectorDrawing.N(path.Points[at++])).Append(' ');
+
+                _content.Append(verb switch
+                {
+                    VectorVerb.Move => "m\n",
+                    VectorVerb.Line => "l\n",
+                    VectorVerb.Cubic => "c\n",
+                    _ => "h\n"
+                });
+            }
+        }
+
+        /// <summary>A piece of a drawing's text, set the right way up in a space that points down.</summary>
+        private void Label(PlacedRun run, double opacity)
+        {
+            FontFile? file = Fonts.FontFor(run.Style);
+            if (file == null)
+                return;
+
+            EmbeddedFont font = Use(file);
+
+            _content.Append("q\n").Append(AlphaState(run.Alpha * opacity))
+                    .Append(Rgb(run.Style.Color ?? Frisket.Color.Black)).Append(" rg\nBT\n/")
+                    .Append(font.Name).Append(' ').Append(VectorDrawing.N(run.Style.EmSizeInMillimeters)).Append(" Tf\n")
+                    .Append("1 0 0 -1 ").Append(VectorDrawing.N(run.X)).Append(' ').Append(VectorDrawing.N(run.Y)).Append(" Tm\n<")
+                    .Append(GlyphString(run.Text, font, _missingGlyphs)).Append("> Tj\nET\nQ\n");
+        }
+
+        // ------------------------------------------------------------------
 
         private readonly Dictionary<IImportedPage, string> _forms = new();
         private readonly List<(string Name, int Number)> _formObjects = new();
@@ -1460,6 +1615,11 @@ namespace Frisket
             if (_images.TryGetValue(key, out EmbeddedImage? found))
                 return found;
 
+            // Here and not when the file is written, so the words reach whoever is drawing,
+            // and the same words the proof uses.
+            if (Pictures.Refusal(source) is { } refused)
+                throw new NotSupportedException(refused);
+
             var image = new EmbeddedImage { Name = "Im" + (_images.Count + 1) };
             _images[key] = image;
             _pending[key] = source;
@@ -1472,7 +1632,7 @@ namespace Frisket
         {
             ImageSource source = _pending[key];
 
-            if (LooksLikeJpeg(source.Data))
+            if (Pictures.LooksLikeJpeg(source.Data))
             {
                 (int width, int height, int components) = JpegSize(source.Data);
                 string space = components == 1 ? "/DeviceGray" : components == 4 ? "/DeviceCMYK" : "/DeviceRGB";
@@ -1484,27 +1644,37 @@ namespace Frisket
                 return;
             }
 
-            if (PngImage.TryRead(source.Data, out PngImage png))
+            if (!PngImage.TryRead(source.Data, out PngImage png, out string reason))
+                throw new NotSupportedException(reason);
+
+            if (png.HasAlpha)
             {
-                // PNG's own filtering is PDF's Predictor 15, so the compressed data goes
-                // in untouched here too.
-                image.ObjectNumber = _pdf.AddRawStream(
-                    $"/Type /XObject /Subtype /Image /Width {png.Width} /Height {png.Height} " +
-                    $"/ColorSpace {png.ColorSpace} /BitsPerComponent {png.BitDepth} /Filter /FlateDecode " +
-                    $"/DecodeParms << /Predictor 15 /Colors {png.Colors} /BitsPerComponent {png.BitDepth} " +
-                    $"/Columns {png.Width} >>", png.Data);
+                // PDF keeps alpha apart, so the two channels cannot cross untouched: the
+                // colours become a stream of their own and the alpha a soft mask beside them.
+                // Straight, not premultiplied, in both PNG and PDF, so no colour is changed.
+                (byte[] colour, byte[]? alpha) = png.Planes();
+                string size = $"/Type /XObject /Subtype /Image /Width {png.Width} /Height {png.Height} ";
+                string mask = string.Empty;
+
+                if (alpha != null)
+                {
+                    int number = _pdf.AddStream(size + "/ColorSpace /DeviceGray /BitsPerComponent 8", alpha);
+                    mask = $" /SMask {number} 0 R";
+                }
+
+                image.ObjectNumber = _pdf.AddStream(
+                    size + $"/ColorSpace {png.ColorSpace} /BitsPerComponent 8{mask}", colour);
                 return;
             }
 
-            throw new NotSupportedException(
-                "Only JPEG and non-interlaced 8-bit grayscale or RGB PNG images can be embedded; " +
-                "this one has a palette, an alpha channel, or is interlaced. A canvas exports " +
-                "RGBA: fill it with an opaque colour before exporting and the PNG comes out " +
-                "without an alpha channel.");
+            // PNG's own filtering is PDF's Predictor 15, so the compressed data goes in
+            // untouched here too.
+            image.ObjectNumber = _pdf.AddRawStream(
+                $"/Type /XObject /Subtype /Image /Width {png.Width} /Height {png.Height} " +
+                $"/ColorSpace {png.ColorSpace} /BitsPerComponent {png.BitDepth} /Filter /FlateDecode " +
+                $"/DecodeParms << /Predictor 15 /Colors {png.Colors} /BitsPerComponent {png.BitDepth} " +
+                $"/Columns {png.Width} >>", png.Data);
         }
-
-        private static bool LooksLikeJpeg(byte[] data)
-            => data.Length > 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF;
 
         /// <summary>Reads a JPEG's size and component count from its start-of-frame marker.</summary>
         private static (int Width, int Height, int Components) JpegSize(byte[] data)

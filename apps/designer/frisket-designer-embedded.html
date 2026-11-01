@@ -52,6 +52,9 @@
      recipient's address block, the firm's legal notices - offered under <em>Library</em> in
      the palette and named <code>st://reference</code> in the template. They answer after a
      short delay, the way a backend would; the template keeps only their names.</p>
+  <p>The report also holds a <strong>chart</strong>, an SVG file its application drew. The canvas
+     reads it by the engine's rules and draws what it read, so it is a picture only in name: its
+     curves are marks and its labels text, in the PDF as here.</p>
 </header>
 
 <main>
@@ -114,6 +117,36 @@
     });
   }
 
+  // A chart the host drew, in the limited SVG examples/charts/README.md lists: two curves, two
+  // scales, a plot area they cannot leave, and labels that are text. A real host would bring one
+  // per case through the data, with SourceField; carried in the template here, to keep this short.
+  const chart = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-size="14">
+    <defs><clipPath id="plot"><rect x="70" y="40" width="660" height="240"/></clipPath></defs>
+    <text x="400" y="24" text-anchor="middle" font-size="18" font-weight="bold" fill="#20262c">Fréquentation 2026</text>
+    <g stroke="#d5dae0" stroke-dasharray="4 4">
+      <line x1="70" y1="100" x2="730" y2="100"/><line x1="70" y1="160" x2="730" y2="160"/><line x1="70" y1="220" x2="730" y2="220"/>
+    </g>
+    <g clip-path="url(#plot)" fill="none" stroke-width="2.5" stroke-linejoin="round">
+      <polyline stroke="steelblue" points="70,250 190,205 310,160 430,85 550,140 670,200 730,190"/>
+      <path stroke="#b4693f" d="M70 260 C 130 200, 190 240, 250 190 S 370 20, 430 10 S 550 180, 610 140 S 700 90, 730 110"/>
+    </g>
+    <g stroke="#20262c" stroke-width="1.5">
+      <line x1="70" y1="40" x2="70" y2="280"/><line x1="730" y1="40" x2="730" y2="280"/><line x1="70" y1="280" x2="730" y2="280"/>
+    </g>
+    <g fill="#20262c" text-anchor="end">
+      <text x="62" y="280" dy=".35em">0</text><text x="62" y="160" dy=".35em">1 000</text><text x="62" y="40" dy=".35em">2 000</text>
+    </g>
+    <g fill="#b4693f">
+      <text x="738" y="280" dy=".35em">0 %</text><text x="738" y="160" dy=".35em">50 %</text><text x="738" y="40" dy=".35em">100 %</text>
+    </g>
+    <g fill="#20262c" text-anchor="middle">
+      <text x="70" y="302">Jan.</text><text x="430" y="302">Jul.</text><text x="730" y="302">Dec.</text>
+      <text transform="translate(20 160) rotate(-90)" fill="steelblue">Visitors</text>
+      <text transform="translate(788 160) rotate(90)" fill="#b4693f">Occupancy</text>
+    </g>
+  </svg>`;
+  const chartBytes = btoa(String.fromCharCode(...new TextEncoder().encode(chart)));
+
   // A template the host kept from last time: an expert report's opening, in French.
   document.getElementById("first").report = {
     Title: "Rapport d'expertise",
@@ -125,6 +158,8 @@
         { $type: "SubTemplateItem", TemplatePath: "st://destinataire" },
         { $type: "TextItem", Text: "Rapport d'expertise n° {Dossier.Numero}" },
         { $type: "TextItem", Text: "Le présent rapport répond à la mission confiée par ordonnance." },
+        { $type: "ImageItem", AltText: "Fréquentation sur l'année : les visiteurs passent de 300 en janvier à 1 500 en juillet, puis redescendent.",
+          Source: { Data: chartBytes, MediaType: "image/svg+xml" } },
         { $type: "SubTemplateItem", TemplatePath: "st://loi/code-civil-1240" }
       ] }]
     }]

@@ -330,6 +330,17 @@ namespace Frisket
             if (image.Source?.Data is not { Length: > 0 })
                 return;
 
+            // Shown, not read, for the reason a barcode is: a mail reader does not draw SVG -
+            // Gmail strips it, Outlook has no way to - and this engine cannot make a bitmap of
+            // one. can.drawingInFlow says so before anything is sent.
+            if (Pictures.LooksLikeDrawing(image.Source.Data))
+            {
+                if (!string.IsNullOrWhiteSpace(image.AltText))
+                    html.Append("<p style=\"margin:0 0 .6em;color:#666;\">")
+                        .Append(Escape(image.AltText!)).Append("</p>\n");
+                return;
+            }
+
             // Encoded here, not interpolated. ImageSource.Data is a byte[] that the
             // serializer happens to write as base64, so it *looks* like a base64 string
             // everywhere a template is read - and appending it to a string gives

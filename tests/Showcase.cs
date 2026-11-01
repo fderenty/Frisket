@@ -31,7 +31,7 @@ namespace test
             Directory.CreateDirectory(directory);
             File.WriteAllText(Path.Combine(directory, AppendixFile), Appendix().ToJson());
             File.WriteAllText(Path.Combine(directory, TemplateFile), Build().ToJson());
-            File.WriteAllText(Path.Combine(directory, DataFile), DataJson());
+            File.WriteAllText(Path.Combine(directory, DataFile), DataJson(directory));
             return Path.Combine(directory, TemplateFile);
         }
 
@@ -405,7 +405,44 @@ namespace test
             body.Add(BuildSignOff());
             body.Add(BuildCosts());
 
-            // --- 7. what the page cannot show ----------------------------------
+            // --- 7. what another application drew -------------------------------
+            // The conformance claim has to survive these two as it survives everything else,
+            // and a validator can only say so of a file that carries them (section 4).
+            Demonstrates(body, "A chart, and a picture with alpha", "Chart",
+                "A chart drawn by another application as an SVG file and handed over in the "
+                + "data, so the template never changes. Zoom in: the curves stay sharp, because "
+                + "they are marks and not pixels. Select a label: it is text. The orange curve "
+                + "runs off its scale and stops at the top of the plot, which is a clip path. "
+                + "Under it, a PNG with an alpha channel: the band shows through its rings, "
+                + "which is a soft mask, and a checker wants to see one is allowed here.");
+
+            body.Add(new ImageItem
+            {
+                SourceField = "Chart",
+                AltText = "Attendance over the year: visitors rise from 300 in January to 1,500 "
+                        + "in July and fall back to 750 in December, while occupancy peaks above "
+                        + "the scale in the summer."
+            });
+
+            var tinted = new ContainerItem { Layout = LayoutMode.Absolute };
+            tinted.Style.Location.Dock = Dock.Left | Dock.Right;
+            tinted.Style.Location.HeightValue = 18;
+            tinted.Style.Margin.Top = 2;
+            tinted.Style.Background = new BrushStyle { Color = new Color(214, 228, 240) };
+
+            var rings = new ImageItem
+            {
+                Source = new ImageSource { Data = SeeThroughMark(96), MediaType = "image/png" },
+                AltText = "The ACME mark, its rings transparent over a pale blue band"
+            };
+            rings.Style.Location.Left = (2, Units.Millimeter);
+            rings.Style.Location.Top = (2, Units.Millimeter);
+            rings.Style.Location.Width = (14, Units.Millimeter);
+            rings.Style.Location.Height = (14, Units.Millimeter);
+            tinted.Add(rings);
+            body.Add(tinted);
+
+            // --- 8. what the page cannot show ----------------------------------
             // Three of the things this document exists to prove leave no mark on it.
             // Nothing on screen is wrong, and nothing on screen is evidence either, so
             // the only honest thing a caption can do is say where else to look.
@@ -802,7 +839,7 @@ namespace test
         /// and one deliberately long observation so a single row is itself split - which
         /// is the case that once dropped the short cells of the second half.
         /// </summary>
-        internal static string DataJson(int rows = 26)
+        internal static string DataJson(string directory, int rows = 26)
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("{\n");
@@ -839,6 +876,13 @@ namespace test
             }
 
             sb.Append("  ],\n");
+            // The chart, as a host hands one over: bytes it generated, as a data: URI. In LF
+            // whatever the checkout, or this file would follow it (CLAUDE.md 6).
+            string chart = File.ReadAllText(Path.Combine(directory, "charts", "attendance.svg")).ReplaceLineEndings("\n");
+            sb.Append("  \"Chart\": \"data:image/svg+xml;base64,")
+              .Append(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(chart)))
+              .Append("\",\n");
+
             sb.Append("  \"Photos\": [\n");
             for (int i = 0; i < 6; i++)
             {
@@ -871,6 +915,21 @@ namespace test
                 if (r > 0.72) return ((byte)196, (byte)62, (byte)48);
                 if (r > 0.46) return ((byte)255, (byte)255, (byte)255);
                 return ((byte)32, (byte)44, (byte)62);
+            });
+        }
+
+        /// <summary>The same mark with an alpha channel: what is not ring is not there, and the ring's edge is soft.</summary>
+        internal static byte[] SeeThroughMark(int size)
+        {
+            double centre = size / 2.0;
+            return PngEncoder.WithAlpha(size, size, (x, y) =>
+            {
+                double dx = x - centre, dy = y - centre;
+                double r = Math.Sqrt(dx * dx + dy * dy) / (size * 0.47);
+                if (r > 1) return ((byte)255, (byte)255, (byte)255, (byte)0);
+                if (r > 0.72) return ((byte)196, (byte)62, (byte)48, (byte)255);
+                if (r > 0.46) return ((byte)255, (byte)255, (byte)255, (byte)((0.72 - r) / 0.26 * 200));
+                return ((byte)32, (byte)44, (byte)62, (byte)230);
             });
         }
 

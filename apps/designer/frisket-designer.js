@@ -254,7 +254,7 @@ function frisketDesigner(seams = {}) {
       </label>
       <div id="bgFields" hidden>
         <div class="field"><label data-i18n="add.image">Image</label><div class="val">
-          <input type="file" id="bgFile" accept="image/png,image/jpeg"></div></div>
+          <input type="file" id="bgFile" accept="image/png,image/jpeg,image/svg+xml"></div></div>
         <div class="field"><label data-i18n="field.area">Covers</label><div class="val">
           <select id="bgArea">
             <option value="Sheet" data-i18n="BackdropArea.Sheet">The whole sheet</option>
@@ -1299,6 +1299,16 @@ function frisketDesigner(seams = {}) {
           const reader = new FileReader();
           reader.onload = () => {
             item.Source = { Data: String(reader.result).split(",")[1], SourcePath: f.name, MediaType: f.type || "image/png" };
+
+            // A drawing says its own proportions, and a browser asked for the size of an SVG
+            // with only a viewBox answers with something of its own.
+            if (pictureIsDrawing(item.Source.Data)) {
+              delete item.NaturalWidth;
+              delete item.NaturalHeight;
+              refresh();
+              return;
+            }
+
             const probe = new Image();
             probe.onload = () => { item.NaturalWidth = probe.width / 3.78; item.NaturalHeight = probe.height / 3.78; refresh(); };
             probe.src = String(reader.result);

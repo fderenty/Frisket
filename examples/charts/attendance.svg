@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="sans-serif" font-size="14">
+  <title>Attendance over the year, on two scales</title>
+
+  <defs>
+    <!-- The plot area: a curve that runs off the scale stops at its edge. -->
+    <clipPath id="plot">
+      <rect x="70" y="50" width="660" height="280"/>
+    </clipPath>
+  </defs>
+
+  <text x="400" y="26" text-anchor="middle" font-size="20" font-weight="bold" fill="#20262c">Fréquentation 2026</text>
+
+  <!-- The grid. -->
+  <g stroke="#d5dae0" stroke-width="1" stroke-dasharray="4 4">
+    <line x1="70" y1="50" x2="730" y2="50"/>
+    <line x1="70" y1="120" x2="730" y2="120"/>
+    <line x1="70" y1="190" x2="730" y2="190"/>
+    <line x1="70" y1="260" x2="730" y2="260"/>
+  </g>
+
+  <!-- The curves, under the axes and inside the plot. -->
+  <g clip-path="url(#plot)" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <polyline stroke="steelblue" points="70,290 130,270 190,240 250,250 310,190 370,150 430,120 490,135 550,180 610,210 670,235 730,225"/>
+    <path stroke="#b4693f" d="M70 300 C 130 230, 190 280, 250 220 S 370 40, 430 30 S 550 210, 610 170 S 700 110, 730 130"/>
+  </g>
+
+  <!-- The points of the first curve. -->
+  <g fill="steelblue">
+    <circle cx="70" cy="290" r="3.5"/>
+    <circle cx="310" cy="190" r="3.5"/>
+    <circle cx="430" cy="120" r="3.5"/>
+    <circle cx="730" cy="225" r="3.5"/>
+  </g>
+
+  <!-- Two axes, one to each side, and the time along the bottom. -->
+  <g stroke="#20262c" stroke-width="1.5" fill="none">
+    <line x1="70" y1="50" x2="70" y2="330"/>
+    <line x1="730" y1="50" x2="730" y2="330"/>
+    <line x1="70" y1="330" x2="730" y2="330"/>
+  </g>
+
+  <g fill="#20262c" text-anchor="end">
+    <text x="62" y="330" dy="0.35em">0</text>
+    <text x="62" y="260" dy="0.35em">500</text>
+    <text x="62" y="190" dy="0.35em">1 000</text>
+    <text x="62" y="120" dy="0.35em">1 500</text>
+    <text x="62" y="50" dy="0.35em">2 000</text>
+  </g>
+
+  <g fill="#b4693f">
+    <text x="738" y="330" dy="0.35em">0 %</text>
+    <text x="738" y="260" dy="0.35em">25 %</text>
+    <text x="738" y="190" dy="0.35em">50 %</text>
+    <text x="738" y="120" dy="0.35em">75 %</text>
+    <text x="738" y="50" dy="0.35em">100 %</text>
+  </g>
+
+  <g fill="#20262c" text-anchor="middle">
+    <text x="70" y="352">Jan.</text>
+    <text x="250" y="352">Apr.</text>
+    <text x="430" y="352">Jul.</text>
+    <text x="610" y="352">Oct.</text>
+    <text x="730" y="352">Dec.</text>
+    <text transform="translate(20 190) rotate(-90)" fill="steelblue">Visitors</text>
+    <text transform="translate(788 190) rotate(90)" fill="#b4693f">Occupancy</text>
+  </g>
+
+  <!-- The legend. -->
+  <g font-size="13">
+    <rect x="270" y="372" width="18" height="4" fill="steelblue"/>
+    <text x="294" y="379" fill="#20262c">Visitors</text>
+    <rect x="400" y="372" width="18" height="4" fill="#b4693f"/>
+    <text x="424" y="379" fill="#20262c">Occupancy <tspan font-style="italic">(of capacity)</tspan></text>
+  </g>
+</svg>

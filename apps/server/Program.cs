@@ -224,6 +224,9 @@ app.MapPost("/check", (CheckRequest request) =>
 
             if (request.Fields is { ValueKind: JsonValueKind.Array } fields)
                 issues.AddRange(TemplateFields.Check(report, fields.GetRawText()));
+
+            if (!string.IsNullOrWhiteSpace(request.Data))
+                issues.AddRange(TemplateData.Check(report, request.Data, target));
         }
         catch (Exception e) when (e is InvalidOperationException or FileNotFoundException or JsonException)
         {
@@ -320,15 +323,17 @@ internal sealed record PreviewRequest(
 
 /// <summary>
 /// What /check is asked: the template as text, the host's catalogue of fields when it has one
-/// (the array the content editor is handed as `fields`), and the output aimed at - the
-/// richest by default, which is the engine's own default and loses nothing.
+/// (the array the content editor is handed as `fields`), the data that will fill it when it is
+/// at hand (as text, as /preview takes it), and the output aimed at - the richest by default,
+/// which is the engine's own default and loses nothing.
 /// </summary>
 internal sealed record CheckRequest(
     string Template,
     JsonElement? Fields = null,
     bool Tagged = true,
     bool Interactive = true,
-    bool Paged = true);
+    bool Paged = true,
+    string? Data = null);
 
 [JsonSerializable(typeof(PreviewRequest))]
 internal partial class ServerJson : JsonSerializerContext;

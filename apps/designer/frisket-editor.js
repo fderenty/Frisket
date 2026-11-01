@@ -2889,6 +2889,18 @@ function frisketEditor(seams = {}) {
                           Data: String(reader.result).split(",")[1] || "" };
           item.AltText = "";
 
+          // A drawing says its own proportions, and a browser asked for the size of an SVG
+          // with only a viewBox answers with something of its own. It takes the band.
+          const reading = readingOf(item.Source.Data);
+          if (reading) {
+            const wide = bandWidth();
+            item.NaturalWidth = wide;
+            item.NaturalHeight = wide / (reading.drawing ? reading.drawing.ratio : 2);
+            item.Style.Location.WidthValue = wide;
+            insertAfterCurrent(item);
+            return;
+          }
+
           // Measured rather than assumed. newItem hands out 40 x 20 mm, which is a
           // reasonable placeholder and the wrong shape for almost every real picture;
           // left alone, every image would come in at the same proportions.
