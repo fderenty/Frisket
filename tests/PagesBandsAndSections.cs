@@ -1035,5 +1035,126 @@ namespace test
             Console.WriteLine($"  ⛶ {Path.Combine(dir, "sections.pdf")}");
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// A header "on the first page only" means the first page of what it heads. It counted over
+        /// the whole file, so in any section but the first such a header never showed, and an annex
+        /// could not have one - while {SectionPage} beside it counted from the annex's own start.
+        ///
+        /// First, Last, their two opposites and Range count within the section now. Odd and Even do
+        /// not: they are the two sides of a sheet, and a sheet does not know about sections. Nor do a
+        /// watermark and a backdrop, which belong to the file. With one section nothing moves.
+        /// </summary>
+        [Fact]
+        public void Test107_APageScopeCountsInItsSection()
+        {
+            const string testName = "Test 107";
+            Console.WriteLine("Test 107: a page scope on an item counts within its section");
+            Console.WriteLine();
+
+            static Section Section(int pages)
+            {
+                var section = new Section { Dimension = new() { Width = 210, Height = 297 } };
+
+                var header = new Header { Layout = LayoutMode.Stack };
+                header.Style.Location.HeightValue = 10;
+                foreach ((string word, PageScope scope) in new[]
+                {
+                    ("first", PageScope.First), ("last", PageScope.Last), ("notfirst", PageScope.ExceptFirst),
+                    ("notlast", PageScope.ExceptLast), ("odd", PageScope.Odd), ("even", PageScope.Even),
+                    ("second", PageScope.Range)
+                })
+                {
+                    var text = new TextItem { Text = word };
+                    text.Style.PageScope = scope;
+                    if (scope == PageScope.Range)
+                        text.Style.PageRange = new List<int> { 2 };
+                    header.Add(text);
+                }
+                section.Add(header);
+
+                var body = new Body { Layout = LayoutMode.Stack };
+                for (int i = 0; i < pages; i++)
+                {
+                    var page = new TextItem { Text = "page" };
+                    if (i > 0)
+                        page.Style.PageBreak = PageBreak.Before;
+                    body.Add(page);
+                }
+                section.Add(body);
+                return section;
+            }
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            List<List<string>> Drawn(params int[] sections)
+            {
+                var report = new Report { Title = "Scope", Language = "en-GB" };
+                report.Sections.Clear();
+                foreach (int pages in sections)
+                    report.Sections.Add(Section(pages));
+                report.Reattach();
+
+                var proof = new SvgBackend(new FontTextMeasurer(library));
+                ReportRenderer.Render(report, proof);
+                return proof.Pages.Select(page => System.Text.RegularExpressions.Regex
+                    .Matches(page, "<text[^>]*>([^<]*)</text>").Select(m => m.Groups[1].Value).ToList()).ToList();
+            }
+
+            string On(List<List<string>> pages, string word) => string.Join(",",
+                Enumerable.Range(0, pages.Count).Where(i => pages[i].Contains(word)).Select(i => i + 1));
+
+            // Two pages, then three: the file's pages 1 and 2, then 3, 4 and 5.
+            List<List<string>> two = Drawn(2, 3);
+            AssertEqual(testName, "five pages", 5, two.Count, 0);
+            foreach (List<string> page in two)
+                Console.WriteLine("    " + string.Join(" ", page));
+
+            AssertEqual(testName, "first: the first page of each section", "1,3", On(two, "first"), 0);
+            AssertEqual(testName, "last: the last page of each section", "2,5", On(two, "last"), 0);
+            AssertEqual(testName, "except the first", "2,4,5", On(two, "notfirst"), 0);
+            AssertEqual(testName, "except the last", "1,3,4", On(two, "notlast"), 0);
+            AssertEqual(testName, "a range counts in the section, as {SectionPage} does", "2,4", On(two, "second"), 0);
+
+            // The side of the sheet, whatever the section. After a first section of an odd length,
+            // or the two countings agree and this proves nothing: 2 then 3 starts the second on
+            // page 3, odd in the file and in the section, and the sabotage went green on it. After
+            // 3 then 2 it starts on page 4, a verso, though it is the section's first.
+            List<List<string>> sides = Drawn(3, 2);
+            AssertEqual(testName, "the second section opens on the file's page 4", "1,4", On(sides, "first"), 0);
+            AssertEqual(testName, "odd is the side of the sheet", "1,3,5", On(sides, "odd"), 0);
+            AssertEqual(testName, "and even", "2,4", On(sides, "even"), 0);
+
+            // With one section the two countings are one, which is why nothing else had to move.
+            List<List<string>> one = Drawn(3);
+            AssertEqual(testName, "in one section, first", "1", On(one, "first"), 0);
+            AssertEqual(testName, "last", "3", On(one, "last"), 0);
+            AssertEqual(testName, "except the first", "2,3", On(one, "notfirst"), 0);
+            AssertEqual(testName, "except the last", "1,2", On(one, "notlast"), 0);
+            AssertEqual(testName, "a range", "2", On(one, "second"), 0);
+
+            // A section of one page is its own first and last.
+            List<List<string>> single = Drawn(1, 1);
+            AssertEqual(testName, "one page is its section's first", "1,2", On(single, "first"), 0);
+            AssertEqual(testName, "and its last", "1,2", On(single, "last"), 0);
+            AssertEqual(testName, "and has neither opposite", string.Empty, On(single, "notfirst") + On(single, "notlast"), 0);
+
+            // What belongs to the file goes on counting over the file.
+            var marked = new Report { Title = "Scope", Language = "en-GB" };
+            marked.Sections.Clear();
+            marked.Sections.Add(Section(2));
+            marked.Sections.Add(Section(2));
+            marked.Watermark = new Watermark("STAMP") { PageScope = PageScope.First, Mode = WatermarkMode.Single };
+            marked.Reattach();
+
+            var stamped = new SvgBackend(new FontTextMeasurer(library));
+            ReportRenderer.Render(marked, stamped);
+            AssertEqual(testName, "a watermark on the first page is on the file's first page", "1",
+                string.Join(",", Enumerable.Range(0, stamped.Pages.Count).Where(i => stamped.Pages[i].Contains(">STAMP<")).Select(i => i + 1)), 0);
+
+            Console.WriteLine();
+        }
     }
 }

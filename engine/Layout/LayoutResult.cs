@@ -1,7 +1,11 @@
 using System.Text.Json.Serialization;
 namespace Frisket
 {
-    /// <summary>Which pages an item appears on. Drives both overlays and header/footer variants.</summary>
+    /// <summary>
+    /// Which pages something appears on. On an item, First, Last, their opposites and Range count
+    /// within its section, as {SectionPage} does; Odd and Even are the sides of a sheet, and go by
+    /// the file. On a watermark or a backdrop, which belong to the file, all of them go by the file.
+    /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<PageScope>))]
     public enum PageScope { All, First, Last, ExceptFirst, ExceptLast, Odd, Even, Range }
 

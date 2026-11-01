@@ -2631,6 +2631,13 @@ body item with a page scope stayed in the first section and vanished from any ot
 empty. And the back page, whose own comment says it holds tokens and which `TemplateFields` walks as
 though it were filled, never was. Test 106 asks of what is drawn, every place a template can hold a token.
 
+**And `PageScope.First` on a header meant the first page of the file**, so in any section but the first
+it never showed, and an annex could not have one - while `{SectionPage}` beside it counted from the
+annex's own start. The author's decision, the same day: on an item, `First`, `Last`, their opposites and
+`Range` count within the section. `Odd` and `Even` do not, being the two sides of a sheet, and a watermark
+or a backdrop belongs to the file and goes on counting over it. With one section the two countings are
+one, which is why nothing else had to move, and why it could wait for somebody with two.
+
 Three traps met, all silent:
 
 - **old templates** put `Document` and `Dimension` at the root. Two properties read them back without ever writing them again — and `Dimension` must be **set aside then applied in `Reattach`**, because the two arrive in file order and `Dimension` before `Document` set the size on an object the next line replaced;

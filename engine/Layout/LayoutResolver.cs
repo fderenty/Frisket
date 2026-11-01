@@ -2528,8 +2528,19 @@ namespace Frisket
             }
 
             foreach (Page page in result.Pages)
+            {
+                // Within the section, as {SectionPage} counts: "first page only" on a header means
+                // the first page of what it heads. Over the whole file, an annex could not have one.
+                LaidOutSection? section = result.Sections
+                    .FirstOrDefault(sec => page.Number - 1 >= sec.FirstPage
+                                        && page.Number - 1 < sec.FirstPage + sec.PageCount);
+
+                int within = section == null ? page.Number : page.Number - section.FirstPage;
+                int count = section?.PageCount ?? total;
+
                 page.RemoveAll(placed => !flowed.Contains(placed.Source)
-                                         && !IsOnPage(placed.Source, page.Number, total));
+                                         && !IsOnPage(placed.Source, page.Number, within, count));
+            }
         }
 
         private static void CollectFlowItems(ContainerItem container, HashSet<BaseItem> into)
@@ -2547,26 +2558,31 @@ namespace Frisket
         /// Scope is inherited: an item shows only if it and every container above it do.
         /// Without this, hiding a totals block would leave its contents on the page.
         /// </summary>
-        private static bool IsOnPage(BaseItem item, int number, int total)
+        private static bool IsOnPage(BaseItem item, int page, int within, int count)
         {
             for (BaseItem? at = item; at != null; at = at.Parent)
             {
-                if (!Matches(at.Style, number, total))
+                if (!Matches(at.Style, page, within, count))
                     return false;
             }
             return true;
         }
 
-        private static bool Matches(Style style, int number, int total) => style.PageScope switch
+        /// <summary>
+        /// Whether a style's scope takes in a page. <paramref name="page"/> is its number in the
+        /// file, and <paramref name="within"/> and <paramref name="count"/> its number and the
+        /// total in its section. Odd and Even go by the file, being the two sides of a sheet.
+        /// </summary>
+        private static bool Matches(Style style, int page, int within, int count) => style.PageScope switch
         {
             PageScope.All => true,
-            PageScope.First => number == 1,
-            PageScope.Last => number == total,
-            PageScope.ExceptFirst => number != 1,
-            PageScope.ExceptLast => number != total,
-            PageScope.Odd => (number & 1) == 1,
-            PageScope.Even => (number & 1) == 0,
-            PageScope.Range => style.PageRange != null && style.PageRange.Contains(number),
+            PageScope.First => within == 1,
+            PageScope.Last => within == count,
+            PageScope.ExceptFirst => within != 1,
+            PageScope.ExceptLast => within != count,
+            PageScope.Odd => (page & 1) == 1,
+            PageScope.Even => (page & 1) == 0,
+            PageScope.Range => style.PageRange != null && style.PageRange.Contains(within),
             _ => true
         };
 

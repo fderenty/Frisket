@@ -487,13 +487,14 @@ namespace Frisket
         public bool KeepWithNext { get; set; }
 
         /// <summary>
-        /// Which pages this item shows on. Declared, but inert until the pagination
-        /// pass exists; <see cref="PageScope.Range"/> reads <see cref="PageRange"/>.
+        /// Which pages of its section this item shows on, for what is not in the flow: a header,
+        /// a footer, what they hold. An item in a body takes part in the pagination and stays
+        /// wherever it falls. <see cref="PageScope.Range"/> reads <see cref="PageRange"/>.
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumConverter<PageScope>))]
         public PageScope PageScope { get; set; } = PageScope.All;
 
-        /// <summary>Explicit page numbers, 1-based, used when <see cref="PageScope"/> is Range.</summary>
+        /// <summary>Explicit page numbers within the section, 1-based, used when <see cref="PageScope"/> is Range.</summary>
         public List<int>? PageRange { get; set; }
 
         /// <summary>

@@ -123,7 +123,7 @@ namespace Frisket
         /// </summary>
         public double Spacing { get; set; }
 
-        /// <summary>Pages that carry the mark. All of them, unless narrowed.</summary>
+        /// <summary>Pages that carry the mark, counted over the whole file. All of them, unless narrowed.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<PageScope>))]
         public PageScope PageScope { get; set; } = PageScope.All;
 

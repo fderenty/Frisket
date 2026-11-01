@@ -136,7 +136,7 @@ namespace Frisket
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]   // default is not default(T)
         public double Opacity { get; set; } = 1;
 
-        /// <summary>Pages that carry it. All of them, unless narrowed.</summary>
+        /// <summary>Pages that carry it, counted over the whole file. All of them, unless narrowed.</summary>
         [JsonConverter(typeof(JsonStringEnumConverter<PageScope>))]
         public PageScope PageScope { get; set; } = PageScope.All;
 

@@ -189,7 +189,7 @@
           ]
         },
         "PageScope": {
-          "description": "Pages that carry it. All of them, unless narrowed.",
+          "description": "Pages that carry it, counted over the whole file. All of them, unless narrowed.",
           "type": "string",
           "enum": [
             "All",
@@ -2516,7 +2516,7 @@
           "type": "boolean"
         },
         "PageScope": {
-          "description": "Which pages this item shows on. Declared, but inert until the pagination pass exists; PageScope.Range reads Style.PageRange.",
+          "description": "Which pages of its section this item shows on, for what is not in the flow: a header, a footer, what they hold. An item in a body takes part in the pagination and stays wherever it falls. PageScope.Range reads Style.PageRange.",
           "type": "string",
           "enum": [
             "All",
@@ -2530,7 +2530,7 @@
           ]
         },
         "PageRange": {
-          "description": "Explicit page numbers, 1-based, used when Style.PageScope is Range.",
+          "description": "Explicit page numbers within the section, 1-based, used when Style.PageScope is Range.",
           "type": [
             "array",
             "null"
@@ -3494,7 +3494,7 @@
           ]
         },
         "PageScope": {
-          "description": "Pages that carry the mark. All of them, unless narrowed.",
+          "description": "Pages that carry the mark, counted over the whole file. All of them, unless narrowed.",
           "type": "string",
           "enum": [
             "All",
