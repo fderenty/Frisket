@@ -1169,6 +1169,15 @@ namespace test
             AssertEqual(testName, "the section carries: a rich row split, each half keeping its cells", true,
                 richWidths.Count >= 2 && richWidths.All(n => n == richRow!.Childs.Count), 0);
 
+            // And what a reader is told of the whole file, which no profile asks (test 111).
+            Reading aloud = ReadAloud(bytes);
+            AssertEqual(testName, "read down its tree, every word is reached, and by the right element", "",
+                string.Join(" | ", aloud.Faults.Take(5)), 0);
+            AssertEqual(testName, "the section carries: a rich heading, which is a heading", true,
+                aloud.Heard.Any(h => h.Tag == "H2" && h.Words == "1.1. A note in several styles"), 0);
+            AssertEqual(testName, "the section carries: a rich cell, holding its words", true,
+                aloud.Heard.Any(h => h.Tag == "TD" && h.Words.StartsWith("Noted on site.", StringComparison.Ordinal)), 0);
+
             // The two backends must turn the mark the same way. They did not: the SVG
             // rotated one way and the PDF matrix the other, so the preview ascended and
             // the printed page descended. Both were self-consistent, and every assertion

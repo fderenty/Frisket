@@ -371,6 +371,13 @@ namespace Frisket
         /// <summary>Appearance of the text, and what the resolver measures it with.</summary>
         public TextStyle Font { get; set; } = new();
 
+        /// <summary>
+        /// The rich text this is a piece of, when the resolver made it to draw one. A piece is
+        /// no part of the template and has no parent, so what is asked of it - which pages it
+        /// is on, which element of a tagged file holds it - is asked of this.
+        /// </summary>
+        internal AdvancedTextItem? PieceOf { get; set; }
+
         public TextItem() { }
 
         protected override BaseItem CreateEmpty() => new TextItem();

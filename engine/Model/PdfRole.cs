@@ -126,7 +126,7 @@ namespace Frisket
             FieldItem { Kind: FieldKind.Signature, Signing: Signing.ByHand } => PdfRole.Figure,
 
             FieldItem => PdfRole.Form,
-            TextItem => PdfRole.Paragraph,
+            TextItem or AdvancedTextItem => PdfRole.Paragraph,
             _ => PdfRole.Section
         };
     }

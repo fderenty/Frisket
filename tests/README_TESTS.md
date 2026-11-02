@@ -42,6 +42,7 @@ question a file name answers is where a person would look.
 | `PdfImport.cs` | a page read out of another PDF, drawn as an item, and what it costs a conformance claim |
 | `PdfOutput.cs` | the written PDF read back: structure, subset fonts, PDF/A-3B, Factur-X, veraPDF |
 | `Placement.cs` | where an item lands in the box it was given: units, constraints, margins, alignment |
+| `ReadingOrder.cs` | a tagged file read back the way assistive software reads it, from the tree down to the decoded words |
 | `Robustness.cs` | bytes and callers the engine does not trust: bounded counts, fuzzing, cancellation |
 | `Standalone.cs` | each editor face built into one HTML file, with nothing left pointing outside it |
 | `SvgOutput.cs` | SVG pages and fragments - the engine's proof of what the printer will do |

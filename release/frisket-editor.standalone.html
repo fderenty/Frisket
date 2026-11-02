@@ -5060,7 +5060,7 @@ function roleOf(item, parent) {
   if (item.$type === "ImageItem" || item.$type === "BarcodeItem") return "Figure";
   if (item.$type === "FieldItem")
     return item.Kind === "Signature" && item.Signing === "ByHand" ? "Figure" : "Form";
-  if (item.$type === "TextItem") return "Paragraph";
+  if (item.$type === "TextItem" || item.$type === "AdvancedTextItem") return "Paragraph";
   return "Section";
 }
 

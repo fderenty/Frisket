@@ -574,6 +574,34 @@
               "$type": "AdvancedTextItem",
               "Runs": [
                 {
+                  "Text": "{HeadingNumber}. A note in "
+                },
+                {
+                  "Text": "several",
+                  "Font": {
+                    "Italic": true
+                  }
+                },
+                {
+                  "Text": " styles"
+                }
+              ],
+              "Font": {
+                "Size": 1.3,
+                "Bold": true
+              },
+              "Role": "Heading2",
+              "Style": {
+                "Margin": {
+                  "Top": 4,
+                  "Bottom": 1
+                }
+              }
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
                   "Text": "Note for {Client}: "
                 },
                 {
@@ -1021,11 +1049,14 @@
                   "GroupItems": "Items",
                   "Childs": [
                     {
-                      "$type": "TextItem",
-                      "Text": "All",
+                      "$type": "AdvancedTextItem",
+                      "Runs": [
+                        {
+                          "Text": "All"
+                        }
+                      ],
                       "Font": {
-                        "Size": 0.9,
-                        "HorizontalAlignment": "Left"
+                        "Size": 0.9
                       },
                       "Style": {}
                     },

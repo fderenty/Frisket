@@ -262,6 +262,18 @@ namespace test
                 + "inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. "
                 + "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit."));
 
+            // A heading written the way the content editor writes everything. It has to reach
+            // the file as a heading, which a rich text once could not.
+            var richHeading = new AdvancedTextItem { Role = PdfRole.Heading2 };
+            richHeading.Font.Size = 1.3;
+            richHeading.Font.Bold = true;
+            richHeading.Runs.Add(new TextRun { Text = "{HeadingNumber}. A note in " });
+            richHeading.Runs.Add(new TextRun { Text = "several", Font = new TextStyle { Italic = true } });
+            richHeading.Runs.Add(new TextRun { Text = " styles" });
+            richHeading.Style.Margin.Top = 4;
+            richHeading.Style.Margin.Bottom = 1;
+            body.Add(richHeading);
+
             // One paragraph carrying several styles at once, which no run of plain text
             // items can do: the styles change inside a sentence, not between them.
             var mixed = new AdvancedTextItem();
@@ -570,9 +582,13 @@ namespace test
             note.Runs.Add(new TextRun { Text = "Noted on site. ", Font = new TextStyle { Bold = true } });
             note.Runs.Add(new TextRun { Text = "{FieldNotes}" });
 
+            // Rich too: overleaf it has nothing left to draw, and it is still one of the row's cells.
+            var site = new AdvancedTextItem { Font = new TextStyle { Size = 0.9 } };
+            site.Runs.Add(new TextRun { Text = "All" });
+
             var row = new TableRow();
             row.Style.Padding = new() { Left = 1.5, Top = 1, Right = 1.5, Bottom = 1 };
-            row.Add(BodyCell("All"));
+            row.Add(site);
             row.Add(note);
             table.Add(row);
 

@@ -8,6 +8,158 @@ namespace test
     /// </summary>
     public partial class EngineTests
     {
+        /// <summary>
+        /// What is asked of a rich text is asked of the item. It was drawn through pieces with
+        /// no parent and placed nothing of its own, so all of this was answered by nothing, in
+        /// the template's own terms, with no error and from the first commit. The content editor
+        /// writes nothing but rich text, so these were its documents.
+        /// </summary>
+        [Fact]
+        public void Test110_ARichTextAnswersForItself()
+        {
+            const string testName = "Test 110";
+            Console.WriteLine("Test 110: what is asked of a rich text");
+            Console.WriteLine();
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+            var measurer = new FontTextMeasurer(library);
+
+            static AdvancedTextItem Rich(string text)
+            {
+                var item = new AdvancedTextItem();
+                item.Runs.Add(new TextRun { Text = text });
+                return item;
+            }
+            static Report Sheet(params BaseItem[] items)
+            {
+                var report = new Report
+                {
+                    Title = "Rich",
+                    Language = "en-GB",
+                    GeneratedAt = SampleDate,
+                    Dimension = new() { Width = 100, Height = 120 },
+                    Body = new() { Layout = LayoutMode.Stack },
+                };
+                foreach (BaseItem item in items)
+                    report.Body!.Add(item);
+                report.Reattach();
+                return report;
+            }
+            static bool Says(Page page, string word) => page.Items.Any(i => i.Source is TextItem text
+                && (i.Fragment ?? text.Text).Contains(word, StringComparison.Ordinal));
+            static string Showing(LayoutResult layout, string word)
+                => string.Join(",", layout.Pages.Where(p => Says(p, word)).Select(p => p.Number));
+
+            string filler = string.Join(" ", Enumerable.Repeat("filler", 400));
+
+            // --- a page scope, in a band ------------------------------------------------------
+            Report scoped = Sheet(new TextItem { Text = filler });
+            var footer = new Footer { Layout = LayoutMode.Stack };
+            AdvancedTextItem onLast = Rich("ONLAST");
+            onLast.Style.PageScope = PageScope.Last;
+            footer.Add(onLast);
+            AdvancedTextItem justified = Rich("JUSTIFIED words spread across a line that wraps so that its first line is stretched and broken into words by the resolver");
+            justified.Font.HorizontalAlignment = HorizontalAlignment.Justify;
+            justified.Style.PageScope = PageScope.First;
+            footer.Add(justified);
+            var header = new Header { Layout = LayoutMode.Stack };
+            var group = new ContainerItem { Layout = LayoutMode.Stack };
+            group.Style.PageScope = PageScope.First;
+            group.Add(Rich("INGROUP"));
+            header.Add(group);
+            scoped.Section!.Add(footer);
+            scoped.Section!.Add(header);
+            scoped.Reattach();
+            LayoutResult scopedLaid = scoped.Resolve(measurer);
+            AssertEqual(testName, "the sample runs to several pages", true, scopedLaid.PageCount >= 2, 0);
+            AssertEqual(testName, "a scope on a rich text is honoured", scopedLaid.PageCount.ToString(), Showing(scopedLaid, "ONLAST"), 0);
+            AssertEqual(testName, "and on the group holding one", "1", Showing(scopedLaid, "INGROUP"), 0);
+            AssertEqual(testName, "and on a justified one, drawn a word at a time", "1", Showing(scopedLaid, "JUSTIFIED"), 0);
+
+            // A body item with a scope stays wherever it falls (0.4.0), and so do its words.
+            AdvancedTextItem flowed = Rich("FLOWED");
+            flowed.Style.PageScope = PageScope.Last;
+            AssertEqual(testName, "in the body it stays where it falls", "1",
+                Showing(Sheet(flowed, new TextItem { Text = filler }).Resolve(measurer), "FLOWED"), 0);
+
+            // --- whether it is drawn at all ----------------------------------------------------
+            AdvancedTextItem hidden = Rich("HIDDEN");
+            hidden.Style.Visibility = Visibility.Invisible;
+            var after = new TextItem { Text = "AFTER" };
+            var svg = new SvgBackend(measurer);
+            LayoutResult hiddenLaid = ReportRenderer.Render(Sheet(hidden, after), svg);
+            AssertEqual(testName, "an invisible rich text draws nothing", false, svg.Pages[0].Contains("HIDDEN"), 0);
+            AssertEqual(testName, "and keeps its room", true,
+                hiddenLaid.Pages[0].Items.First(i => ReferenceEquals(i.Source, after)).Frame.Top > 1, 0);
+
+            // --- a background and a border ------------------------------------------------------
+            static int Rectangles(string page) => System.Text.RegularExpressions.Regex.Matches(page, "<rect").Count;
+            int RectanglesOf(AdvancedTextItem item)
+            {
+                var drawn = new SvgBackend(measurer);
+                ReportRenderer.Render(Sheet(item), drawn);
+                return Rectangles(drawn.Pages[0]);
+            }
+            int bare = RectanglesOf(Rich("WORDS"));
+            AdvancedTextItem shaded = Rich("WORDS");
+            shaded.Style.Background = new BrushStyle { Color = new Color(200, 0, 0) };
+            AssertEqual(testName, "a background is drawn", bare + 1, RectanglesOf(shaded), 0);
+            AdvancedTextItem bordered = Rich("WORDS");
+            bordered.Style.Border = new PenStyle { Width = 0.2 };
+            AssertEqual(testName, "and a border", bare + 1, RectanglesOf(bordered), 0);
+
+            AdvancedTextItem underWords = Rich("WORDS");
+            underWords.Style.Background = new BrushStyle { Color = new Color(200, 0, 0) };
+            List<PlacedItem> placed = Sheet(underWords).Resolve(measurer).Pages[0].Items.ToList();
+            AssertEqual(testName, "under its words", true,
+                placed.FindIndex(i => ReferenceEquals(i.Source, underWords)) >= 0
+                && placed.FindIndex(i => ReferenceEquals(i.Source, underWords)) < placed.FindIndex(i => i.Source is TextItem), 0);
+
+            // --- a bookmark, a frame, and the room it takes ---------------------------------------
+            AdvancedTextItem marked = Rich(string.Join(" ", Enumerable.Repeat("marked", 400)));
+            marked.Bookmark = "Rich mark";
+            LayoutResult markedLaid = Sheet(new TextItem { Text = "Before" }, marked).Resolve(measurer);
+            AssertEqual(testName, "a bookmark reaches the outline, once though it is split", "Rich mark",
+                string.Join(",", markedLaid.Outline.Select(o => o.Title)), 0);
+            AssertEqual(testName, "and it was split", true, markedLaid.PageCount >= 2, 0);
+            foreach (Page page in markedLaid.Pages)
+            {
+                PlacedItem part = page.Items.Single(i => ReferenceEquals(i.Source, marked));
+                AssertEqual(testName, $"page {page.Number}: the frame holds its words", true,
+                    page.Items.Where(i => i.Source is TextItem { PieceOf: not null })
+                        .All(i => i.Frame.Top >= part.Frame.Top - 0.01 && i.Frame.Bottom <= part.Frame.Bottom + 0.01), 0);
+                AssertEqual(testName, $"page {page.Number}: and this part's words, not the whole text's", true,
+                    part.Frame.Bottom <= page.BodyBand.Bottom + 0.01, 0);
+            }
+            AssertEqual(testName, "and nothing is said of a text that was cut", 0, markedLaid.Issues.Count, 0);
+
+            AdvancedTextItem framed = Rich("WORDS");
+            Sheet(framed).Resolve(measurer);
+            AssertEqual(testName, "the frame it landed in is told back", true,
+                framed.Style.RenderedFrame.Bottom > framed.Style.RenderedFrame.Top, 0);
+
+            AdvancedTextItem padded = Rich("WORDS");
+            padded.Style.Padding = new() { Bottom = 10 };
+            var holder = new ContainerItem { Layout = LayoutMode.Stack };
+            holder.Add(padded);
+            var below = new TextItem { Text = "BELOW" };
+            LayoutResult paddedLaid = Sheet(holder, below).Resolve(measurer);
+            double wordsEnd = paddedLaid.Pages[0].Items.First(i => i.Source is TextItem { PieceOf: not null }).Frame.Bottom;
+            AssertEqual(testName, "the padding at its foot counts in a group", wordsEnd + 10,
+                paddedLaid.Pages[0].Items.First(i => ReferenceEquals(i.Source, below)).Frame.Top, 0.01);
+
+            // --- what cannot be cut says so, naming it ---------------------------------------------
+            AdvancedTextItem kept = Rich(string.Join(" ", Enumerable.Repeat("kept", 800)));
+            kept.Style.Splitting = Splitting.KeepTogether;
+            List<TemplateIssue> told = Sheet(kept).Resolve(measurer).Issues.ToList();
+            AssertEqual(testName, "a rich text asked to stay whole and taller than the page is named", true,
+                told.Count == 1 && told[0].Rule == "fits.overflow" && ReferenceEquals(told[0].Item, kept), 0);
+
+            Console.WriteLine();
+        }
+
         [Fact]
         public void Test50_AdvancedText()
         {

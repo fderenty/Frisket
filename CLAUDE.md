@@ -2283,12 +2283,8 @@ a forced row always ends past the foot, so the next one breaks and starts afresh
 stays because it says what is true. *Unfalsifiable is not the same as correct* (§5c), and here it is
 not the same as wrong either.
 
-**And the same run found what it was not looking for.** A rich text's pieces are `TextItem`s made up
-as it is laid out, so they have no `Parent`, so in a tagged PDF each is a `P` at the root of the tree:
-a rich cell's `TD` is empty and its words come after the table, a rich paragraph is read after every
-plain text on its page, and a rich heading is not a heading, since a flowed rich text places no element
-of its own. Older than this section, and untouched by it. veraPDF passes both profiles over it, because
-a well-formed tree in the wrong order is not something either profile tests (§4b).
+**And the same run found what it was not looking for**, by dumping the tree of a table to see what
+a cut cell had done to it: §15c.
 
 ## 12. Test outputs
 
@@ -2656,6 +2652,62 @@ teaches people to ignore the panel.
 **The designer's echo dropped `Strikethrough` in `newFont()`, `fontOf()` and `text()` at
 once** — §1's five places seen from the cascade, and found only by comparing the SVG
 produced against what was expected, never by reading the code.
+
+## 15c. A rich text places itself, and its pieces answer to it
+
+"The backends learned nothing" (§15) was true and had a price nobody had counted. A piece is in no
+template, so it has no parent, and a flowed rich text placed nothing but pieces. So whatever was asked
+of the *item* found nobody there. Measured on 0.4.1, each side by side with a plain text:
+
+| Asked of a rich text | What it got |
+|---|---|
+| a page scope in a band, or on a group above it | ignored: a footer meant for the last page on every page |
+| `Visibility.Invisible` | drawn |
+| a background, a border | not drawn, and the designer's preview drew them: the echo was right |
+| a bookmark | not in the outline |
+| `RenderedFrame` | `NaN` |
+| padding at its foot, in a group | ignored: the next item sat on it |
+| a role, a language, in a tagged file | ignored, and worse, below |
+
+**In a tagged PDF each piece was a `P` at the root of the tree.** A rich cell's `TD` was empty and its
+words came after the table. A rich paragraph was read after every plain text on its page. Each line
+and each change of style was a paragraph of its own, and a rich heading was no heading. That is every
+document the content editor writes, in files claiming PDF/UA-1, from the first commit. veraPDF passes
+both profiles, because a well-formed tree in the wrong order is not something either tests (§4b).
+
+`PlaceAdvancedPart` places the item before its pieces, on every road, and `TextItem.PieceOf` says
+whose a piece is, so a scope and a visibility are asked of the owner. In the file a piece is a mark
+and no longer an element: `/K [own, pieces...]` on the item's element, one per page as a plain text
+has, and the number tree indexed by mark as §4b says it must be. Auto on a rich text answered
+`Section`, which nothing had ever seen because nothing had ever been tagged by it, and answers
+`Paragraph` now, on both sides of §5.
+
+The backends did learn something this time, and one thing only: `BeginElement` knows a piece.
+
+**A check on a tree has to read the file the way a reader does.** Test 85 reads `/K n`, so it would have
+passed an element listing its marks in an array with a wrong map; test 40 questioned the model and the
+bytes. `ReadAloud` (`tests/ReadingOrder.cs`) goes down from `/StructTreeRoot`, takes each mark's words off
+the page that draws them and decodes them through the font's own `ToUnicode`, with the reader in
+`Frisket.Import`, asking the engine nothing. Test 111 compares what it hears with what the page says,
+and test 40 asks it of the conformance document, which holds a rich heading now. It printed the right
+order the first time and failed on its own sample: three hundred words fitted on a page, so "over
+several pages" had no matter (§10c).
+
+The cost, stated: every tagged document holding rich text changes, though not on the page, and a
+document that asked any of the above of a rich text now gets it, so it does change on the page.
+
+Twenty-one sabotages from a run seen green (§14d), and four went through, three of them holes. A frame
+taking every line and not this part's still held its words, so it is asked to stop at the foot. An
+element dropping its own mark from `/K` was invisible to a reader that only went down, so the map is read
+in both directions. And veraPDF passed a rich part that placed no element, because the first word makes
+one when nothing has: only a *short* rich cell, with no word left to draw overleaf, shows the fault, and
+the conformance document had none, so it has one now. The fourth, a piece joining an element of another
+page, needs a part with no element, which cannot now be reached; the comparison stays, as the one in
+`EmitStructure` does.
+
+**What this did not reach.** The heading-number rules of both validators ask `item is TextItem`, so
+`{HeadingNumber}` in a rich text with no format to answer it says nothing beforehand; the number itself
+is right.
 
 ## 15b. A heading numbers itself from the text, not from a style
 

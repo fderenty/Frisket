@@ -191,6 +191,13 @@ namespace Frisket
             /// two elements, and the second cannot be found by looking at the item.
             /// </summary>
             public int Owner { get; init; } = -1;
+
+            /// <summary>
+            /// The further marks this element holds, in reading order: the pieces its words are
+            /// drawn through, when it is a rich text. One line or one change of style is not a
+            /// paragraph, so they are marks of the one element rather than elements of their own.
+            /// </summary>
+            public List<int>? Pieces { get; set; }
         }
 
         private readonly List<Marked> _marked = new();
@@ -209,6 +216,29 @@ namespace Frisket
         {
             if (!Tagged || _inElement)
                 return;
+
+            // A piece of a rich text is a mark of the element placed just before it. Each piece
+            // used to be a paragraph with no parent, so at the root of the tree: a rich cell's
+            // words came after its table, a rich paragraph after every plain text on its page,
+            // and a rich heading was no heading. veraPDF passes that, a well-formed tree in the
+            // wrong order being nothing either profile tests.
+            //
+            // An owner with no element here is decoration, or was not placed, and then it is the
+            // owner that is being begun: what it says of itself is what the piece says.
+            if (item is TextItem { PieceOf: { } rich })
+            {
+                if (_marked.Count > 0 && _marked[^1] is var element
+                    && ReferenceEquals(element.Item, rich) && element.Page == _pageObjects.Count)
+                {
+                    _inElement = true;
+                    (element.Pieces ??= new List<int>()).Add(_mcid);
+                    _content.Append('/').Append(element.Tag).Append(" <</MCID ").Append(_mcid).Append(">> BDC\n");
+                    _mcid++;
+                    return;
+                }
+
+                item = rich;
+            }
 
             PdfRole role = PdfRoles.Resolve(item);
 
@@ -408,6 +438,14 @@ namespace Frisket
                         sb.Append(elements[kid]).Append(" 0 R ");
                     sb.Append(']');
                 }
+                else if (mark.Pieces is { } pieces)
+                {
+                    // Its own mark first, which holds at most a background, then its words.
+                    sb.Append(" /K [").Append(mark.Mcid);
+                    foreach (int piece in pieces)
+                        sb.Append(' ').Append(piece);
+                    sb.Append(']');
+                }
                 else if (mark.Mcid >= 0)
                 {
                     sb.Append(" /K ").Append(mark.Mcid);
@@ -469,15 +507,21 @@ namespace Frisket
             var numbers = new StringBuilder();
             for (int page = 0; page < _pageObjects.Count; page++)
             {
-                var onPage = new List<string>();
+                var onPage = new SortedDictionary<int, string>();
                 for (int i = 0; i < _marked.Count; i++)
-                    if (_marked[i].Page == page && _marked[i].Mcid >= 0)
-                        onPage.Add(elements[i] + " 0 R");
+                {
+                    if (_marked[i].Page != page || _marked[i].Mcid < 0)
+                        continue;
+
+                    onPage[_marked[i].Mcid] = elements[i] + " 0 R";
+                    foreach (int piece in _marked[i].Pieces ?? [])
+                        onPage[piece] = elements[i] + " 0 R";
+                }
 
                 if (onPage.Count == 0)
                     continue;
 
-                numbers.Append(page).Append(" [").Append(string.Join(" ", onPage)).Append("] ");
+                numbers.Append(page).Append(" [").Append(string.Join(" ", onPage.Values)).Append("] ");
             }
 
             // Then one key per control, so a reader going from the widget finds the Form

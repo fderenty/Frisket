@@ -846,7 +846,7 @@ namespace Frisket
                 if (full > available + FitTolerance && !force)
                     return new FlowOutcome(top, resume, false);
 
-                PlaceAdvancedLines(item, page, left, top, right, lines, first, remaining);
+                PlaceAdvancedPart(item, page, left, top, right, lines, first, remaining);
                 return new FlowOutcome(top + full + item.Style.Margin.Bottom, null, true);
             }
 
@@ -871,13 +871,32 @@ namespace Frisket
             if (fitting >= remaining)
             {
                 double height = used + frame;
-                PlaceAdvancedLines(item, page, left, top, right, lines, first, remaining);
+                PlaceAdvancedPart(item, page, left, top, right, lines, first, remaining);
                 return new FlowOutcome(top + height + item.Style.Margin.Bottom, null, true);
             }
 
             double part = used + frame;
-            PlaceAdvancedLines(item, page, left, top, right, lines, first, fitting);
+            PlaceAdvancedPart(item, page, left, top, right, lines, first, fitting);
             return new FlowOutcome(top + part, new Continuation { LineIndex = first + fitting }, true);
+        }
+
+        /// <summary>
+        /// Places what a page holds of a rich text: the item itself, and the pieces its words
+        /// are drawn through.
+        ///
+        /// The item as well, since it is the only one of them in the template. With the pieces
+        /// alone, each a text with no parent, everything asked of the item was answered by
+        /// nothing: a page scope, whether it is drawn at all, its background, its bookmark, its
+        /// frame, the padding at its foot, and which element of a tagged file holds its words.
+        /// </summary>
+        private void PlaceAdvancedPart(AdvancedTextItem item, Page page, double left, double top, double right,
+                                       List<AdvancedLine> lines, int first, int count)
+        {
+            double height = lines.Skip(first).Take(count).Sum(line => line.Height)
+                          + item.Style.Padding.Top + item.Style.Padding.Bottom;
+
+            Place(item, page, left, top, right, top + height, null, null);
+            PlaceAdvancedLines(item, page, left, top, right, lines, first, count);
         }
 
         /// <summary>
@@ -1085,13 +1104,13 @@ namespace Frisket
                         // the geometry: no backend learns anything, and the two outputs
                         // cannot disagree about a line the way they could if each worked
                         // out its own spacing.
-                        x = PlaceJustifiedPiece(piece, page, x, pieceTop, metrics, spacePad);
+                        x = PlaceJustifiedPiece(item, piece, page, x, pieceTop, metrics, spacePad);
                         continue;
                     }
 
                     // Drawn as measured; carrying the token, when there is one, so the pass
                     // that knows the page total finds it as it finds a plain text's.
-                    var synthetic = new TextItem { Text = piece.Pending ?? piece.Text, Font = piece.Font };
+                    TextItem synthetic = PieceFor(item, piece.Pending ?? piece.Text, piece.Font);
                     Place(synthetic, page, x, pieceTop, x + piece.Width, pieceTop + metrics.LineHeight,
                          piece.Text, piece.Font);
                     x += piece.Width;
@@ -1099,6 +1118,14 @@ namespace Frisket
 
                 cursor += line.Height;
             }
+        }
+
+        /// <summary>The text a piece of a rich text is drawn as, which answers to that rich text.</summary>
+        private static TextItem PieceFor(AdvancedTextItem item, string text, TextStyle font)
+        {
+            var piece = new TextItem { Text = text, Font = font, PieceOf = item };
+            piece.Style.Visibility = item.Style.Visibility;
+            return piece;
         }
 
         /// <summary>
@@ -1130,7 +1157,7 @@ namespace Frisket
         /// next piece starts. The spaces are not drawn - a space draws nothing anyway -
         /// so widening them is a matter of where the next word is put.
         /// </summary>
-        private double PlaceJustifiedPiece(AdvancedPiece piece, Page page, double x, double top,
+        private double PlaceJustifiedPiece(AdvancedTextItem item, AdvancedPiece piece, Page page, double x, double top,
                                            FontMetrics metrics, double spacePad)
         {
             double spaceWidth = _measurer.Measure(" ", piece.Font, double.PositiveInfinity).Width;
@@ -1151,7 +1178,7 @@ namespace Frisket
                     double width = _measurer.Measure(word, piece.Font, double.PositiveInfinity).Width;
                     string carried = waiting != null && drawnWords < waiting.Length ? waiting[drawnWords] : word;
                     drawnWords++;
-                    var synthetic = new TextItem { Text = carried, Font = piece.Font };
+                    TextItem synthetic = PieceFor(item, carried, piece.Font);
                     Place(synthetic, page, x, top, x + width, top + metrics.LineHeight,
                           word, piece.Font);
                     x += width;
@@ -1829,8 +1856,7 @@ namespace Frisket
                     continue;
                 }
 
-                // The same for a rich cell, whose words are drawn by pieces of their own:
-                // the cell is placed as Arrange places it, and holds them.
+                // The same for a rich cell, placed as it is anywhere else.
                 if (cell is AdvancedTextItem rich && (skip > 0 || maxLines != int.MaxValue))
                 {
                     double from = box.Left + rich.Style.Margin.Left;
@@ -1838,14 +1864,7 @@ namespace Frisket
                     List<AdvancedLine> lines = CellLines(rich, Math.Max(0, to - from), page);
                     int count = Math.Max(0, Math.Min(shown, lines.Count - skip));
 
-                    double part = lines.Skip(skip).Take(count).Sum(line => line.Height)
-                                + rich.Style.Padding.Top + rich.Style.Padding.Bottom;
-                    var piece = new Rect(from, cellTop, to, cellTop + part);
-
-                    SetFrame(rich, piece);
-                    page.Place(rich, piece);
-                    NoteOutline(rich, page, piece);
-                    PlaceAdvancedLines(rich, page, from, cellTop, to, lines, skip, count);
+                    PlaceAdvancedPart(rich, page, from, cellTop, to, lines, skip, count);
                     continue;
                 }
 
@@ -2665,8 +2684,11 @@ namespace Frisket
                 int within = section == null ? page.Number : page.Number - section.FirstPage;
                 int count = section?.PageCount ?? total;
 
-                page.RemoveAll(placed => !flowed.Contains(placed.Source)
-                                         && !IsOnPage(placed.Source, page.Number, within, count));
+                page.RemoveAll(placed =>
+                {
+                    BaseItem asked = placed.Source is TextItem { PieceOf: { } rich } ? rich : placed.Source;
+                    return !flowed.Contains(asked) && !IsOnPage(asked, page.Number, within, count);
+                });
             }
         }
 
