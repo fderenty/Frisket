@@ -1668,5 +1668,591 @@ namespace test
                 "", string.Join(" | ", texts.Select(TextOf).Where(t => t.Contains('{'))), 0);
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// What a list with nothing in it leaves, when the template says what to show: a whole
+        /// table. Reported by another application on 0.4.0. The header and the message went out
+        /// with their tokens as typed, and the message was one cell in the first column, at the
+        /// document's size rather than the table's - broken a word at a time, and refused by
+        /// PDF/UA 7.2 for a row narrower than the others.
+        ///
+        /// No sample had the shape: test 26's table has one column and no header, and test 96's
+        /// empty list says nothing. The conformance document carries one now, which is what puts
+        /// it in front of veraPDF (test 53).
+        /// </summary>
+        [Fact]
+        public void Test108_AListWithNothingInIt()
+        {
+            const string testName = "Test 108";
+            Console.WriteLine("Test 108: a list with nothing in it, and a message to show");
+            Console.WriteLine();
+
+            const double lineSize = 0.7;
+            const string none = """{ "Client": "ACME", "Lines": [] }""";
+            const string one = """{ "Client": "ACME", "Lines": [ { "Ref": "a", "Name": "b", "Total": "c" } ] }""";
+
+            static TextItem Cell(string text, double? size = null)
+                => new() { Text = text, Font = new TextStyle { Size = size } };
+
+            static TableItem Listing(string? message, string heading = "Lines of {Client}", bool fitted = false)
+            {
+                var table = new TableItem { RepeatOver = "Lines", EmptyText = message, Grid = new PenStyle { Width = 0.2 } };
+                if (fitted)
+                    table.AddFittedColumn();
+                else
+                    table.AddColumn(12);
+                table.AddColumn(90).AddColumn(30);
+                table.AddHeaderRow(Cell("Ref"), Cell(heading), Cell("Total"));
+                table.AddRow(Cell("{Ref}", lineSize), Cell("{Name}", lineSize), Cell("{Total}", lineSize));
+                return table;
+            }
+
+            static Report Sheet(BaseItem content)
+            {
+                var report = new Report
+                {
+                    Title = "An empty list",
+                    Language = "en-GB",
+                    GeneratedAt = SampleDate,
+                    Dimension = new() { Width = 210, Height = 297 },
+                    Body = new() { Layout = LayoutMode.Stack },
+                };
+                report.Body!.Add(content);
+                report.Reattach();
+                return report;
+            }
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+            var measurer = new FontTextMeasurer(library);
+
+            static string TextOf(PlacedItem p) => p.Fragment ?? ((TextItem)p.Source).Text;
+            List<PlacedItem> Placed(Report bound)
+                => bound.Resolve(measurer).Pages.SelectMany(p => p.Items).Where(i => i.Source is TextItem).ToList();
+            List<PlacedItem> Bound(BaseItem content, string data) => Placed(ReportBinder.Bind(Sheet(content), data));
+            static PlacedItem Saying(List<PlacedItem> placed, string text) => placed.First(i => TextOf(i) == text);
+
+            // --- what goes on the page ----------------------------------------------------
+            List<PlacedItem> empty = Bound(Listing("Nothing for {Client}"), none);
+            Console.WriteLine($"    {string.Join(" | ", empty.Select(TextOf))}");
+
+            AssertEqual(testName, "the header is filled", 1, empty.Count(i => TextOf(i) == "Lines of ACME"), 0);
+            AssertEqual(testName, "and the message, on one line across the table", 1,
+                empty.Count(i => TextOf(i) == "Nothing for ACME"), 0);
+            AssertEqual(testName, "with no token left anywhere", "",
+                string.Join(" | ", empty.Select(TextOf).Where(t => t.Contains('{'))), 0);
+
+            PlacedItem said = Saying(empty, "Nothing for ACME");
+            AssertEqual(testName, "it starts where the first column does",
+                Saying(empty, "Ref").Frame.Left, said.Frame.Left, 0.001);
+            AssertEqual(testName, "and ends where the last one does",
+                Saying(empty, "Total").Frame.Right, said.Frame.Right, 0.001);
+            AssertEqual(testName, "centred", true, said.Font!.HorizontalAlignment == HorizontalAlignment.Center, 0);
+
+            AssertEqual(testName, "a list that is not there says the same", 1,
+                Bound(Listing("Nothing for {Client}"), """{ "Client": "ACME" }""").Count(i => TextOf(i) == "Nothing for ACME"), 0);
+
+            // --- it reads like the lines it stands in for ---------------------------------
+            double LineSize(BaseItem content) => Saying(Bound(content, one), "a").Font!.Size!.Value;
+            double line = LineSize(Listing("x"));
+
+            AssertEqual(testName, "the lines are not at the size of the header, or this proves nothing", true,
+                Math.Abs(line - Saying(empty, "Ref").Font!.Size!.Value) > 1, 0);
+            AssertEqual(testName, "the message is at the size of the lines", line, said.Font.Size!.Value, 0.001);
+
+            double TableFoot(string data)
+                => ReportBinder.Bind(Sheet(Listing("Nothing for {Client}")), data).Resolve(measurer)
+                               .Pages[0].Items.First(i => i.Source is TableItem).Frame.Bottom;
+            AssertEqual(testName, "and its row is as tall as a line's", TableFoot(one), TableFoot(none), 0.001);
+
+            static TableItem RichFirstCell(TextStyle paragraph, TextStyle? run)
+            {
+                var rich = new AdvancedTextItem { Font = paragraph };
+                rich.Runs.Add(new TextRun { Text = "{Ref}", Font = run });
+                var table = Listing("Nothing for {Client}");
+                var row = new TableRow();
+                row.Add(rich);
+                row.Add(Cell("{Name}"));
+                row.Add(Cell("{Total}"));
+                table.Remove(table.Childs.OfType<TableRow>().Last());
+                table.Add(row);
+                return table;
+            }
+
+            AssertEqual(testName, "a rich first cell gives its paragraph's size", line,
+                Saying(Bound(RichFirstCell(new TextStyle { Size = lineSize }, null), none), "Nothing for ACME").Font!.Size!.Value, 0.001);
+            AssertEqual(testName, "and its first run's when that says otherwise", line,
+                Saying(Bound(RichFirstCell(new TextStyle { Size = 3 }, new TextStyle { Size = lineSize }), none), "Nothing for ACME").Font!.Size!.Value, 0.001);
+
+            // --- read outside the list, in whatever encloses it ----------------------------
+            var families = new ContainerItem { Layout = LayoutMode.Stack, RepeatOver = "Families" };
+            families.Add(Listing("Nothing in {Family} for {Client}", "Lines of {Family}"));
+            List<PlacedItem> nested = Bound(families, """
+                { "Client": "ACME", "Families": [
+                    { "Family": "tools", "Lines": [ { "Ref": "a", "Name": "b", "Total": "c" } ] },
+                    { "Family": "toys", "Lines": [] } ] }
+                """);
+
+            AssertEqual(testName, "nested, the message reads the entry around it, and the root", 1,
+                nested.Count(i => TextOf(i) == "Nothing in toys for ACME"), 0);
+            AssertEqual(testName, "and the header too", 1, nested.Count(i => TextOf(i) == "Lines of toys"), 0);
+            AssertEqual(testName, "the family with lines has no message", 0, nested.Count(i => TextOf(i) == "Nothing in tools for ACME"), 0);
+
+            // --- filled as everything else is ----------------------------------------------
+            AssertEqual(testName, "an unknown token stays visible by default", 1,
+                Bound(Listing("Nothing for {Nope}"), none).Count(i => TextOf(i) == "Nothing for {Nope}"), 0);
+            AssertEqual(testName, "or is blanked on request", 1,
+                Placed(ReportBinder.Bind(Sheet(Listing("Nothing for {Nope}")), none, new BindingOptions { MissingField = MissingField.Blank }))
+                    .Count(i => TextOf(i).Trim() == "Nothing for"), 0);
+
+            bool Refused(TableItem table)
+            {
+                try
+                {
+                    ReportBinder.Bind(Sheet(table), none, new BindingOptions { MissingField = MissingField.Fail });
+                    return false;
+                }
+                catch (MissingDataException)
+                {
+                    return true;
+                }
+            }
+
+            AssertEqual(testName, "or refused, in the message", true, Refused(Listing("Nothing for {Nope}")), 0);
+            AssertEqual(testName, "and in the header", true, Refused(Listing("Nothing", "Lines of {Nope}")), 0);
+
+            TableItem hidden = Listing("Nothing for {Client}");
+            hidden.Childs.OfType<TableRow>().First().ShowWhen = "Nope";
+            List<PlacedItem> noHeader = Bound(hidden, none);
+            AssertEqual(testName, "a header's own condition still holds", 0, noHeader.Count(i => TextOf(i) == "Ref"), 0);
+            AssertEqual(testName, "with the message still there", 1, noHeader.Count(i => TextOf(i) == "Nothing for ACME"), 0);
+
+            // --- a container that is not a table -------------------------------------------
+            var block = new ContainerItem { Layout = LayoutMode.Stack, RepeatOver = "Lines", EmptyText = "Nothing for {Client}" };
+            block.Add(Cell("{Ref}", lineSize));
+            AssertEqual(testName, "any other container fills its message and gives it its font", line,
+                Saying(Bound(block, none), "Nothing for ACME").Font!.Size!.Value, 0.001);
+
+            // --- the shape of the row, wherever the table is -------------------------------
+            // A fitted column measures its cells, and a message wider than any column is not one.
+            double FirstColumnEnds(string message)
+                => Saying(Bound(Listing(message, fitted: true), none), "Ref").Frame.Right;
+            const string longer = "Nothing at all here, and a good deal more to say about that than any one column holds";
+            AssertEqual(testName, "the message does not widen a fitted column", FirstColumnEnds("x"), FirstColumnEnds(longer), 0.001);
+
+            // In a band a table is laid where it was put, by another road than the flow's.
+            Report banded = Sheet(Cell("Body"));
+            banded.Header = new Header();
+            banded.Header.Style.Location.HeightValue = 40;
+            banded.Header.Add(Listing("Nothing for {Client}"));
+            banded.Reattach();
+            List<PlacedItem> inBand = Placed(ReportBinder.Bind(banded, none));
+            AssertEqual(testName, "in a band too the message is on one line", 1,
+                inBand.Count(i => TextOf(i) == "Nothing for ACME"), 0);
+            AssertEqual(testName, "and ends where the last column does",
+                Saying(inBand, "Total").Frame.Right, Saying(inBand, "Nothing for ACME").Frame.Right, 0.001);
+
+            // Too long for a page, so it splits: each part still takes the whole table.
+            string endless = string.Join(" ", Enumerable.Repeat("Nothing to show here.", 500));
+            Report lengthy = Sheet(Cell("Before"));
+            lengthy.Body!.Add(Listing(endless));
+            lengthy.Reattach();
+            List<PlacedItem> split = Placed(ReportBinder.Bind(lengthy, none));
+            List<PlacedItem> parts = split.Where(i => TextOf(i).Contains("show", StringComparison.Ordinal)).ToList();
+            Console.WriteLine($"    a message too long for a page comes in {parts.Count} parts");
+            AssertEqual(testName, "a message too long for a page splits", true, parts.Count >= 2, parts.Count);
+            AssertEqual(testName, "each part across the table", true,
+                parts.All(p => Math.Abs(p.Frame.Right - Saying(split, "Total").Frame.Right) < 0.001
+                            && Math.Abs(p.Frame.Left - Saying(split, "Ref").Frame.Left) < 0.001), 0);
+            AssertEqual(testName, "and every word of it arrives", 500,
+                System.Text.RegularExpressions.Regex.Matches(string.Concat(parts.Select(TextOf)), "here").Count, 0);
+
+            // --- the outputs say so, each in its own way --------------------------------
+            string Proof(string data)
+            {
+                var svg = new SvgBackend(measurer);
+                ReportRenderer.Render(ReportBinder.Bind(Sheet(Listing("Nothing for {Client}")), data), svg);
+                return string.Concat(svg.Pages);
+            }
+            static int Rectangles(string svg) => System.Text.RegularExpressions.Regex.Matches(svg, "<rect").Count;
+            AssertEqual(testName, "the grid strokes one box across the row where a line has three", 2,
+                Rectangles(Proof(one)) - Rectangles(Proof(none)), 0);
+
+            string Tagged(string data)
+            {
+                var pdf = new PdfBackend(library)
+                {
+                    Conformance = PdfConformance.PdfA3b, Language = "en-GB", Tagged = true, Compress = false
+                };
+                ReportRenderer.Render(ReportBinder.Bind(Sheet(Listing("Nothing for {Client}")), data), pdf);
+                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            }
+            static int Spans(string pdf) => System.Text.RegularExpressions.Regex.Matches(pdf, "/ColSpan").Count;
+            AssertEqual(testName, "the cell says how many columns it takes", 1,
+                System.Text.RegularExpressions.Regex.Matches(Tagged(none), @"/S /TD[^>]*/A << /O /Table /ColSpan 3 >>").Count, 0);
+            AssertEqual(testName, "and nothing else does", 1, Spans(Tagged(none)), 0);
+            AssertEqual(testName, "and a line of a list does not", 0, Spans(Tagged(one)), 0);
+
+            string Mail(string data) => FlowingHtml.Write(ReportBinder.Bind(Sheet(Listing("Nothing for {Client}")), data));
+            AssertEqual(testName, "the mail spans the same columns", true,
+                System.Text.RegularExpressions.Regex.IsMatch(Mail(none), "<td colspan=\"3\"[^>]*>.*Nothing for ACME"), 0);
+            AssertEqual(testName, "and only there", false, Mail(one).Contains("colspan", StringComparison.Ordinal), 0);
+
+            // --- and the checks ------------------------------------------------------------
+            static IEnumerable<string> Ragged(Report report)
+                => TemplateValidator.Check(report, TemplateProfile.Sound).Where(i => i.Rule == "sound.raggedTable").Select(i => i.Message);
+
+            Report filled = ReportBinder.Bind(Sheet(Listing("Nothing")), none);
+            AssertEqual(testName, "the row the binder made is not called ragged", "",
+                string.Join(" | ", Ragged(filled)), 0);
+            AssertEqual(testName, "and a copy of it still takes every column", 3,
+                ((TableRow)filled.AllItems.OfType<TableRow>().Last().Clone()).SpansColumns ? 3 : 1, 0);
+
+            TableItem shortRow = Listing(null);
+            TableRow written = shortRow.Childs.OfType<TableRow>().Last();
+            written.Remove(written.Childs[2]);
+            written.Remove(written.Childs[1]);
+            AssertEqual(testName, "but a row written with one cell still is: no template can ask for this", 1,
+                Ragged(Sheet(shortRow)).Count(), 0);
+
+            const string catalogue = """[ "Client", { "path": "Lines", "type": "list", "fields": [ "Ref", "Name", "Total" ] } ]""";
+            List<TemplateIssue> Unknown(string message)
+                => TemplateFields.Check(Sheet(Listing(message)), catalogue).Where(i => i.Rule == "fields.unknown").ToList();
+
+            AssertEqual(testName, "a message the data answers has nothing said of it", 0, Unknown("Nothing for {Client}").Count, 0);
+            List<TemplateIssue> misspelt = Unknown("Nothing for {Clent}");
+            AssertEqual(testName, "a misspelt one is found, at its place", true,
+                misspelt.Count == 1 && misspelt[0].Pointer?.EndsWith("/EmptyText", StringComparison.Ordinal) == true, 0);
+            AssertEqual(testName, "with the name meant", true, misspelt[0].Message.Contains("\"Client\"", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and a field of an entry is one too: there is no entry to read", 1, Unknown("Nothing for {Ref}").Count, 0);
+
+            Console.WriteLine();
+        }
+
+        [Fact]
+        public void Test109_NothingGoesOffTheFootInSilence()
+        {
+            const string testName = "Test 109";
+            Console.WriteLine("Test 109: what does not fit goes overleaf, or says it cannot");
+            Console.WriteLine();
+
+            const double foot = 120;
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+            var measurer = new FontTextMeasurer(library);
+
+            static string[] Words(string prefix, int count)
+                => Enumerable.Range(0, count).Select(i => prefix + i).ToArray();
+            static TextItem Plain(string text) => new() { Text = text };
+            static AdvancedTextItem Rich(params string[] runs)
+            {
+                var item = new AdvancedTextItem();
+                foreach (string run in runs)
+                    item.Runs.Add(new TextRun { Text = run });
+                return item;
+            }
+            static TableItem Table(params BaseItem[] cells)
+            {
+                var table = new TableItem();
+                foreach (BaseItem _ in cells)
+                    table.AddAutoColumn();
+                table.AddRow(cells);
+                return table;
+            }
+            static ContainerItem Group(params BaseItem[] items)
+            {
+                var group = new ContainerItem { Layout = LayoutMode.Stack };
+                foreach (BaseItem item in items)
+                    group.Add(item);
+                return group;
+            }
+            static TextItem Tall(double height, string text = "Tall")
+            {
+                TextItem item = Plain(text);
+                item.Style.Location.Height = (height, Units.Millimeter);
+                return item;
+            }
+            static ImageItem Picture(double height) => new()
+            {
+                NaturalWidth = 50, NaturalHeight = height, AltText = "A picture", Scaling = ImageScaling.None,
+            };
+            static Report Sheet(params BaseItem[] items)
+            {
+                var report = new Report
+                {
+                    Title = "Past the foot",
+                    Language = "en-GB",
+                    GeneratedAt = SampleDate,
+                    Dimension = new() { Width = 100, Height = foot },
+                    Body = new() { Layout = LayoutMode.Stack },
+                };
+                foreach (BaseItem item in items)
+                    report.Body!.Add(item);
+                report.Reattach();
+                return report;
+            }
+
+            string long1 = string.Join(" ", Words("a", 300));
+            string long2 = string.Join(" ", Words("b", 300));
+
+            static IEnumerable<string> Said(PlacedItem placed)
+                => placed.Source is TextItem text ? (placed.Fragment ?? text.Text).Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries) : [];
+
+            // Every word of a column, on the paper, once, in order, and nothing said about it.
+            void Arrives(string what, Report report, params (string Prefix, int Count)[] columns)
+            {
+                LayoutResult layout = report.Resolve(measurer);
+                Console.WriteLine($"    {what}: {layout.PageCount} page(s)");
+
+                List<PlacedItem> placed = layout.Pages.SelectMany(p => p.Items).ToList();
+                foreach ((string prefix, int count) in columns)
+                    AssertEqual(testName, $"{what}: every {prefix} word, once and in order", string.Join(" ", Words(prefix, count)),
+                        string.Join(" ", placed.SelectMany(Said).Where(w => w.StartsWith(prefix, StringComparison.Ordinal))), 0);
+
+                AssertEqual(testName, $"{what}: nothing past the foot", "",
+                    string.Join(" | ", placed.Where(p => p.Source is not Body && p.Frame.Bottom > foot + 0.01)
+                                             .Select(p => $"{p.Source.GetType().Name} to {p.Frame.Bottom:0.0}")), 0);
+                AssertEqual(testName, $"{what}: and nothing to say", 0, layout.Issues.Count, 0);
+            }
+
+            // --- a row taller than a page is cut, wherever it stands --------------------------
+            Arrives("a text cell, first on its page", Sheet(Table(Plain(long1))), ("a", 300));
+            Arrives("a text cell, after something", Sheet(Plain("Before"), Table(Plain(long1))), ("a", 300));
+            Arrives("a rich cell, first on its page", Sheet(Table(Rich(long1))), ("a", 300));
+            Arrives("a rich cell, after something", Sheet(Plain("Before"), Table(Rich(long1))), ("a", 300));
+            Arrives("a text cell beside a rich one", Sheet(Table(Plain(long1), Rich(long2))), ("a", 300), ("b", 300));
+            Arrives("a rich cell in two columns", Sheet(new Func<ContainerItem>(() =>
+            {
+                ContainerItem columns = Group(Table(Rich(long1)));
+                columns.ColumnCount = 2;
+                return columns;
+            })()), ("a", 300));
+
+            TableItem headed = Table(Rich(long1));
+            headed.AddHeaderRow(Plain("Heading"));
+            headed.RepeatHeader = true;
+            Arrives("under a header that comes back", Sheet(headed), ("a", 300));
+
+            // A header and a row that each fit, and do not fit together, was the same fault.
+            TableItem crowded = Table(Plain(string.Join(" ", Words("a", 150))));
+            crowded.AddHeaderRow(Plain(string.Join(" ", Enumerable.Repeat("head", 100))));
+            Arrives("a row that only overflows its header", Sheet(crowded), ("a", 150));
+
+            // What the box adds has to be counted, or the last line of a part goes past the foot.
+            TableItem padded = Table(Rich(long1));
+            TableRow paddedRow = padded.Childs.OfType<TableRow>().Single();
+            paddedRow.Style.Padding = new() { Top = 9, Bottom = 9 };
+            paddedRow.Childs[0].Style.Padding = new() { Top = 7, Bottom = 7 };
+            paddedRow.Childs[0].Style.Margin = new() { Top = 5, Bottom = 5 };
+            Arrives("a padded row", Sheet(padded), ("a", 300));
+
+            // Lines of a rich text have heights of their own, so a part is not lines times one.
+            AdvancedTextItem mixed = Rich(long1);
+            mixed.Runs.Insert(0, new TextRun { Text = "Large opening words\n", Font = new TextStyle { Size = 3 } });
+            mixed.Runs.Add(new TextRun { Text = "\nLarge closing words", Font = new TextStyle { Size = 3 } });
+            Arrives("a rich cell of two sizes", Sheet(Table(mixed)), ("a", 300));
+
+            // --- each part is still a row ------------------------------------------------------
+            AdvancedTextItem shortCell = Rich("Short");
+            TableItem uneven = Table(Rich(long1), shortCell);
+            LayoutResult unevenLaid = Sheet(uneven).Resolve(measurer);
+            var unevenRow = uneven.Childs.OfType<TableRow>().Single();
+            AssertEqual(testName, "the row was cut", true, unevenLaid.PageCount >= 2, 0);
+            foreach (Page page in unevenLaid.Pages)
+            {
+                AssertEqual(testName, $"page {page.Number} shows both its cells", 2,
+                    unevenRow.Childs.Count(cell => page.Items.Any(i => ReferenceEquals(i.Source, cell))), 0);
+
+                PlacedItem rowPart = page.Items.Single(i => ReferenceEquals(i.Source, unevenRow));
+                AssertEqual(testName, $"page {page.Number}: the cell is inside its row", true,
+                    page.Items.Where(i => ReferenceEquals(i.Source, unevenRow.Childs[0]))
+                        .All(i => i.Frame.Top >= rowPart.Frame.Top - 0.01 && i.Frame.Bottom <= rowPart.Frame.Bottom + 0.01), 0);
+            }
+            AssertEqual(testName, "and the short one says what it says once", 1,
+                unevenLaid.Pages.SelectMany(p => p.Items).SelectMany(Said).Count(w => w == "Short"), 0);
+
+            TableItem total = Table(Rich(long1, " of {Pages}"));
+            LayoutResult totalLaid = Sheet(total).Resolve(measurer);
+            AssertEqual(testName, "the page total in a rich cell that was cut is the real one", totalLaid.PageCount.ToString(),
+                totalLaid.Pages.SelectMany(p => p.Items).SelectMany(Said).Last(), 0);
+
+            // --- only a row with a page to itself goes down as it stands -----------------------
+            TableItem keptSecond = new();
+            keptSecond.AddAutoColumn();
+            keptSecond.AddRow(Plain("a0 first row"));
+            keptSecond.AddRow(Plain(string.Join(" ", Words("k", 100))));
+            keptSecond.Childs[0].Style.Location.Height = (105, Units.Millimeter);
+            keptSecond.Childs[1].Style.Splitting = Splitting.KeepTogether;
+            LayoutResult keptLaid = Sheet(keptSecond).Resolve(measurer);
+            AssertEqual(testName, "a kept row that is not the first moves to the next page", true,
+                keptLaid.PageCount == 2
+                && keptLaid.Pages[1].Items.Any(i => ReferenceEquals(i.Source, keptSecond.Childs[1]))
+                && !keptLaid.Pages[0].Items.Any(i => ReferenceEquals(i.Source, keptSecond.Childs[1])), 0);
+
+            // A line taller than any page, part way down a row: what is left of the row goes
+            // down from where it had got to. It used to start the row again, words and all.
+            AdvancedTextItem giant = Rich("a0\n", "a1\n", "a2");
+            giant.Runs[1].Font = new TextStyle { Size = 150 };
+            TableItem afterGiant = Table(giant);
+            afterGiant.AddRow(Plain("c0"));
+            LayoutResult giantLaid = Sheet(afterGiant).Resolve(measurer);
+            AssertEqual(testName, "what no page can hold goes down once, and from where it had got to", "a0 a1 a2 c0",
+                string.Join(" ", giantLaid.Pages.SelectMany(p => p.Items).SelectMany(Said)), 0);
+            AssertEqual(testName, "and is said", "fits.overflow",
+                string.Join(",", giantLaid.Issues.Select(i => i.Rule)), 0);
+
+            // --- a group lower down a page has a page to go to ---------------------------------
+            void Moves(string what, BaseItem first)
+            {
+                ContainerItem group = Group(first);
+                LayoutResult layout = Sheet(Tall(100), group).Resolve(measurer);
+                PlacedItem[] on1 = layout.Pages[0].Items.Where(i => i.Source is not (Body or Header or Footer)).ToArray();
+                Console.WriteLine($"    {what}: {layout.PageCount} page(s)");
+
+                AssertEqual(testName, $"{what}: nothing past the foot", 0d, Math.Max(0, on1.Max(i => i.Frame.Bottom) - foot), 0.01);
+                AssertEqual(testName, $"{what}: it opens the next page", true,
+                    layout.PageCount >= 2 && layout.Pages[1].Items.Any(i => ReferenceEquals(i.Source, first)), 0);
+                AssertEqual(testName, $"{what}: and leaves no empty group behind", false,
+                    layout.Pages[0].Items.Any(i => ReferenceEquals(i.Source, group)), 0);
+                AssertEqual(testName, $"{what}: and nothing to say", 0, layout.Issues.Count, 0);
+            }
+
+            Moves("a picture in a group", Picture(50));
+            Moves("a grid in a group", new Func<ImageGridItem>(() =>
+            {
+                var grid = new ImageGridItem { GridColumns = 1, RowHeight = 50 };
+                grid.Add(Picture(40));
+                return grid;
+            })());
+            TableItem keptInGroup = Table(Plain(string.Join(" ", Words("k", 60))));
+            keptInGroup.Childs[0].Style.Splitting = Splitting.KeepTogether;
+            Moves("a kept row in a group", keptInGroup);
+
+            // In columns too: each column starts at the group's own top, not on a fresh page.
+            ImageItem inColumns = Picture(50);
+            ContainerItem columned = Group(inColumns);
+            columned.ColumnCount = 2;
+            LayoutResult columnedLaid = Sheet(Tall(100), columned).Resolve(measurer);
+            AssertEqual(testName, "a group in columns moves the same", true,
+                columnedLaid.PageCount == 2 && columnedLaid.Pages[1].Items.Any(i => ReferenceEquals(i.Source, inColumns)), 0);
+
+            // A table in a group that is cut is still cut, and carries its first row's lines here.
+            ContainerItem cutGroup = Group(Table(Plain(string.Join(" ", Words("a", 200)))));
+            Arrives("a long row in a group lower down", Sheet(Tall(90), cutGroup), ("a", 200));
+
+            // What goes first with it goes with it, which is what KeepWithNext was for.
+            TextItem heading = Plain("Heading");
+            heading.Style.KeepWithNext = true;
+            LayoutResult withHeading = Sheet(Tall(100), Plain("Standing"), heading, Group(Picture(50))).Resolve(measurer);
+            AssertEqual(testName, "a heading follows the group it heads", true,
+                withHeading.Pages[1].Items.Any(i => ReferenceEquals(i.Source, heading)), 0);
+
+            // A stated height that fits here has nothing to gain from another page.
+            ContainerItem box = Group(Picture(30));
+            box.Style.Location.Height = (10, Units.Millimeter);
+            LayoutResult boxed = Sheet(Tall(60), box).Resolve(measurer);
+            AssertEqual(testName, "a stated box that fits stays where it was put", true,
+                boxed.PageCount == 1 && boxed.Pages[0].Items.Any(i => ReferenceEquals(i.Source, box)), 0);
+
+            // --- a band has no next page ------------------------------------------------------
+            TableItem footed = new();
+            footed.AddAutoColumn();
+            footed.AddRow(Plain(string.Join(" ", Words("a", 60))));
+            footed.AddRow(Plain("b0"));
+            Report bandReport = Sheet(Plain("Body"));
+            var footer = new Footer { Layout = LayoutMode.Stack };
+            footer.Style.Location.Height = (10, Units.Millimeter);
+            footer.Add(footed);
+            bandReport.Section!.Add(footer);
+            bandReport.Reattach();
+            LayoutResult bandLaid = bandReport.Resolve(measurer);
+            List<string> bandWords = bandLaid.Pages[0].Items.SelectMany(Said).ToList();
+            AssertEqual(testName, "a table in a band too small for it loses nothing", 61,
+                bandWords.Count(w => w != "Body"), 0);
+            AssertEqual(testName, "and all of it stays on the one page", 1, bandLaid.PageCount, 0);
+
+            // The band is resolved first on every page, and what it knows stops with it: the
+            // body's own long row still has a next page.
+            Report bandAndBody = Sheet(Table(Rich(long1)));
+            var plainFooter = new Footer { Layout = LayoutMode.Stack };
+            plainFooter.Add(Table(Plain("Footer")));
+            bandAndBody.Section!.Add(plainFooter);
+            bandAndBody.Reattach();
+            Arrives("a long row under a stacked footer", bandAndBody, ("a", 300));
+
+            // --- what cannot be cut says so ----------------------------------------------------
+            List<TemplateIssue> Told(params BaseItem[] items) => Sheet(items).Resolve(measurer).Issues.ToList();
+            void Says(string what, List<TemplateIssue> told, BaseItem culprit, string where)
+            {
+                Console.WriteLine($"    {what}: {string.Join(" | ", told.Select(i => $"{i.Rule} at {i.Where}"))}");
+                AssertEqual(testName, $"{what}: one thing to put right", "fits.overflow",
+                    string.Join(",", told.Select(i => i.Rule)), 0);
+                AssertEqual(testName, $"{what}: and which", true, ReferenceEquals(told[0].Item, culprit), 0);
+                AssertEqual(testName, $"{what}: and where", where, told[0].Where, 0);
+                AssertEqual(testName, $"{what}: a warning", IssueLevel.Warning, told[0].Level, 0);
+            }
+
+            ImageItem tower = Picture(400);
+            Says("a picture taller than the page", Told(tower), tower, "section 1, page 1");
+
+            ImageItem later = Picture(400);
+            Says("the same further on", Told(Plain("Before"), later), later, "section 1, page 2");
+
+            ContainerItem groupCell = Group(Enumerable.Range(0, 200).Select(i => (BaseItem)Plain("g" + i)).ToArray());
+            TableItem groupTable = Table(groupCell);
+            Says("a group in a cell", Told(groupTable), groupTable.Childs[0], "section 1, page 1");
+
+            TableItem keptRich = Table(Rich(long1));
+            keptRich.Childs[0].Style.Splitting = Splitting.KeepTogether;
+            Says("a rich row asked to stay whole", Told(keptRich), keptRich.Childs[0], "section 1, page 1");
+
+            TextItem keptText = Plain(long1);
+            keptText.Style.Splitting = Splitting.KeepTogether;
+            Says("a text asked to stay whole", Told(keptText), keptText, "section 1, page 1");
+
+            ImageItem nested = Picture(400);
+            Says("a picture inside a group", Told(Group(nested)), nested, "section 1, page 1");
+
+            ImageItem secret = Picture(400);
+            secret.Style.Visibility = Visibility.Invisible;
+            AssertEqual(testName, "what is not drawn is not lost", 0, Told(secret).Count, 0);
+
+            // Composing starts over when the page total takes another digit, and has to end up
+            // having said this once, in the attempt that counts.
+            ImageItem counted = Picture(400);
+            Report restarted = Sheet(counted, Plain(string.Join(" ", Enumerable.Repeat("words", 4000))), Plain("{Pages}"));
+            AssertEqual(testName, "said once however often composing starts over", 1, restarted.Resolve(measurer).Issues.Count, 0);
+
+            // And the command line hands it on: nothing else there reads a layout's issues.
+            string directory = Directory.CreateTempSubdirectory("frisket-overflow").FullName;
+            string template = Path.Combine(directory, "tower.json");
+            File.WriteAllText(template, Sheet(Picture(400)).ToJson());
+            string configuration = AppContext.BaseDirectory.Contains(
+                Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar) ? "Debug" : "Release";
+            string cli = Path.Combine(RepositoryRoot(), "apps", "cli", "bin", configuration, "net10.0", "Frisket.Cli.dll");
+            var run = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo("dotnet")
+                {
+                    ArgumentList = { cli, "render", "-t", template, "-o", directory, "--format", "html" },
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                },
+            };
+            run.Start();
+            run.StandardOutput.ReadToEnd();
+            string errors = run.StandardError.ReadToEnd();
+            run.WaitForExit();
+            AssertEqual(testName, "the command line says it on standard error", true,
+                errors.Contains("fits.overflow, section 1, page 1", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and still writes the document", 0, run.ExitCode, 0);
+            Directory.Delete(directory, recursive: true);
+
+            Console.WriteLine();
+        }
     }
 }

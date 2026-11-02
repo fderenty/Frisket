@@ -657,7 +657,7 @@
             },
             {
               "$type": "TextItem",
-              "Text": "A table longer than a page, with one row taller than a page on its own. Look for the column headings repeating at the top of each page, and - the part worth checking - for the split row showing as many cells on the second page as the table has columns. A half-row with fewer cells is refused by a conformance checker and read aloud as nonsense.",
+              "Text": "A table longer than a page, with one row taller than a page on its own. Look for the column headings repeating at the top of each page, and - the part worth checking - for the split row showing as many cells on the second page as the table has columns. A half-row with fewer cells is refused by a conformance checker and read aloud as nonsense. Under it, a table over a list with nothing in it: look for its headings staying, and one line across every column saying so. Then a note in mixed styles, taller than a page too: look for it carrying on overleaf with no line lost.",
               "Font": {
                 "Size": 0.95,
                 "Italic": true,
@@ -821,6 +821,246 @@
               "Style": {
                 "Margin": {
                   "Top": 2
+                }
+              }
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 26
+                },
+                {},
+                {
+                  "Width": 46
+                }
+              ],
+              "RepeatHeader": true,
+              "Grid": {
+                "Color": {
+                  "R": 170,
+                  "G": 170,
+                  "B": 170,
+                  "A": 255
+                },
+                "Width": 0.15
+              },
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "RepeatOver": "Withheld",
+              "EmptyText": "No reading was withheld from {Client}.",
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Site",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Why it was withheld from {Client}",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Withheld by",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Site}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "{Reason}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "{By}",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Margin": {
+                  "Top": 4
+                }
+              }
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 26
+                },
+                {}
+              ],
+              "RepeatHeader": true,
+              "Grid": {
+                "Color": {
+                  "R": 170,
+                  "G": 170,
+                  "B": 170,
+                  "A": 255
+                },
+                "Width": 0.15
+              },
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Site",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TextItem",
+                      "Text": "Field notes",
+                      "Font": {
+                        "Size": 0.9,
+                        "Bold": true
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "All",
+                      "Font": {
+                        "Size": 0.9,
+                        "HorizontalAlignment": "Left"
+                      },
+                      "Style": {}
+                    },
+                    {
+                      "$type": "AdvancedTextItem",
+                      "Runs": [
+                        {
+                          "Text": "Noted on site. ",
+                          "Font": {
+                            "Bold": true
+                          }
+                        },
+                        {
+                          "Text": "{FieldNotes}"
+                        }
+                      ],
+                      "Font": {
+                        "Size": 0.9
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 1.5,
+                      "Top": 1,
+                      "Right": 1.5,
+                      "Bottom": 1
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Margin": {
+                  "Top": 4
                 }
               }
             },

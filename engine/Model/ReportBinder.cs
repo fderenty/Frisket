@@ -339,27 +339,27 @@ namespace Frisket
             foreach (BaseItem child in container.Childs.ToArray())
                 container.Remove(child);
 
-            // Nothing to show: the container says so itself rather than leaving an empty
-            // frame and a stranded header behind.
-            if (records == null || records.Count == 0)
+            // Nothing to show and nothing to say about it: the container goes, rather than
+            // leaving an empty frame and a stranded header behind.
+            if (records is not { Count: > 0 } && container.EmptyText == null)
             {
-                if (container.EmptyText == null)
-                {
-                    container.Style.Visibility = Visibility.Gone;
-                    return;
-                }
-
-                foreach (BaseItem child in kept)
-                    container.Add(child);
-
-                container.Add(EmptyRow(container, prototypes, container.EmptyText));
+                container.Style.Visibility = Visibility.Gone;
                 return;
             }
 
+            // One loop for a list with entries and a list without. The empty one had its own,
+            // which added the header and did not fill it, so it printed its tokens braces and all.
             foreach (BaseItem child in kept)
             {
                 container.Add(child);
                 Bind(child, data, outer, options);
+            }
+
+            if (records is not { Count: > 0 })
+            {
+                // Read where the header is read, outside the list: there is no entry to read.
+                container.Add(EmptyRow(container, prototypes, Fill(container.EmptyText!, data, outer, options)));
+                return;
             }
 
             if (prototypes.Count == 0)
@@ -391,25 +391,50 @@ namespace Frisket
             }
         }
 
-        /// <summary>Builds the stand-in shown when a collection turns out empty.</summary>
+        /// <summary>
+        /// Builds the stand-in shown when a collection turns out empty. The message is only a
+        /// string, with no way to ask for a font, so it reads like the entries it stands in for.
+        /// </summary>
         private static BaseItem EmptyRow(ContainerItem container, List<BaseItem> prototypes, string message)
         {
-            var label = new TextItem
-            {
-                Text = message,
-                Font = new() { HorizontalAlignment = HorizontalAlignment.Center }
-            };
+            TextStyle font = FirstFont(prototypes)?.Clone() ?? new TextStyle();
+            font.HorizontalAlignment = HorizontalAlignment.Center;
 
-            // In a table the message has to be a row, or it would not sit in the columns.
+            var label = new TextItem { Text = message, Font = font };
+
+            // In a table the message has to be a row, or it would not sit in the columns. One
+            // cell across all of them: in the first column alone it broke a word at a time, and
+            // a row narrower than the others is refused by PDF/UA 7.2.
             if (container is not TableItem)
                 return label;
 
-            var row = new TableRow();
+            var row = new TableRow { SpansColumns = true };
             if (prototypes.FirstOrDefault() is ContainerItem model)
                 row.Style = model.Style.Clone();
 
             row.Add(label);
             return row;
+        }
+
+        /// <summary>The font of the first text among <paramref name="items"/>, looking inside what holds others.</summary>
+        private static TextStyle? FirstFont(IEnumerable<BaseItem> items)
+        {
+            foreach (BaseItem item in items)
+            {
+                TextStyle? found = item switch
+                {
+                    TextItem text => text.Font,
+                    AdvancedTextItem { Runs: [{ Font: { } own }, ..] } advanced => own.Over(advanced.Font),
+                    AdvancedTextItem advanced => advanced.Font,
+                    ContainerItem holder => FirstFont(holder.Childs),
+                    _ => null
+                };
+
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
 
         /// <summary>

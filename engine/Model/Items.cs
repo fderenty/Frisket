@@ -258,7 +258,7 @@ namespace Frisket
         /// </summary>
         public string? RepeatOver { get; set; }
 
-        /// <summary>Shown in place of the children when the collection turns out empty.</summary>
+        /// <summary>Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.</summary>
         public string? EmptyText { get; set; }
 
         /// <summary>

@@ -386,8 +386,10 @@ namespace Frisket
                 foreach (BaseItem cell in row.Childs)
                 {
                     string tag = row.IsHeader ? "th" : "td";
-                    html.Append('<').Append(tag)
-                        .Append(" style=\"padding:.3em .5em;vertical-align:top;")
+                    html.Append('<').Append(tag);
+                    if (row.ColumnSpan > 1)
+                        html.Append(" colspan=\"").Append(row.ColumnSpan).Append('"');
+                    html.Append(" style=\"padding:.3em .5em;vertical-align:top;")
                         .Append(row.IsHeader ? "text-align:left;border-bottom:1px solid #ddd;" : "")
                         .Append("\">");
                     WriteItem(html, cell, report, band);

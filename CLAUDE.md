@@ -2198,6 +2198,98 @@ Corollary for that test: a row shorter than a page can arrive at the top of a fr
 page, where the flow lays it whole rather than looping. A row never asked to split
 proves nothing — it needs enough in it to overrun a full page.
 
+**And the row standing in for an empty list was that same row, from the day it existed.**
+`EmptyText` made one cell in a table of several columns, so the first list to turn out empty
+with a message to show was refused by PDF/UA 7.2, drew its message a word at a time in the
+first column at the document's size rather than the table's, and printed the tokens of the
+message and of the header as typed: `Repeat` had a loop of its own for the empty case, which
+added the header and did not fill it. Reported on 2 November 2026 by another application,
+which had already stopped using the path. Test 26's table has one column and no header, test
+96's empty list says nothing, and the conformance document had no empty list: the shape was
+in no sample, so veraPDF was never shown it.
+
+It takes every column now, which needed the one thing the format does not have, a merged
+cell. `TableRow.SpansColumns` is internal and only the binder sets it: `/ColSpan` in the PDF,
+`colspan` in the mail, one box in the grid, no say in a fitted column. A row written with too
+few cells is still `sound.raggedTable`, since nothing a template says can ask for this. The
+cost, stated: a filled document saved as JSON and read back loses the mark, and that rule
+then says so. A span in the format would be §1's five places, and nobody has asked for one.
+
+And the message reads like what it stands in for, in the font of the first text the entries
+hold, a rich cell's first run included. It is only a string, so it has no other way to ask.
+The header and the message read their tokens in the same place, outside the list, and
+`TemplateFields` asks about the message there, so a field of an entry named in it is flagged:
+there is no entry to read.
+
+## 11b. Past the foot of a page, and nobody told
+
+A check for that message found it: a message long enough to need a second page came out
+whole, down to 968 mm on a page of 297, on one page. `FlowTable` asked whether a row was first
+on its page before it asked whether it could be cut. Forcing is how the flow keeps moving when
+nothing fits, so it has to be the last thing tried, and it was the first. Put something above
+the row and every word arrived, which is why nothing in the suite ever saw it: test 40's long
+row, by §11's own corollary, sits lower down.
+
+**Asking who else had it found three more, and two were commoner than the fault reported.**
+Twenty-two shapes measured before a line was changed:
+
+- **Forcing belonged to the page and was worked out per group.** `FlowColumn` said
+  `!placedSomething` of its own children, so the first child of *any* stacked group was forced
+  wherever the group stood. A picture in a group near the foot went off the page rather than onto
+  the next, 80 mm of it in the measurement, and a kept row with it. `FlowStack`'s *not even one
+  child fit, let the caller open a page* had been unreachable since it was written. `opensPage`
+  goes down the flow now. A group with a stated height that fits stays where it was put, or a box
+  would move away from its place for the sake of what overflows it;
+- **A rich cell was never cut.** Only a `TextItem` counted as having lines, so a row whose long
+  text was rich had nothing to cut, wherever it stood. The content editor writes nothing but rich
+  text, so this was every long cell it ever produced. `CellsToCut` answers for both, and each line
+  of a rich one keeps its own height. `LinesThatFit` walks up measuring once, since a row taller
+  than a page has thousands of lines and it broke the whole text again for every one it tried:
+  a row of seventeen pages took 277 s on 0.4.0 and takes 20 s, which is still the breaking of
+  twenty thousand words several times a page, and nobody has a cell that long;
+- **A row part way through was restarted.** A remainder no page could hold had been left to fall
+  out of the loop with a carry of zero, and came back from its first line, words and all.
+
+Cutting first had a price of its own: a table in a stacked band had the old order to thank for
+keeping its rows, and a band has no next page, so its rest would have gone nowhere. Hence
+`_laidInPlace`, under which `FlowTable` does what `LayRows` already does for a table at
+coordinates: everything, whole.
+
+**What cannot be cut says so.** A picture taller than the page, a group in a table cell, a stated
+height, something kept whole: each goes down as it is and the part below the foot is not on the
+paper. `fits.overflow`, a `Warning` in `LayoutResult.Issues`, one per thing to go and put right, so
+never for what is inside something already reported, nor for a table or a group, which are only as
+tall as what they hold. It is said on composing rather than by the validator, which does not know
+how tall anything is. And `frisket render` had never read `Issues` at all, so `fits.pageLimit` and
+`fits.importedPage` were as silent there as this: standard error, now.
+
+**`KeepTogether` was tried and put back.** Cutting a kept item that fits on no page looked like the
+kinder answer, since the choice left is the rest of its text or none of it. Tests 10 and 39 refused
+it, in as many words ("KeepTogether must refuse to split"), and that was the author's rule before it
+was an obstacle, so it stands and the warning covers it. The tests exist to be asked.
+
+**A group in a cell is not cut either, which is a limit and not a decision.** It would need a row to
+remember where each of its cells had got to, rather than one line count for all. The warning is what
+it gets until somebody has one that long.
+
+**No sample moved by a byte**, across every file the suite writes, and that is the finding: not one
+document here held any of these shapes, so a green suite and a passing veraPDF said nothing about
+them. The conformance document holds a rich row across pages now (§4).
+
+Thirty-three sabotages, from a run seen green first (§14d), and two went through. Not telling a
+column that its group does not open a page had no sample, since nothing here had columns in a group
+lower down: it has one now. Taking out `skip = 0` after a forced remainder changes nothing and cannot:
+a forced row always ends past the foot, so the next one breaks and starts afresh overleaf anyway. It
+stays because it says what is true. *Unfalsifiable is not the same as correct* (§5c), and here it is
+not the same as wrong either.
+
+**And the same run found what it was not looking for.** A rich text's pieces are `TextItem`s made up
+as it is laid out, so they have no `Parent`, so in a tagged PDF each is a `P` at the root of the tree:
+a rich cell's `TD` is empty and its words come after the table, a rich paragraph is read after every
+plain text on its page, and a rich heading is not a heading, since a flowed rich text places no element
+of its own. Older than this section, and untouched by it. veraPDF passes both profiles over it, because
+a well-formed tree in the wrong order is not something either profile tests (§4b).
+
 ## 12. Test outputs
 
 One tree only: `tests/output/`, anchored on the repository root through

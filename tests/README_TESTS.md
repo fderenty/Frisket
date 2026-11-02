@@ -181,7 +181,8 @@ serialized and opened in the designer, and each row is its own object.
 `ContainerItem.RepeatOver` names the collection. In a table the header rows stay
 and the remaining rows are prototypes, cycled - two of them band the rows; any
 other container repeats its whole set of children. `EmptyText` says what to show
-when the collection turns out empty; without it the container goes `Gone`.
+when the collection turns out empty, its tokens filled as a header's are, across all
+the columns of a table; without it the container goes `Gone`.
 
 `GroupBy` buckets a flat collection by one field before repeating, publishing per
 group a `Key`, a `Count`, the rows under `GroupItems`, a `Sum` of every numeric
@@ -252,10 +253,13 @@ four is marked with what it used to say and what settled it.
   facade on the first section's, and a report holding several sections gives each its
   own. A band can hold several `PageScope` variants, which is what per-page differences
   are for. *Said "per report" until sections arrived.*
-- A table row taller than what is left of the page **is** split, and both halves show
-  as many cells as the table has columns - a half handing back fewer is refused by
-  veraPDF and unreadable aloud, so short cells are placed empty. What is never split is
-  a row of an *image grid*, and a line of an advanced text: those move whole.
+- A table row taller than what is left of the page **is** split, wherever it stands and
+  whether its text is plain or rich, and both halves show as many cells as the table has
+  columns - a half handing back fewer is refused by veraPDF and unreadable aloud, so short
+  cells are placed empty. What is never split is a row of an *image grid*, a line of an
+  advanced text, a picture, a group in a table cell, a stated height, or what is asked to
+  stay whole: those move whole. One taller than a page goes down as it is, the part past the
+  foot does not reach the paper, and `fits.overflow` says so in `LayoutResult.Issues` (test 109).
   *Said a row is never split; test 39 has asserted the opposite since it was written.*
 - Element alignment (`Style.AlignHorizontal`, `AlignVertical`) moves an item inside the
   room it was given, on any axis nothing else decided - including an item that measured

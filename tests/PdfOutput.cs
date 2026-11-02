@@ -1110,6 +1110,9 @@ namespace test
             // that binding kept the elements themselves, on the tree it actually built.
             AssertEqual(testName, "the section carries: an image grid", true,
                 report.AllItems.OfType<ImageGridItem>().Any(g => g.Childs.Count == 6), 0);
+            AssertEqual(testName, "the section carries: an empty list, saying so across its columns", true,
+                report.AllItems.OfType<TableRow>().Any(r => r.ColumnSpan == 3
+                    && r.Childs.OfType<TextItem>().Single().Text == "No reading was withheld from ACME Corporation."), 0);
             // It used to read "A. Method", a letter typed into the included file. The
             // heading is numbered by the report that splices it in now - which is only
             // possible because expansion happens before anything else, so by the time
@@ -1155,6 +1158,16 @@ namespace test
             Console.WriteLine($"    the split row shows {string.Join(" puis ", widths)} cellules");
             AssertEqual(testName, "and each half keeps its cells", true,
                 widths.Count >= 2 && widths.All(n => n == splitRow.Childs.Count), 0);
+
+            // The same of a row whose text is rich, which is drawn by another road.
+            ContainerItem? richRow = report.AllItems.OfType<TableRow>()
+                .FirstOrDefault(r => r.Childs.OfType<AdvancedTextItem>().Any());
+            var richWidths = layout.Pages
+                .Select(page => richRow?.Childs.Count(cell => page.Items.Any(i => ReferenceEquals(i.Source, cell))) ?? 0)
+                .Where(n => n > 0)
+                .ToList();
+            AssertEqual(testName, "the section carries: a rich row split, each half keeping its cells", true,
+                richWidths.Count >= 2 && richWidths.All(n => n == richRow!.Childs.Count), 0);
 
             // The two backends must turn the mark the same way. They did not: the SVG
             // rotated one way and the PDF matrix the other, so the preview ascended and

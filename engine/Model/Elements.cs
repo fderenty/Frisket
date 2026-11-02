@@ -449,6 +449,18 @@ namespace Frisket
         /// <summary>Header rows are repeated at the top of every page the table spans.</summary>
         public bool IsHeader { get; set; }
 
+        /// <summary>
+        /// Set by the binder on the row standing in for an empty list, whose one cell takes
+        /// every column. Not part of the template format, which has no merged cells: a row
+        /// written with fewer cells than columns is still that row's fault, and a filled
+        /// document saved as JSON and read back loses this and is told so by
+        /// sound.raggedTable.
+        /// </summary>
+        internal bool SpansColumns { get; set; }
+
+        /// <summary>How many columns this row's one cell takes, for the outputs that have to say.</summary>
+        internal int ColumnSpan => SpansColumns && Parent is TableItem table ? Math.Max(1, table.Columns.Count) : 1;
+
         public TableRow() { }
 
         public TableRow(bool isHeader) => IsHeader = isHeader;
@@ -459,12 +471,14 @@ namespace Frisket
         {
             base.CopyTo(target);
             ((TableRow)target).IsHeader = IsHeader;
+            ((TableRow)target).SpansColumns = SpansColumns;
         }
     }
 
     /// <summary>
-    /// A table. Its children are <see cref="TableRow"/> items, and it splits between
-    /// rows when it does not fit: a row is never cut in half.
+    /// A table. Its children are <see cref="TableRow"/> items. What does not fit carries on
+    /// overleaf, between two rows or between two lines of a row's text, plain or rich, unless
+    /// the row says <see cref="Splitting.KeepTogether"/>.
     /// </summary>
     public class TableItem : ContainerItem
     {

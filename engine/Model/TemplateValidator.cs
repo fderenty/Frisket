@@ -747,7 +747,7 @@ namespace Frisket
             // widest row is the best guess at what the table was meant to be.
             int width = table.Columns.Count > 0 ? table.Columns.Count : rows.Max(r => r.Childs.Count);
 
-            foreach (TableRow row in rows.Where(r => r.Childs.Count != width))
+            foreach (TableRow row in rows.Where(r => !r.SpansColumns && r.Childs.Count != width))
             {
                 found.Add(new TemplateIssue("sound.raggedTable", IssueLevel.Error,
                     $"This row has {row.Childs.Count} cell(s) where the table has {width} column(s). "

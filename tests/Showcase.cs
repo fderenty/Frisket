@@ -289,8 +289,13 @@ namespace test
                 + "Look for the column headings repeating at the top of each page, and - "
                 + "the part worth checking - for the split row showing as many cells on "
                 + "the second page as the table has columns. A half-row with fewer cells "
-                + "is refused by a conformance checker and read aloud as nonsense.");
+                + "is refused by a conformance checker and read aloud as nonsense. Under it, a "
+                + "table over a list with nothing in it: look for its headings staying, and "
+                + "one line across every column saying so. Then a note in mixed styles, taller "
+                + "than a page too: look for it carrying on overleaf with no line lost.");
             body.Add(BuildTable());
+            body.Add(BuildWithheld());
+            body.Add(BuildFieldNotes());
 
             // --- 3. Photographs -----------------------------------------------
             Demonstrates(body, "Site photographs", "Site photographs",
@@ -502,6 +507,75 @@ namespace test
 
             table.Bookmark = "Readings";
             table.BookmarkLevel = 1;
+            return table;
+        }
+
+        /// <summary>
+        /// A table over a list with nothing in it, which keeps its headings and says so across
+        /// its columns: one cell where the other row has three, which PDF/UA 7.2 refuses unless
+        /// the cell says how many it takes. Here so that veraPDF is shown it, as it is the field
+        /// in a table below.
+        /// </summary>
+        private static TableItem BuildWithheld()
+        {
+            var table = new TableItem
+            {
+                RepeatOver = "Withheld",
+                EmptyText = "No reading was withheld from {Client}.",
+                Grid = new PenStyle { Width = 0.15, Color = new Color(170, 170, 170) }
+            };
+            table.Style.Margin.Top = 4;
+            table.AddColumn(26).AddAutoColumn().AddColumn(46);
+
+            var head = new TableRow { IsHeader = true };
+            head.Style.Padding = new() { Left = 1.5, Top = 1, Right = 1.5, Bottom = 1 };
+            head.Add(HeadCell("Site"));
+            head.Add(HeadCell("Why it was withheld from {Client}"));
+            head.Add(HeadCell("Withheld by"));
+            table.Add(head);
+
+            var row = new TableRow();
+            row.Style.Padding = new() { Left = 1.5, Top = 1, Right = 1.5, Bottom = 1 };
+            row.Add(BodyCell("{Site}"));
+            row.Add(BodyCell("{Reason}"));
+            row.Add(BodyCell("{By}"));
+            table.Add(row);
+
+            return table;
+        }
+
+        /// <summary>
+        /// A row whose text is rich and taller than a page, which is what a long cell written
+        /// in the content editor is. It was never cut: it ran off the foot of the page, and
+        /// nothing failed, because no table here held one. The validator can only refuse what
+        /// it is shown, so the two halves of this row are shown to it.
+        /// </summary>
+        private static TableItem BuildFieldNotes()
+        {
+            var table = new TableItem
+            {
+                RepeatHeader = true,
+                Grid = new PenStyle { Width = 0.15, Color = new Color(170, 170, 170) }
+            };
+            table.Style.Margin.Top = 4;
+            table.AddColumn(26).AddAutoColumn();
+
+            var head = new TableRow { IsHeader = true };
+            head.Style.Padding = new() { Left = 1.5, Top = 1, Right = 1.5, Bottom = 1 };
+            head.Add(HeadCell("Site"));
+            head.Add(HeadCell("Field notes"));
+            table.Add(head);
+
+            var note = new AdvancedTextItem { Font = new TextStyle { Size = 0.9 } };
+            note.Runs.Add(new TextRun { Text = "Noted on site. ", Font = new TextStyle { Bold = true } });
+            note.Runs.Add(new TextRun { Text = "{FieldNotes}" });
+
+            var row = new TableRow();
+            row.Style.Padding = new() { Left = 1.5, Top = 1, Right = 1.5, Bottom = 1 };
+            row.Add(BodyCell("All"));
+            row.Add(note);
+            table.Add(row);
+
             return table;
         }
 
@@ -876,6 +950,12 @@ namespace test
             }
 
             sb.Append("  ],\n");
+            sb.Append("  \"Withheld\": [],\n");
+            sb.Append("  \"FieldNotes\": \"")
+              .Append(string.Join(" ", Enumerable.Repeat(
+                  "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, "
+                  + "sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.", 40)))
+              .Append("\",\n");
             // The chart, as a host hands one over: bytes it generated, as a data: URI. In LF
             // whatever the checkout, or this file would follow it (CLAUDE.md 6).
             string chart = File.ReadAllText(Path.Combine(directory, "charts", "attendance.svg")).ReplaceLineEndings("\n");

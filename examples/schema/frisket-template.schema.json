@@ -511,7 +511,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -780,7 +780,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -1173,7 +1173,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -1475,7 +1475,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -1685,7 +1685,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -2368,7 +2368,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -2704,7 +2704,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -2831,7 +2831,7 @@
     },
     "TableItem": {
       "type": "object",
-      "description": "A table. Its children are TableRow items, and it splits between rows when it does not fit: a row is never cut in half.",
+      "description": "A table. Its children are TableRow items. What does not fit carries on overleaf, between two rows or between two lines of a row\u0027s text, plain or rich, unless the row says Splitting.KeepTogether.",
       "properties": {
         "$type": {
           "const": "TableItem",
@@ -2954,7 +2954,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"
@@ -3150,7 +3150,7 @@
           ]
         },
         "EmptyText": {
-          "description": "Shown in place of the children when the collection turns out empty.",
+          "description": "Shown in place of the entries when the collection turns out empty, centred, in the font of the first text they hold. Tokens are filled as in a header row, outside the list. A table keeps its header rows and writes this across all its columns. Left out, the container goes, header and all.",
           "type": [
             "string",
             "null"

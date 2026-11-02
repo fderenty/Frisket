@@ -254,6 +254,7 @@ namespace Frisket
             var result = new LayoutResult();
             _result = result;
             _bookmarked.Clear();
+            _overflowing.Clear();
 
             foreach (Section section in _report.Sections)
                 Reset(section);
@@ -288,9 +289,13 @@ namespace Frisket
                         NoteOutline(body, page, band);
 
                         Rect area = band.Deflate(body.Style.Padding);
+                        int flowed = page.Items.Count;
                         pending = body.Layout == LayoutMode.Stack
                             ? FlowChildren(body, area, page, pending)
                             : ArrangeChildren(body, area, page);
+
+                        if (body.Layout == LayoutMode.Stack)
+                            NoteOverflow(result, section, page, flowed, area.Bottom);
                     }
                     else
                     {
@@ -359,6 +364,48 @@ namespace Frisket
 
             return result;
         }
+
+        /// <summary>
+        /// Says what the flow drew past the foot of a page. Text carries on overleaf, so what
+        /// is left is what cannot: a picture taller than the page, a group in a table cell, a
+        /// stated height, or what the author asked to keep whole. It goes down all the same,
+        /// since it fits on no other page either, and the part below the foot is simply not
+        /// there on paper.
+        ///
+        /// One issue per thing to go and put right, so never for what is inside something
+        /// already reported, and never for a table or a group, which are only as tall as what
+        /// they hold. The pieces of a rich text have no parent, being no part of the template.
+        /// </summary>
+        private void NoteOverflow(LayoutResult result, Section section, Page page, int from, double foot)
+        {
+            for (int i = from; i < page.Items.Count; i++)
+            {
+                PlacedItem placed = page.Items[i];
+                BaseItem item = placed.Source;
+
+                if (item is TableItem or ContainerItem { Layout: LayoutMode.Stack } || item.Parent == null
+                    || item.Style.Visibility != Visibility.Visible
+                    || !(placed.Frame.Bottom > foot + FitTolerance))
+                    continue;
+
+                bool within = false;
+                for (BaseItem? up = item.Parent; up != null && !within; up = up.Parent)
+                    within = _overflowing.Contains(up);
+
+                if (within || !_overflowing.Add(item))
+                    continue;
+
+                result.AddIssue(new TemplateIssue(
+                    "fits.overflow", IssueLevel.Warning,
+                    $"This runs {placed.Frame.Bottom - foot:0.#} mm past the foot of the page, and that part "
+                    + "does not reach the paper. It is taller than the page and cannot be cut: a picture, "
+                    + "a group in a table cell, a stated height, or something asked to stay whole.",
+                    item,
+                    $"section {_report.Sections.IndexOf(section) + 1}, page {page.Number}"));
+            }
+        }
+
+        private readonly HashSet<BaseItem> _overflowing = new();
 
         /// <summary>
         /// Adds a page and reserves its bands. Header and footer are resolved first,
@@ -438,11 +485,12 @@ namespace Frisket
         /// page of a long text is a nicety, and it would mean laying the whole thing out
         /// twice to find out how tall it is.
         /// </summary>
-        private Continuation? FlowChildren(ContainerItem container, Rect area, Page page, Continuation? resume)
+        private Continuation? FlowChildren(ContainerItem container, Rect area, Page page, Continuation? resume,
+                                           bool opensPage = true)
         {
             int columns = Math.Max(1, container.ColumnCount);
             if (columns == 1)
-                return FlowColumn(container, area, page, resume);
+                return FlowColumn(container, area, page, resume, opensPage);
 
             double gap = Math.Max(0, container.ColumnGap);
             double width = (area.Width - gap * (columns - 1)) / columns;
@@ -450,7 +498,7 @@ namespace Frisket
             // Too narrow to divide: one column is a poor result, a negative one is not a
             // result at all.
             if (width <= 0)
-                return FlowColumn(container, area, page, resume);
+                return FlowColumn(container, area, page, resume, opensPage);
 
             // One attempt at full height, which is the answer whenever the content
             // overflows: a page that continues has no spare room to even out.
@@ -493,7 +541,7 @@ namespace Frisket
                 {
                     double left = area.Left + i * (width + gap);
                     rest = FlowColumn(container, new Rect(left, area.Top, left + width, bottom),
-                                      page, rest);
+                                      page, rest, opensPage);
 
                     if (rest == null)
                         return null;
@@ -503,7 +551,8 @@ namespace Frisket
             }
         }
 
-        private Continuation? FlowColumn(ContainerItem container, Rect area, Page page, Continuation? resume)
+        private Continuation? FlowColumn(ContainerItem container, Rect area, Page page, Continuation? resume,
+                                         bool opensPage)
         {
             IReadOnlyList<BaseItem> children = container.Childs;
             int start = resume?.ChildIndex ?? 0;
@@ -551,8 +600,10 @@ namespace Frisket
                     return WithKept(i);
 
                 // An item that fits on no page at all would loop forever, so the first
-                // item of a page is placed even when it overflows the band.
-                bool force = !placedSomething;
+                // item of a page is placed even when it overflows the band. Of a page, and
+                // not of a group: a group lower down has a page to move to, and its first
+                // child went off the foot of this one instead.
+                bool force = opensPage && !placedSomething;
 
                 placedAt[i] = page.Items.Count;
                 if (firstOnPage < 0)
@@ -1151,12 +1202,16 @@ namespace Frisket
             PlacedItem slot = page.Place(stack, provisional);
             NoteOutline(stack, page, provisional);
 
+            // A stated height that fits has nothing to gain from another page: what is too
+            // tall for that box stays where the author put the box.
+            bool opensPage = force || top + requestedHeight <= area.Bottom + FitTolerance;
+
             Rect inner = new Rect(left, top, right, bottomLimit).Deflate(stack.Style.Padding);
-            Continuation? rest = FlowChildren(stack, inner, page, resume);
+            Continuation? rest = FlowChildren(stack, inner, page, resume, opensPage);
 
             // Not even one child fit: take the slot back rather than leave an empty
             // rectangle behind, and let the caller open a page.
-            if (page.Items.Count == before + 1 && rest != null && !force)
+            if (page.Items.Count == before + 1 && rest != null && !opensPage)
             {
                 page.RemoveAll(placed => ReferenceEquals(placed, slot));
                 return new FlowOutcome(top, resume, false);
@@ -1202,9 +1257,11 @@ namespace Frisket
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Lays a table out row by row. Rows are never cut in half: the table stops at
-        /// the last row that fits and continues on the next page, where the header rows
-        /// are re-emitted first if <see cref="TableItem.RepeatHeader"/> is set.
+        /// Lays a table out row by row. A row that does not fit is cut between two lines
+        /// of its text and carries on overleaf, where the header rows are re-emitted first
+        /// if <see cref="TableItem.RepeatHeader"/> is set. A row with nothing to cut, or one
+        /// asked to stay whole, moves as it is, and goes off the foot only where it already
+        /// has a page to itself and nothing to cut.
         /// </summary>
         private FlowOutcome FlowTable(TableItem table, Rect area, double left, double right,
                                       double top, Page page, Continuation? resume, bool force)
@@ -1240,14 +1297,19 @@ namespace Frisket
             int skip = resume?.LineIndex ?? 0;
             int carry = 0;                                   // lines the next page resumes at
 
+            // A table in a band or a group at coordinates has no next page to carry on to,
+            // so a row cut there would lose the rest. It is laid whole, as LayRows does.
+            double foot = _laidInPlace ? double.PositiveInfinity : area.Bottom;
+
             for (; index < body.Count; index++)
             {
                 TableRow row = body[index];
-                double height = RowHeight(row, edges, page, skip);
+                double[] across = EdgesOf(row, edges);
+                double height = RowHeight(row, across, page, skip);
 
-                if (cursor + height <= area.Bottom + FitTolerance || (force && placed == 0 && skip == 0))
+                if (cursor + height <= foot + FitTolerance)
                 {
-                    cursor = PlaceRow(row, edges, cursor, inner.Right, page, skip, int.MaxValue, out _);
+                    cursor = PlaceRow(row, across, cursor, inner.Right, page, skip, int.MaxValue, out _);
                     placed++;
                     skip = 0;
                     continue;
@@ -1256,19 +1318,29 @@ namespace Frisket
                 // The row does not fit whole. A long description should not push the
                 // whole line to the next page and leave a hole at the bottom, so the
                 // cells are cut at a line boundary and the row carries on overleaf.
-                int lines = RowLineCount(row, edges, page, skip);
-                int fits = lines > 0 ? LinesThatFit(row, edges, page, skip, area.Bottom - cursor) : 0;
+                int lines = RowLineCount(row, across, page, skip);
+                int fits = lines > 0 ? LinesThatFit(row, across, page, skip, foot - cursor) : 0;
 
                 // Not CanSplit: that asks whether a container flows, and a row is laid
                 // out absolutely by nature. What decides here is whether the author asked
                 // for the row to be kept whole.
-                if (row.Style.Splitting == Splitting.KeepTogether || fits <= 0 || fits >= lines)
+                if (row.Style.Splitting != Splitting.KeepTogether && fits > 0 && fits < lines)
+                {
+                    cursor = PlaceRow(row, across, cursor, inner.Right, page, skip, fits, out int shown);
+                    placed++;
+                    carry = skip + shown;
+                    break;
+                }
+
+                // Nothing to cut, and a page to itself: it goes down as it is, because a row
+                // that fits on no page would otherwise loop forever. Only now - asked before
+                // trying to cut, this drew a row taller than the page straight off its foot.
+                if (!force || placed > 0)
                     break;
 
-                cursor = PlaceRow(row, edges, cursor, inner.Right, page, skip, fits, out int shown);
+                cursor = PlaceRow(row, across, cursor, inner.Right, page, skip, int.MaxValue, out _);
                 placed++;
-                carry = skip + shown;
-                break;
+                skip = 0;
             }
 
             // Not one row fit: give the slot back and let the caller open a page.
@@ -1457,8 +1529,9 @@ namespace Frisket
 
             foreach (BaseItem child in table.Childs)
             {
+                // A cell across every column says nothing about the width of the first.
                 if (child is not TableRow row || row.Style.Visibility == Visibility.Gone
-                    || column >= row.Childs.Count)
+                    || row.SpansColumns || column >= row.Childs.Count)
                     continue;
 
                 BaseItem cell = row.Childs[column];
@@ -1550,25 +1623,46 @@ namespace Frisket
             {
                 if (row.Style.Visibility == Visibility.Gone)
                     continue;
-                cursor = PlaceRow(row, edges, cursor, inner.Right, page);
+                cursor = PlaceRow(row, EdgesOf(row, edges), cursor, inner.Right, page);
             }
 
             return cursor;
         }
 
-        /// <summary>Tallest cell decides, unless the row states its own height.</summary>
         /// <summary>
-        /// How many lines of a row fit in the room left. Binary search would be overkill:
-        /// a row has few lines, and the height is not linear in them because cells differ.
+        /// The edges a row is laid out between: the table's columns, or their two ends for the
+        /// row standing in for an empty list. Handed to everything that measures or places the
+        /// row, the grid included, which then strokes one box across it.
+        /// </summary>
+        private static double[] EdgesOf(TableRow row, double[] edges)
+            => row.SpansColumns ? new[] { edges[0], edges[^1] } : edges;
+
+        /// <summary>
+        /// How many lines of a row fit in the room left. Walks up from one, each cell's
+        /// lines measured once: the height is not linear in them because cells differ, and
+        /// a row taller than a page has thousands.
         /// </summary>
         private int LinesThatFit(TableRow row, double[] edges, Page page, int skip, double room)
         {
+            List<(double[] Lines, double Box)> cells = CellsToCut(row, edges, page);
+            double spare = room - row.Style.Padding.Top - row.Style.Padding.Bottom + FitTolerance;
             int lines = RowLineCount(row, edges, page, skip);
-            for (int count = lines; count > 0; count--)
-                if (PartHeight(row, edges, page, skip, count) <= room + FitTolerance)
-                    return count;
+            var used = new double[cells.Count];
 
-            return 0;
+            for (int count = 1; count <= lines; count++)
+            {
+                for (int c = 0; c < cells.Count; c++)
+                {
+                    int line = skip + count - 1;
+                    if (line < cells[c].Lines.Length)
+                        used[c] += cells[c].Lines[line];
+
+                    if (used[c] + cells[c].Box > spare)
+                        return count - 1;
+                }
+            }
+
+            return lines;
         }
 
         private double RowHeight(TableRow row, double[] edges, Page page) => RowHeight(row, edges, page, 0);
@@ -1584,6 +1678,11 @@ namespace Frisket
             if (!double.IsNaN(row.Style.Location4Calc.HeightValue))
                 return ToMillimeters(row.Style.Location4Calc.HeightValue, row.Style.Location4Calc.HeightUnit, 0);
 
+            // Only text carries on to the next page. Anything else - an image, a barcode -
+            // was drawn whole in the first part and leaves nothing.
+            if (skip > 0)
+                return PartHeight(row, edges, page, skip, int.MaxValue);
+
             double tallest = 0;
             IReadOnlyList<BaseItem> cells = row.Childs;
             EdgeSize inset = row.Style.Padding;
@@ -1598,25 +1697,7 @@ namespace Frisket
                 double width = edges[i + 1] - edges[i] - inset.Left - inset.Right
                                - cell.Style.Margin.Left - cell.Style.Margin.Right;
 
-                double height;
-                if (skip > 0 && cell is TextItem text)
-                {
-                    // Only text carries on to the next page. Anything else - an image, a
-                    // barcode - was drawn whole in the first part and leaves nothing.
-                    (IReadOnlyList<string> lines, TextStyle font) = CellLines(text, Math.Max(0, width), page);
-                    int left = Math.Max(0, lines.Count - skip);
-                    height = left * _measurer.GetMetrics(font).LineHeight
-                           + text.Style.Padding.Top + text.Style.Padding.Bottom;
-                }
-                else if (skip > 0)
-                {
-                    continue;
-                }
-                else
-                {
-                    height = IntrinsicHeight(cell, Math.Max(0, width), page);
-                }
-
+                double height = IntrinsicHeight(cell, Math.Max(0, width), page);
                 tallest = Math.Max(tallest, height + cell.Style.Margin.Top + cell.Style.Margin.Bottom);
             }
 
@@ -1631,27 +1712,59 @@ namespace Frisket
             return (_measurer.BreakLines(TextOf(text, page), font, inner), font);
         }
 
+        /// <summary>A rich cell broken to its column width. Each line has a height of its own.</summary>
+        private List<AdvancedLine> CellLines(AdvancedTextItem rich, double width, Page page)
+        {
+            double inner = Math.Max(0, width - rich.Style.Padding.Left - rich.Style.Padding.Right);
+            return BreakAdvancedText(rich, inner, page);
+        }
+
+        /// <summary>
+        /// The cells of a row that can be cut between two lines, which is what its text
+        /// can, plain or rich: how tall each line is, and what the box around them adds.
+        /// </summary>
+        private List<(double[] Lines, double Box)> CellsToCut(TableRow row, double[] edges, Page page)
+        {
+            var cut = new List<(double[], double)>();
+            IReadOnlyList<BaseItem> cells = row.Childs;
+            EdgeSize inset = row.Style.Padding;
+
+            for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
+            {
+                BaseItem cell = cells[i];
+                if (cell.Style.Visibility == Visibility.Gone || cell is not (TextItem or AdvancedTextItem))
+                    continue;
+
+                double width = Math.Max(0, edges[i + 1] - edges[i] - inset.Left - inset.Right
+                                         - cell.Style.Margin.Left - cell.Style.Margin.Right);
+                double box = cell.Style.Padding.Top + cell.Style.Padding.Bottom
+                           + cell.Style.Margin.Top + cell.Style.Margin.Bottom;
+
+                if (cell is TextItem text)
+                {
+                    (IReadOnlyList<string> lines, TextStyle font) = CellLines(text, width, page);
+                    double[] heights = new double[lines.Count];
+                    Array.Fill(heights, _measurer.GetMetrics(font).LineHeight);
+                    cut.Add((heights, box));
+                }
+                else
+                {
+                    cut.Add((CellLines((AdvancedTextItem)cell, width, page).Select(l => l.Height).ToArray(), box));
+                }
+            }
+
+            return cut;
+        }
+
         /// <summary>
         /// How many lines of the tallest text cell a row would need to show, from
         /// <paramref name="skip"/> onwards. Zero when nothing in the row is text.
         /// </summary>
         private int RowLineCount(TableRow row, double[] edges, Page page, int skip)
         {
-            IReadOnlyList<BaseItem> cells = row.Childs;
-            EdgeSize inset = row.Style.Padding;
             int most = 0;
-
-            for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
-            {
-                if (cells[i] is not TextItem text || cells[i].Style.Visibility == Visibility.Gone)
-                    continue;
-
-                double width = edges[i + 1] - edges[i] - inset.Left - inset.Right
-                               - text.Style.Margin.Left - text.Style.Margin.Right;
-
-                (IReadOnlyList<string> lines, _) = CellLines(text, Math.Max(0, width), page);
-                most = Math.Max(most, Math.Max(0, lines.Count - skip));
-            }
+            foreach ((double[] lines, _) in CellsToCut(row, edges, page))
+                most = Math.Max(most, lines.Length - skip);
 
             return most;
         }
@@ -1716,6 +1829,26 @@ namespace Frisket
                     continue;
                 }
 
+                // The same for a rich cell, whose words are drawn by pieces of their own:
+                // the cell is placed as Arrange places it, and holds them.
+                if (cell is AdvancedTextItem rich && (skip > 0 || maxLines != int.MaxValue))
+                {
+                    double from = box.Left + rich.Style.Margin.Left;
+                    double to = box.Right - rich.Style.Margin.Right;
+                    List<AdvancedLine> lines = CellLines(rich, Math.Max(0, to - from), page);
+                    int count = Math.Max(0, Math.Min(shown, lines.Count - skip));
+
+                    double part = lines.Skip(skip).Take(count).Sum(line => line.Height)
+                                + rich.Style.Padding.Top + rich.Style.Padding.Bottom;
+                    var piece = new Rect(from, cellTop, to, cellTop + part);
+
+                    SetFrame(rich, piece);
+                    page.Place(rich, piece);
+                    NoteOutline(rich, page, piece);
+                    PlaceAdvancedLines(rich, page, from, cellTop, to, lines, skip, count);
+                    continue;
+                }
+
                 // The same for anything that is not text: drawn whole in the first
                 // part, and present but empty in the rest.
                 if (skip > 0)
@@ -1734,26 +1867,12 @@ namespace Frisket
         /// <summary>Height of a row showing <paramref name="count"/> lines from <paramref name="skip"/>.</summary>
         private double PartHeight(TableRow row, double[] edges, Page page, int skip, int count)
         {
-            IReadOnlyList<BaseItem> cells = row.Childs;
-            EdgeSize inset = row.Style.Padding;
             double tallest = 0;
 
-            for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
-            {
-                if (cells[i] is not TextItem text || cells[i].Style.Visibility == Visibility.Gone)
-                    continue;
+            foreach ((double[] lines, double box) in CellsToCut(row, edges, page))
+                tallest = Math.Max(tallest, lines.Skip(skip).Take(count).Sum() + box);
 
-                double width = edges[i + 1] - edges[i] - inset.Left - inset.Right
-                               - text.Style.Margin.Left - text.Style.Margin.Right;
-
-                (IReadOnlyList<string> lines, TextStyle font) = CellLines(text, Math.Max(0, width), page);
-                int here = Math.Max(0, Math.Min(count, lines.Count - skip));
-
-                tallest = Math.Max(tallest, here * _measurer.GetMetrics(font).LineHeight
-                                          + text.Style.Padding.Top + text.Style.Padding.Bottom
-                                          + text.Style.Margin.Top + text.Style.Margin.Bottom);
-            }
-
+            EdgeSize inset = row.Style.Padding;
             return tallest + inset.Top + inset.Bottom;
         }
 
@@ -2094,6 +2213,9 @@ namespace Frisket
         /// </summary>
         private void FlowBand(ContainerItem container, Rect area, Page page)
         {
+            bool outer = _laidInPlace;
+            _laidInPlace = true;
+
             double cursor = area.Top;
             double variantTop = double.NaN;
             double variantBottom = double.NaN;
@@ -2130,7 +2252,12 @@ namespace Frisket
                 if (scope != PageScope.All)
                     variantBottom = Math.Max(variantBottom, cursor);
             }
+
+            _laidInPlace = outer;
         }
+
+        /// <summary>True while a band is being stacked, where nothing can carry on overleaf.</summary>
+        private bool _laidInPlace;
 
         private Continuation? ArrangeChildren(ContainerItem container, Rect childArea, Page page)
         {

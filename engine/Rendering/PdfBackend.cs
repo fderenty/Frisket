@@ -428,6 +428,11 @@ namespace Frisket
                 if (mark.Tag == "TH")
                     sb.Append(" /A << /O /Table /Scope /Column >>");
 
+                // A cell across every column has to say so, or its row is narrower than the
+                // others and PDF/UA 7.2 refuses the file.
+                if (mark.Tag == "TD" && mark.Item.Parent is TableRow { ColumnSpan: > 1 } spanning)
+                    sb.Append(" /A << /O /Table /ColSpan ").Append(spanning.ColumnSpan).Append(" >>");
+
                 // What to announce in place of something that cannot be read.
                 if (!string.IsNullOrWhiteSpace(mark.Alt))
                     sb.Append(" /Alt ").Append(PdfWriter.Text(mark.Alt));

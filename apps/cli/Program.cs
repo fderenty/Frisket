@@ -274,7 +274,7 @@ namespace Frisket.Cli
                         Language = report.Language,
                         Interactive = !options.Flat
                     };
-                    ReportRenderer.Render(report, pdf);
+                    Warn(ReportRenderer.Render(report, pdf));
 
                     string path = Path.Combine(options.Output, name + ".pdf");
                     File.WriteAllBytes(path, pdf.ToArray());
@@ -285,7 +285,7 @@ namespace Frisket.Cli
                 case "html":
                 {
                     var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
-                    ReportRenderer.Render(report, svg);
+                    Warn(ReportRenderer.Render(report, svg));
 
                     string path = Path.Combine(options.Output, name + ".html");
                     File.WriteAllText(path, svg.ToHtml(options.Bare
@@ -309,7 +309,7 @@ namespace Frisket.Cli
                 case "svg":
                 {
                     var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
-                    ReportRenderer.Render(report, svg);
+                    Warn(ReportRenderer.Render(report, svg));
 
                     for (int i = 0; i < svg.Pages.Count; i++)
                     {
@@ -547,6 +547,13 @@ namespace Frisket.Cli
             };
 
         private static void Say(string path) => Console.WriteLine(path);
+
+        /// <summary>What composing the document found, which nothing else here would say.</summary>
+        private static void Warn(LayoutResult layout)
+        {
+            foreach (TemplateIssue issue in layout.Issues)
+                Console.Error.WriteLine($"frisket: {issue.Rule}, {issue.Where}: {issue.Message}");
+        }
 
         private static void Usage()
         {

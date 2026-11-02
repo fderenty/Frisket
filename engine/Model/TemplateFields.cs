@@ -117,6 +117,9 @@ namespace Frisket
                     if (list == null && !Known(over, scopes))
                         Flag(over, pointer + "/RepeatOver", name + " › RepeatOver", item, scopes);
                     inside = list == null ? scopes : new[] { list }.Concat(scopes).ToList();
+
+                    // Printed when there is no entry to read, so outside the list, as a header is.
+                    Tokens(container.EmptyText, pointer + "/EmptyText", name + " › EmptyText", item, scopes);
                 }
 
                 for (int i = 0; i < container.Childs.Count; i++)

@@ -16,7 +16,9 @@ namespace Frisket
     /// <summary>
     /// What happens when an item does not fit in the space left on the current page.
     /// <see cref="Auto"/> splits it if it is splittable at all (a table, a multi-line
-    /// paragraph); <see cref="KeepTogether"/> always pushes it whole to the next page.
+    /// paragraph); <see cref="KeepTogether"/> always pushes it whole to the next page. Taller
+    /// than a page it stays whole all the same, and the part past the foot does not reach the
+    /// paper, which <c>fits.overflow</c> says in <see cref="LayoutResult.Issues"/>.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<Splitting>))]
     public enum Splitting { Auto, KeepTogether }
