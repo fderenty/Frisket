@@ -749,6 +749,30 @@ So the question asked of a group is not "was it placed at coordinates" but "do i
 
 `RenderTarget` gains `Paged`. A section or a group in `Absolute` has **no** flowing form: its children can only be stacked in the order they were declared, which is certainly not the arrangement that was drawn. `can.absoluteInFlow` says so **before** a byte is written — afterwards it is too late to be told.
 
+**The engine's own tokens went out as typed, for as long as this output existed.** The binder leaves
+`{Page}`, `{Title}`, `{HeadingNumber}` and the rest for the layout, and a message has no layout, so a filled mail
+said "{HeadingNumber}. Introduction" and "Page {Page} of {Pages}". Every assertion here looked at the shape of the
+output, and the showcase's mail is written unbound, so its data tokens showing hid these. Found by reading one, on
+the way to something else, 2 November 2026.
+
+What has an answer is filled as on a page: the title, the date, the time, the report's fields, heading numbers.
+What has none goes, the author's decision: a message has no page 3. **By the stretch between two separators**, and
+neither by the token nor by the item. The token alone leaves "Page  of "; the item takes "Confidential" out of
+"Confidential - Page 3 of 8", which is the part that matters. A separator is a line break, or a dash, a bar, a dot
+or a slash standing alone between spaces. It is safe because `{Page}` is the number of the page it is written on,
+so what stands beside it is pagination and not payment terms. Read across a rich text's runs, since a number in
+bold is a run of its own, and what stays keeps its style. No rule warns of it, since the commonest footer there is
+would set it off every time, exactly as wanted (§15). The cost, stated: a whole sentence built round a page number
+goes with it, "See page {Page}" as much as "These notes apply to page {Page}".
+
+Twenty-six sabotages from a run seen green, and two holes. A dash with a word against it had no sample, since
+`Well-known` never reaches the question. And `{SectionPages}` alone was in no test at all, older than any of this:
+test 52's one line naming it names `{Pages}` too, which is enough to have the whole line settled afterwards, so the
+section's total could have gone and nobody told. *A sample that holds two causes of one effect checks neither.*
+One sabotage also hung the run for an hour: it took out the branch a scan advances by, which is not the fault it
+named (§5c), and a timeout on `shell=True` kills the shell and then waits for its children. The driver takes the
+whole tree down now, and says `HUNG`.
+
 Two faults found by building it, none by reading:
 
 - `ImageSource.Data` is a **`byte[]`** the serialiser writes as base64, so it *looks* like a base64 string everywhere a template is read. Appending it to a string gives `"System.Byte[]"` — a `data:` URI a browser accepts and draws nothing for. Found by opening the file;
@@ -2705,9 +2729,64 @@ the conformance document had none, so it has one now. The fourth, a piece joinin
 page, needs a part with no element, which cannot now be reached; the comparison stays, as the one in
 `EmitStructure` does.
 
-**What this did not reach.** The heading-number rules of both validators ask `item is TextItem`, so
-`{HeadingNumber}` in a rich text with no format to answer it says nothing beforehand; the number itself
-is right.
+**And the validators had the same blind spot.** The three heading-number rules asked `item is TextItem`,
+on both sides, so `{HeadingNumber}` in a rich text with no format to answer it said nothing beforehand and
+went out on the page as typed. They read the runs now, one by one as they are filled: a token cut across
+two runs is printed as typed and is not a number anybody asked for.
+
+## 15d. What a reader hears of a header and a footer
+
+Reading a file's tree after §15c found the next thing: bands are placed before the body, because the
+body's height comes from them and placement is paint order, and the tree followed. So every page opened
+on its footer, and in a report every sentence over two pages was broken by whatever both bands said.
+
+**The obvious answer was the wrong one, and the author said so.** PDF/UA 7.8 wants running headers and
+footers marked as pagination artifacts, Word and PDFMaker do it to all of them, and I recommended the
+same: a footer is decoration. *"Pour moi, le pied de page n'est pas une décoration, il peut avoir des
+informations importantes."* The ACME invoice's footer holds `AMOUNT DUE` and its totals. Marked as the
+standard's own default, the sum to pay would be on the paper and nowhere a blind reader can reach,
+with no error, in a file a validator passes. The standard says *running*, and Matterhorn lists both
+faults: a running footer left in the tree (18-001), and real content marked as an artifact (01-002).
+A human checks both, so veraPDF answers neither.
+
+**What settled it was the author's next sentence, that it is the type of document and not its length.**
+A report's footer says the same thing on every page; an invoice's totals are on the last. That difference
+is already in the file: how many pages an item landed on. So no question is asked about the document:
+
+- what is on one page is not repeating, so it is read, whatever the band says;
+- what repeats goes by `RepeatedReading` on the band: `Once` by default, `EveryPage`, or `Never`;
+- `Role = Artifact` on an item silences that item, which is what a lone page number is for;
+- a control is always read, a widget with no Form over it being refused as surely (§4b);
+- a table or a list answers as a whole on each page. A total row scoped to the last page in a table that
+  repeats gave a `TR` read out of a `Table` that was not, and PDF/UA refuses that;
+- a footer is read after the page's body, by a stable sort in `EmitStructure`, and whatever is not read
+  is `/Artifact <</Type /Pagination /Subtype /Footer>>`, which is 18-002.
+
+**`Once` loses nothing here, and that is a fact about this engine.** The binder fills the data before layout
+and there is no running subtotal, so a band's item says the same words on every page but for its page
+numbers, and a scoped variant is an item of its own. Where the words could differ page by page, reading once
+would lose them. If a carried-forward total ever exists, this rule has to be looked at again the day it does.
+
+On the band and not the report, because `SubTemplateMode.Append` assembles a report and an invoice into one
+file, each section with its own bands. Decided after composing, since it turns on the final page count.
+
+It costs what it says: an auditor reading 7.8 strictly may object to `Once`'s first occurrence, which is what
+`Never` is for; someone arriving straight at page 5 does not hear the footer, which is what `EveryPage` is for.
+Back pages and anything else hung directly off a section repeat too, and are read every time: they are not
+headers or footers, and nobody has asked.
+
+**Nothing on the canvas changes**, so §1's fourth place, the echo, has nothing to echo: the designer does not
+paginate. What can drift is what the panel offers, how it is worded and what no key is read as, and the harness
+reads all three off the engine's enum. Test 112 hears all three values through `ReadAloud` and finds the proof
+identical whichever is chosen, and test 113 shows each to veraPDF.
+
+Twenty-nine sabotages from a run seen green, and three went through. Two were code doing nothing, and it is gone
+rather than kept unproved: a guard against counting a rich text's pieces, which `BandOf` already refuses for having
+no parent, and a clause marking an artifact as pagination that its not being wanted had already done. The third was
+a hole: an item marked Artifact, on one page, opening the table around it. And the check written for it failed on
+the mended code, because a rule in a row is not an artifact. *A cell takes its role from the row it sits in*, as
+`PdfRoles.Resolve` says in its own comment, so a rule scoped to one page is a cell on one page, and reading its table
+there is right. The sample was wrong, not the rule (§10c).
 
 ## 15b. A heading numbers itself from the text, not from a style
 

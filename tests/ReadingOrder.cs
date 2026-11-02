@@ -22,6 +22,12 @@ namespace test
             /// <summary>What is drawn and marked as decoration, which a reader skips.</summary>
             public List<string> Skipped { get; } = new();
 
+            /// <summary>What is drawn and marked as a pagination artifact, with its subtype.</summary>
+            public List<(string Subtype, string Words)> Running { get; } = new();
+
+            /// <summary>Every element of the tree, words or no words, in the order it comes.</summary>
+            public List<string> Tags { get; } = new();
+
             /// <summary>The tags directly under the document.</summary>
             public List<string> AtTheTop { get; } = new();
 
@@ -31,6 +37,7 @@ namespace test
 
         private static readonly Regex ContentToken = new(
             @"/(?<tag>\w+) <</MCID (?<mcid>\d+)>> BDC"
+            + @"|/Artifact <</Type /Pagination /Subtype /(?<running>\w+)>> BDC"
             + @"|(?<artifact>/Artifact BMC)"
             + @"|(?<end>\bEMC\b)"
             + @"|/(?<font>[\w+-]+) [\d.]+ Tf"
@@ -63,6 +70,7 @@ namespace test
 
                 Dictionary<string, string> font = new();
                 int open = -1;          // the mark being read, or -2 inside decoration
+                string? subtype = null;
                 var words = new StringBuilder();
                 int count = 0;
 
@@ -77,6 +85,13 @@ namespace test
                     else if (token.Groups["artifact"].Success)
                     {
                         open = -2;
+                        subtype = null;
+                        words.Clear();
+                    }
+                    else if (token.Groups["running"].Success)
+                    {
+                        open = -2;
+                        subtype = token.Groups["running"].Value;
                         words.Clear();
                     }
                     else if (token.Groups["end"].Success)
@@ -84,6 +99,8 @@ namespace test
                         string said = Regex.Replace(words.ToString(), @"\s+", " ").Trim();
                         if (open >= 0)
                             marks[(pages[index], open)] = said;
+                        else if (open == -2 && said.Length > 0 && subtype != null)
+                            reading.Running.Add((subtype, said));
                         else if (open == -2 && said.Length > 0)
                             reading.Skipped.Add(said);
                         open = -1;
@@ -117,6 +134,7 @@ namespace test
             {
                 var element = (PdfDictionary)file.Get(reference.Number)!;
                 string tag = ((PdfName)file.Resolve(element["S"])!).Value;
+                reading.Tags.Add(tag);
                 if (depth == 1)
                     reading.AtTheTop.Add(tag);
 
@@ -354,6 +372,268 @@ namespace test
                 string.Join(",", reading.AtTheTop.Distinct()), 0);
 
             Console.WriteLine();
+        }
+
+        /// <summary>
+        /// A report long enough to repeat its bands: a header in plain and rich text, and a
+        /// footer holding what the two kinds of document put there. A notice and a page number
+        /// on every page, as a report has; on the last page only, an amount due, as an invoice
+        /// has; and a table with a row only the last page shows, which is the shape that has to
+        /// be read as a whole or refused.
+        /// </summary>
+        private static Report WithBands(RepeatedReading reading, int words = 1500)
+        {
+            var report = new Report
+            {
+                Title = "Bands",
+                Language = "en-GB",
+                GeneratedAt = SampleDate,
+                Dimension = new() { Width = 120, Height = 150 },
+                Body = new() { Layout = LayoutMode.Stack },
+                Header = new() { Layout = LayoutMode.Stack, RepeatedReading = reading },
+                Footer = new() { Layout = LayoutMode.Stack, RepeatedReading = reading },
+            };
+
+            report.Body!.Add(new TextItem { Text = string.Join(" ", Enumerable.Range(0, words).Select(i => "b" + i)) });
+
+            var richHeader = new AdvancedTextItem();
+            richHeader.Runs.Add(new TextRun { Text = "Rich header" });
+            report.Header!.Add(new TextItem { Text = "Header words" });
+            report.Header!.Add(richHeader);
+
+            report.Footer!.Add(new TextItem { Text = "Confidential words" });
+            report.Footer!.Add(new TextItem { Text = "Page {Page} of {Pages}" });
+
+            var amount = new AdvancedTextItem();
+            amount.Runs.Add(new TextRun { Text = "AMOUNT DUE" });
+            var summary = new ContainerItem { Layout = LayoutMode.Stack };
+            summary.Style.PageScope = PageScope.Last;
+            summary.Add(amount);
+            report.Footer!.Add(summary);
+
+            var fees = new TableItem();
+            fees.AddAutoColumn();
+            fees.AddRow(new TextItem { Text = "Fee row" });
+            fees.AddRow(new TextItem { Text = "Total row" });
+            fees.Childs[1].Style.PageScope = PageScope.Last;
+            report.Footer!.Add(fees);
+
+            report.Reattach();
+            return report;
+        }
+
+        /// <summary>
+        /// A header or footer is heard as the template says, and after the page it closes.
+        ///
+        /// Both were placed before the body, which paint order and the body's height need, and
+        /// the tree followed: every page opened on its last line, and a sentence over two pages
+        /// was broken by whatever both bands said, every time. PDF/UA 7.8 wants what runs marked
+        /// as pagination; what appears once is not running, and marking it would hide it. So the
+        /// question is asked of each item, and how many pages it landed on decides.
+        /// </summary>
+        [Fact]
+        public void Test112_ABandIsHeardAsTheTemplateSays()
+        {
+            const string testName = "Test 112";
+            Console.WriteLine("Test 112: what a reader hears of a header and a footer");
+            Console.WriteLine();
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            (Reading Reading, int Pages) Hear(Report report)
+            {
+                var pdf = new PdfBackend(library) { Tagged = true, Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+                LayoutResult layout = ReportRenderer.Render(report, pdf);
+                return (ReadAloud(pdf.ToArray()), layout.PageCount);
+            }
+            static string Said(Heard heard) => $"{heard.Tag}: {(heard.Words.StartsWith('b') ? "body" : heard.Words)}";
+            static int Count(Reading reading, string subtype, string words)
+                => reading.Running.Count(r => r.Subtype == subtype && r.Words == words);
+
+            string[] Opening = ["P: Header words", "P: Rich header", "P: body"];
+            string[] Closing(int page, int pages) => ["P: Confidential words", $"P: Page {page} of {pages}", "TD: Fee row"];
+            string[] Last(int pages) => ["P: Confidential words", $"P: Page {pages} of {pages}", "P: AMOUNT DUE", "TD: Fee row", "TD: Total row"];
+
+            // --- once, the default ---------------------------------------------------------------
+            AssertEqual(testName, "reading once is what a band says when it says nothing", RepeatedReading.Once, new Footer().RepeatedReading, 0);
+
+            (Reading once, int pages) = Hear(WithBands(RepeatedReading.Once));
+            Console.WriteLine($"    {pages} pages, once: {string.Join(" | ", once.Heard.Select(Said))}");
+            AssertEqual(testName, "the sample runs to more than two pages", true, pages >= 3, 0);
+            AssertEqual(testName, "once: everything reaches everything", "", string.Join(" | ", once.Faults), 0);
+
+            var expected = new List<string>();
+            expected.AddRange(Opening);
+            expected.AddRange(Closing(1, pages));
+            for (int page = 2; page < pages; page++)
+                expected.Add("P: body");
+            expected.AddRange(["P: body", "P: AMOUNT DUE", "TD: Fee row", "TD: Total row"]);
+            AssertEqual(testName, "once: heard the first time, after the body, and what is on the last page there",
+                string.Join(" | ", expected), string.Join(" | ", once.Heard.Select(Said)), 0);
+
+            AssertEqual(testName, "once: still on the paper of every other page", pages - 1, Count(once, "Footer", "Confidential words"), 0);
+            AssertEqual(testName, "once: the page number too", $"Page {pages} of {pages}",
+                once.Running.Last(r => r.Words.StartsWith("Page ", StringComparison.Ordinal)).Words, 0);
+            AssertEqual(testName, "once: the header says it is a header", pages - 1, Count(once, "Header", "Header words"), 0);
+            AssertEqual(testName, "once: and its rich text with it", pages - 1, Count(once, "Header", "Rich header"), 0);
+
+            // --- on every page -------------------------------------------------------------------
+            (Reading every, _) = Hear(WithBands(RepeatedReading.EveryPage));
+            expected.Clear();
+            for (int page = 1; page <= pages; page++)
+            {
+                expected.AddRange(Opening);
+                expected.AddRange(page == pages ? Last(pages) : Closing(page, pages));
+            }
+            AssertEqual(testName, "on every page: all of it, each page in its order",
+                string.Join(" | ", expected), string.Join(" | ", every.Heard.Select(Said)), 0);
+            AssertEqual(testName, "on every page: nothing is marked as pagination", 0, every.Running.Count, 0);
+            AssertEqual(testName, "on every page: everything reaches everything", "", string.Join(" | ", every.Faults), 0);
+
+            // --- never ---------------------------------------------------------------------------
+            (Reading never, _) = Hear(WithBands(RepeatedReading.Never));
+            expected.Clear();
+            for (int page = 1; page <= pages; page++)
+                expected.Add("P: body");
+            expected.AddRange(["P: AMOUNT DUE", "TD: Fee row", "TD: Total row"]);
+            AssertEqual(testName, "never: the amount due is not repeating, so it is read, and its table whole",
+                string.Join(" | ", expected), string.Join(" | ", never.Heard.Select(Said)), 0);
+            AssertEqual(testName, "never: what repeats is on the paper of every page", pages, Count(never, "Footer", "Confidential words"), 0);
+            AssertEqual(testName, "never: and the header's", pages, Count(never, "Header", "Header words"), 0);
+            AssertEqual(testName, "never: everything reaches everything", "", string.Join(" | ", never.Faults), 0);
+
+            // A document of one page repeats nothing.
+            (Reading alone, int onePage) = Hear(WithBands(RepeatedReading.Never, words: 3));
+            AssertEqual(testName, "the short sample is one page", 1, onePage, 0);
+            AssertEqual(testName, "never: on one page nothing repeats, so all of it is read", true,
+                alone.Heard.Any(h => h.Words == "Confidential words") && alone.Running.Count == 0, 0);
+
+            // --- what the item says of itself ----------------------------------------------------
+            Report silenced = WithBands(RepeatedReading.EveryPage);
+            silenced.Footer!.Childs[1].Role = PdfRole.Artifact;
+            (Reading quiet, _) = Hear(silenced);
+            AssertEqual(testName, "a page number marked Artifact is never read, whatever the band says", false,
+                quiet.Heard.Any(h => h.Words.StartsWith("Page ", StringComparison.Ordinal)), 0);
+            AssertEqual(testName, "and is a footer's pagination all the same", pages,
+                quiet.Running.Count(r => r.Subtype == "Footer" && r.Words.StartsWith("Page ", StringComparison.Ordinal)), 0);
+
+            // Marked as nothing to read, on one page only: it does not open the table around it.
+            Report ruled = WithBands(RepeatedReading.Never);
+            var ruledTable = new TableItem();
+            ruledTable.AddAutoColumn().AddAutoColumn();
+            var rule = new LineItem { Role = PdfRole.Artifact };
+            rule.Style.PageScope = PageScope.Last;
+            ruledTable.AddRow(new TextItem { Text = "Ruled row" }, rule);
+            ruled.Footer!.Add(ruledTable);
+            ruled.Reattach();
+            AssertEqual(testName, "what is not read does not open the table it is in", false,
+                Hear(ruled).Reading.Heard.Any(h => h.Words == "Ruled row"), 0);
+
+            // A control is a widget on every page, and a widget with no Form over it is refused.
+            Report withField = WithBands(RepeatedReading.Never);
+            withField.Footer!.Add(new FieldItem { Name = "initials", Kind = FieldKind.Text, AltText = "Initials" });
+            withField.Reattach();
+            (Reading fielded, _) = Hear(withField);
+            AssertEqual(testName, "a control in a band is read on every page, whatever the band says", pages,
+                fielded.Tags.Count(tag => tag == "Form"), 0);
+
+            // --- it belongs to the band, and each section has its own ----------------------------
+            Report two = WithBands(RepeatedReading.Once);
+            var second = new Section { Dimension = new() { Width = 120, Height = 150 } };
+            var secondBody = new Body();
+            secondBody.Add(new TextItem { Text = string.Join(" ", Enumerable.Range(0, 1500).Select(i => "b" + i)) });
+            var secondFooter = new Footer { Layout = LayoutMode.Stack, RepeatedReading = RepeatedReading.EveryPage };
+            secondFooter.Add(new TextItem { Text = "Annex footer" });
+            second.Add(secondFooter);
+            second.Add(secondBody);
+            two.Sections.Add(second);
+            two.Reattach();
+            (Reading both, _) = Hear(two);
+            int annexPages = two.Resolve(new FontTextMeasurer(library)).Sections[1].PageCount;
+            AssertEqual(testName, "the second section repeats its footer", true, annexPages >= 2, 0);
+            AssertEqual(testName, "a section's own band says for itself", annexPages,
+                both.Heard.Count(h => h.Words == "Annex footer"), 0);
+            AssertEqual(testName, "and the first section's is not moved by it", 1,
+                both.Heard.Count(h => h.Words == "Confidential words"), 0);
+
+            // --- it survives what a template goes through ----------------------------------------
+            string written = WithBands(RepeatedReading.EveryPage).ToJson();
+            AssertEqual(testName, "written by name", true, written.Contains("\"RepeatedReading\": \"EveryPage\"", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and the default not at all", false,
+                WithBands(RepeatedReading.Once).ToJson().Contains("RepeatedReading", StringComparison.Ordinal), 0);
+            Report readBack = Report.FromJson(written);
+            AssertEqual(testName, "read back", RepeatedReading.EveryPage, readBack.Footer!.RepeatedReading, 0);
+            AssertEqual(testName, "and through the binder", RepeatedReading.EveryPage,
+                ReportBinder.Bind(readBack, "{}").Footer!.RepeatedReading, 0);
+            AssertEqual(testName, "a header's copy keeps it", RepeatedReading.Never,
+                ((Header)new Header { RepeatedReading = RepeatedReading.Never }.Clone()).RepeatedReading, 0);
+            AssertEqual(testName, "a footer's copy keeps it", RepeatedReading.Never,
+                ((Footer)new Footer { RepeatedReading = RepeatedReading.Never }.Clone()).RepeatedReading, 0);
+
+            // --- and it changes nothing that is drawn ---------------------------------------------
+            static string Proof(Report report, ITextMeasurer measurer)
+            {
+                var svg = new SvgBackend(measurer);
+                ReportRenderer.Render(report, svg);
+                return string.Concat(svg.Pages);
+            }
+            var measurer = new FontTextMeasurer(library);
+            AssertEqual(testName, "the pages are the same whichever is chosen", true,
+                Proof(WithBands(RepeatedReading.Once), measurer) == Proof(WithBands(RepeatedReading.Never), measurer)
+                && Proof(WithBands(RepeatedReading.Once), measurer) == Proof(WithBands(RepeatedReading.EveryPage), measurer), 0);
+
+            Console.WriteLine();
+        }
+
+        /// <summary>The pagination marks and the reordered tree, shown to the validator on both profiles.</summary>
+        [SkippableTheory]
+        [InlineData("ua1", RepeatedReading.Once)]
+        [InlineData("ua1", RepeatedReading.EveryPage)]
+        [InlineData("ua1", RepeatedReading.Never)]
+        [InlineData("3b", RepeatedReading.Once)]
+        public void Test113_ABandIsValidHoweverItIsRead(string flavour, RepeatedReading reading)
+        {
+            string testName = $"Test 113: veraPDF {flavour}, read {reading}";
+            Console.WriteLine($"Running {testName}...");
+
+            string? verapdf = FindVeraPdf();
+            Skip.If(verapdf == null, "veraPDF was not found. Set FRISKET_VERAPDF to its launcher, or put it on PATH.");
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            Report report = WithBands(reading);
+            report.Footer!.Add(new FieldItem { Name = "initials", Kind = FieldKind.Text, AltText = "Initials" });
+            report.Reattach();
+
+            var pdf = new PdfBackend(library) { Tagged = true, Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            ReportRenderer.Render(report, pdf);
+
+            string path = Path.Combine(Path.GetTempPath(), $"frisket-bands-{Guid.NewGuid():N}.pdf");
+            File.WriteAllBytes(path, pdf.ToArray());
+
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo(verapdf!)
+                {
+                    Arguments = $"--format text --flavour {flavour} \"{path}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                }
+            };
+            process.Start();
+            process.ErrorDataReceived += (_, _) => { };
+            process.BeginErrorReadLine();
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(180_000);
+            File.Delete(path);
+
+            Console.WriteLine($"    {output.Trim()}");
+            AssertEqual(testName, $"the document is valid {flavour}", true, output.Contains("PASS", StringComparison.Ordinal), 0);
         }
     }
 }

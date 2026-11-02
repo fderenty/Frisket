@@ -94,6 +94,16 @@ namespace test
             var loose = new TextItem { Text = "See {HeadingNumber} below" };
             report.Body!.Add(loose);
 
+            // Both again in rich text, which is everything the content editor writes.
+            var unspelledRich = new AdvancedTextItem { Role = PdfRole.Heading1 };
+            unspelledRich.Runs.Add(new TextRun { Text = "{HeadingNumber}. " });
+            unspelledRich.Runs.Add(new TextRun { Text = "A rich heading" });
+            report.Body!.Add(unspelledRich);
+            var looseRich = new AdvancedTextItem();
+            looseRich.Runs.Add(new TextRun { Text = "See " });
+            looseRich.Runs.Add(new TextRun { Text = "{HeadingNumber} below" });
+            report.Body!.Add(looseRich);
+
             // Justified text carrying a hard break of its own. The break is stretched to
             // the margin like a wrapped line, which is not what a break means - and the
             // engine cannot tell the two apart once the lines are assembled, which is why
@@ -190,6 +200,10 @@ namespace test
                 true, Has("sound.headingNumberNoFormat"), 0);
             AssertEqual(testName, "and one on something that is not a heading",
                 true, Has("sound.headingNumberOutsideHeading"), 0);
+            AssertEqual(testName, "a rich heading with no format is asked the same", true,
+                issues.Any(i => i.Rule == "sound.headingNumberNoFormat" && ReferenceEquals(i.Item, unspelledRich)), 0);
+            AssertEqual(testName, "and a rich text that is no heading", true,
+                issues.Any(i => i.Rule == "sound.headingNumberOutsideHeading" && ReferenceEquals(i.Item, looseRich)), 0);
             AssertEqual(testName, "a role naming a control on something that is not one",
                 true, Has("ua.formRole"), 0);
             AssertEqual(testName, "a section with no page size", true,
@@ -213,11 +227,34 @@ namespace test
                 Body = new() { Layout = LayoutMode.Stack }
             };
             deep.Body!.Add(new TextItem { Text = "{HeadingNumber} Deep", Role = PdfRole.Heading3 });
+            var deepRich = new AdvancedTextItem { Role = PdfRole.Heading3 };
+            deepRich.Runs.Add(new TextRun { Text = "{HeadingNumber} Deep and rich" });
+            deep.Body!.Add(deepRich);
             deep.Reattach();
 
             AssertEqual(testName, "a heading deeper than the format spells out", true,
                 TemplateValidator.Check(deep, TemplateProfile.Sound)
                     .Any(i => i.Rule == "sound.headingNumberDepth"), 0);
+            AssertEqual(testName, "and a rich one", true,
+                TemplateValidator.Check(deep, TemplateProfile.Sound)
+                    .Any(i => i.Rule == "sound.headingNumberDepth" && ReferenceEquals(i.Item, deepRich)), 0);
+
+            // Filled run by run, so a token cut across two runs is printed as typed and is not
+            // a number anybody asked for. Read as one string, this would call it one.
+            var cutReport = new Report
+            {
+                Title = "t", Language = "en-GB",
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack }
+            };
+            var cutToken = new AdvancedTextItem();
+            cutToken.Runs.Add(new TextRun { Text = "{Heading" });
+            cutToken.Runs.Add(new TextRun { Text = "Number}" });
+            cutReport.Body!.Add(cutToken);
+            cutReport.Reattach();
+            AssertEqual(testName, "a token cut across two runs is not one", false,
+                TemplateValidator.Check(cutReport, TemplateProfile.Sound)
+                    .Any(i => i.Rule.StartsWith("sound.headingNumber", StringComparison.Ordinal)), 0);
 
             deep.HeadingNumbering = "1.1.1";
             AssertEqual(testName, "and it falls silent once the format reaches it", false,
@@ -271,6 +308,7 @@ namespace test
             // level is reached and the format still stops at two.
             report.HeadingNumbering = "1.1";
             loose.Text = "See {HeadingNumber[1]} below";
+            looseRich.Runs[1].Text = "{HeadingNumber[1]} below";
             report.Body!.Remove(nested);
             sizeless.Dimension = new() { Width = 210, Height = 297 };
 

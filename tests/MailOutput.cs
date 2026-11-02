@@ -20,6 +20,121 @@ namespace test
         }
 
         /// <summary>
+        /// A message fills the tokens it has an answer to, and has no page to number.
+        ///
+        /// The binder leaves the engine's own tokens for the layout, and a message has no layout,
+        /// so all of them went out as typed: "{HeadingNumber}. Introduction", "Page {Page} of
+        /// {Pages}". Every assertion on this output looked at its shape, and no sample here was
+        /// ever read as a person reads a mail.
+        /// </summary>
+        [Fact]
+        public void Test114_AMessageFillsWhatItCanAndHasNoPages()
+        {
+            const string testName = "Test 114";
+            Console.WriteLine("Test 114: the engine's own tokens in a message");
+            Console.WriteLine();
+
+            static AdvancedTextItem Rich(params (string Text, bool Bold)[] runs)
+            {
+                var item = new AdvancedTextItem();
+                foreach ((string text, bool bold) in runs)
+                    item.Runs.Add(new TextRun { Text = text, Font = bold ? new TextStyle { Bold = true } : null });
+                return item;
+            }
+            static string Mail(string? numbering, params BaseItem[] items)
+            {
+                var report = new Report
+                {
+                    Title = "Title <one>",
+                    Language = "en-GB",
+                    HeadingNumbering = numbering,
+                    GeneratedAt = SampleDate,
+                    Dimension = new() { Width = 100, Height = 120 },
+                    Body = new() { Layout = LayoutMode.Stack },
+                };
+                report.Fields["Reference"] = "R-12";
+                foreach (BaseItem item in items)
+                    report.Body!.Add(item);
+                report.Reattach();
+                return FlowingHtml.Write(report);
+            }
+            static string Bare(string html)
+            {
+                int body = html.IndexOf("<body", StringComparison.Ordinal);
+                string text = System.Text.RegularExpressions.Regex.Replace(html[body..], "<[^>]+>", "\n");
+                return string.Join(" | ", text.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0))
+                    .Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&");
+            }
+            static string Says(string text) => Bare(Mail("1.1", new TextItem { Text = text }));
+
+            // --- what it has an answer to ---------------------------------------------------------
+            AssertEqual(testName, "the title", "Report: Title <one>", Says("Report: {Title}"), 0);
+            AssertEqual(testName, "the date", $"Made {SampleDate:yyyy-MM-dd}", Says("Made {Date}"), 0);
+            AssertEqual(testName, "with a format", $"Made {SampleDate:dd/MM/yyyy}", Says("Made {Date:dd/MM/yyyy}"), 0);
+            AssertEqual(testName, "the time", $"At {SampleDate:HH:mm}", Says("At {Time}"), 0);
+            AssertEqual(testName, "a field the report holds", "Ref R-12", Says("Ref {Reference}"), 0);
+            AssertEqual(testName, "a brace written out", "{Title}", Says("{{Title}}"), 0);
+            AssertEqual(testName, "what is filled is still escaped", true,
+                Mail("1.1", new TextItem { Text = "{Title}" }).Contains("Title &lt;one&gt;", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "a token nobody can answer stays, as it does on a page", "{Nobody}", Says("{Nobody}"), 0);
+
+            var first = new TextItem { Text = "{HeadingNumber}. First", Role = PdfRole.Heading1 };
+            var second = new TextItem { Text = "{HeadingNumber}. Second", Role = PdfRole.Heading2 };
+            AdvancedTextItem richHeading = Rich(("{HeadingNumber}. ", false), ("Rich", true));
+            richHeading.Role = PdfRole.Heading2;
+            var within = new TextItem { Text = "{SectionHeadingNumber}. Within", Role = PdfRole.Heading2 };
+            AssertEqual(testName, "heading numbers, plain and rich", "1. First | 1.1. Second | 1.2. | Rich | 1.3. Within",
+                Bare(Mail("1.1", first, second, richHeading, within)), 0);
+            AssertEqual(testName, "with no format to write them in they stay, as they do on a page", "{HeadingNumber}. Alone",
+                Bare(Mail(null, new TextItem { Text = "{HeadingNumber}. Alone", Role = PdfRole.Heading1 })), 0);
+
+            // --- what it has no answer to ----------------------------------------------------------
+            foreach (string gone in new[]
+                     {
+                         "Page {Page} of {Pages}", "Page {Page}/{Pages}", "Page {Page} / {Pages}", "{Pages} pages", "Sheet {SectionPage}",
+                         "{SectionPages} sheets", "page {page} of {PAGES}", "Page {Page:000}", "See page {Page}",
+                     })
+                AssertEqual(testName, $"\"{gone}\" says nothing at all", "", Says(gone), 0);
+
+            AssertEqual(testName, "it leaves no empty paragraph behind", 0,
+                Count(Mail("1.1", new TextItem { Text = "Page {Page} of {Pages}" }), "<p "), 0);
+
+            AssertEqual(testName, "what stands beside it stays", "Confidential", Says("Confidential — Page {Page} of {Pages}"), 0);
+            AssertEqual(testName, "whichever side", "Confidential", Says("Page {Page} of {Pages} - Confidential"), 0);
+            AssertEqual(testName, "and the separator between what stays", "Confidential | Draft",
+                Says("Confidential | Page {Page} | Draft"), 0);
+            AssertEqual(testName, "on a line of its own", "Confidential", Says("Confidential\nPage {Page}"), 0);
+            AssertEqual(testName, "a dash in a word is no separator", "", Says("Well-known Page {Page}"), 0);
+            AssertEqual(testName, "nor one with a word against it on the right", "", Says("Due -5 on page {Page}"), 0);
+            AssertEqual(testName, "nor one with a word against it on the left", "", Says("Well- Page {Page}"), 0);
+            AssertEqual(testName, "a text with no page number is not touched", "A - B / C | D", Says("A - B / C | D"), 0);
+            AssertEqual(testName, "a page written out is not a page number", "{Page} of - it", Says("{{Page}} of - it"), 0);
+
+            // Rich text: the number in bold is a run of its own, and what stays keeps its style.
+            AssertEqual(testName, "rich: \"Page 3 of 8\" with its numbers in bold says nothing", "",
+                Bare(Mail("1.1", Rich(("Page ", false), ("{Page}", true), (" of ", false), ("{Pages}", true)))), 0);
+            string kept = Mail("1.1", Rich(("Confidential", true), (" — Page ", false), ("{Page}", true)));
+            AssertEqual(testName, "rich: what stays stays", "Confidential", Bare(kept), 0);
+            AssertEqual(testName, "rich: in its own style", true,
+                System.Text.RegularExpressions.Regex.IsMatch(kept, "<span style=\"font-weight:bold;\">Confidential</span>"), 0);
+            AssertEqual(testName, "rich: a text with no page number keeps every run", "A | B",
+                Bare(Mail("1.1", Rich(("A", false), ("B", true)))), 0);
+
+            // A cell is still a cell, or a row comes out a column short.
+            var table = new TableItem();
+            table.AddAutoColumn().AddAutoColumn();
+            table.AddRow(new TextItem { Text = "Kept" }, new TextItem { Text = "Page {Page}" });
+            AssertEqual(testName, "a cell left with nothing is still a cell", 2,
+                Count(Mail("1.1", table), "padding:.3em"), 0);
+
+            // What is shown in place of something else.
+            var code = new BarcodeItem { Value = "x", AltText = "Code for {Title} - page {Page}" };
+            AssertEqual(testName, "an alternative text shown in the message", "Code for Title <one>", Bare(Mail("1.1", code)), 0);
+
+            Console.WriteLine();
+        }
+
+        /// <summary>
         /// The report as a message rather than as a page.
         ///
         /// FlowingHtml is a second consumer of the model, parallel to the resolver

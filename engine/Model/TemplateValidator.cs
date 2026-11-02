@@ -463,7 +463,17 @@ namespace Frisket
             // A heading number asked for and not answerable. All three leave the token
             // visible on the page rather than resolving to something wrong, which is loud
             // - but loud at the wrong moment, once the document is out.
-            if (item is TextItem { Text: not null } counted && HeadingNumbers.Mentions(counted.Text))
+            //
+            // Of a rich text too, run by run as it is filled: a token cut across two runs is
+            // not a token, and the separator keeps it from reading as one here.
+            string? counted = item switch
+            {
+                TextItem text => text.Text,
+                AdvancedTextItem rich => string.Join("\n", rich.Runs.Select(run => run.Text)),
+                _ => null
+            };
+
+            if (counted != null && HeadingNumbers.Mentions(counted))
             {
                 int declared = HeadingNumbers.Depth(numbering);
                 int level = HeadingNumbers.LevelOf(item);
@@ -477,7 +487,7 @@ namespace Frisket
                         item, where));
                 }
 
-                if (level == 0 && !MentionsLevel(counted.Text))
+                if (level == 0 && !MentionsLevel(counted))
                 {
                     found.Add(new TemplateIssue("sound.headingNumberOutsideHeading", IssueLevel.Warning,
                         "This is not a heading, so there is no level for the number to be. "

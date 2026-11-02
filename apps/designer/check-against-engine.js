@@ -554,6 +554,30 @@ if (quotePath) {
         !/Color:\s*\{\s*R:\s*128[^}]*A:\s*\d+/.test(source),
         'a number typed in the panel is a copy nothing holds');
 
+  // --- what a reader hears of a band -----------------------------------------
+  // Nothing to echo on the canvas: it changes no drawing, and this page does not paginate. So
+  // what can drift is what is offered, how it is worded, and what no key is read as.
+  const readingBlock = /enum RepeatedReading\s*\{([\s\S]*?)^    \}/m
+    .exec(readText(path.join(REPO, 'engine/Model/PdfRole.cs')));
+  const readings = readingBlock ? [...readingBlock[1].matchAll(/^\s*(\w+),?\s*$/gm)].map(m => m[1]) : [];
+  check('the engine names how a band can be read', readings.length === 3, readings.join(', '));
+
+  const offeredReadings = /select\(\[([^\]]*)\], item\.RepeatedReading/.exec(script);
+  check('the panel offers exactly those, in order',
+        !!offeredReadings && JSON.stringify(JSON.parse('[' + offeredReadings[1] + ']')) === JSON.stringify(readings),
+        offeredReadings ? offeredReadings[1] : 'no control');
+
+  for (const reading of readings)
+    check(`and both languages word ${reading}`,
+          (script.match(new RegExp(`"RepeatedReading\\.${reading}":`, 'g')) || []).length === 2);
+
+  for (const type of ['Header', 'Footer']) {
+    const band = { $type: type, Childs: [] };
+    sandbox.hydrate(band);
+    check(`a ${type} saying nothing is read as the engine reads it`, band.RepeatedReading === readings[0],
+          String(band.RepeatedReading));
+  }
+
   // --- the picture behind the page ------------------------------------------
   // Section 1 once more, and the half a harness exists for: the model, the panel,
   // the echo and this file all have to say one thing about one type.

@@ -1760,6 +1760,15 @@ function frisketDesigner(seams = {}) {
         }
       }
 
+      // What a reader hears of a band that comes back on every page. Nothing changes on the
+      // canvas: it is printed whichever this says, and a tagged file is the only place it shows.
+      if (item.$type === "Header" || item.$type === "Footer") {
+        heading(t("section.reading"));
+        p.appendChild(field2(t("field.repeatedReading"), select(["Once", "EveryPage", "Never"], item.RepeatedReading,
+          v => { item.RepeatedReading = v; refresh(); }, "RepeatedReading")));
+        p.appendChild(field2("", note(t("hint.repeatedReading"))));
+      }
+
       // Filled from a list in the data. The engine has always done it - the ACME invoice's
       // lines - and this panel never offered it, so a template had to be written by hand to
       // say so. A group, a table or a grid: what Body, the bands and a row would mean by it

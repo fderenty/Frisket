@@ -58,6 +58,12 @@ namespace Frisket
         internal double[]? GridEdges;
 
         /// <summary>
+        /// Set when this placement belongs to a header or footer and is not to be read here:
+        /// what the backend is told it is drawing, in place of <see cref="Source"/>.
+        /// </summary>
+        internal RunningMark? Running;
+
+        /// <summary>
         /// For text, the style with its size already resolved to points, so the backend
         /// draws with exactly the size the layout was computed with. Null for other items.
         /// </summary>

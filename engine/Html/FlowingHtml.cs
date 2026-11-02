@@ -45,6 +45,9 @@ namespace Frisket
         {
             if (report is null) throw new ArgumentNullException(nameof(report));
 
+            // The same walk the resolver takes first: a heading's number is stored on the item.
+            HeadingNumbers.Apply(report);
+
             var html = new StringBuilder();
             html.Append("<!doctype html>\n<html");
             if (!string.IsNullOrWhiteSpace(report.Language))
@@ -113,14 +116,17 @@ namespace Frisket
                     break;
 
                 case TextItem text:
+                    if (WithoutPageNumbers([text.Text]) is not { } words)
+                        break;
+
                     html.Append("<p style=\"margin:0 0 .6em;")
                         .Append(TextCss(text.Font, report)).Append("\">")
-                        .Append(Escape(text.Text).Replace("\n", "<br>"))
+                        .Append(Escape(Filled(words[0], text, report)).Replace("\n", "<br>"))
                         .Append("</p>\n");
                     break;
 
                 case ImageItem image:
-                    WriteImage(html, image, band);
+                    WriteImage(html, image, report, band);
                     break;
 
                 case LineItem:
@@ -141,7 +147,7 @@ namespace Frisket
                 // before a single byte is written.
                 case FieldItem field:
                     html.Append("<p style=\"margin:0 0 .6em;\">")
-                        .Append(Escape(field.Value ?? field.Tooltip ?? ""))
+                        .Append(Escape(Spoken(field.Value ?? field.Tooltip ?? "", field, report)))
                         .Append("</p>\n");
                     break;
 
@@ -151,7 +157,7 @@ namespace Frisket
                 case BarcodeItem barcode:
                     if (!string.IsNullOrWhiteSpace(barcode.AltText))
                         html.Append("<p style=\"margin:0 0 .6em;color:#666;\">")
-                            .Append(Escape(barcode.AltText!)).Append("</p>\n");
+                            .Append(Escape(Spoken(barcode.AltText!, barcode, report))).Append("</p>\n");
                     break;
 
                 case ContainerItem container:
@@ -305,17 +311,21 @@ namespace Frisket
 
         private static void WriteAdvanced(StringBuilder html, AdvancedTextItem item, Report report)
         {
+            if (WithoutPageNumbers(item.Runs.Select(run => run.Text ?? "").ToList()) is not { } words)
+                return;
+
             html.Append("<p style=\"margin:0 0 .6em;")
                 .Append(TextCss(item.Font, report))
                 .Append(Align(item.Font.HorizontalAlignment))
                 .Append("\">");
 
-            foreach (TextRun run in item.Runs)
+            for (int i = 0; i < item.Runs.Count; i++)
             {
-                if (string.IsNullOrEmpty(run.Text))
+                if (words[i].Length == 0)
                     continue;
 
-                string body = Escape(run.Text).Replace("\n", "<br>");
+                TextRun run = item.Runs[i];
+                string body = Escape(Filled(words[i], item, report)).Replace("\n", "<br>");
                 string css = run.Font == null ? "" : RunCss(run.Font, report);
 
                 if (css.Length == 0) html.Append(body);
@@ -325,7 +335,119 @@ namespace Frisket
             html.Append("</p>\n");
         }
 
-        private static void WriteImage(StringBuilder html, ImageItem image, double band)
+        /// <summary>
+        /// A text's tokens, filled as they are on a page. The binder leaves the engine's own for
+        /// the layout, and a message has no layout, so <c>{Title}</c> and <c>{HeadingNumber}</c>
+        /// went out as typed until 2 November 2026. A heading number with no format to answer
+        /// it stays visible here as it does on a page, and so does a field the data did not fill.
+        /// </summary>
+        private static string Filled(string text, BaseItem owner, Report report)
+            => ReportTokens.Resolve(HeadingNumbers.Fill(text, owner, report.HeadingNumbering),
+                                    new TokenContext(0, "", report.Title, report.GeneratedAt ?? DateTimeOffset.Now, report.Fields));
+
+        /// <summary>A text that is shown in passing, such as an alternative text, without its page numbers.</summary>
+        private static string Spoken(string text, BaseItem owner, Report report)
+            => WithoutPageNumbers([text]) is { } words ? Filled(words[0], owner, report) : "";
+
+        /// <summary>
+        /// A text as it can be said with no pages, or null when that leaves nothing of it. The
+        /// pieces are a plain text's one string, or the runs of a rich one.
+        ///
+        /// A message has no page 3, so what asks for one goes, and it goes by the stretch between
+        /// two separators rather than by the token or by the item. Taking the token alone leaves
+        /// "Page  of ", and taking the item takes "Confidential" out of "Confidential - Page 3 of
+        /// 8", which is the part that matters. {Page} is the number of the page it is on, so a
+        /// stretch holding it is pagination: nobody writes payment terms beside it.
+        ///
+        /// Read across the runs, since "Page {Page}" with its number in bold is two of them.
+        /// </summary>
+        private static List<string>? WithoutPageNumbers(IReadOnlyList<string> pieces)
+        {
+            string whole = string.Concat(pieces);
+            if (!ReportTokens.UsesPageNumber(whole))
+                return pieces.ToList();
+
+            var keep = new bool[whole.Length];
+            bool kept = false;
+            int start = 0;
+            int separator = 0;
+
+            while (true)
+            {
+                int end = NextSeparator(whole, start, out int length);
+                string stretch = whole[start..end];
+
+                if (stretch.Trim().Length > 0 && !ReportTokens.UsesPageNumber(stretch))
+                {
+                    // The separator in front of it only if something stands before it.
+                    Array.Fill(keep, true, kept ? separator : start, end - (kept ? separator : start));
+                    kept = true;
+                }
+
+                if (end == whole.Length)
+                    break;
+
+                separator = end;
+                start = end + length;
+            }
+
+            if (!kept)
+                return null;
+
+            var words = new List<string>(pieces.Count);
+            int at = 0;
+            foreach (string piece in pieces)
+            {
+                var left = new StringBuilder(piece.Length);
+                foreach (char c in piece)
+                {
+                    if (keep[at++])
+                        left.Append(c);
+                }
+                words.Add(left.ToString());
+            }
+            return words;
+        }
+
+        /// <summary>
+        /// Where the next separator starts, or the end of the text, and how long it is: a line
+        /// break, or a dash, a bar, a dot or a slash standing alone between spaces.
+        /// </summary>
+        private static int NextSeparator(string text, int from, out int length)
+        {
+            for (int i = from; i < text.Length; i++)
+            {
+                if (text[i] == '\n')
+                {
+                    length = 1;
+                    return i;
+                }
+
+                if (!char.IsWhiteSpace(text[i]))
+                    continue;
+
+                int mark = i;
+                while (mark < text.Length && char.IsWhiteSpace(text[mark]) && text[mark] != '\n')
+                    mark++;
+
+                if (mark + 1 < text.Length && "-–—·•|/".Contains(text[mark]) && char.IsWhiteSpace(text[mark + 1]))
+                {
+                    int after = mark + 1;
+                    while (after < text.Length && char.IsWhiteSpace(text[after]) && text[after] != '\n')
+                        after++;
+
+                    length = after - i;
+                    return i;
+                }
+
+                i = mark - 1;
+            }
+
+            length = 0;
+            return text.Length;
+        }
+
+        private static void WriteImage(StringBuilder html, ImageItem image, Report report, double band)
         {
             if (image.Source?.Data is not { Length: > 0 })
                 return;
@@ -337,7 +459,7 @@ namespace Frisket
             {
                 if (!string.IsNullOrWhiteSpace(image.AltText))
                     html.Append("<p style=\"margin:0 0 .6em;color:#666;\">")
-                        .Append(Escape(image.AltText!)).Append("</p>\n");
+                        .Append(Escape(Spoken(image.AltText!, image, report))).Append("</p>\n");
                 return;
             }
 
@@ -366,7 +488,7 @@ namespace Frisket
             html.Append("<img src=\"data:")
                 .Append(Escape(image.Source.MediaType ?? "image/png"))
                 .Append(";base64,").Append(encoded)
-                .Append("\" alt=\"").Append(Escape(image.AltText ?? ""))
+                .Append("\" alt=\"").Append(Escape(Spoken(image.AltText ?? "", image, report)))
                 .Append("\" style=\"display:block;").Append(width).Append("max-width:100%;height:auto;")
                 .Append(ImageAcross(image.Style.AlignHorizontal))
                 .Append("\">\n");

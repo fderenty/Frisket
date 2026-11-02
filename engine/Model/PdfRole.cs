@@ -73,6 +73,53 @@ namespace Frisket
         Artifact
     }
 
+    /// <summary>
+    /// How a tagged PDF reads what a header or footer repeats from page to page. It is printed
+    /// on every page whichever this says. What such a band shows on one page only is not
+    /// repeating, so it is always read: an amount due on the last page cannot be silenced from
+    /// here, only by a Role of Artifact on the item itself.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<RepeatedReading>))]
+    public enum RepeatedReading
+    {
+        /// <summary>
+        /// Read where it first appears, and not again. A band says the same words on every
+        /// page but for its page numbers, so nothing is lost, and a sentence running over a
+        /// page is not broken by them. Someone arriving straight at a later page does not hear it.
+        /// </summary>
+        Once,
+
+        /// <summary>
+        /// Read on every page: a notice that has to be heard wherever the reader is. PDF/UA 7.8
+        /// asks for running headers and footers to be artifacts, so an audit may object.
+        /// </summary>
+        EveryPage,
+
+        /// <summary>
+        /// Never read, as PDF/UA 7.8 asks of a running header or footer. Whatever it says has to
+        /// be in the body as well, or it is on the paper and nowhere else.
+        /// </summary>
+        Never
+    }
+
+    /// <summary>
+    /// What a placement of a header or footer is drawn as when it is not to be read: a pagination
+    /// artifact, which is how PDF/UA 7.8 asks for one to be written, and of its own subtype.
+    /// </summary>
+    internal sealed class RunningMark : BaseItem
+    {
+        public static readonly RunningMark Header = new("Header");
+        public static readonly RunningMark Footer = new("Footer");
+
+        public string Subtype { get; }
+
+        private RunningMark(string subtype)
+        {
+            Subtype = subtype;
+            Role = PdfRole.Artifact;
+        }
+    }
+
     /// <summary>The tag each role writes into the structure tree.</summary>
     internal static class PdfRoles
     {

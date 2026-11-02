@@ -119,6 +119,16 @@ namespace Frisket
         /// resolver therefore has to come back and settle afterwards.
         /// </summary>
         public static bool UsesPageCount(string? text)
+            => Mentions(text, PagesToken, SectionPagesToken);
+
+        /// <summary>
+        /// True when the text uses any of the page tokens: what a message, having no pages,
+        /// has no answer to. See <c>FlowingHtml</c>.
+        /// </summary>
+        internal static bool UsesPageNumber(string? text)
+            => Mentions(text, PageToken, PagesToken, SectionPageToken, SectionPagesToken);
+
+        private static bool Mentions(string? text, params string[] names)
         {
             if (string.IsNullOrEmpty(text))
                 return false;
@@ -136,9 +146,11 @@ namespace Frisket
                 if (end < 0)
                     return false;
                 ReadOnlySpan<char> name = NameOf(text.AsSpan(i + 1, end - i - 1));
-                if (name.Equals(PagesToken, StringComparison.OrdinalIgnoreCase)
-                    || name.Equals(SectionPagesToken, StringComparison.OrdinalIgnoreCase))
-                    return true;
+                foreach (string asked in names)
+                {
+                    if (name.Equals(asked, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
                 i = end;
             }
             return false;

@@ -285,7 +285,10 @@ namespace Frisket
             // eighty-seven times is worse than no watermark at all.
             if (role == PdfRole.Artifact)
             {
-                _content.Append("/Artifact BMC\n");
+                if (item is RunningMark running)
+                    _content.Append("/Artifact <</Type /Pagination /Subtype /").Append(running.Subtype).Append(">> BDC\n");
+                else
+                    _content.Append("/Artifact BMC\n");
                 return;
             }
 
@@ -407,6 +410,15 @@ namespace Frisket
             {
                 if (parentOf[i] >= 0)
                     (children[parentOf[i]] ??= new List<int>()).Add(i);
+            }
+
+            // A footer is placed before its page's body, since the body's height comes from
+            // it and paint order follows placement. It is read after, or every page opens on
+            // its last line. A stable sort, so nothing else moves.
+            for (int i = 0; i < _marked.Count; i++)
+            {
+                if (children[i] is { Count: > 1 } held)
+                    children[i] = held.OrderBy(kid => InFooter(_marked[kid].Item) ? 1 : 0).ToList();
             }
 
             for (int i = 0; i < _marked.Count; i++)
@@ -540,6 +552,16 @@ namespace Frisket
             _pdf.Set(root, $"<< /Type /StructTreeRoot /K {section} 0 R /ParentTree {parentTree} 0 R " +
                            $"/ParentTreeNextKey {next + _fields.Count} >>");
             return root;
+        }
+
+        private static bool InFooter(BaseItem item)
+        {
+            for (BaseItem? at = item; at != null; at = at.Parent)
+            {
+                if (at is Footer)
+                    return true;
+            }
+            return false;
         }
 
         private IReadOnlyList<OutlineEntry> _outline = Array.Empty<OutlineEntry>();

@@ -355,6 +355,7 @@ namespace Frisket
 
             _document = _report.Section;
             ApplyPageScope(result);
+            MarkRunningBands(result);
 
             // The mark is text, so it goes through the same cascade and the same
             // millimetres-of-cap-height rule as everything else. Settled once here, not
@@ -2690,6 +2691,89 @@ namespace Frisket
                     return !flowed.Contains(asked) && !IsOnPage(asked, page.Number, within, count);
                 });
             }
+        }
+
+        /// <summary>
+        /// Decides which placements of a header or footer a tagged file reads, by
+        /// <see cref="RepeatedReading"/>. Only once the pages are final, since it turns on how
+        /// many an item ended up on: one is not repeating, so it is read whatever the band says.
+        ///
+        /// Each item answers for itself, so a total on the last page is read in a footer whose
+        /// notice was read on the first. A table or a list answers as a whole on each page: a
+        /// row read out of a table that is not is a row PDF/UA refuses. A control is always
+        /// read, a widget with no Form over it being refused as surely.
+        /// </summary>
+        private static void MarkRunningBands(LayoutResult result)
+        {
+            var pagesOn = new Dictionary<BaseItem, int>();
+            var firstOn = new Dictionary<BaseItem, Page>();
+
+            foreach (Page page in result.Pages)
+            {
+                foreach (PlacedItem placed in page.Items)
+                {
+                    // A piece of a rich text has no parent, so no band, and follows its owner below.
+                    if (BandOf(placed.Source) == null)
+                        continue;
+
+                    pagesOn[placed.Source] = pagesOn.GetValueOrDefault(placed.Source) + 1;
+                    firstOn.TryAdd(placed.Source, page);
+                }
+            }
+
+            foreach (Page page in result.Pages)
+            {
+                var read = new HashSet<BaseItem>();
+
+                foreach (PlacedItem placed in page.Items)
+                {
+                    if (BandOf(placed.Source) is not { } band)
+                        continue;
+
+                    bool wanted = PdfRoles.Resolve(placed.Source) != PdfRole.Artifact
+                        && (placed.Source is FieldItem || band.RepeatedReading switch
+                        {
+                            RepeatedReading.EveryPage => true,
+                            RepeatedReading.Never => pagesOn[placed.Source] == 1,
+                            _ => ReferenceEquals(firstOn[placed.Source], page),
+                        });
+
+                    if (wanted)
+                        read.Add(WholeOf(placed.Source));
+                }
+
+                foreach (PlacedItem placed in page.Items)
+                {
+                    BaseItem asked = placed.Source is TextItem { PieceOf: { } rich } ? rich : placed.Source;
+                    if (BandOf(asked) is not { } band)
+                        continue;
+
+                    if (!read.Contains(WholeOf(asked)))
+                        placed.Running = band is Footer ? RunningMark.Footer : RunningMark.Header;
+                }
+            }
+        }
+
+        private static IRunningBand? BandOf(BaseItem item)
+        {
+            for (BaseItem? at = item; at != null; at = at.Parent)
+            {
+                if (at is IRunningBand band)
+                    return band;
+            }
+            return null;
+        }
+
+        /// <summary>The outermost table or list around an item in a band, or the item itself.</summary>
+        private static BaseItem WholeOf(BaseItem item)
+        {
+            BaseItem whole = item;
+            for (BaseItem? at = item; at != null && at is not IRunningBand; at = at.Parent)
+            {
+                if (PdfRoles.Resolve(at) is PdfRole.Table or PdfRole.TableRow or PdfRole.List)
+                    whole = at;
+            }
+            return whole;
         }
 
         private static void CollectFlowItems(ContainerItem container, HashSet<BaseItem> into)

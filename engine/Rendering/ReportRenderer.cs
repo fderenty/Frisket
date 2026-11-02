@@ -269,7 +269,7 @@ namespace Frisket
                 || double.IsNaN(frame.Right) || double.IsNaN(frame.Bottom))
                 return;
 
-            backend.BeginElement(source, frame);
+            backend.BeginElement(placed.Running ?? source, frame);
             try
             {
                 DrawContent(placed, source, frame, backend);

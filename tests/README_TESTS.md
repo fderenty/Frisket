@@ -262,6 +262,9 @@ four is marked with what it used to say and what settled it.
   stay whole: those move whole. One taller than a page goes down as it is, the part past the
   foot does not reach the paper, and `fits.overflow` says so in `LayoutResult.Issues` (test 109).
   *Said a row is never split; test 39 has asserted the opposite since it was written.*
+- In a tagged PDF, what a header or footer repeats is read as its `RepeatedReading` says, and what it
+  shows on one page only is always read (test 112). A back page, and anything else hung directly off a
+  section, repeats too and is read every time.
 - Element alignment (`Style.AlignHorizontal`, `AlignVertical`) moves an item inside the
   room it was given, on any axis nothing else decided - including an item that measured
   its own size, which is most of them. A text's own `HorizontalAlignment` is a different

@@ -447,11 +447,20 @@ namespace Frisket
     /// is handed the whole band. Two lines of an address then print one over the other, in
     /// a band as tall as one of them, and nothing anywhere says so.
     /// </summary>
-    public class Header : ContainerItem
+    public class Header : ContainerItem, IRunningBand
     {
+        /// <summary>How a tagged PDF reads what this header repeats from page to page. What it shows on one page only is always read.</summary>
+        public RepeatedReading RepeatedReading { get; set; }
+
         protected override BaseItem CreateEmpty() => new Header();
 
-        public Header() 
+        protected override void CopyTo(BaseItem target)
+        {
+            base.CopyTo(target);
+            ((Header)target).RepeatedReading = RepeatedReading;
+        }
+
+        public Header()
         {
             Style.Location.Dock = Dock.Top | Dock.Left | Dock.Right;
         }
@@ -467,14 +476,29 @@ namespace Frisket
     /// band. A notice and a page number written as two children come out on one line, over
     /// one another, and nothing anywhere says so.
     /// </summary>
-    public class Footer : ContainerItem
+    public class Footer : ContainerItem, IRunningBand
     {
+        /// <summary>How a tagged PDF reads what this footer repeats from page to page. What it shows on one page only, such as totals on the last, is always read.</summary>
+        public RepeatedReading RepeatedReading { get; set; }
+
         protected override BaseItem CreateEmpty() => new Footer();
 
-        public Footer() 
+        protected override void CopyTo(BaseItem target)
+        {
+            base.CopyTo(target);
+            ((Footer)target).RepeatedReading = RepeatedReading;
+        }
+
+        public Footer()
         {
             Style.Location.Dock = Dock.Bottom | Dock.Left | Dock.Right;
         }
+    }
+
+    /// <summary>A band that comes back on every page of its section.</summary>
+    internal interface IRunningBand
+    {
+        RepeatedReading RepeatedReading { get; }
     }
 
     /// <summary>

@@ -1254,6 +1254,15 @@
               }
             ]
           }
+        },
+        "RepeatedReading": {
+          "description": "How a tagged PDF reads what this footer repeats from page to page. What it shows on one page only, such as totals on the last, is always read.",
+          "type": "string",
+          "enum": [
+            "Once",
+            "EveryPage",
+            "Never"
+          ]
         }
       },
       "additionalProperties": false
@@ -1556,6 +1565,15 @@
               }
             ]
           }
+        },
+        "RepeatedReading": {
+          "description": "How a tagged PDF reads what this header repeats from page to page. What it shows on one page only is always read.",
+          "type": "string",
+          "enum": [
+            "Once",
+            "EveryPage",
+            "Never"
+          ]
         }
       },
       "additionalProperties": false

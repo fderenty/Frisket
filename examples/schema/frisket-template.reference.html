@@ -318,11 +318,17 @@ section.type{scroll-margin-top:1rem}
 </section>
 <section class="type" id="t-Header">
 <h3>Header <span class="tag">"$type": "Header"</span></h3>
-<p>The band across the top of every page of its section. It sizes itself from what it holds, and the body band starts where it ends.</p><p>It does not stack. Its constructor sets Dock and never touches Layout, so a header left as it was built composes in Absolute, where a child that states no coordinates is handed the whole band. Two lines of an address then print one over the other, in a band as tall as one of them, and nothing anywhere says so.</p><p class="inherited">Also carries <a href="#t-BaseItem">BaseItem</a>'s 8, <a href="#t-ContainerItem">ContainerItem</a>'s 9.</p>
+<p>The band across the top of every page of its section. It sizes itself from what it holds, and the body band starts where it ends.</p><p>It does not stack. Its constructor sets Dock and never touches Layout, so a header left as it was built composes in Absolute, where a child that states no coordinates is handed the whole band. Two lines of an address then print one over the other, in a band as tall as one of them, and nothing anywhere says so.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
+<tr id="p-Header.RepeatedReading"><td><code>RepeatedReading</code></td><td><code>RepeatedReading</code></td><td><code>Once</code></td><td><p>How a tagged PDF reads what this header repeats from page to page. What it shows on one page only is always read.</p></td></tr>
+</tbody></table>
+<p class="inherited">Also carries <a href="#t-BaseItem">BaseItem</a>'s 8, <a href="#t-ContainerItem">ContainerItem</a>'s 9.</p>
 </section>
 <section class="type" id="t-Footer">
 <h3>Footer <span class="tag">"$type": "Footer"</span></h3>
-<p>The band across the bottom of every page of its section - page numbers, a notice, the totals. It sizes itself from what it holds, and the body band ends where it begins.</p><p>Like Header, it does not stack: its constructor sets Dock and never Layout, so a footer left as it was built hands every child that states no coordinates the whole band. A notice and a page number written as two children come out on one line, over one another, and nothing anywhere says so.</p><p class="inherited">Also carries <a href="#t-BaseItem">BaseItem</a>'s 8, <a href="#t-ContainerItem">ContainerItem</a>'s 9.</p>
+<p>The band across the bottom of every page of its section - page numbers, a notice, the totals. It sizes itself from what it holds, and the body band ends where it begins.</p><p>Like Header, it does not stack: its constructor sets Dock and never Layout, so a footer left as it was built hands every child that states no coordinates the whole band. A notice and a page number written as two children come out on one line, over one another, and nothing anywhere says so.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
+<tr id="p-Footer.RepeatedReading"><td><code>RepeatedReading</code></td><td><code>RepeatedReading</code></td><td><code>Once</code></td><td><p>How a tagged PDF reads what this footer repeats from page to page. What it shows on one page only, such as totals on the last, is always read.</p></td></tr>
+</tbody></table>
+<p class="inherited">Also carries <a href="#t-BaseItem">BaseItem</a>'s 8, <a href="#t-ContainerItem">ContainerItem</a>'s 9.</p>
 </section>
 <section class="type" id="t-Body">
 <h3>Body <span class="tag">"$type": "Body"</span></h3>

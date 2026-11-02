@@ -227,6 +227,33 @@
               "Style": {}
             },
             {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "{HeadingNumber}. "
+                },
+                {
+                  "Text": "A rich heading"
+                }
+              ],
+              "Font": {},
+              "Role": "Heading1",
+              "Style": {}
+            },
+            {
+              "$type": "AdvancedTextItem",
+              "Runs": [
+                {
+                  "Text": "See "
+                },
+                {
+                  "Text": "{HeadingNumber} below"
+                }
+              ],
+              "Font": {},
+              "Style": {}
+            },
+            {
               "$type": "TextItem",
               "Text": "First paragraph.\nSecond one.",
               "Font": {

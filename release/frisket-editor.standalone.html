@@ -1076,14 +1076,14 @@ function tableRow(texts, header) {
 }
 
 function blankReport() {
-  const header = { $type: "Header", Style: newStyle(), Layout: "Absolute", Childs: [] };
+  const header = { $type: "Header", Style: newStyle(), Layout: "Absolute", RepeatedReading: "Once", Childs: [] };
   header.Style.Location.Dock = "Left, Top, Right";
   header.Style.Location.HeightValue = 25;
 
   const body = { $type: "Body", Style: newStyle(), Layout: "Stack", Childs: [] };
   body.Style.Location.Dock = "Fill";
 
-  const footer = { $type: "Footer", Style: newStyle(), Layout: "Absolute", Childs: [] };
+  const footer = { $type: "Footer", Style: newStyle(), Layout: "Absolute", RepeatedReading: "Once", Childs: [] };
   footer.Style.Location.Dock = "Left, Right, Bottom";
   footer.Style.Location.HeightValue = 14;
 
@@ -1833,8 +1833,8 @@ function hydrate(item) {
     TableRow:      { Layout: "Absolute" },
     TableItem:     { Layout: "Stack", RepeatHeader: true },
     ImageGridItem: { Layout: "Stack" },
-    Header:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
-    Footer:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
+    Header:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true, RepeatedReading: "Once" },
+    Footer:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true, RepeatedReading: "Once" },
     Body:          { Layout: "Stack", ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
     FieldItem:     { Kind: "Text", Signing: "ByHand", Multiline: false, ReadOnly: false,
                      Required: false, MaxLength: 0 },
@@ -2731,6 +2731,11 @@ const STRINGS = {
     "DashStyle.DashDot": "Dash-dot",
     "ImageScaling.Uniform": "Keep proportions", "ImageScaling.Stretch": "Stretch",
     "ImageScaling.None": "None",
+    "RepeatedReading.Once": "Once", "RepeatedReading.EveryPage": "On every page",
+    "RepeatedReading.Never": "Never",
+    "section.reading": "Reading aloud",
+    "field.repeatedReading": "What repeats is read",
+    "hint.repeatedReading": "In a tagged PDF, for someone using a screen reader. Once means where it first appears. It is printed on every page whichever you choose, and what appears on one page only, such as totals on the last, is always read.",
     "Symbology.Qr": "QR", "Symbology.Code128": "Code 128",
     "QrErrorCorrection.Low": "Low (7%)", "QrErrorCorrection.Medium": "Medium (15%)",
     "QrErrorCorrection.Quartile": "High (25%)", "QrErrorCorrection.High": "Highest (30%)",
@@ -2941,6 +2946,11 @@ const STRINGS = {
     "DashStyle.DashDot": "Tiret-point",
     "ImageScaling.Uniform": "Garder les proportions", "ImageScaling.Stretch": "Étirer",
     "ImageScaling.None": "Aucun",
+    "RepeatedReading.Once": "Une fois", "RepeatedReading.EveryPage": "À chaque page",
+    "RepeatedReading.Never": "Jamais",
+    "section.reading": "Lecture à voix haute",
+    "field.repeatedReading": "Ce qui se répète est lu",
+    "hint.repeatedReading": "Dans un PDF balisé, pour qui utilise un lecteur d’écran. Une fois signifie à sa première apparition. Tout reste imprimé sur chaque page, et ce qui n’apparaît que sur une page, comme les totaux de la dernière, est toujours lu.",
     "Symbology.Qr": "QR", "Symbology.Code128": "Code 128",
     "QrErrorCorrection.Low": "Faible (7 %)", "QrErrorCorrection.Medium": "Moyenne (15 %)",
     "QrErrorCorrection.Quartile": "Forte (25 %)", "QrErrorCorrection.High": "Maximale (30 %)",
@@ -5225,11 +5235,16 @@ function walkFor(container, where, profile, add, numbering) {
       // A heading number asked for and not answerable. All three leave the token
       // visible on the page rather than resolving to something wrong, which is loud -
       // but loud once the document is out, which is too late.
-      if (child.$type === "TextItem"
-          && /\{(section)?headingnumber(\[\d+\])?[:}]/i.test(child.Text || "")) {
+      //
+      // Of a rich text too, run by run as it is filled: a token cut across two runs is not
+      // a token, and the separator keeps it from reading as one here.
+      const counted = child.$type === "TextItem" ? (child.Text || "")
+        : child.$type === "AdvancedTextItem" ? (child.Runs || []).map(run => run.Text || "").join("\n")
+        : "";
+      if (/\{(section)?headingnumber(\[\d+\])?[:}]/i.test(counted)) {
         const declared = headingDepth(numbering);
         const level = headingLevelOf(child);
-        const named = /\{(section)?headingnumber\[\d+\]/i.test(child.Text || "");
+        const named = /\{(section)?headingnumber\[\d+\]/i.test(counted);
 
         if (!declared) add("sound.headingNumberNoFormat", "warning", child, here);
         if (!level && !named) add("sound.headingNumberOutsideHeading", "warning", child, here);

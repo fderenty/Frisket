@@ -1018,6 +1018,29 @@ namespace test
                 svg.Pages[secondStart].Contains($"sheet {secondStart + 1} of {layout.PageCount}"), 0);
             AssertEqual(testName, "no token was left behind", false, all.Contains("{Section"), 0);
 
+            // That footer names {Pages} too, which alone has its whole line settled afterwards.
+            // So a text naming only the section's total is asked of itself, plain and rich.
+            var lone = new Report { Title = "Lone total", DefaultFont = new TextStyle { Family = DmsFont } };
+            lone.Section.Dimension = new DocumentDimension { Width = 100, Height = 60 };
+            var loneRich = new AdvancedTextItem();
+            loneRich.Runs.Add(new TextRun { Text = "{SectionPages}" });
+            var loneFooter = new Footer { Layout = LayoutMode.Stack };
+            loneFooter.Add(new TextItem { Text = "{SectionPages}" });
+            loneFooter.Add(loneRich);
+            lone.Section.Add(loneFooter);
+            var loneBody = new Body { Layout = LayoutMode.Stack };
+            for (int i = 0; i < 12; i++)
+                loneBody.Add(new TextItem { Text = "Paragraph " + i, Font = new TextStyle { Size = 3 } });
+            lone.Section.Add(loneBody);
+            lone.Reattach();
+
+            LayoutResult loneLayout = lone.Resolve(new FontTextMeasurer(library));
+            string loneTotal = loneLayout.PageCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            AssertEqual(testName, "the lone total has pages to count", true, loneLayout.PageCount > 1, loneLayout.PageCount);
+            foreach (Page page in loneLayout.Pages)
+                AssertEqual(testName, $"the section's total alone, plain and rich, on page {page.Number}", 2,
+                    page.Items.Count(placed => placed.Fragment == loneTotal), 0);
+
             // --- and what a reader obeys ---------------------------------------------
             string raw = System.Text.Encoding.Latin1.GetString(bytes);
             var boxes = System.Text.RegularExpressions.Regex
