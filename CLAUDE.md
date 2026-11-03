@@ -226,6 +226,23 @@ regular declares 500 there, that is to say Medium. Same lesson as cap height —
 font says about itself is a claim, and here the name the type designer gave the cut is
 the better of the two.
 
+**And the name table speaks every language the font was sold in.** One record per
+platform and language: Arial's bold says *Bold* in US English, then *Negreta*, *Fett*,
+*Gras* and twenty more. `ReadNames` kept the last record it read, records are sorted by
+language, and Arial's last is French Canadian - so its bold was a family called `Arial
+Gras`, and a template asking for Arial in bold, in italic or in both was drawn in the
+regular. The fonts of a Windows machine, registered whole, made 152 families where there
+are 116: Times New Roman, Segoe UI, Verdana and Georgia split the same way, and MS Gothic
+went under its Japanese name, which no template in Latin letters can spell. Nothing
+failed, since a regular is a legal answer, and every face this repository ships names
+itself in English alone: the shape no sample had, again. The author asked about it as a
+doubt over "Arial Gras", 3 November 2026.
+
+English for Windows first, then any English, then Unicode and Macintosh English, then the
+rest - a rank and not a filter, because a font named only in Japanese is still called
+something. Test 115 rewrites the name table of a face of ours rather than reading a system
+font, which may not be shipped and would make a check that holds on one machine.
+
 **And the order of a directory decided the typeface.** `RegisterDirectory` took files in
 the order the file system listed them, and that order is not a detail: the first family
 registered becomes `DefaultFamily`, and a key claimed twice goes to the file registered

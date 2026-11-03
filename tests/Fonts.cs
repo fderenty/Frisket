@@ -770,6 +770,209 @@ namespace test
         }
 
         /// <summary>
+        /// A font is the family it names in English, whatever else its name table says.
+        ///
+        /// A name table holds a record per platform and language, and a font sold worldwide
+        /// carries dozens. The engine kept the last one it read, and records are sorted by
+        /// language: Arial's bold became a family called "Arial Gras", from the French
+        /// Canadian record, so a template asking for Arial in bold was drawn in the regular
+        /// and the bold sat under a name nobody would type. The bolds of Times New Roman,
+        /// Segoe UI and Verdana went the same way, and MS Gothic took its Japanese name.
+        ///
+        /// Nothing here could have seen it: every face this repository ships names itself in
+        /// English and only in English. So the files are made, from a face of ours with its
+        /// name table written again the way a font sold worldwide writes it. Never a system
+        /// font: none of them may be shipped, and a test that needs Arial holds on one
+        /// machine (section 3).
+        ///
+        /// Each table catches one way of choosing wrongly. In file order the last record is
+        /// French, so the last word read loses; reversed, the first is, so the first word read
+        /// loses too. The others pin the order of preference one step at a time, and the last
+        /// is a language tag whose number happens to look like English.
+        /// </summary>
+        [Fact]
+        public void Test115_AFontIsTheFamilyItNamesInEnglish()
+        {
+            const string testName = "Test 115";
+            Console.WriteLine("Test 115: a font named in several languages is the family it names in English");
+            Console.WriteLine();
+
+            var shipped = new FontLibrary();
+            shipped.RegisterDirectory(FontDirectory());
+            FontFile regular = shipped.Resolve(DmsFont, false, false)!;
+            FontFile bold = shipped.Resolve(DmsFont, true, false)!;
+            AssertEqual(testName, "the face has a bold file of its own to rename", true,
+                bold.Bold && !ReferenceEquals(bold, regular), 0);
+
+            byte[] boldBytes = File.ReadAllBytes(bold.Source);
+            string family = bold.Family;
+            const string sample = "見本";      // "specimen", in Japanese
+            const string thick = "太字";       // "bold", in Japanese
+
+            FontFile Named(IEnumerable<(int, int, int, int, string)> records, params string[] tags)
+                => FontFile.Load(WithNames(boldBytes, NameTable(records, tags)));
+
+            // --- the way a font sold worldwide writes it -----------------------------
+            var worldwide = new (int Platform, int Encoding, int Language, int Id, string Text)[]
+            {
+                (1, 0, 0, 1, family), (1, 0, 0, 2, "Bold"),
+                (3, 1, 0x0407, 2, "Fett"),
+                (3, 1, 0x0409, 1, family), (3, 1, 0x0409, 2, "Bold"),
+                (3, 1, 0x040C, 2, "Gras"),
+                (3, 1, 0x0411, 1, sample), (3, 1, 0x0411, 2, thick),
+                (3, 1, 0x0C0C, 2, "Gras"),
+            };
+
+            FontFile inOrder = Named(worldwide);
+            Console.WriteLine($"    in file order: '{inOrder.Family}', '{inOrder.Subfamily}', bold {inOrder.Bold}");
+            AssertEqual(testName, "the family is the one it names in English", family, inOrder.Family, 0);
+            AssertEqual(testName, "and so is the style", "Bold", inOrder.Subfamily, 0);
+            AssertEqual(testName, "which is a bold", true, inOrder.Bold, 0);
+
+            FontFile reversed = Named(worldwide.AsEnumerable().Reverse());
+            Console.WriteLine($"    reversed:      '{reversed.Family}', '{reversed.Subfamily}'");
+            AssertEqual(testName, "whatever order the records come in",
+                family + " / Bold", reversed.Family + " / " + reversed.Subfamily, 0);
+
+            // What a template sees: the family in bold is the bold, and no family is named
+            // after a word for bold.
+            var library = new FontLibrary();
+            library.Register(regular.Source);
+            library.Register(WithNames(boldBytes, NameTable(worldwide)));
+            AssertEqual(testName, "asking for the family in bold draws the bold", true,
+                library.Resolve(family, true, false)?.Bold == true, 0);
+            AssertEqual(testName, "and the library holds one family", family,
+                string.Join(", ", library.Fonts.Select(f => f.Family).Distinct()), 0);
+
+            // --- the order of preference, one step at a time ------------------------
+            // Out of order on purpose: sorted, US English comes first anyway.
+            AssertEqual(testName, "US English comes before British English", family, Named(new[]
+            {
+                (3, 1, 0x0809, 1, family + " UK"),
+                (3, 1, 0x0409, 1, family),
+            }).Family, 0);
+
+            AssertEqual(testName, "and between two as good, the first stands", family, Named(new[]
+            {
+                (3, 1, 0x0809, 1, family),
+                (3, 1, 0x0C09, 1, family + " AU"),
+            }).Family, 0);
+
+            AssertEqual(testName, "British English comes before French", "Bold", Named(new[]
+            {
+                (3, 1, 0x040C, 1, family), (3, 1, 0x040C, 2, "Gras"),
+                (3, 1, 0x0809, 1, family), (3, 1, 0x0809, 2, "Bold"),
+            }).Subfamily, 0);
+
+            AssertEqual(testName, "a Unicode record comes before French", "Bold", Named(new[]
+            {
+                (0, 3, 0, 1, family), (0, 3, 0, 2, "Bold"),
+                (3, 1, 0x040C, 1, family), (3, 1, 0x040C, 2, "Gras"),
+            }).Subfamily, 0);
+
+            AssertEqual(testName, "and a Macintosh one in English", "Bold", Named(new[]
+            {
+                (1, 0, 0, 1, family), (1, 0, 0, 2, "Bold"),
+                (3, 1, 0x040C, 1, family), (3, 1, 0x040C, 2, "Gras"),
+            }).Subfamily, 0);
+
+            // A rank and not a filter: a font with no English name keeps the one it has.
+            AssertEqual(testName, "a font named only in Japanese is still called something", sample,
+                Named(new[] { (3, 1, 0x0411, 1, sample) }).Family, 0);
+
+            // From 0x8000 a Windows language is the index of a tag the table spells out, so
+            // 0x8009 is the tenth tag - French here - and not English because its low bits say 9.
+            string[] tags = Enumerable.Repeat("fr", 10).ToArray();
+            AssertEqual(testName, "a language tag is not read as a language number", "Bold", Named(new[]
+            {
+                (0, 3, 0, 1, family), (0, 3, 0, 2, "Bold"),
+                (3, 1, 0x8009, 1, family), (3, 1, 0x8009, 2, "Gras"),
+            }, tags).Subfamily, 0);
+
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// A name table holding exactly these records, in this order: format 0, or format 1
+        /// when it carries language tags.
+        /// </summary>
+        private static byte[] NameTable(IEnumerable<(int Platform, int Encoding, int Language, int Id, string Text)> records,
+                                        params string[] tags)
+        {
+            var list = records.ToList();
+            var head = new List<byte>();
+            var storage = new List<byte>();
+
+            void U16(int value)
+            {
+                head.Add((byte)(value >> 8));
+                head.Add((byte)value);
+            }
+
+            int Store(byte[] bytes)
+            {
+                int at = storage.Count;
+                storage.AddRange(bytes);
+                return at;
+            }
+
+            U16(tags.Length > 0 ? 1 : 0);
+            U16(list.Count);
+            U16(6 + list.Count * 12 + (tags.Length > 0 ? 2 + tags.Length * 4 : 0));
+
+            foreach (var record in list)
+            {
+                byte[] text = record.Platform == 1
+                    ? System.Text.Encoding.ASCII.GetBytes(record.Text)
+                    : System.Text.Encoding.BigEndianUnicode.GetBytes(record.Text);
+                U16(record.Platform);
+                U16(record.Encoding);
+                U16(record.Language);
+                U16(record.Id);
+                U16(text.Length);
+                U16(Store(text));
+            }
+
+            if (tags.Length > 0)
+            {
+                U16(tags.Length);
+                foreach (string tag in tags)
+                {
+                    byte[] text = System.Text.Encoding.BigEndianUnicode.GetBytes(tag);
+                    U16(text.Length);
+                    U16(Store(text));
+                }
+            }
+
+            return head.Concat(storage).ToArray();
+        }
+
+        /// <summary>
+        /// The same font with another name table: the new one appended, and the table
+        /// directory pointed at it. The engine reads no checksum, so nothing else need move.
+        /// </summary>
+        private static byte[] WithNames(byte[] font, byte[] names)
+        {
+            int start = (font.Length + 3) & ~3;
+            var result = new byte[start + names.Length];
+            font.CopyTo(result, 0);
+            names.CopyTo(result, start);
+
+            int tables = (result[4] << 8) | result[5];
+            for (int i = 0; i < tables; i++)
+            {
+                int record = 12 + i * 16;
+                if (System.Text.Encoding.ASCII.GetString(result, record, 4) != "name")
+                    continue;
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(result.AsSpan(record + 8), (uint)start);
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(result.AsSpan(record + 12), (uint)names.Length);
+                return result;
+            }
+
+            throw new InvalidDataException("the font has no name table to replace");
+        }
+
+        /// <summary>
         /// A font somebody chose, given to the engine as bytes rather than as a path -
         /// posted over HTTP, read out of a database, picked in a browser.
         ///

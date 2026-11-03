@@ -544,18 +544,40 @@
                 : (family + " " + string.Join(" ", rest), bold, italic);
         }
 
+        /// <summary>
+        /// The family and the subfamily, as the file gives them in English.
+        ///
+        /// A name table holds one record per platform, encoding and language, and a font
+        /// sold worldwide carries dozens. Arial's bold says "Bold" for en-US, then
+        /// "Negreta", "Fett", "Gras" and twenty more. This kept the last record it read,
+        /// and records are sorted by language, so the bold of Arial, Times New Roman,
+        /// Segoe UI and Verdana became a family called "Arial Gras" - French Canadian,
+        /// 0x0C0C, being the highest language in the file - and a template asking for
+        /// Arial in bold was drawn in the regular, without a word. A family named in its
+        /// own script went the same way: MS Gothic became "ＭＳ ゴシック 標準", which no
+        /// template written in Latin letters will ever spell.
+        ///
+        /// Nothing here could see it: every face this repository ships names itself in
+        /// English and in English only.
+        ///
+        /// English for Windows first, because every font made for Windows has it and the
+        /// style words <see cref="ApplySubfamily"/> knows are English. A rank and not a
+        /// filter: a font that names itself only in Japanese is still called something.
+        /// </summary>
         private static (string Family, string Subfamily) ReadNames(BigEndianReader r, int offset)
         {
             int count = r.UInt16(offset + 2);
             int storage = offset + r.UInt16(offset + 4);
             string family = "Unknown";
             string subfamily = "Regular";
+            int familyRank = int.MaxValue;
+            int subfamilyRank = int.MaxValue;
 
             for (int i = 0; i < count; i++)
             {
                 int rec = offset + 6 + i * 12;
                 int platform = r.UInt16(rec);
-                int encoding = r.UInt16(rec + 2);
+                int language = r.UInt16(rec + 4);
                 int nameId = r.UInt16(rec + 6);
                 int length = r.UInt16(rec + 8);
                 int at = storage + r.UInt16(rec + 10);
@@ -565,8 +587,12 @@
                 if (at + length > r.Length)
                     continue;
 
-                bool utf16 = platform == 3 || (platform == 0) || encoding == 1 && platform == 0;
-                string value = utf16
+                // Strictly better only: among records as good as each other, the first stands.
+                int rank = NameRank(platform, language);
+                if (rank >= (nameId == 1 ? familyRank : subfamilyRank))
+                    continue;
+
+                string value = platform is 0 or 3
                     ? System.Text.Encoding.BigEndianUnicode.GetString(r.Slice(at, length))
                     : System.Text.Encoding.ASCII.GetString(r.Slice(at, length));
 
@@ -575,13 +601,29 @@
                     continue;
 
                 if (nameId == 1)
-                    family = value;
+                    (family, familyRank) = (value, rank);
                 else
-                    subfamily = value;
+                    (subfamily, subfamilyRank) = (value, rank);
             }
 
             return (family, subfamily);
         }
+
+        /// <summary>
+        /// How good a name record is, lowest first: Windows in US English, Windows in any
+        /// other English, Unicode (which has no language), Macintosh in English, then
+        /// Windows in any language, then the rest. A Windows language of 0x8000 and above
+        /// is a tag of the table's own, not an LCID, so the English mask says nothing of it.
+        /// </summary>
+        private static int NameRank(int platform, int language) => platform switch
+        {
+            3 when language == 0x0409 => 0,
+            3 when language < 0x8000 && (language & 0x3FF) == 0x09 => 1,
+            0 => 2,
+            1 when language == 0 => 3,
+            3 => 4,
+            _ => 5,
+        };
 
         /// <summary>
         /// Font files are big-endian; nothing in .NET reads them that way for free.
