@@ -22,7 +22,7 @@ on:
       version:
         description: Version stamped on what is built
         required: false
-        default: 0.6.0-dev
+        default: 0.6.1-dev
 
 permissions:
   contents: read
@@ -48,7 +48,7 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=${REQUESTED:-0.6.0-dev}" >> "$GITHUB_OUTPUT"
+            echo "value=${REQUESTED:-0.6.1-dev}" >> "$GITHUB_OUTPUT"
           fi
 
   native:
