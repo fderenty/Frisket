@@ -142,6 +142,27 @@ namespace Frisket
             _current.Append("/>\n");
         }
 
+        /// <summary>
+        /// An item's frame: the rectangle it always was when it is square and closed all round,
+        /// and otherwise the same shapes the PDF paints, worked out once in <see cref="FrameOutline"/>.
+        /// </summary>
+        public void DrawFrame(Rect frame, PenStyle? pen, BrushStyle? fill, Sides sides, CornerRadius corners)
+        {
+            if (FrameOutline.Drawn(pen, sides) == Sides.None)
+                pen = null;
+            if (pen == null && fill == null)
+                return;
+
+            if (FrameOutline.IsPlain(frame, pen, sides, corners))
+            {
+                DrawRectangle(frame, pen, fill);
+                return;
+            }
+
+            foreach (VectorShape shape in FrameOutline.Shapes(frame, pen, fill, sides, corners))
+                Paint(shape, 1);
+        }
+
         public void DrawLine(double x1, double y1, double x2, double y2, PenStyle pen)
         {
             _current.Append("  <line x1=\"").Append(N(x1)).Append("\" y1=\"").Append(N(y1))

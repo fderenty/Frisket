@@ -1130,6 +1130,12 @@ namespace test
                 report.AllItems.OfType<AdvancedTextItem>()
                     .Any(a => a.Runs.Any(r => r.Text.StartsWith("Note for ") && !r.Text.Contains('{'))), 0);
 
+            // Test 116 measures a frame's geometry. What is asked here is that the file the
+            // validator reads holds one that is not a rectangle, read back from the template.
+            AssertEqual(testName, "the section carries: a frame with a side, rounded corners and translucent ink", true,
+                report.AllItems.Any(i => i.Style.BorderSides == Sides.Left && i.Style.CornerRadius.TopLeft > 0
+                                      && i.Style.Border is { Color.A: < 255 } && i.Style.Background != null), 0);
+
             // Binding rebuilds the tree, so the row is found by what it holds rather than
             // by the reference the test started with.
             var longCell = report.AllItems.OfType<TextItem>()

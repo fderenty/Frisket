@@ -188,8 +188,10 @@ section.type{scroll-margin-top:1rem}
 <tr id="p-Style.AlignHorizontal"><td><code>AlignHorizontal</code></td><td><code>ItemAlign</code></td><td><code>None</code></td><td><p>Where the item sits across the space it was given. Answers the question text alignment cannot: how to centre an image, a table or a field. It applies only when the item has a width of its own and neither an anchor nor a coordinate has already placed it.</p></td></tr>
 <tr id="p-Style.AlignVertical"><td><code>AlignVertical</code></td><td><code>ItemAlign</code></td><td><code>None</code></td><td><p>Where the item sits down the space it was given. Only meaningful inside an absolutely arranged container: in a flow the vertical position is the cursor.</p></td></tr>
 <tr id="p-Style.RepeatOnBreak"><td><code>RepeatOnBreak</code></td><td><code>true or false</code></td><td><code>false</code></td><td><p>Re-emit this item at the top of the next page when the container holding it runs over. It is what a table's repeating header does, made available to any stacked container - so a group header stays above its rows when the group spills onto the following page.</p></td></tr>
-<tr id="p-Style.Border"><td><code>Border</code></td><td><code>PenStyle</code></td><td><i>null</i></td><td><p>Outline stroked around the frame. Carried for the backend; the resolver ignores it.</p></td></tr>
-<tr id="p-Style.Background"><td><code>Background</code></td><td><code>BrushStyle</code></td><td><i>null</i></td><td><p>Fill behind the frame. Carried for the backend; the resolver ignores it.</p></td></tr>
+<tr id="p-Style.Border"><td><code>Border</code></td><td><code>PenStyle</code></td><td><i>null</i></td><td><p>Outline stroked around the frame, on the sides BorderSides names and round the corners CornerRadius rounds. Carried for the backend; the resolver ignores it.</p></td></tr>
+<tr id="p-Style.BorderSides"><td><code>BorderSides</code></td><td><code>Sides?</code></td><td><i>null</i></td><td><p>The sides of the frame the Border is drawn on: Left, Top, Right, Bottom, several joined with a comma, All or None. All when absent, which is what a border has always been here. The sides are the pen's alone: a Background still fills the whole frame. A corner between two sides drawn is drawn with them, rounded or not; a side whose neighbour is not drawn stops where its corner begins.</p></td></tr>
+<tr id="p-Style.CornerRadius"><td><code>CornerRadius</code></td><td><code>CornerRadius</code></td><td><i>null</i></td><td><p>How far each corner of the frame is rounded, in millimetres. The Background and the Border both follow it; square when absent.</p></td></tr>
+<tr id="p-Style.Background"><td><code>Background</code></td><td><code>BrushStyle</code></td><td><i>null</i></td><td><p>Fill behind the frame, over the whole of it and inside its rounded corners. Carried for the backend; the resolver ignores it.</p></td></tr>
 </tbody></table>
 </section>
 <section class="type" id="t-BaseItem">
@@ -376,6 +378,15 @@ section.type{scroll-margin-top:1rem}
 <tr id="p-PenStyle.Color"><td><code>Color</code></td><td><code>Color</code></td><td><code>#FF000000</code></td><td><p>The ink. Defaults to black.</p></td></tr>
 <tr id="p-PenStyle.Width"><td><code>Width</code></td><td><code>a number</code></td><td><code>0.2</code></td><td><p>Line thickness in millimeters.</p></td></tr>
 <tr id="p-PenStyle.DashStyle"><td><code>DashStyle</code></td><td><code>DashStyle</code></td><td><code>Solid</code></td><td><p>Solid, Dash, Dot or DashDot.</p></td></tr>
+</tbody></table>
+</section>
+<section class="type" id="t-CornerRadius">
+<h3>CornerRadius</h3>
+<p>How far each corner of an item's frame is rounded: the radius of a quarter circle, in millimetres, one per corner. Zero is a square corner, and a frame nobody rounded is square at all four. The fill and the border follow the same corners.</p><p>Two radii along one side that come to more than the side are scaled down until they fit, all four by the same factor - CSS's rule, so the same numbers give the same shape in a browser and here. A frame 10 mm high with every radius at 20 comes out with round ends of 5, and a negative radius is a square corner.</p><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>What it is</th></tr></thead><tbody>
+<tr id="p-CornerRadius.TopLeft"><td><code>TopLeft</code></td><td><code>a number</code></td><td><code>0</code></td><td><p>The top-left corner's radius, in millimetres.</p></td></tr>
+<tr id="p-CornerRadius.TopRight"><td><code>TopRight</code></td><td><code>a number</code></td><td><code>0</code></td><td><p>The top-right corner's radius, in millimetres.</p></td></tr>
+<tr id="p-CornerRadius.BottomRight"><td><code>BottomRight</code></td><td><code>a number</code></td><td><code>0</code></td><td><p>The bottom-right corner's radius, in millimetres.</p></td></tr>
+<tr id="p-CornerRadius.BottomLeft"><td><code>BottomLeft</code></td><td><code>a number</code></td><td><code>0</code></td><td><p>The bottom-left corner's radius, in millimetres.</p></td></tr>
 </tbody></table>
 </section>
 <section class="type" id="t-BrushStyle">

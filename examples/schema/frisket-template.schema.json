@@ -865,6 +865,41 @@
       },
       "additionalProperties": false
     },
+    "CornerRadius": {
+      "type": "object",
+      "description": "How far each corner of an item\u0027s frame is rounded: the radius of a quarter circle, in millimetres, one per corner. Zero is a square corner, and a frame nobody rounded is square at all four. The fill and the border follow the same corners. Two radii along one side that come to more than the side are scaled down until they fit, all four by the same factor - CSS\u0027s rule, so the same numbers give the same shape in a browser and here. A frame 10 mm high with every radius at 20 comes out with round ends of 5, and a negative radius is a square corner.",
+      "properties": {
+        "TopLeft": {
+          "description": "The top-left corner\u0027s radius, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "TopRight": {
+          "description": "The top-right corner\u0027s radius, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "BottomRight": {
+          "description": "The bottom-right corner\u0027s radius, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "BottomLeft": {
+          "description": "The bottom-left corner\u0027s radius, in millimetres. A number; the string \u0022NaN\u0022 means undecided.",
+          "type": [
+            "number",
+            "string"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "DocumentDimension": {
       "type": "object",
       "description": "The size of a sheet, in millimetres: a width and a height, with neither axis privileged - landscape is nothing more than the larger number written first. Both start at zero and nothing supplies a page size - not the engine, not the CLI, not the native library. A section that leaves them there is laid out on a sheet of nothing: /MediaBox [0 0 0 0], every column too narrow to divide, one item forced onto each page. The designer writes A4 into any section that arrives without one, which is why this is only ever met by a template built by hand.",
@@ -2582,11 +2617,23 @@
           "type": "boolean"
         },
         "Border": {
-          "description": "Outline stroked around the frame. Carried for the backend; the resolver ignores it.",
+          "description": "Outline stroked around the frame, on the sides BorderSides names and round the corners CornerRadius rounds. Carried for the backend; the resolver ignores it.",
           "$ref": "#/$defs/PenStyle"
         },
+        "BorderSides": {
+          "description": "The sides of the frame the Border is drawn on: Left, Top, Right, Bottom, several joined with a comma, All or None. All when absent, which is what a border has always been here. The sides are the pen\u0027s alone: a Background still fills the whole frame. A corner between two sides drawn is drawn with them, rounded or not; a side whose neighbour is not drawn stops where its corner begins. One of None, Left, Top, Right, Bottom, All - or several of them joined with a comma and a space.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(?:None|Left|Top|Right|Bottom|All)(?:, (?:None|Left|Top|Right|Bottom|All))*$"
+        },
+        "CornerRadius": {
+          "description": "How far each corner of the frame is rounded, in millimetres. The Background and the Border both follow it; square when absent.",
+          "$ref": "#/$defs/CornerRadius"
+        },
         "Background": {
-          "description": "Fill behind the frame. Carried for the backend; the resolver ignores it.",
+          "description": "Fill behind the frame, over the whole of it and inside its rounded corners. Carried for the backend; the resolver ignores it.",
           "$ref": "#/$defs/BrushStyle"
         }
       },

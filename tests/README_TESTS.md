@@ -278,6 +278,13 @@ four is marked with what it used to say and what settled it.
 - Images declare their natural size; the engine decodes nothing, by design
 - `Style.Border`, `Style.Background` and `TableItem.Grid` are carried for the
   backend to draw; the resolver only computes geometry
+- A border is drawn on the sides `Style.BorderSides` names, all four unless it says
+  otherwise, and the fill and the border follow `Style.CornerRadius`, square unless it says
+  otherwise. Both outputs draw the same marks, and a frame that asks for neither is the
+  rectangle it always was, to the byte (test 116). Translucent ink on a frame, a rule, a grid
+  or a barcode is faded in the PDF as in the proof.
+  *Said nothing of translucency, and the PDF drew every such rectangle and rule opaque
+  while the proof faded it.*
 - `SvgBackend.ToHtml` carries a print stylesheet: the on-screen viewer chrome
   (grey surround, shadow, page counter) is dropped when printing, and `@page` is
   set to the report's own sheet size so one page maps to one sheet

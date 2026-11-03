@@ -701,6 +701,24 @@ namespace Frisket
             if (pen == null && fill == null)
                 return;
 
+            // A translucent ink needs a graphics state, and then the fill and the stroke are two
+            // paintings: B composes them as a knockout group, so a translucent stroke would
+            // replace the fill beneath it rather than lie over it, which is not what the proof
+            // draws. Opaque, the rectangle is written as it always was.
+            if (fill is { Color.A: < 255 } || pen is { Color.A: < 255 })
+            {
+                string box = PdfWriter.N(frame.Left) + " " + PdfWriter.N(frame.Top) + " "
+                           + PdfWriter.N(frame.Width) + " " + PdfWriter.N(frame.Height) + " re\n";
+                if (fill != null)
+                    _content.Append("q\n").Append(AlphaState(fill.Color)).Append(Rgb(fill.Color)).Append(" rg\n")
+                            .Append(box).Append("f\nQ\n");
+                if (pen != null)
+                    _content.Append("q\n").Append(AlphaState(pen.Color)).Append(Rgb(pen.Color)).Append(" RG\n")
+                            .Append(PdfWriter.N(pen.Width)).Append(" w\n").Append(Dash(pen))
+                            .Append(box).Append("S\nQ\n");
+                return;
+            }
+
             if (fill != null)
                 _content.Append(Rgb(fill.Color)).Append(" rg\n");
             if (pen != null)
@@ -715,11 +733,41 @@ namespace Frisket
 
         public void DrawLine(double x1, double y1, double x2, double y2, PenStyle pen)
         {
+            // Translucent ink through a graphics state of its own, which nothing after it inherits.
+            bool translucent = pen.Color.A < 255;
+            if (translucent)
+                _content.Append("q\n").Append(AlphaState(pen.Color));
+
             _content.Append(Rgb(pen.Color)).Append(" RG\n")
                     .Append(PdfWriter.N(pen.Width)).Append(" w\n")
                     .Append(Dash(pen))
                     .Append(PdfWriter.N(x1)).Append(' ').Append(PdfWriter.N(y1)).Append(" m\n")
                     .Append(PdfWriter.N(x2)).Append(' ').Append(PdfWriter.N(y2)).Append(" l\nS\n");
+
+            if (translucent)
+                _content.Append("Q\n");
+        }
+
+        /// <summary>
+        /// An item's frame. Square and closed all round, it is the rectangle this backend has
+        /// always drawn; with a corner rounded or a side left out, it is the shapes
+        /// <see cref="FrameOutline"/> works out for both backends, painted as a drawing's are.
+        /// </summary>
+        public void DrawFrame(Rect frame, PenStyle? pen, BrushStyle? fill, Sides sides, CornerRadius corners)
+        {
+            if (FrameOutline.Drawn(pen, sides) == Sides.None)
+                pen = null;
+            if (pen == null && fill == null)
+                return;
+
+            if (FrameOutline.IsPlain(frame, pen, sides, corners))
+            {
+                DrawRectangle(frame, pen, fill);
+                return;
+            }
+
+            foreach (VectorShape shape in FrameOutline.Shapes(frame, pen, fill, sides, corners))
+                Paint(shape, 1);
         }
 
         /// <summary>

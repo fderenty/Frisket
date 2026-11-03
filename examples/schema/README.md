@@ -48,7 +48,7 @@ exact spellings, and the discriminator that tells one kind from another.
 
 | | |
 |---|---|
-| 33 definitions | every type reachable from `Report` |
+| 34 definitions | every type reachable from `Report` |
 | `$type` | pinned per kind with `const`, so a `oneOf` resolves to one branch |
 | enumerations | as their names, which is what the file holds |
 | serialization names | `LeftValue`, not the C# `Left` behind it |

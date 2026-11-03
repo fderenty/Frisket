@@ -284,7 +284,8 @@ namespace Frisket
         {
 
             if (source.Style.Background != null || source.Style.Border != null)
-                backend.DrawRectangle(frame, source.Style.Border, source.Style.Background);
+                backend.DrawFrame(frame, source.Style.Border, source.Style.Background,
+                                  source.Style.BorderSides, source.Style.CornerRadius);
 
             // The grid belongs to the row, not to the cells: a cell is inset by the row
             // padding, so stroking cells would draw floating boxes instead of a table.

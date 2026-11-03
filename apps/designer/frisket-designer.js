@@ -1862,6 +1862,57 @@ function frisketDesigner(seams = {}) {
         }));
       p.appendChild(field2(t("field.background"), bg));
 
+      // The border was in the model and in the echo, and nowhere in this panel: a frame could
+      // be drawn only by writing the template by hand. Its sides and its corners came with it,
+      // and the corners are offered whenever there is a fill or a border for them to round.
+      const border = document.createElement("div"); border.className = "val";
+      border.append(input("checkbox", !!item.Style.Border, v => {
+        item.Style.Border = v ? newPen() : null; refresh();
+      }));
+      if (item.Style.Border) {
+        const pen = item.Style.Border;
+        border.append(input("color", hex(pen.Color), v => {
+          pen.Color = { R: parseInt(v.slice(1, 3), 16), G: parseInt(v.slice(3, 5), 16), B: parseInt(v.slice(5, 7), 16), A: 255 };
+          refresh();
+        }));
+        border.append(input("number", pen.Width, v => { pen.Width = Number(v) || 0.1; refresh(); }, { step: 0.05, min: 0.05 }));
+        border.append(select(["Solid", "Dash", "Dot", "DashDot"], pen.DashStyle || "Solid",
+          v => { pen.DashStyle = v; refresh(); }, "DashStyle"));
+      }
+      p.appendChild(field2(t("field.border"), border));
+
+      if (item.Style.Border) {
+        const drawn = document.createElement("div");
+        drawn.className = "dock";
+        for (const side of ["Left", "Top", "Right", "Bottom"]) {
+          const l = document.createElement("label");
+          l.append(input("checkbox", sidesOf(item.Style) & SIDES[side], v => {
+            const m = sidesOf(item.Style);
+            item.Style.BorderSides = sidesToString(v ? m | SIDES[side] : m & ~SIDES[side]);
+            refresh();
+          }), side.slice(0, 1));
+          drawn.appendChild(l);
+        }
+        p.appendChild(field2(t("field.borderSides"), drawn));
+      }
+
+      if (item.Style.Border || item.Style.Background) {
+        const round = item.Style.CornerRadius ??= corners();
+        const grid = document.createElement("div");
+        grid.className = "edges";
+        // An arrow pointing at each corner, written as escapes: the characters themselves
+        // read as nothing in a diff once an editor has had its way with them.
+        for (const [corner, tag] of [["TopLeft", "↖"], ["TopRight", "↗"], ["BottomRight", "↘"], ["BottomLeft", "↙"]]) {
+          const cell = document.createElement("div");
+          const mark = document.createElement("span"); mark.textContent = tag;
+          cell.appendChild(mark);
+          cell.appendChild(input("number", round[corner], v => { round[corner] = Math.max(0, Number(v) || 0); refresh(); }, { step: 0.5, min: 0 }));
+          grid.appendChild(cell);
+        }
+        p.appendChild(field2(t("field.corners"), grid));
+        p.appendChild(field2("", note(t("hint.corners"))));
+      }
+
       if (item !== doc0() && item.$type !== "Header" && item.$type !== "Body" && item.$type !== "Footer") {
         const del = button(t("action.delete"), () => {
           const parent = parentOf(item);

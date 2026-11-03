@@ -14,6 +14,39 @@ namespace Frisket
         void DrawText(Rect frame, string text, TextStyle style);
         void DrawLine(double x1, double y1, double x2, double y2, PenStyle pen);
         void DrawRectangle(Rect frame, PenStyle? pen, BrushStyle? fill);
+
+        /// <summary>
+        /// Draws an item's frame: the fill over all of it, then the border on the
+        /// <paramref name="sides"/> asked for, both following the <paramref name="corners"/>.
+        /// What every item's Background and Border come to, where DrawRectangle is a field's
+        /// outline or a barcode's bar.
+        ///
+        /// The default is what a surface that knows only rectangles and lines can do honestly:
+        /// the sides exactly, and the corners square. A rounded corner drawn square still frames
+        /// what it frames; a side drawn that the template left out would be a mark nobody asked
+        /// for.
+        /// </summary>
+        void DrawFrame(Rect frame, PenStyle? pen, BrushStyle? fill, Sides sides, CornerRadius corners)
+        {
+            Sides drawn = pen == null ? Sides.None : sides & Sides.All;
+            if (drawn == Sides.All)
+            {
+                DrawRectangle(frame, pen, fill);
+                return;
+            }
+
+            if (fill != null)
+                DrawRectangle(frame, null, fill);
+            if ((drawn & Sides.Top) != 0)
+                DrawLine(frame.Left, frame.Top, frame.Right, frame.Top, pen!);
+            if ((drawn & Sides.Right) != 0)
+                DrawLine(frame.Right, frame.Top, frame.Right, frame.Bottom, pen!);
+            if ((drawn & Sides.Bottom) != 0)
+                DrawLine(frame.Right, frame.Bottom, frame.Left, frame.Bottom, pen!);
+            if ((drawn & Sides.Left) != 0)
+                DrawLine(frame.Left, frame.Bottom, frame.Left, frame.Top, pen!);
+        }
+
         void DrawImage(Rect frame, ImageSource image);
 
         /// <summary>

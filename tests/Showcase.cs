@@ -431,7 +431,9 @@ namespace test
                 + "they are marks and not pixels. Select a label: it is text. The orange curve "
                 + "runs off its scale and stops at the top of the plot, which is a clip path. "
                 + "Under it, a PNG with an alpha channel: the band shows through its rings, "
-                + "which is a soft mask, and a checker wants to see one is allowed here.");
+                + "which is a soft mask, and a checker wants to see one is allowed here. The band "
+                + "has its corners rounded and a rule in translucent blue on its left side only, "
+                + "which is a frame drawn as paths rather than a rectangle.");
 
             body.Add(new ImageItem
             {
@@ -446,6 +448,11 @@ namespace test
             tinted.Style.Location.HeightValue = 18;
             tinted.Style.Margin.Top = 2;
             tinted.Style.Background = new BrushStyle { Color = new Color(214, 228, 240) };
+            // A frame that is not a rectangle, so the validator reads one: a side and four
+            // rounded corners, in ink that needs a graphics state of its own.
+            tinted.Style.Border = new PenStyle { Color = new Color(40, 90, 150, 153), Width = 1.2 };
+            tinted.Style.BorderSides = Sides.Left;
+            tinted.Style.CornerRadius = new CornerRadius { TopLeft = 3, TopRight = 3, BottomRight = 3, BottomLeft = 3 };
 
             var rings = new ImageItem
             {

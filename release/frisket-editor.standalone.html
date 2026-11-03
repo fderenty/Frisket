@@ -958,6 +958,24 @@ function dockToString(mask) {
 }
 
 const edges = (l = 0, t = 0, r = 0, b = 0) => ({ Left: l, Top: t, Right: r, Bottom: b });
+const corners = (tl = 0, tr = 0, br = 0, bl = 0) => ({ TopLeft: tl, TopRight: tr, BottomRight: br, BottomLeft: bl });
+
+// The sides a border is drawn on: Dock's four bits under the engine's own Sides enum, whose
+// all-four is All where Dock's is Fill. Absent is All, which is what a border always was.
+const SIDES = { Left: 1, Top: 2, Right: 4, Bottom: 8 };
+
+function sidesOf(style) {
+  const a = style.BorderSides;
+  if (a === undefined || a === null) return 15;
+  if (typeof a === "number") return a & 15;
+  const named = Object.assign({ None: 0, All: 15 }, SIDES);
+  return String(a).split(",").reduce((m, n) => m | (named[n.trim()] || 0), 0);
+}
+function sidesToString(mask) {
+  if (mask === 0) return "None";
+  if (mask === 15) return "All";
+  return Object.keys(SIDES).filter(k => mask & SIDES[k]).join(", ");
+}
 
 // The presets offered for a section's Dimension - a plain width/height, chosen once
 // when a template is created and rarely revisited, which is why it lives with
@@ -987,7 +1005,7 @@ function newStyle() {
     Margin: edges(), Padding: edges(),
     Constraints: { MinWidth: 0, MinHeight: 0, MaxWidth: 0, MaxHeight: 0 },
     Visibility: "Visible", PageBreak: "None", Splitting: "Auto", PageScope: "All",
-    PageRange: null, Border: null, Background: null
+    PageRange: null, Border: null, BorderSides: "All", CornerRadius: corners(), Background: null
   };
 }
 const newFont = () => ({
@@ -1807,6 +1825,9 @@ function hydrate(item) {
   fill(s.Margin ??= {}, edges());
   fill(s.Padding ??= {}, edges());
   fill(s.Constraints ??= {}, { MinWidth: 0, MinHeight: 0, MaxWidth: 0, MaxHeight: 0 });
+  // The engine writes a corner only when it is rounded, so a frame rounded at one corner
+  // arrives with the other three missing.
+  fill(s.CornerRadius ??= {}, corners());
 
   // Rich text too. It was left out, and a template naming no font for one - legal, and what a
   // hand or an AI writing from the schema produces - stopped the designer at `item.Font.Wrap`
@@ -2671,6 +2692,8 @@ const STRINGS = {
     "field.bookmark": "Bookmark", "field.level": "Level",
     "field.visible": "Visible", "field.pageBreak": "Break", "field.splitting": "Splitting",
     "field.pageScope": "Pages", "field.background": "Background",
+    "field.border": "Border", "field.borderSides": "Sides drawn", "field.corners": "Corners",
+    "hint.corners": "The radius of each corner, in millimetres. The background and the border both follow it, and two radii too large for their side are reduced together until they fit.",
     "field.signing": "Signing", "field.scope": "On", "field.padding": "Margins",
     "field.mode": "Placing", "field.layer": "Layer", "field.angle": "Angle",
 
@@ -2884,6 +2907,8 @@ const STRINGS = {
     "field.bookmark": "Signet", "field.level": "Niveau",
     "field.visible": "Visible", "field.pageBreak": "Saut", "field.splitting": "Coupe",
     "field.pageScope": "Pages", "field.background": "Fond",
+    "field.border": "Bordure", "field.borderSides": "Côtés tracés", "field.corners": "Coins",
+    "hint.corners": "Le rayon de chaque coin, en millimètres. Le fond et la bordure le suivent tous deux, et deux rayons trop grands pour leur côté sont réduits ensemble jusqu'à tenir.",
     "field.signing": "Signature", "field.scope": "Sur", "field.padding": "Marges",
     "field.mode": "Pose", "field.layer": "Plan", "field.angle": "Angle",
 
@@ -3319,8 +3344,7 @@ function render(report, selected, index = 0, show = {}, lookup = null) {
     if (!["left", "top", "right", "bottom"].every(k => Number.isFinite(frame[k]))) continue;
     if (item.Style.Visibility !== "Visible") continue;
 
-    if (item.Style.Background) out.push(box(frame, null, item.Style.Background));
-    if (item.Style.Border) out.push(box(frame, item.Style.Border, null));
+    if (item.Style.Background || item.Style.Border) out.push(frameSvg(frame, item.Style));
     if (p.gridEdges && p.grid) {
       for (let i = 0; i + 1 < p.gridEdges.length; i++)
         out.push(box(rect(p.gridEdges[i], frame.top, p.gridEdges[i + 1], frame.bottom), p.grid, null));
@@ -3403,6 +3427,107 @@ const bandRect = (r, colour) => Number.isFinite(r.left)
 function box(r, pen, fill) {
   const stroke = pen ? ` stroke="${hex(pen.Color)}" stroke-width="${n3(pen.Width)}"` : "";
   return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${fill ? hex(fill.Color) : "none"}"${stroke}/>`;
+}
+
+// ---- an item's frame ---------------------------------------------------------
+// The engine's FrameOutline, number for number: the harness holds the two together on every
+// case test 116 writes, so a corner worked out differently here is a failure there and not a
+// preview that rounds a little more than the PDF.
+
+const KAPPA = 0.5522847498307936;
+const alphaOf = c => ((c && c.A !== undefined ? c.A : 255)) / 255;
+const FRAME_DASHES = { Dash: [2, 1], Dot: [0.4, 0.8], DashDot: [2, 1, 0.4, 1] };
+
+/// The four radii as drawn - a negative one square, two that do not fit along a side scaled
+/// down with the other two by the same factor, as CSS does.
+function frameRadii(r, c) {
+  const clean = v => Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : 0;
+  const tl = clean(c && c.TopLeft), tr = clean(c && c.TopRight);
+  const br = clean(c && c.BottomRight), bl = clean(c && c.BottomLeft);
+  const wide = Number.isFinite(r.width) ? Math.max(0, r.width) : 0;
+  const tall = Number.isFinite(r.height) ? Math.max(0, r.height) : 0;
+  let factor = 1;
+  const fit = (side, a, b) => { if (a + b > side) factor = Math.min(factor, side / (a + b)); };
+  fit(wide, tl, tr); fit(wide, bl, br); fit(tall, tl, bl); fit(tall, tr, br);
+  return [tl * factor, tr * factor, br * factor, bl * factor];
+}
+
+/// Clockwise from the top, each side followed by the corner that ends it: a closed path for
+/// all four, and one open path per run of sides that touch otherwise.
+function frameTrace(f, drawn, [tl, tr, br, bl]) {
+  const starts = [[f.left + tl, f.top], [f.right, f.top + tr], [f.right - br, f.bottom], [f.left, f.bottom - bl]];
+  const ends = [[f.right - tr, f.top], [f.right, f.bottom - br], [f.left + bl, f.bottom], [f.left, f.top + tl]];
+  const after = [tr, br, bl, tl];
+  const around = [SIDES.Top, SIDES.Right, SIDES.Bottom, SIDES.Left];
+  const path = svgPath();
+  let at = [NaN, NaN];
+
+  const line = to => { if (to[0] !== at[0] || to[1] !== at[1]) svgLine(path, to[0], to[1]); at = to; };
+  const corner = i => {
+    if (after[i] === 0) return;
+    const k = after[i] * KAPPA, from = ends[i], to = starts[(i + 1) % 4];
+    const c = [[from[0] + k, from[1], to[0], to[1] - k], [from[0], from[1] + k, to[0] + k, to[1]],
+               [from[0] - k, from[1], to[0], to[1] + k], [from[0], from[1] - k, to[0] - k, to[1]]][i];
+    svgCubic(path, c[0], c[1], c[2], c[3], to[0], to[1]);
+    at = to;
+  };
+
+  if (drawn === 15) {
+    svgMove(path, starts[0][0], starts[0][1]);
+    at = starts[0];
+    for (let i = 0; i < 3; i++) { line(ends[i]); corner(i); }
+    if (tl > 0) { line(ends[3]); corner(3); }
+    svgClose(path);
+    return path;
+  }
+
+  const first = [3, 2, 1, 0].find(i => (drawn & around[i]) === 0);
+  let open = false;
+  for (let step = 1; step <= 4; step++) {
+    const i = (first + step) % 4;
+    if ((drawn & around[i]) === 0) { open = false; continue; }
+    if (!open) { svgMove(path, starts[i][0], starts[i][1]); at = starts[i]; open = true; }
+    line(ends[i]);
+    if (drawn & around[(i + 1) % 4]) corner(i);
+  }
+  return path;
+}
+
+/// What a frame comes to: `plain` when it is the rectangle it always was, and the fill and
+/// the border as shapes either way.
+function frameOutline(r, pen, fill, sides, radii) {
+  const drawn = pen ? sides & 15 : 0;
+  const round = frameRadii(r, radii);
+  const shapes = [];
+  if (fill)
+    shapes.push({ path: frameTrace(r, 15, round), fill: fill.Color, fillAlpha: alphaOf(fill.Color) });
+  if (pen && drawn)
+    shapes.push({ path: frameTrace(r, drawn, round), stroke: pen.Color, strokeAlpha: alphaOf(pen.Color),
+                  strokeWidth: pen.Width, dash: FRAME_DASHES[pen.DashStyle] || [] });
+  return { plain: (drawn === 0 || drawn === 15) && round.every(v => v === 0), shapes };
+}
+
+/// The frame as SvgBackend writes it: one rectangle when it is plain, the shapes otherwise.
+function frameSvg(r, style) {
+  const sides = sidesOf(style);
+  const pen = style.Border && (sides & 15) ? style.Border : null;
+  const { plain, shapes } = frameOutline(r, pen, style.Background, sides, style.CornerRadius);
+  const ink = (attribute, c) => alphaOf(c) < 1 ? ` ${attribute}="${n3(alphaOf(c))}"` : "";
+  const dashes = (list, sep) => list.length ? ` stroke-dasharray="${list.map(n5).join(sep)}"` : "";
+
+  if (plain) {
+    const b = style.Background;
+    return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}"`
+         + ` fill="${b ? hex(b.Color) : "none"}"${b ? ink("fill-opacity", b.Color) : ""}`
+         + (pen ? ` stroke="${hex(pen.Color)}"${ink("stroke-opacity", pen.Color)} stroke-width="${n3(pen.Width)}"`
+                  + dashes(FRAME_DASHES[pen.DashStyle] || [], ",") : "")
+         + "/>";
+  }
+
+  return shapes.map(s => `<path d="${drawnPathData(s.path)}"`
+    + (s.fill ? ` fill="${hex(s.fill)}"${ink("fill-opacity", s.fill)}`
+              : ` fill="none" stroke="${hex(s.stroke)}" stroke-width="${n5(s.strokeWidth)}"${ink("stroke-opacity", s.stroke)}${dashes(s.dash, " ")}`)
+    + "/>").join("");
 }
 
 /// Both decorations share one SVG attribute - two of them would have the second

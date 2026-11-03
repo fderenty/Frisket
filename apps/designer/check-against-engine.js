@@ -200,6 +200,7 @@ eval(withHandles(script,
      '\nsandbox.carryReferences = carryReferences; sandbox.referenceOf = referenceOf;' +
      '\nsandbox.setData = setData; sandbox.resolvedImageSource = resolvedImageSource;' +
      '\nsandbox.readingOf = readingOf; sandbox.pictureRefusal = pictureRefusal; sandbox.setTextRuler = setTextRuler;' +
+     '\nsandbox.frameOutline = frameOutline; sandbox.sidesOf = sidesOf;' +
      '\nsandbox.frisketDesigner = typeof frisketDesigner === "function" ? frisketDesigner : undefined;');
 
 // The alpha the engine defaults a watermark to, read from its own source. Typed here
@@ -1643,6 +1644,74 @@ if (faultyPath && findingsPath) {
   check('and says nothing of one it can draw', fine.length === 0, fine.length + ' finding(s)');
 }
 
+// --- and a frame is the same shape on both sides ------------------------------
+// Test 116 writes what the engine's FrameOutline makes of every combination of sides against
+// corners square, rounded, too large and negative, and of each frame of its sample sheet. The
+// echo works the same shapes out itself and has to come to the same verbs and the same numbers,
+// or the canvas rounds a corner the PDF does not.
+{
+  const cases = JSON.parse(readText(path.join(REPO, 'tests', 'output', 'frames', 'outlines.json')));
+  const pathData = p => {
+    let d = '', at = 0;
+    for (const verb of p.verbs) {
+      const count = verb === 'C' ? 6 : verb === 'Z' ? 0 : 2;
+      d += verb + Array.from({ length: count }, () => p.points[at++]).join(' ');
+    }
+    return d;
+  };
+  const near = (a, b) => typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) <= 0.0002 : JSON.stringify(a) === JSON.stringify(b);
+  const numbers = d => (d.match(/-?[\d.]+(?:[eE][-+]?\d+)?/g) || []).map(Number);
+  const sameD = (a, b) => a.replace(/[^A-Z]/g, '') === b.replace(/[^A-Z]/g, '')
+    && numbers(a).length === numbers(b).length && numbers(a).every((x, i) => Math.abs(x - numbers(b)[i]) <= 0.0002);
+
+  let agreed = 0;
+  for (const c of cases) {
+    const f = c.frame;
+    const r = { left: f.left, top: f.top, right: f.right, bottom: f.bottom, width: f.right - f.left, height: f.bottom - f.top };
+    const mine = sandbox.frameOutline(r, c.style.Border, c.style.Background, sandbox.sidesOf(c.style), c.style.CornerRadius);
+    const shapes = mine.shapes.map(s => ({
+      d: pathData(s.path), fill: s.fill || null, fillAlpha: s.fill ? s.fillAlpha : null,
+      stroke: s.stroke || null, strokeAlpha: s.stroke ? s.strokeAlpha : null,
+      strokeWidth: s.stroke ? s.strokeWidth : null, dash: s.stroke ? s.dash : null
+    }));
+
+    let fault = mine.plain !== c.plain ? `plain ${mine.plain} here, ${c.plain} in the engine`
+              : shapes.length !== c.shapes.length ? `${shapes.length} shapes here, ${c.shapes.length} in the engine` : null;
+    for (let i = 0; !fault && i < shapes.length; i++) {
+      const a = shapes[i], b = c.shapes[i];
+      if (!sameD(a.d, b.d)) fault = `shape ${i}: ${a.d} here, ${b.d} in the engine`;
+      else for (const key of ['fill', 'fillAlpha', 'stroke', 'strokeAlpha', 'strokeWidth', 'dash'])
+        if (!near(a[key], b[key])) {
+          fault = `shape ${i}: ${key} ${JSON.stringify(a[key])} here, ${JSON.stringify(b[key])} in the engine`;
+          break;
+        }
+    }
+
+    // A line per case only when it says something: there are a hundred and seventy of them.
+    if (fault) check(`${c.name}: the same frame`, false, fault);
+    else agreed += 1;
+  }
+  check('there are frames to confront, every combination of sides among them', cases.length > 160, cases.length + ' cases');
+  check('and every one of them comes out the same on both sides', agreed === cases.length, `${agreed} of ${cases.length}`);
+
+  // And on the page: square and closed is still one rectangle, anything else is a path.
+  const sheet = (...styles) => ({
+    Title: 'Frames', Language: 'en-GB',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+      Childs: [{ $type: 'Body', Layout: 'Stack', Childs: styles.map(Style => ({ $type: 'ContainerItem', Style: Object.assign({
+        Location: { WidthValue: 50, HeightValue: 20 } }, Style) })) }] }]
+  });
+  const pen = { Color: { R: 0, G: 0, B: 0, A: 255 }, Width: 0.3, DashStyle: 'Solid' };
+  const square = sandbox.render(sheet({ Border: pen, Background: { Color: { R: 230, G: 230, B: 230, A: 255 } } }), null, 0);
+  check('a frame that asks for nothing new is drawn as the rectangle it was', /<rect[^>]*fill="#e6e6e6"[^>]*stroke="#000000"/.test(square) && !/<path/.test(square),
+        (square.match(/<(rect|path)[^>]*\/>/g) || []).slice(-1)[0] || 'nothing');
+  const rounded = sandbox.render(sheet({ Border: pen, BorderSides: 'Left, Top', CornerRadius: { TopLeft: 4 } }), null, 0);
+  check('one with a side left out or a corner rounded is drawn from its shapes', /<path d="M[^"]*C[^"]*" fill="none" stroke="#000000"/.test(rounded),
+        (rounded.match(/<path[^>]*\/>/g) || ['no path'])[0]);
+  const veiled = sandbox.render(sheet({ Background: { Color: { R: 200, G: 0, B: 0, A: 51 } } }), null, 0);
+  check('and a translucent fill is faded on the canvas as in the PDF', /<rect[^>]*fill-opacity="0.2"/.test(veiled), 'fill-opacity 0.2');
+}
+
 // --- and they must agree about the output, not only about the template -------
 // The same confrontation for the third profile, on a template that is faultless:
 // everything found here is something the chosen output drops. The echo has to be
@@ -1899,6 +1968,66 @@ if (flatPath && flatFindingsPath) {
         drawn.includes('repeat-mark') ? 'marked' : 'not marked');
   check('and so does the tree', wordsIn(sandbox.ui.tree).includes('\u21BB Lignes'),
         wordsIn(sandbox.ui.tree).includes('\u21BB') ? 'named' : 'not named');
+}
+
+// --- a frame from the panel ---------------------------------------------------------
+// The border was in the model and in the echo and nowhere in the panel, so a frame could be
+// drawn only by writing the template by hand. Asked of the panel by using it: tick the
+// border, leave a side out, round a corner, and see that the template and the canvas follow.
+{
+  const report = sandbox.blankReport();
+  const body = report.Sections[0].Childs.find(c => c.$type === 'Body');
+  // Rounded at one corner already, as the engine writes it: the other three absent.
+  const group = { $type: 'ContainerItem', Layout: 'Absolute', Childs: [],
+                  Style: { Location: { WidthValue: 60, HeightValue: 20 }, CornerRadius: { TopRight: 2 } } };
+  body.Childs.push(group);
+  sandbox.hydrate(report.Sections[0]);
+  sandbox.setReport(report);
+  sandbox.setSelected(group);
+
+  const S = sandbox.STRINGS.en;
+  const findIn = (node, test) => !node || typeof node !== 'object' ? null
+    : test(node) ? node : (node.children || []).map(c => findIn(c, test)).find(Boolean) || null;
+  const allIn = (node, test, out = []) => {
+    if (!node || typeof node !== 'object') return out;
+    if (test(node)) out.push(node);
+    (node.children || []).forEach(c => allIn(c, test, out));
+    return out;
+  };
+  const panel = () => { sandbox.ui.props.children.length = 0; sandbox.drawProps(); return sandbox.ui.props; };
+  const fieldOf = label => findIn(panel(), n => n.className === 'field' && (n.children || []).some(c => c.textContent === label));
+  const ticks = node => allIn(node, n => n.type === 'checkbox');
+
+  const border = fieldOf(S['field.border']);
+  check('the panel offers a border', !!border, border ? 'offered' : 'not offered');
+  const on = border && ticks(border)[0];
+  if (on) { on.checked = true; on.oninput(); }
+  check('and ticking it gives the item one', !!group.Style.Border, JSON.stringify(group.Style.Border));
+
+  const drawn = fieldOf(S['field.borderSides']);
+  const sides = drawn ? ticks(drawn) : [];
+  check('with the four sides it is drawn on, all ticked', sides.length === 4 && sides.every(b => b.checked),
+        `${sides.filter(b => b.checked).length} of ${sides.length}`);
+  if (sides[3]) { sides[3].checked = false; sides[3].oninput(); }
+  check('and leaving out the bottom names the other three', group.Style.BorderSides === 'Left, Top, Right', String(group.Style.BorderSides));
+
+  const round = fieldOf(S['field.corners']);
+  const radii = round ? allIn(round, n => n.type === 'number') : [];
+  check('four corners to round, the three a file left out shown square',
+        radii.length === 4 && radii.map(r => String(r.value)).join(' ') === '0 2 0 0', radii.map(r => String(r.value)).join(' '));
+  if (radii[0]) { radii[0].value = '4'; radii[0].oninput(); }
+  check('the first being the top left', group.Style.CornerRadius.TopLeft === 4 && group.Style.CornerRadius.TopRight === 2,
+        JSON.stringify(group.Style.CornerRadius));
+
+  const saved = sandbox.forEngine(report).Sections[0].Childs.find(c => c.$type === 'Body').Childs[0].Style;
+  check('the template keeps both', saved.BorderSides === 'Left, Top, Right' && saved.CornerRadius.TopLeft === 4,
+        `${saved.BorderSides} / ${JSON.stringify(saved.CornerRadius)}`);
+  // Up the left, round the top-left corner, along the top, round the top-right one, down the
+  // right: and nothing along the foot.
+  const page = sandbox.render(report, null, 0, {});
+  const outline = (page.match(/<path d="([^"]*)" fill="none" stroke/) || [])[1] || '';
+  check('and the canvas draws the frame the panel describes, open at the foot and round at the top',
+        outline.replace(/[^A-Z]/g, '') === 'MLCLCL', outline || 'no path');
 }
 
 // --- one designer per call --------------------------------------------------------

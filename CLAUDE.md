@@ -469,7 +469,8 @@ Three things this document cost, and that must not be learned again:
 - **PDF/A validator** on `tests/output/conformance/conformance.pdf` — a single file
   that brings everything together: PDF/A-3B, Factur-X attached, multipage, back
   pages, translucent watermark, form with handwritten and digital signature, two
-  barcodes, split table row, image and subset fonts.
+  barcodes, split table row, image and subset fonts, and a frame drawn as paths - rounded,
+  ruled on one side, in translucent ink (§10e).
 
   Test 40 checks that each of these things is there **before** writing it: a single
   file to validate is only worth something if it really carries everything,
@@ -2224,6 +2225,77 @@ noise passes for the signal.
 Along the way, `new Watermark("SPECIMEN")` proved nothing: `Watermark.Text` is already
 `"SPECIMEN"`, so the default alone would have drawn the same page — §5b again, seen from
 a test rather than a cascade.
+
+## 10e. A frame has sides and corners, and the PDF never faded its ink
+
+Asked which shapes the engine draws by itself, the answer was a rectangle on any item, a
+straight rule and a table's grid. Reading the two backends side by side to say so found two
+faults that no assertion could see:
+
+- **A translucent rectangle or rule was opaque in the PDF.** `SvgBackend` wrote
+  `fill-opacity` and `stroke-opacity`; `PdfBackend.DrawRectangle` and `DrawLine` wrote the
+  colour and never a graphics state. A background, a border, a rule, a table's grid, a
+  barcode's bars and a field's outline at 20 % came out as a veil in the proof and a solid
+  block in the PDF. Every such colour in the suite was opaque, and the designer's colour
+  pickers write `A: 255`, so only a template written by hand - or by a model from the
+  schema, which offers `A` - could reach it: the shape no sample had, once more. Translucent
+  ink goes through a graphics state now, the fill and the stroke as two paintings, because
+  `B` composes them as a knockout (§14d). Opaque, the bytes are what they always were.
+- **The border had no control in the designer.** §1's third place, missing since the
+  property existed: the echo drew a border, and nobody could set one.
+
+Then the request, 3 November 2026: choose the sides, round the corners, and change nothing
+for a frame that asks for neither.
+
+**`Sides`, not `Dock`**, though the four bits are the same: an item stuck to every edge is
+`Fill`, a border on every side is `All`, and either word reads wrong in the other place.
+`All` is the default and `None` the zero, so `BorderSidesJson` maps `All` to null. Written
+as it stands, the value left out of the file would have been `None`, read back as `All`
+(§1). **`CornerRadius`** holds four radii in millimetres, one per corner, and the fill and
+the border both follow it.
+
+What was decided, once, in `FrameOutline`, for both backends and for the echo:
+
+- radii too large for their side are reduced together, all four by one factor. That is
+  CSS's rule, so a host's web page and the PDF agree on the same numbers;
+- the fill covers the whole frame, whatever sides the border keeps;
+- a corner between two drawn sides is drawn with them. A side whose neighbour is not drawn
+  stops where its corner begins, which is the straight part of a rounded frame;
+- a run of touching sides is one path, so a square corner between two of them is a join,
+  not two butt ends with a notch where they meet.
+
+**Plain stays plain.** A frame square at every corner and closed all round, or not stroked
+at all, never reaches `FrameOutline`: it is the rectangle both backends always wrote, in the
+same bytes. The whole suite ran with every file under `tests/output/` unchanged before any
+sample asked for the new properties, which is how "change nothing" was checked rather than
+argued.
+
+`IReportBackend.DrawFrame` has a default for somebody else's surface: the sides exactly,
+the corners square. A rounded corner drawn square still frames what it frames, while a side
+drawn that the template left out would be a mark nobody asked for. The mail draws no frame
+at all, as before.
+
+Test 116 reads both outputs back through test 102's interpreter, which learnt `B`, `<rect>`
+and `<line>` for it. It leaves one thing out of the comparison: the miter limit, which a
+plain rectangle leaves at PDF's 10 against SVG's 4, and which decides nothing at a right
+angle. It also writes `tests/output/frames/outlines.json`, every combination of sides
+against five sets of corners, and the harness holds the echo to it number by number.
+
+Its sample sheet came to 19 marks against 20 on its first run: the last item, the
+translucent rule, had fallen onto a second page that the reader never opened. The count
+caught it, because it counts what was asked for rather than what was found.
+
+Twenty-seven sabotages from a run seen green, all caught. One is caught only by the harness:
+a closed path that draws a line back to its start before closing. That is right, because
+both outputs then draw the same picture, and only the echo drifting from the engine
+gives it away. **The first run of the echo's ten said "caught" ten times and proved
+nothing.** An engine sabotage had left test 116 green, so the test wrote that sabotaged
+geometry into `outlines.json`, and the restore did not write the file again. All ten then
+failed on the same line about a frame none of them had touched. The output a test writes for a harness
+is part of the state a sabotage must undo. The driver now writes it again after every
+engine sabotage that test 116 let through, and the ten were run again, each caught by its
+own check. The same family as §14d's: a failure proves something only against a run that
+passed, and *ten verdicts that all quote one line are one verdict*.
 
 ## 11. A split row must still be a whole row
 

@@ -710,6 +710,16 @@ namespace test
                     case "f": Paint("fill", false); break;
                     case "f*": Paint("fill", true); break;
                     case "S": Paint("stroke", false); break;
+                    case "B":
+                    {
+                        // A frame's rectangle, filled then stroked in one operator: two paintings
+                        // of one path, as the proof writes them on one element.
+                        var kept = new List<(double, double)>(path);
+                        Paint("fill", false);
+                        path.AddRange(kept);
+                        Paint("stroke", false);
+                        break;
+                    }
                     case "rg": state2.Fill = $"{Fmt(N(0))} {Fmt(N(1))} {Fmt(N(2))}"; break;
                     case "RG": state2.Stroke = $"{Fmt(N(0))} {Fmt(N(1))} {Fmt(N(2))}"; break;
                     case "w": state2.Width = N(0); break;
@@ -760,8 +770,12 @@ namespace test
             public PdfState Copy() => (PdfState)MemberwiseClone();
         }
 
-        /// <summary>The same reading of the proof: nested svg, groups, clip references, paths and text.</summary>
-        private static List<Mark> ReadProofMarks(string page)
+        /// <summary>
+        /// The same reading of the proof: nested svg, groups, clip references, paths and text -
+        /// and with <paramref name="wholePage"/>, every mark on the page rather than what is
+        /// inside a drawing, rectangles and lines included, for an item's frame.
+        /// </summary>
+        private static List<Mark> ReadProofMarks(string page, bool wholePage = false)
         {
             XDocument document = XDocument.Parse(page);
             XNamespace svg = "http://www.w3.org/2000/svg";
@@ -822,9 +836,21 @@ namespace test
 
                         Walk(child, inner, within);
                     }
-                    else if (name == "path" && child.Parent!.Name.LocalName != "clipPath")
+                    else if ((name == "path" || name == "rect" || name == "line") && child.Parent!.Name.LocalName != "clipPath")
                     {
-                        List<(double X, double Y)> points = Trace((string)child.Attribute("d")!, m);
+                        // A rectangle's corners in the order PDF's re gives them, and a line's two ends.
+                        List<(double X, double Y)> points = name switch
+                        {
+                            "rect" => new()
+                            {
+                                m.Apply(D(child, "x"), D(child, "y")),
+                                m.Apply(D(child, "x") + D(child, "width"), D(child, "y")),
+                                m.Apply(D(child, "x") + D(child, "width"), D(child, "y") + D(child, "height")),
+                                m.Apply(D(child, "x"), D(child, "y") + D(child, "height"))
+                            },
+                            "line" => new() { m.Apply(D(child, "x1"), D(child, "y1")), m.Apply(D(child, "x2"), D(child, "y2")) },
+                            _ => Trace((string)child.Attribute("d")!, m)
+                        };
                         List<List<(double, double)>> Copied() => around.Select(c => new List<(double, double)>(c)).ToList();
 
                         if ((string?)child.Attribute("fill") is { } fill && fill != "none")
@@ -846,7 +872,8 @@ namespace test
                                 Kind = "stroke", Points = points, Clips = Copied(), Colour = Colour(stroke),
                                 Alpha = D(child, "stroke-opacity", 1), Width = D(child, "stroke-width", 1) * Scale(m),
                                 Dash = child.Attribute("stroke-dasharray") is { } dash
-                                    ? string.Join(" ", dash.Value.Split(' ').Select(s => Fmt(double.Parse(s, CultureInfo.InvariantCulture) * dashes)))
+                                    ? string.Join(" ", dash.Value.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(s => Fmt(double.Parse(s, CultureInfo.InvariantCulture) * dashes)))
                                     : "",
                                 DashOffset = D(child, "stroke-dashoffset") * dashes,
                                 Caps = $"{caps} {joins} {Fmt(D(child, "stroke-miterlimit", 4))}"
@@ -870,8 +897,11 @@ namespace test
             }
 
             // Only what is inside a drawing: the page's own background and title are not marks here.
-            foreach (XElement drawing in document.Root!.Elements(svg + "svg"))
-                Walk(new XElement(svg + "holder", drawing), VectorMatrix.Identity, new());
+            if (wholePage)
+                Walk(document.Root!, VectorMatrix.Identity, new());
+            else
+                foreach (XElement drawing in document.Root!.Elements(svg + "svg"))
+                    Walk(new XElement(svg + "holder", drawing), VectorMatrix.Identity, new());
 
             return marks;
         }

@@ -26,6 +26,26 @@ namespace Frisket
         Fill = Left | Top | Right | Bottom
     }
 
+    /// <summary>
+    /// The sides of an item's frame its <see cref="Style.Border"/> is drawn on. Its own enum
+    /// rather than <see cref="Dock"/>, whose four bits are the same: a border on every side is
+    /// All and an item stuck to every edge is Fill, and either word would say the wrong thing
+    /// in the other place.
+    /// </summary>
+    [Flags]
+    [JsonConverter(typeof(JsonStringEnumConverter<Sides>))]
+    public enum Sides
+    {
+        None = 0,
+        Left = 1,
+        Top = 2,
+        Right = 4,
+        Bottom = 8,
+
+        /// <summary>All four: the frame closed all round, which is what a border is unless the template says otherwise.</summary>
+        All = Left | Top | Right | Bottom
+    }
+
     [JsonConverter(typeof(JsonStringEnumConverter<Visibility>))]
     public enum Visibility { Visible, Invisible, Gone }
 
@@ -337,6 +357,34 @@ namespace Frisket
     }
 
     /// <summary>
+    /// How far each corner of an item's frame is rounded: the radius of a quarter circle, in
+    /// millimetres, one per corner. Zero is a square corner, and a frame nobody rounded is
+    /// square at all four. The fill and the border follow the same corners.
+    ///
+    /// Two radii along one side that come to more than the side are scaled down until they
+    /// fit, all four by the same factor - CSS's rule, so the same numbers give the same shape
+    /// in a browser and here. A frame 10 mm high with every radius at 20 comes out with round
+    /// ends of 5, and a negative radius is a square corner.
+    /// </summary>
+    public class CornerRadius
+    {
+        public CornerRadius Clone() => (CornerRadius)MemberwiseClone();
+
+        /// <summary>The top-left corner's radius, in millimetres.</summary>
+        public double TopLeft { get; set; }
+        /// <summary>The top-right corner's radius, in millimetres.</summary>
+        public double TopRight { get; set; }
+        /// <summary>The bottom-right corner's radius, in millimetres.</summary>
+        public double BottomRight { get; set; }
+        /// <summary>The bottom-left corner's radius, in millimetres.</summary>
+        public double BottomLeft { get; set; }
+
+        /// <summary>Nothing set on any corner, so nothing worth writing down.</summary>
+        [JsonIgnore]
+        public bool IsEmpty => TopLeft == 0 && TopRight == 0 && BottomRight == 0 && BottomLeft == 0;
+    }
+
+    /// <summary>
     /// Lower and upper bounds in millimetres on the size the resolver arrives at. Zero on a
     /// side means no bound there, so a Constraints nobody has touched changes nothing.
     ///
@@ -521,10 +569,40 @@ namespace Frisket
         /// </summary>
         public bool RepeatOnBreak { get; set; }
 
-        /// <summary>Outline stroked around the frame. Carried for the backend; the resolver ignores it.</summary>
+        /// <summary>Outline stroked around the frame, on the sides BorderSides names and round the corners CornerRadius rounds. Carried for the backend; the resolver ignores it.</summary>
         public PenStyle? Border { get; set; }
 
-        /// <summary>Fill behind the frame. Carried for the backend; the resolver ignores it.</summary>
+        /// <summary>
+        /// The sides of the frame the Border is drawn on: Left, Top, Right, Bottom, several
+        /// joined with a comma, All or None. All when absent, which is what a border has always
+        /// been here. The sides are the pen's alone: a Background still fills the whole frame.
+        /// A corner between two sides drawn is drawn with them, rounded or not; a side whose
+        /// neighbour is not drawn stops where its corner begins.
+        /// </summary>
+        [JsonIgnore]
+        public Sides BorderSides { get; set; } = Sides.All;
+
+        // All is the default and None is the enum's zero, so written as it stands the one left
+        // out of the file would be None, read back as All. All maps to null instead.
+        [JsonPropertyName("BorderSides")]
+        public Sides? BorderSidesJson
+        {
+            get => BorderSides == Sides.All ? null : BorderSides;
+            set => BorderSides = value ?? Sides.All;
+        }
+
+        /// <summary>How far each corner of the frame is rounded, in millimetres. The Background and the Border both follow it; square when absent.</summary>
+        [JsonIgnore]
+        public CornerRadius CornerRadius { get; set; } = new();
+
+        [JsonPropertyName("CornerRadius")]
+        public CornerRadius? CornerRadiusJson
+        {
+            get => CornerRadius.IsEmpty ? null : CornerRadius;
+            set => CornerRadius = value ?? new();
+        }
+
+        /// <summary>Fill behind the frame, over the whole of it and inside its rounded corners. Carried for the backend; the resolver ignores it.</summary>
         public BrushStyle? Background { get; set; }
 
         /// <summary>A deep copy. The rendered frame is left out: it is a result, not a setting.</summary>
@@ -544,6 +622,8 @@ namespace Frisket
             PageScope = PageScope,
             PageRange = PageRange == null ? null : new List<int>(PageRange),
             Border = Border?.Clone(),
+            BorderSides = BorderSides,
+            CornerRadius = CornerRadius.Clone(),
             Background = Background?.Clone()
         };
 
