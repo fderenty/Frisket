@@ -25,6 +25,16 @@ namespace Frisket
         [JsonIgnore]
         public IEnumerable<BaseItem> AllItems => Sections.SelectMany(Descendants);
 
+        /// <summary>
+        /// <see cref="AllItems"/>, then the back page's items. AllItems is the flow and keeps
+        /// meaning that; this is for a question about everything the report holds. An imported
+        /// page - asked for as a back page of terms - was never read when it sat on the back,
+        /// because the reader walked AllItems: nothing was drawn and nothing was said.
+        /// </summary>
+        internal IEnumerable<BaseItem> EveryItem => BackPage is { } back
+            ? AllItems.Concat(Descendants(back.Content))
+            : AllItems;
+
         private static IEnumerable<BaseItem> Descendants(ContainerItem container)
         {
             foreach (BaseItem child in container.Childs)

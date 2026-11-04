@@ -274,9 +274,17 @@ namespace Frisket
                 if (at + 2 + length > outline.Length)
                     throw new InvalidDataException("instructions run past the glyph");
 
-                var plain = new byte[outline.Length - length];
+                // Up to where the points end, and not to the end of the slot. A slot holds the
+                // padding the font aligned it with, and the subset pads each glyph to four
+                // again: kept, the old padding and the new reached four bytes or more once an
+                // odd-length program was gone - 350 of the 2,844 simple glyphs of Windows' Times
+                // New Roman, which fontTools reports as "too much glyph data". Nothing drew
+                // differently.
+                int end = PointsEnd(outline, at + 2 + length, contours == 0 ? 0 : UInt16(outline, at - 2) + 1);
+
+                var plain = new byte[end - length];
                 Array.Copy(outline, 0, plain, 0, at);                      // header and contour ends
-                Array.Copy(outline, at + 2 + length, plain, at + 2, outline.Length - at - 2 - length);
+                Array.Copy(outline, at + 2 + length, plain, at + 2, end - at - 2 - length);
                 return plain;                                              // a length of zero, then the points
             }
 
@@ -305,6 +313,38 @@ namespace Frisket
 
             // The composite's own instructions follow its last component.
             return hinting ? copy : copy[..p];
+        }
+
+        /// <summary>
+        /// Where a simple glyph's data ends: its flags, from <paramref name="flags"/>, then the
+        /// x and the y of each of its <paramref name="points"/>. A flag says how many bytes each
+        /// coordinate takes, and may repeat itself.
+        /// </summary>
+        private static int PointsEnd(byte[] outline, int flags, int points)
+        {
+            int p = flags, xs = 0, ys = 0;
+            for (int n = 0; n < points;)
+            {
+                if (p >= outline.Length)
+                    throw new InvalidDataException("flags run past the glyph");
+
+                int flag = outline[p++];
+                int count = 1;
+                if ((flag & 0x08) != 0)                                    // REPEAT_FLAG
+                {
+                    if (p >= outline.Length)
+                        throw new InvalidDataException("flags run past the glyph");
+                    count += outline[p++];
+                }
+
+                xs += count * ((flag & 0x02) != 0 ? 1 : (flag & 0x10) != 0 ? 0 : 2);   // X_SHORT, X_SAME
+                ys += count * ((flag & 0x04) != 0 ? 1 : (flag & 0x20) != 0 ? 0 : 2);   // Y_SHORT, Y_SAME
+                n += count;
+            }
+
+            if (p + xs + ys > outline.Length)
+                throw new InvalidDataException("points run past the glyph");
+            return p + xs + ys;
         }
 
         /// <summary>Adds every glyph the wanted ones are built from, however deep.</summary>

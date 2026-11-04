@@ -455,6 +455,17 @@ the CFF face under TrueType's keys exactly as it always had.
 after it was on by default, and so did the tests' README. A claim in prose drifts as any
 other (§5c).
 
+**A slot is not a glyph.** The same host found, in 0.10.0 with `--no-hinting`, 46 glyphs over
+six faces that fontTools called "too much glyph data: 4 excess bytes". A subset took each
+glyph's whole slot, `loca[g+1] - loca[g]`, which holds the padding the face aligned it with;
+without hinting the program went and the padding stayed, and the subset padded to four
+again. Windows faces align on two, so an odd-length program left one old byte and up to three
+new ones: 350 of the 2,844 simple glyphs of Times New Roman. Nothing drew differently, and no
+validator here reads glyph data. A simple glyph is now cut where its points end, as fontTools
+reads it; with hinting the slot still travels as the face had it. Test 118's face had both
+causes all along - padding after its points, a program of three bytes - and was asked only
+whether the program was gone.
+
 ## 4. External checks, after any touch to text, fonts or the PDF
 
 **And a warning-free build can be a build that did not happen.** §6 says a stale
@@ -2207,6 +2218,26 @@ The fix is not the property, it is the type: 28 of 29 enums carried it that way,
 model was one new property away from this every time. Every enum declares it on itself
 now, and the schema did not move by a byte - which is how you know nothing had been
 writing numbers yet.
+
+**Read, then bound, and the page was gone.** Reported by a host on 4 November 2026: without
+data the imported page was there; with `-d`, the fields were filled, the page was not, and
+nothing was said - exit code 0. `ReportBinder.Bind` copies the template through JSON, and
+`Resolved` is never written, being what a reader made of the template and not part of it.
+So every page read first - the order the CLI uses, and the one `import/README.md` gave - reached
+the layout unread. The comment on `CopyTo` had thought of exactly this for a clone; the copy
+one step earlier, made another way, had not. Every test of imports resolved and composed;
+none bound. Bind now hands each copy what was read for its original.
+
+**Asking who else had it found the case the item exists for.** `ImportedPages.Resolve` and the
+`fits.importedPage` note both walked `Report.AllItems`, which is the sections - and a back page
+of terms somebody else drew, the use this element was asked for, sits on `BackPage.Content`.
+It was never read, bound or not. `Report.EveryItem` is AllItems and the back, for questions
+about everything a report holds; AllItems keeps meaning the flow.
+
+Both were silent for one reason: an unread page lays out at no height and draws nothing, which
+is right, and said nothing, which was not. `fits.importedPageUnread` says it now, once per page
+that names something and is not `Gone`. It is also all a host without a reader gets - the
+native library carries none, so a template importing a page draws without it there.
 
 ## 9. Columns do not save paper
 

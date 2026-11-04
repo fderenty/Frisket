@@ -606,6 +606,133 @@ namespace test
         }
 
         /// <summary>
+        /// An imported page survives binding, the back page's is read at all, and a page
+        /// nobody read is said.
+        ///
+        /// Reported by a host on 4 November 2026: without data the page was there, with data
+        /// the fields were filled and the page was gone - no message, exit code 0. Binding
+        /// copies the template through JSON, and what a reader made of a page is never
+        /// written, so every page read first - the order the CLI and import/README.md use -
+        /// reached the layout unread. Every test of imports resolved and composed; none bound.
+        ///
+        /// Asking who else lost a page found the back page, which is what this item was asked
+        /// for: the reader walked the sections and never the back, bound or not. Both were
+        /// silent because an unread page lays out at no height, which is the third half here.
+        /// </summary>
+        [Fact]
+        public void Test121_AnImportedPageSurvivesBindingAndTheBackPagesIsRead()
+        {
+            const string testName = "Test 121";
+            Console.WriteLine("Test 121: an imported page survives binding, and the back page's is read");
+            Console.WriteLine();
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+            var measurer = new FontTextMeasurer(library);
+
+            byte[] elsewhere = File.ReadAllBytes(Path.Combine(OutputDirectory("import"), "three-sheets.pdf"));
+            const string data = """{ "Name": "Dupont", "Annexes": [ {}, {} ] }""";
+
+            // A page in the body, one in a container repeated per annex, and one on the back.
+            Report Template()
+            {
+                var report = new Report { Title = "Terms for {Name}", Language = "en-GB" };
+                report.Section.Dimension = new() { Width = 210, Height = 297 };
+                report.Section.Style.Padding = new() { Left = 20, Top = 20, Right = 20, Bottom = 20 };
+                report.Body = new() { Layout = LayoutMode.Stack };
+                report.Body.Add(new TextItem { Text = "Name: {Name}" });
+
+                var terms = new ImportedPageItem { Data = elsewhere, Page = 2, AltText = "The terms" };
+                terms.Style.Location.WidthValue = 120;
+                report.Body.Add(terms);
+
+                var each = new ContainerItem { Layout = LayoutMode.Stack, RepeatOver = "Annexes" };
+                var annex = new ImportedPageItem { Data = elsewhere, Page = 3, AltText = "An annex" };
+                annex.Style.Location.WidthValue = 60;
+                each.Add(annex);
+                report.Body.Add(each);
+
+                report.BackPage = new BackPage { Content = new ContainerItem { Layout = LayoutMode.Stack } };
+                report.BackPage.Content.Add(new ImportedPageItem { Data = elsewhere, Page = 1, AltText = "Conditions" });
+
+                report.Reattach();
+                return report;
+            }
+
+            static List<ImportedPageItem> Pages(Report report) => report.EveryItem.OfType<ImportedPageItem>().ToList();
+
+            // --- read, then bound: the order the CLI uses ------------------------------------
+            Report template = Template();
+            ImportedPages.Resolve(template, new PdfPageImporter());
+            List<ImportedPageItem> read = Pages(template);
+            Console.WriteLine($"    lues avant liaison : {read.Count(p => p.Resolved != null)} / {read.Count}");
+
+            AssertEqual(testName, "every page is read, the back page's too", 3, read.Count(p => p.Resolved != null), 0);
+
+            Report bound = ReportBinder.Bind(template, data);
+            List<ImportedPageItem> kept = Pages(bound);
+            Console.WriteLine($"    apres liaison : {kept.Count(p => p.Resolved != null)} / {kept.Count}");
+
+            AssertEqual(testName, "bound: the body's, one per annex and the back's", 4, kept.Count, 0);
+            AssertEqual(testName, "and every one still carries what was read", 4, kept.Count(p => p.Resolved != null), 0);
+            AssertEqual(testName, "the same reading, not another", true, ReferenceEquals(read[0].Resolved, kept[0].Resolved), 0);
+
+            LayoutResult laid = bound.Resolve(measurer);
+            var front = laid.Pages.Where(p => !p.IsBack).SelectMany(p => p.Items).Where(i => i.Source is ImportedPageItem).ToList();
+            var back = laid.Pages.Where(p => p.IsBack).SelectMany(p => p.Items).Where(i => i.Source is ImportedPageItem).ToList();
+            int sheets = laid.Pages.Count(p => !p.IsBack);
+            Console.WriteLine($"    posees : {front.Count} au recto, {back.Count} au verso de {sheets} feuille(s)");
+
+            AssertEqual(testName, "the body's page and each annex are laid out", 3, front.Count, 0);
+            AssertEqual(testName, "and the back of every sheet carries its page", sheets, back.Count, 0);
+            AssertEqual(testName, "each with the height its proportions want", true,
+                front.Concat(back).All(i => i.Frame.Height > 10), 0);
+            AssertEqual(testName, "the copy is stated for each, back included", 4,
+                laid.Issues.Count(i => i.Rule == "fits.importedPage"), 0);
+            AssertEqual(testName, "and none is said to be unread", 0,
+                laid.Issues.Count(i => i.Rule == "fits.importedPageUnread"), 0);
+
+            // What reaches the file: a form per page read, one placement per item placed, and
+            // nothing named that is not there.
+            bound.GeneratedAt = SampleDate;
+            var pdf = new PdfBackend(library) { Compress = false, Language = "en-GB" };
+            ReportRenderer.Render(bound, laid, pdf);
+            byte[] bytes = pdf.ToArray();
+            WriteSamplePdf(Path.Combine(OutputDirectory("import"), "bound-with-terms.pdf"), bytes);
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
+
+            AssertEqual(testName, "one form per page read", 3, CountOccurrences(written, "/Subtype /Form"), 0);
+            AssertEqual(testName, "and one placement per item placed", front.Count + back.Count, CountOccurrences(written, " Do"), 0);
+            AssertEqual(testName, "and every object the document names, it holds", "", string.Join(", ", Dangling(written)), 0);
+
+            // --- bound, then read: the other order holds as well ----------------------------
+            Report late = ReportBinder.Bind(Template(), data);
+            ImportedPages.Resolve(late, new PdfPageImporter());
+            AssertEqual(testName, "bound first and read after, every page is read", 4,
+                Pages(late).Count(p => p.Resolved != null), 0);
+
+            // --- read by nobody: said, once per page that names something --------------------
+            Report unread = ReportBinder.Bind(Template(), data);
+            var empty = new ImportedPageItem { AltText = "Nothing named" };
+            var gone = new ImportedPageItem { Data = elsewhere, AltText = "Hidden" };
+            gone.Style.Visibility = Visibility.Gone;
+            unread.Body!.Add(empty);
+            unread.Body.Add(gone);
+            unread.Reattach();
+
+            List<TemplateIssue> said = unread.Resolve(measurer).Issues.Where(i => i.Rule == "fits.importedPageUnread").ToList();
+            Console.WriteLine($"    jamais lues : {said.Count} x {said.FirstOrDefault()?.Level}");
+
+            AssertEqual(testName, "a page nobody read is said, back included", 4, said.Count, 0);
+            AssertEqual(testName, "as a warning", true, said.All(i => i.Level == IssueLevel.Warning), 0);
+            AssertEqual(testName, "naming the item, and never one that names nothing or is Gone", true,
+                said.All(i => i.Item is ImportedPageItem p && p != empty && p != gone), 0);
+
+            Console.WriteLine();
+        }
+
+        /// <summary>
         /// A page drawing text in Helvetica with no font file behind it.
         ///
         /// The oldest PDF/A violation there is - a viewer substitutes whatever it has, so

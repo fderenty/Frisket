@@ -339,10 +339,30 @@ namespace Frisket
             // this document was ever meant to claim conformance. A report being assembled
             // to be read has no need of PDF/A at all, and for that use this is noise to
             // be ignored - which is exactly what a Warning is for.
-            foreach (BaseItem item in _report.AllItems)
+            //
+            // The back page included, and a page nobody read said as well. It lays out at no
+            // height and draws nothing, which is right - there is nothing to draw - and was
+            // silent: a page lost on binding, or one the CLI never read off the back page, came
+            // out as a document without it and exit code 0.
+            foreach (BaseItem item in _report.EveryItem)
             {
-                if (item is not ImportedPageItem imported || imported.Resolved == null)
+                if (item is not ImportedPageItem imported)
                     continue;
+
+                if (imported.Resolved == null)
+                {
+                    // An item naming nothing is sound.emptyImportedPage's, and one that is Gone
+                    // loses nothing by not being read.
+                    if ((imported.Data.Length > 0 || !string.IsNullOrWhiteSpace(imported.SourcePath))
+                        && imported.Style.Visibility != Visibility.Gone)
+                        result.AddIssue(new TemplateIssue(
+                            "fits.importedPageUnread", IssueLevel.Warning,
+                            "This names a page of another PDF that nothing has read, so nothing is "
+                            + "drawn in its place. Hand the report to ImportedPages.Resolve with a "
+                            + "reader - Frisket.Import's PdfPageImporter - before composing it.",
+                            imported, "Report"));
+                    continue;
+                }
 
                 result.AddIssue(new TemplateIssue(
                     "fits.importedPage", IssueLevel.Warning,

@@ -195,6 +195,25 @@ namespace test
                     without.Has(table) && hinted.Table(table).SequenceEqual(without.Table(table)), 0);
             }
 
+            // And each glyph ends where its data does, padded to four and no further. The
+            // simple ones kept the padding their slot had in the face, and were padded to four
+            // again once an odd-length program was gone: four bytes or more beyond the points,
+            // which fontTools reports as "too much glyph data". Seen in a host's invoice set in
+            // Times New Roman; this face carries both causes - padding after its points, and a
+            // program of three bytes - which is what makes the check worth something.
+            int padded = Enumerable.Range(1, hinted.GlyphCount - 1)
+                .Count(g => hinted.Glyph(g).Length > 0 && !hinted.IsComposite(g) && hinted.Glyph(g).Length > hinted.DataEnd(g));
+            AssertEqual(testName, "the face has simple glyphs with padding after their points", true, padded > 0, padded);
+            AssertEqual(testName, "and its program is of odd length", 1, GlyphProgram.Length % 2, 0);
+
+            for (int g = 0; g < without.GlyphCount; g++)
+            {
+                if (without.Glyph(g).Length == 0)
+                    continue;
+                AssertEqual(testName, $"left out, glyph {g} ends where its data does, padded to four",
+                    (without.DataEnd(g) + 3) & ~3, without.Glyph(g).Length, 0);
+            }
+
             // Smaller, and not by a sum of three bytes a glyph: each outline is padded to four,
             // which can swallow a whole program.
             AssertEqual(testName, "left out, the font is smaller", true,
@@ -562,6 +581,36 @@ namespace test
                 int flags = (g[p] << 8) | g[p + 1];
                 p += 4 + ((flags & 1) != 0 ? 4 : 2);
                 return p + ((flags & 8) != 0 ? 2 : (flags & 0x40) != 0 ? 4 : (flags & 0x80) != 0 ? 8 : 0);
+            }
+
+            /// <summary>
+            /// Where a glyph's data ends within its slot: a composite's after its records and any
+            /// instructions, a simple one's after its flags and the coordinates they announce.
+            /// </summary>
+            public int DataEnd(int glyph)
+            {
+                byte[] g = Glyph(glyph);
+                if (IsComposite(glyph))
+                {
+                    int end = ComponentsEnd(glyph);
+                    return Instructions(glyph) > 0 ? end + 2 + Instructions(glyph) : end;
+                }
+
+                int contours = (short)((g[0] << 8) | g[1]);
+                int at = 10 + 2 * contours;
+                int points = contours == 0 ? 0 : ((g[at - 2] << 8) | g[at - 1]) + 1;
+                int p = at + 2 + ((g[at] << 8) | g[at + 1]);
+                int coordinates = 0;
+                for (int n = 0; n < points;)
+                {
+                    int flag = g[p++];
+                    int times = 1 + ((flag & 0x08) != 0 ? g[p++] : 0);
+                    int x = (flag & 0x02) != 0 ? 1 : (flag & 0x10) != 0 ? 0 : 2;
+                    int y = (flag & 0x04) != 0 ? 1 : (flag & 0x20) != 0 ? 0 : 2;
+                    coordinates += times * (x + y);
+                    n += times;
+                }
+                return p + coordinates;
             }
 
             /// <summary>How many bytes of instructions a glyph carries.</summary>

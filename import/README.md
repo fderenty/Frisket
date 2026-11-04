@@ -28,6 +28,10 @@ Report report = ReportBinder.Bind(template, dataJson);
 A path may not leave `baseDirectory` (or the `root` you pass): the template chooses the
 file, and a template is untrusted the moment somebody else wrote it.
 
+The pages on the back page are read too. A page that nothing has read draws nothing, and
+`LayoutResult.Issues` says so with `fits.importedPageUnread` - which is what a host without
+this reader gets, such as the native library.
+
 **A copy, not a rendering.** Nothing here interprets a content operator or knows what a font
 is: the page's marks and the objects they reach travel as they are, renumbered into the new
 file, so pages full of JPEG, JBIG2 or CCITT images import without a line of code for any of

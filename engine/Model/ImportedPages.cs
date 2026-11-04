@@ -58,7 +58,8 @@ namespace Frisket
             // repeated container names it once per record.
             var already = new Dictionary<(string, int), IImportedPage>();
 
-            foreach (BaseItem item in report.AllItems)
+            // The back page too, which is where terms somebody else drew usually go.
+            foreach (BaseItem item in report.EveryItem)
             {
                 if (item is not ImportedPageItem page || page.Resolved != null)
                     continue;

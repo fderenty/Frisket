@@ -127,6 +127,13 @@ namespace Frisket
             // Work on a copy: a template is a section to be filled many times over.
             Report report = Report.FromJson(template.ToJson());
 
+            // The copy is made through JSON, and what a reader made of an imported page is not
+            // part of the template: it is never written. So every page resolved before binding
+            // - the order the CLI and import/README.md use - reached the layout unread, laid
+            // out at no height and drew nothing, with no word said. Handed back here; a
+            // repeated container's clones then carry it, as CopyTo already does.
+            CarryImportedPages(template, report);
+
             // The title carries tokens too, and {Title} elsewhere resolves through it.
             report.Title = Fill(report.Title, data, null, options);
 
@@ -157,6 +164,29 @@ namespace Frisket
 
         public static Report Bind(Report template, string dataJson, BindingOptions? options = null)
             => Bind(template, ReportData.FromJson(dataJson), options);
+
+        /// <summary>
+        /// Gives each imported page of the copy what was read for the template's. The copy is
+        /// the template read back, so the two hold their pages in the same order; a pair that
+        /// does not name the same page is left alone rather than given another's reading, and
+        /// fits.importedPageUnread then says so.
+        /// </summary>
+        private static void CarryImportedPages(Report template, Report copy)
+        {
+            using IEnumerator<ImportedPageItem> read =
+                template.EveryItem.OfType<ImportedPageItem>().GetEnumerator();
+
+            foreach (ImportedPageItem page in copy.EveryItem.OfType<ImportedPageItem>())
+            {
+                if (!read.MoveNext())
+                    return;
+
+                ImportedPageItem original = read.Current;
+                if (original.Page == page.Page && original.SourcePath == page.SourcePath
+                    && original.Data.AsSpan().SequenceEqual(page.Data))
+                    page.Resolved = original.Resolved;
+            }
+        }
 
         // ------------------------------------------------------------------
 
