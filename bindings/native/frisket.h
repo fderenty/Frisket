@@ -11,7 +11,7 @@
  * it with fk_last_error() before calling anything else on the same thread.
  *
  * Ownership: whatever the library hands back through an out parameter is yours to free,
- * with the matching er_*_free. Nothing else is.
+ * with the matching fk_*_free. Nothing else is.
  *
  * Threads: handles are not synchronised. Use one set per thread, or lock around them.
  * The error message is per thread already.
@@ -118,10 +118,32 @@ fk_status FK_CALL fk_template_load(const char* path, fk_template* out);
 
 /*
  * What is wrong with the template, as a JSON array of
- * { rule, level, where, message }. Empty means nothing to report. Pass accessible
- * non-zero to include what a screen reader needs on top of plain soundness.
+ * { rule, level, message, where, pointer } - pointer being a JSON Pointer into the
+ * template, or null. Empty means nothing to report. Pass accessible non-zero to include
+ * what a screen reader needs on top of plain soundness.
+ *
+ * The template alone. fk_template_check_for asks more, and is what `frisket check` asks.
  */
 fk_status FK_CALL fk_template_check(fk_template tmpl, int32_t accessible, fk_buffer* out);
+
+/*
+ * What `frisket check` says, in the same shape: what the template's text holds that will
+ * not be read (a misspelt property), what the output about to be made cannot carry,
+ * which of your fields it names wrongly, and what the data brings that cannot be drawn.
+ *
+ *   data_json     the record it will be filled with, or NULL to leave the data out
+ *   options_json  what fk_render takes, so the question is asked of the output that will
+ *                 be made - "tagged" and "interactive" decide what it can carry, and
+ *                 default as a render does. Two more keys, refused by fk_render:
+ *
+ *     { "accessible": true | false,   default false - what a screen reader needs too
+ *       "fields":     [ ... ] }       your catalogue, as the content editor is handed it
+ *
+ * The text is that of fk_template_parse or fk_template_load; a misspelt property is
+ * found only there, since reading the text is what drops it.
+ */
+fk_status FK_CALL fk_template_check_for(fk_template tmpl, const char* data_json,
+                                        const char* options_json, fk_buffer* out);
 
 void FK_CALL fk_template_free(fk_template tmpl);
 
@@ -157,6 +179,17 @@ void FK_CALL fk_template_free(fk_template tmpl);
 fk_status FK_CALL fk_render(fk_template tmpl, fk_fonts fonts,
                             const char* data_json, const char* options_json,
                             fk_token token, fk_buffer* out);
+
+/*
+ * What composing the document in `rendered` found, as a JSON array in the shape of the
+ * checks: a page limit passed, something taller than a page, an imported page nothing
+ * read - which is every imported page here, since this library carries no PDF reader.
+ * Warnings: the document was produced. Empty when there was nothing to say.
+ *
+ * Asked of the buffer fk_render handed back, before you free it, so it always describes
+ * the document beside it. Any other buffer is refused.
+ */
+fk_status FK_CALL fk_render_issues(fk_buffer rendered, fk_buffer* out);
 
 /* ------------------------------------------------------------------- buffers */
 

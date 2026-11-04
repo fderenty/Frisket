@@ -102,6 +102,13 @@ namespace Frisket.Native
         internal IntPtr Data { get; private set; }
         internal int Size { get; }
 
+        /// <summary>
+        /// What composing this document found, as <c>TemplateIssue.ToJson</c> writes it - set
+        /// on what fk_render hands back, and on nothing else. Kept on the document rather than
+        /// on the thread or the template, so it can only ever describe the bytes beside it.
+        /// </summary>
+        internal string? Issues { get; set; }
+
         internal Buffer(byte[] bytes)
         {
             Size = bytes.Length;

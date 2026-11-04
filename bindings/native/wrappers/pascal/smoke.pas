@@ -141,8 +141,16 @@ begin
       give it away. }
     Check('and non-ASCII data survives being read', HasHighByte(Data));
 
+    { What `frisket check` asks: the text, the output about to be made, the data. }
     Options := TErOptions.Default;
-    Pdf := Template.RenderToBytes(Fonts, Data, Options);
+    Options.Tagged := True;
+    Issues := Template.CheckForAsJson(Options, Data, True);
+    Check('the fuller check answers', (Length(Issues) > 0) and (Issues[1] = '['));
+
+    { And what composing it found, with the document it describes. }
+    Options := TErOptions.Default;
+    Pdf := Template.RenderToBytes(Fonts, Data, Options, Issues);
+    Check('what composing it found comes with it', (Length(Issues) > 0) and (Issues[1] = '['));
     Check('a PDF comes out', Length(Pdf) > 1000);
     Check('and it is a PDF', (Length(Pdf) > 5) and (Chr(Pdf[0]) = '%') and (Chr(Pdf[1]) = 'P'));
 

@@ -66,6 +66,9 @@ public:
     void* get() const noexcept { return handle_; }
     explicit operator bool() const noexcept { return handle_ != nullptr; }
 
+    /// Gives the handle up without freeing it - to whoever frees it next.
+    void* release() noexcept { return std::exchange(handle_, nullptr); }
+
 private:
     void reset() noexcept {
         if (handle_) Free{}(std::exchange(handle_, nullptr));
@@ -219,33 +222,61 @@ public:
         return document{handle};
     }
 
-    /// What is wrong with it, as a JSON array. "[]" means nothing to report.
+    /// What is wrong with it, as a JSON array. "[]" means nothing to report. The
+    /// template alone; check_for asks what `frisket check` asks.
     std::string check(bool accessible = true) const {
         void* out = nullptr;
         detail::check(fk_template_check(handle_.get(), accessible ? 1 : 0, &out));
         return detail::take_text(out);
     }
 
+    /// What `frisket check` says, as a JSON array: the text, the output `how` describes,
+    /// your field catalogue (a JSON array, or empty for none) and the data (empty for none).
+    std::string check_for(const options& how,
+                          const std::string& data = {},
+                          bool accessible = false,
+                          const std::string& fields = {}) const {
+        // The render's own options, and the check's two keys added before the brace.
+        std::string json = how.to_json();
+        json.pop_back();
+        json += std::string(",\"accessible\":") + (accessible ? "true" : "false");
+        if (!fields.empty()) json += ",\"fields\":" + fields;
+        json += '}';
+
+        void* out = nullptr;
+        detail::check(fk_template_check_for(handle_.get(),
+                                            data.empty() ? nullptr : data.c_str(),
+                                            json.c_str(), &out));
+        return detail::take_text(out);
+    }
+
     /// One document, as bytes. `data` may be empty, in which case the template is
     /// rendered as it stands - which is how a template is looked at while it is
     /// being drawn.
+    ///
+    /// `issues`, when given, receives what composing it found, as a JSON array: a page
+    /// limit passed, something taller than a page, an imported page nothing read. The
+    /// document is produced all the same - these are warnings.
     std::vector<std::uint8_t> render(const fonts& faces,
                                      const std::string& data = {},
-                                     const options& how = {}) const {
-        return detail::take_bytes(produce(faces, data, how));
+                                     const options& how = {},
+                                     std::string* issues = nullptr) const {
+        return detail::take_bytes(produce(faces, data, how, issues));
     }
 
     /// The same, when what comes back is text: HTML, or the SVG envelope.
     std::string render_text(const fonts& faces,
                             const std::string& data = {},
-                            const options& how = {}) const {
-        return detail::take_text(produce(faces, data, how));
+                            const options& how = {},
+                            std::string* issues = nullptr) const {
+        return detail::take_text(produce(faces, data, how, issues));
     }
 
 private:
     explicit document(void* handle) : handle_(handle) {}
 
-    void* produce(const fonts& faces, const std::string& data, const options& how) const {
+    void* produce(const fonts& faces, const std::string& data, const options& how,
+                  std::string* issues) const {
         const std::string json = how.to_json();
         void* out = nullptr;
 
@@ -254,6 +285,16 @@ private:
         detail::check(fk_render(handle_.get(), faces.handle(),
                                 data.empty() ? nullptr : data.c_str(),
                                 json.c_str(), nullptr, &out));
+
+        // Asked before the buffer goes, since the findings belong to the document in it.
+        // The buffer is held while asking, so a refusal does not leak it.
+        if (issues) {
+            detail::owned<detail::free_buffer> held{out};
+            void* found = nullptr;
+            detail::check(fk_render_issues(held.get(), &found));
+            *issues = detail::take_text(found);
+            out = held.release();
+        }
         return out;
     }
 

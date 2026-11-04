@@ -286,9 +286,19 @@ namespace Frisket.Native
             if (Interop.Read(json) is not { Length: > 0 } text)
                 return Interop.Fail("fk_template_parse: no JSON");
 
-            *template = Handles.Wrap(Report.FromJson(text));
+            Report report = Report.FromJson(text);
+            Sources.AddOrUpdate(report, text);
+            *template = Handles.Wrap(report);
             return Interop.Ok;
         });
+
+        /// <summary>
+        /// The text each template was read from, for <see cref="TemplateCheckFor"/>: a
+        /// property the model does not read is skipped as the text is read, so only the text
+        /// can still say it was there (TemplateJson). Weak, so a template freed takes its text
+        /// with it.
+        /// </summary>
+        private static readonly ConditionalWeakTable<Report, string> Sources = new();
 
         /// <summary>
         /// The same, from a file, so a caller need not read it themselves - and, unlike
@@ -307,13 +317,21 @@ namespace Frisket.Native
             if (!File.Exists(file))
                 return Interop.Fail($"fk_template_load: no template at '{file}'");
 
-            *template = Handles.Wrap(Report.FromFile(file));
+            Report report = Report.FromFile(file);
+            Sources.AddOrUpdate(report, File.ReadAllText(file));
+            *template = Handles.Wrap(report);
             return Interop.Ok;
         });
 
         /// <summary>
         /// What is wrong with the template, as a JSON array. Empty means nothing to
         /// report. Same rules the designer shows and an outside validator would reach.
+        ///
+        /// The template alone, asked nothing about an output - as it always has been.
+        /// <see cref="TemplateCheckFor"/> asks what `frisket check` asks. Both write
+        /// <c>TemplateIssue.ToJson</c>, pointer included: this one wrote a shape of its own
+        /// until 4 November 2026, without the pointer, while that method's own comment called
+        /// itself the one shape for every door a host comes through.
         /// </summary>
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_check")]
         public static int TemplateCheck(IntPtr template, int accessible, IntPtr* result)
@@ -328,17 +346,54 @@ namespace Frisket.Native
             IReadOnlyList<TemplateIssue> issues = TemplateValidator.Check(report,
                 accessible != 0 ? TemplateProfile.All : TemplateProfile.Sound);
 
-            var json = new System.Text.StringBuilder("[");
-            for (int i = 0; i < issues.Count; i++)
-            {
-                if (i > 0) json.Append(',');
-                json.Append("{\"rule\":").Append(Text(issues[i].Rule))
-                    .Append(",\"level\":").Append(Text(issues[i].Level.ToString().ToLowerInvariant()))
-                    .Append(",\"where\":").Append(Text(issues[i].Where))
-                    .Append(",\"message\":").Append(Text(issues[i].Message)).Append('}');
-            }
+            *result = Handles.Wrap(new Buffer(TemplateIssue.ToJson(issues)));
+            return Interop.Ok;
+        });
 
-            *result = Handles.Wrap(new Buffer(json.Append(']').ToString()));
+        /// <summary>
+        /// What `frisket check` says, asked by a host: what the template's text holds that the
+        /// model will not read, what the output about to be made cannot carry, which of the
+        /// host's fields the template names wrongly, and what the data brings that cannot be
+        /// drawn. In the order the command line asks them, and in its shape.
+        ///
+        /// <paramref name="optionsJson"/> is what fk_render takes, so the question is asked of
+        /// the output that will be made, and it defaults as rendering does: a template
+        /// declaring a language really does lose it in an untagged file, and saying so is the
+        /// point. Two keys are a check's own - "accessible", and "fields", the host's
+        /// catalogue as a JSON array - and fk_render refuses both.
+        /// </summary>
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_check_for")]
+        public static int TemplateCheckFor(IntPtr template, IntPtr dataJson, IntPtr optionsJson, IntPtr* result)
+            => Interop.Guarded(() =>
+        {
+            if (Handles.Unwrap<Report>(template) is not { } report)
+                return Interop.Fail("fk_template_check_for: not a template");
+
+            if (result == null)
+                return Interop.Fail("fk_template_check_for: no output pointer");
+
+            RenderOptions options = RenderOptions.Parse(Interop.Read(optionsJson), check: true);
+            var issues = new List<TemplateIssue>();
+
+            if (Sources.TryGetValue(report, out string? text))
+                issues.AddRange(TemplateJson.Check(text));
+
+            // Paged whatever the format: every one this library writes - the PDF, and the
+            // proof as HTML or SVG - has pages. A mail is FlowingHtml's, which it does not offer.
+            var target = new RenderTarget(Tagged: options.Tagged, Interactive: options.Interactive,
+                                          Paged: true);
+            issues.AddRange(TemplateValidator.Check(report,
+                TemplateProfile.Capable | (options.Accessible ? TemplateProfile.All : TemplateProfile.Sound),
+                target));
+
+            if (options.Fields is { } catalogue)
+                issues.AddRange(TemplateFields.Check(report, catalogue));
+
+            if (Interop.Read(dataJson) is { Length: > 0 } data)
+                issues.AddRange(TemplateData.Check(report, data, target,
+                    new BindingOptions { Numbers = options.Numbers }));
+
+            *result = Handles.Wrap(new Buffer(TemplateIssue.ToJson(issues)));
             return Interop.Ok;
         });
 
@@ -392,21 +447,51 @@ namespace Frisket.Native
                 ? ReportBinder.Bind(loaded, data, new BindingOptions { Numbers = options.Numbers })
                 : loaded;
 
+            LayoutResult? layout = null;
             Buffer produced = options.Format switch
             {
-                "pdf" => new Buffer(Pdf(report, library, options, cancellation)),
-                "html" => new Buffer(Html(report, library, options, cancellation)),
-                "svg" => new Buffer(Svg(report, library, cancellation)),
+                "pdf" => new Buffer(Pdf(report, library, options, cancellation, out layout)),
+                "html" => new Buffer(Html(report, library, options, cancellation, out layout)),
+                "svg" => new Buffer(Svg(report, library, cancellation, out layout)),
                 var other => throw new ArgumentException(
                     $"unknown format '{other}'. Try pdf, html or svg.")
             };
+
+            // What composing found goes with the document, for fk_render_issues. Thrown away
+            // until 4 November 2026: the command line printed it, and a host through this
+            // library had an imported page missing from its document and no word of why.
+            produced.Issues = TemplateIssue.ToJson(layout!.Issues);
 
             *result = Handles.Wrap(produced);
             return Interop.Ok;
         });
 
+        /// <summary>
+        /// What composing a document found, as a JSON array in the shape the checks write:
+        /// a page limit passed, something taller than a page, a page of another PDF that
+        /// nothing read - which is every imported page here, since this library carries no
+        /// PDF reader. Warnings, all of them: the document was produced. Empty when composing
+        /// had nothing to say.
+        ///
+        /// Asked of the buffer fk_render handed back, before it is freed - so it always
+        /// describes the document beside it, never the thread's last render. Any other buffer
+        /// is refused.
+        /// </summary>
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_render_issues")]
+        public static int RenderIssues(IntPtr rendered, IntPtr* result) => Interop.Guarded(() =>
+        {
+            if (Handles.Unwrap<Buffer>(rendered) is not { Issues: { } issues })
+                return Interop.Fail("fk_render_issues: not a document fk_render returned");
+
+            if (result == null)
+                return Interop.Fail("fk_render_issues: no output pointer");
+
+            *result = Handles.Wrap(new Buffer(issues));
+            return Interop.Ok;
+        });
+
         private static byte[] Pdf(Report report, FontLibrary library, RenderOptions options,
-                                  CancellationToken cancellation)
+                                  CancellationToken cancellation, out LayoutResult layout)
         {
             var pdf = new PdfBackend(library)
             {
@@ -418,23 +503,23 @@ namespace Frisket.Native
                 Language = report.Language
             };
 
-            ReportRenderer.Render(report, pdf, cancellation);
+            layout = ReportRenderer.Render(report, pdf, cancellation);
             return pdf.ToArray();
         }
 
         private static string Html(Report report, FontLibrary library, RenderOptions options,
-                                   CancellationToken cancellation)
+                                   CancellationToken cancellation, out LayoutResult layout)
         {
             var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
-            ReportRenderer.Render(report, svg, cancellation);
+            layout = ReportRenderer.Render(report, svg, cancellation);
             return svg.ToHtml(options.Bare ? SvgBackend.HtmlChrome.Bare : SvgBackend.HtmlChrome.Preview);
         }
 
         private static string Svg(Report report, FontLibrary library,
-                                  CancellationToken cancellation)
+                                  CancellationToken cancellation, out LayoutResult layout)
         {
             var svg = new SvgBackend(new FontTextMeasurer(library)) { EmbeddedFonts = library };
-            ReportRenderer.Render(report, svg, cancellation);
+            layout = ReportRenderer.Render(report, svg, cancellation);
             SvgBackend.SvgFragment fragment = svg.ToFragment();
 
             var json = new System.Text.StringBuilder("{\"pageWidth\":")

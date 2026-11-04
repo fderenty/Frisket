@@ -1942,6 +1942,17 @@ decided nothing had changed and kept the broken library. The check failed on cod
 correct, which is at least the honest direction. A file restored from a copy is touched
 before anything is built from it.
 
+**And the library said less than the command line, about the same document** (4 November
+2026). `fk_render` threw away `LayoutResult.Issues`, which `frisket render` prints: a Win32
+host's imported page - every imported page, through a library with no PDF reader - was
+missing from its document with no word of why. And `fk_template_check` wrote a JSON shape of
+its own, without the pointer, while `TemplateIssue.ToJson`'s own comment called itself the
+one shape for every door; nor could it be told the output, so no `can.*` rule ever spoke
+through it. `fk_render_issues` and `fk_template_check_for` answer now, and
+`check-against-cli.py` holds what each side *says* to the other, as it held what each
+writes - over a template built to be wrong, since two silences agree. Found by checking a
+claim in prose against the code: *one shape for every door* had a door nobody counted.
+
 ## 8b. What a hostile template gets, and what it no longer gets
 
 Review of 20-21 August 2026, on `engine/` and `bindings/native/` only. Three things

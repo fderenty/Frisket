@@ -124,6 +124,13 @@ int main(int argc, char** argv)
        comes out, slightly wrong, and only the bytes give it away. */
     check("and non-ASCII data survives being read", HasHighByte(data));
 
+    /* What `frisket check` asks: the text, the output about to be made, the data. */
+    check("the fuller check answers",
+          fk_template_check_for(tmpl, data, "{\"tagged\":true,\"accessible\":true}", &out) == FK_OK
+          && out && fk_buffer_data(out)[0] == '[');
+    fk_buffer_free(out);
+    out = NULL;
+
     /* --- the PDF ------------------------------------------------------- */
     check("a PDF comes out", fk_render(tmpl, fonts, data, "{\"format\":\"pdf\"}", NULL, &out) == FK_OK);
     check("and it is a PDF", out && fk_buffer_size(out) > 1000
@@ -131,11 +138,18 @@ int main(int argc, char** argv)
 
     if (out) {
         FILE* f = fopen(pdf_path, "wb");
+        fk_buffer found = NULL;
+
         if (f) {
             fwrite(fk_buffer_data(out), 1, (size_t)fk_buffer_size(out), f);
             fclose(f);
             printf("       %d bytes -> %s\n", fk_buffer_size(out), pdf_path);
         }
+
+        /* What composing it found travels with the document, asked before it goes. */
+        check("what composing it found comes with it",
+              fk_render_issues(out, &found) == FK_OK && found && fk_buffer_data(found)[0] == '[');
+        fk_buffer_free(found);
         fk_buffer_free(out);
         out = NULL;
     }
@@ -164,6 +178,16 @@ int main(int argc, char** argv)
     check("a null template is refused", fk_render(NULL, fonts, data, NULL, NULL, &out) != FK_OK);
     check("an unknown format is refused",
           fk_render(tmpl, fonts, data, "{\"format\":\"ps\"}", NULL, &out) != FK_OK);
+    check("a check's own option is refused by a render",
+          fk_render(tmpl, fonts, data, "{\"accessible\":true}", NULL, &out) != FK_OK);
+
+    {
+        fk_buffer listed = NULL, found = NULL;
+        check("a list is made to ask", fk_fonts_list(fonts, &listed) == FK_OK);
+        check("and a buffer fk_render did not return has no findings to give",
+              fk_render_issues(listed, &found) != FK_OK && found == NULL);
+        fk_buffer_free(listed);
+    }
 
     /* ---- a font the caller chose, rather than a directory swept -------------
        Three doors, and the difference is the point. A scan steps over what is not

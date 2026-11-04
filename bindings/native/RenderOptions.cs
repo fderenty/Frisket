@@ -30,7 +30,13 @@ namespace Frisket.Native
         // separator is a French convention, not a neutral one.
         internal NumberFormatInfo Numbers { get; private init; } = NumberFormats.Invariant;
 
-        internal static RenderOptions Parse(string? json)
+        // A check's own two, read only by fk_template_check_for: the same object asks what
+        // an output would lose, and these say how hard to look. A render is not asked them,
+        // and is told so rather than let one through that changes nothing.
+        internal bool Accessible { get; private init; }
+        internal string? Fields { get; private init; }
+
+        internal static RenderOptions Parse(string? json, bool check = false)
         {
             if (json is not { Length: > 0 })
                 return new RenderOptions();
@@ -53,6 +59,10 @@ namespace Frisket.Native
                     "interactive" => options with { Interactive = Flag(property) },
                     "bare" => options with { Bare = Flag(property) },
                     "numbers" => options with { Numbers = Numbering(Word(property)) },
+                    "accessible" when check => options with { Accessible = Flag(property) },
+                    "fields" when check => options with { Fields = Catalogue(property) },
+                    "accessible" or "fields" => throw new ArgumentException(
+                        $"option '{property.Name}' belongs to fk_template_check_for, not to a render"),
                     _ => throw new ArgumentException($"unknown option '{property.Name}'")
                 };
             }
@@ -70,6 +80,10 @@ namespace Frisket.Native
             JsonValueKind.False => false,
             _ => throw new ArgumentException($"option '{property.Name}' wants true or false")
         };
+
+        private static string Catalogue(JsonProperty property) => property.Value.ValueKind == JsonValueKind.Array
+            ? property.Value.GetRawText()
+            : throw new ArgumentException($"option '{property.Name}' wants the catalogue, a JSON array");
 
         private static PdfConformance Conform(string value) => value switch
         {

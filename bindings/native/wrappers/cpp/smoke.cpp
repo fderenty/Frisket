@@ -110,7 +110,16 @@ int main(int argc, char** argv) {
             [](char c) { return static_cast<unsigned char>(c) >= 0x80; });
         check("and non-ASCII data survives being read", high);
 
-        const std::vector<std::uint8_t> pdf = doc.render(faces, data);
+        // What `frisket check` asks: the text, the output about to be made, the data.
+        frisket::options tagged;
+        tagged.tagged = true;
+        const std::string fuller = doc.check_for(tagged, data, true);
+        check("the fuller check answers", !fuller.empty() && fuller.front() == '[');
+
+        // And what composing it found, with the document it describes.
+        std::string composed;
+        const std::vector<std::uint8_t> pdf = doc.render(faces, data, {}, &composed);
+        check("what composing it found comes with it", !composed.empty() && composed.front() == '[');
         check("a PDF comes out", pdf.size() > 1000);
         check("and it is a PDF", pdf.size() > 5 && std::memcmp(pdf.data(), "%PDF-", 5) == 0);
 

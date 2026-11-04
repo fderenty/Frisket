@@ -85,20 +85,39 @@ type
   TErTemplate = class
   private
     FHandle: TErHandle;
+    function Produce(Fonts: TErFonts; const DataJson: UTF8String;
+                     const Options: TErOptions): TErHandle;
   public
     constructor CreateFromFile(const Path: string);
     constructor CreateFromJson(const Json: UTF8String);
     destructor Destroy; override;
 
-    { What is wrong with the template, as a JSON array. '[]' means nothing. }
+    { What is wrong with the template, as a JSON array. '[]' means nothing. The
+      template alone; CheckForAsJson asks what `frisket check` asks. }
     function CheckAsJson(Accessible: Boolean = True): UTF8String;
 
+    { What `frisket check` says, as a JSON array: the text, the output Options
+      describes, your field catalogue (a JSON array, or '' for none) and the data
+      ('' for none). }
+    function CheckForAsJson(const Options: TErOptions; const DataJson: UTF8String;
+                            Accessible: Boolean = False;
+                            const FieldsJson: UTF8String = ''): UTF8String;
+
     { One document. Data may be empty, in which case the template is rendered
-      bare - which is how a template is looked at while it is being drawn. }
+      bare - which is how a template is looked at while it is being drawn.
+
+      With Issues, also what composing it found, as a JSON array: a page limit
+      passed, something taller than a page, an imported page nothing read - every
+      one, through this library, which reads no PDF. The document is produced all
+      the same: these are warnings. }
     function RenderToBytes(Fonts: TErFonts; const DataJson: UTF8String;
-                           const Options: TErOptions): TBytes;
+                           const Options: TErOptions): TBytes; overload;
+    function RenderToBytes(Fonts: TErFonts; const DataJson: UTF8String;
+                           const Options: TErOptions; out Issues: UTF8String): TBytes; overload;
     function RenderToText(Fonts: TErFonts; const DataJson: UTF8String;
-                          const Options: TErOptions): UTF8String;
+                          const Options: TErOptions): UTF8String; overload;
+    function RenderToText(Fonts: TErFonts; const DataJson: UTF8String;
+                          const Options: TErOptions; out Issues: UTF8String): UTF8String; overload;
     procedure Render(Fonts: TErFonts; const DataJson: UTF8String;
                      const Options: TErOptions; Stream: TStream);
     procedure RenderToFile(Fonts: TErFonts; const DataJson: UTF8String;
@@ -154,10 +173,13 @@ function fk_template_parse(Json: PAnsiChar; out Tmpl: TErHandle): Int32; cdecl; 
 function fk_template_load(Path: PAnsiChar; out Tmpl: TErHandle): Int32; cdecl; external ErLib;
 function fk_template_check(Tmpl: TErHandle; Accessible: Int32;
                            out Buffer: TErHandle): Int32; cdecl; external ErLib;
+function fk_template_check_for(Tmpl: TErHandle; DataJson, OptionsJson: PAnsiChar;
+                               out Buffer: TErHandle): Int32; cdecl; external ErLib;
 procedure fk_template_free(Tmpl: TErHandle); cdecl; external ErLib;
 
 function fk_render(Tmpl, Fonts: TErHandle; DataJson, OptionsJson: PAnsiChar; Token: TErHandle;
                    out Buffer: TErHandle): Int32; cdecl; external ErLib;
+function fk_render_issues(Rendered: TErHandle; out Buffer: TErHandle): Int32; cdecl; external ErLib;
 
 function fk_buffer_data(Buffer: TErHandle): PByte; cdecl; external ErLib;
 function fk_buffer_size(Buffer: TErHandle): Int32; cdecl; external ErLib;
@@ -226,6 +248,21 @@ begin
   if Size > 0 then
     Move(fk_buffer_data(Buffer)^, Result[1], Size);
   fk_buffer_free(Buffer);
+end;
+
+{ What composing the document in Buffer found, asked before the buffer goes: the
+  findings belong to the document in it. A refusal frees the buffer rather than
+  leave it behind. }
+function TakeIssues(Buffer: TErHandle): UTF8String;
+var
+  Found: TErHandle;
+  Status: Int32;
+begin
+  Status := fk_render_issues(Buffer, Found);
+  if Status <> FK_OK then
+    fk_buffer_free(Buffer);
+  Check(Status, 'fk_render_issues');
+  Result := TakeText(Found);
 end;
 
 function ErVersion: UTF8String;
@@ -386,10 +423,28 @@ begin
   Result := TakeText(Buffer);
 end;
 
-function TErTemplate.RenderToBytes(Fonts: TErFonts; const DataJson: UTF8String;
-                                   const Options: TErOptions): TBytes;
+function TErTemplate.CheckForAsJson(const Options: TErOptions; const DataJson: UTF8String;
+                                    Accessible: Boolean; const FieldsJson: UTF8String): UTF8String;
 var
   Buffer: TErHandle;
+  Opts: UTF8String;
+begin
+  { The render's own options, and the check's two keys added before the brace. }
+  Opts := Options.ToJson;
+  SetLength(Opts, Length(Opts) - 1);
+  Opts := Opts + ',"accessible":' + BoolJson(Accessible);
+  if Length(FieldsJson) > 0 then
+    Opts := Opts + ',"fields":' + FieldsJson;
+  Opts := Opts + '}';
+
+  Check(fk_template_check_for(FHandle, Bytes(DataJson), Bytes(Opts), Buffer),
+        'fk_template_check_for');
+  Result := TakeText(Buffer);
+end;
+
+function TErTemplate.Produce(Fonts: TErFonts; const DataJson: UTF8String;
+                             const Options: TErOptions): TErHandle;
+var
   Opts: UTF8String;
   FontHandle: TErHandle;
 begin
@@ -399,24 +454,38 @@ begin
     FontHandle := Fonts.Handle;
 
   Opts := Options.ToJson;
-  Check(fk_render(FHandle, FontHandle, Bytes(DataJson), Bytes(Opts), nil, Buffer), 'fk_render');
+  Check(fk_render(FHandle, FontHandle, Bytes(DataJson), Bytes(Opts), nil, Result), 'fk_render');
+end;
+
+function TErTemplate.RenderToBytes(Fonts: TErFonts; const DataJson: UTF8String;
+                                   const Options: TErOptions): TBytes;
+begin
+  Result := TakeBytes(Produce(Fonts, DataJson, Options));
+end;
+
+function TErTemplate.RenderToBytes(Fonts: TErFonts; const DataJson: UTF8String;
+                                   const Options: TErOptions; out Issues: UTF8String): TBytes;
+var
+  Buffer: TErHandle;
+begin
+  Buffer := Produce(Fonts, DataJson, Options);
+  Issues := TakeIssues(Buffer);
   Result := TakeBytes(Buffer);
 end;
 
 function TErTemplate.RenderToText(Fonts: TErFonts; const DataJson: UTF8String;
                                   const Options: TErOptions): UTF8String;
+begin
+  Result := TakeText(Produce(Fonts, DataJson, Options));
+end;
+
+function TErTemplate.RenderToText(Fonts: TErFonts; const DataJson: UTF8String;
+                                  const Options: TErOptions; out Issues: UTF8String): UTF8String;
 var
   Buffer: TErHandle;
-  Opts: UTF8String;
-  FontHandle: TErHandle;
 begin
-  if Fonts = nil then
-    FontHandle := nil
-  else
-    FontHandle := Fonts.Handle;
-
-  Opts := Options.ToJson;
-  Check(fk_render(FHandle, FontHandle, Bytes(DataJson), Bytes(Opts), nil, Buffer), 'fk_render');
+  Buffer := Produce(Fonts, DataJson, Options);
+  Issues := TakeIssues(Buffer);
   Result := TakeText(Buffer);
 end;
 

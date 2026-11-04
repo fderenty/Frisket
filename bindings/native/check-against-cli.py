@@ -20,8 +20,17 @@ typographic quotes, which is what caught the Pascal wrapper mangling text that n
 reached the library. Neither names a font directory, so every side draws with the
 typefaces bundled with Frisket - the case nobody configures, and the one that ships.
 
+And what each side says, since 4 November 2026, when the library was found saying less
+than the command line: fk_template_check_for against `frisket check --json` - the template
+test 42 builds to be wrong asked of three outputs, the one test 97 has a model write asked
+with its catalogue, and data that is not JSON - with every family of rule heard at least
+once; and fk_render_issues against what `frisket render` prints on standard error, over
+the invoice held to a page fewer than it takes. Each side has to say something, or two
+silences would agree.
+
 Exit code 0 when every case agrees, 1 when one does not.
 """
+import json
 import os
 import subprocess
 import sys
@@ -37,10 +46,111 @@ CASES = [
     os.path.join(ROOT, "bindings", "native", "samples", "accented.data.json"),
 ]
 
+# Built to be wrong by test 42, so a check has something to say; and the template test 97
+# has a model write, with a property misspelt and fields its catalogue does not hold.
+FAULTY = os.path.join(ROOT, "tests", "output", "validator", "faulty.template.json")
+MODEL = os.path.join(ROOT, "tests", "output", "model", "written.template.json")
+CATALOGUE = os.path.join(ROOT, "tests", "output", "model", "fields.json")
+
+# Every family a check can speak in, each of which some case below must reach: a branch of
+# fk_template_check_for that no case reaches is one the comparison would pass without.
+FAMILIES = {"read", "sound", "can", "fields", "data"}
+
+
+def check_cases(out):
+    """The same question asked both ways: what the library is handed, and the CLI's flags."""
+    unreadable = os.path.join(out, "unreadable.data.json")
+    with open(unreadable, "w", encoding="utf-8") as f:
+        f.write("{ not json")
+    with open(CATALOGUE, encoding="utf-8") as f:
+        catalogue = json.load(f)
+
+    return [
+        ("(defaults)", FAULTY, {}, []),
+        ("--tagged --accessible", FAULTY, {"tagged": True, "accessible": True}, ["--tagged", "--accessible"]),
+        ("--flat", FAULTY, {"interactive": False}, ["--flat"]),
+        ("--fields, a model's template", MODEL, {"fields": catalogue}, ["--fields", CATALOGUE]),
+        ("-d, data that is not JSON", TEMPLATE, {"data": "{ not json"}, ["-d", unreadable]),
+    ]
+
 
 def command(cli):
     """How to run one CLI: the managed build through dotnet, a linked binary as it is."""
     return ["dotnet", cli] if cli.endswith(".dll") else [os.path.abspath(cli)]
+
+
+def run(args):
+    return subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace")
+
+
+def compare_checks(api, cli, out):
+    """fk_template_check_for and `frisket check --json`, finding for finding."""
+    failures = 0
+    heard = set()
+    for label, path, options, flags in check_cases(out):
+        with frisket.Template(api, path=path) as template:
+            native = template.check_for(**options)
+        said = json.loads(run(command(cli) + ["check", "-t", path, "--json"] + flags).stdout)
+        heard |= {issue["rule"].split(".")[0] for issue in native}
+
+        agree = native == said and len(native) > 0
+        print(f"  check {label}: native {len(native)}, {os.path.basename(cli)} {len(said)} - "
+              f"{'the same findings' if agree else 'DIFFERENT'}")
+        if not agree:
+            for issue in [i for i in native if i not in said]:
+                print(f"      only native: {issue['rule']} {issue['where']}")
+            for issue in [i for i in said if i not in native]:
+                print(f"      only cli:    {issue['rule']} {issue['where']}")
+            failures += 1
+
+    unheard = FAMILIES - heard
+    if unheard:
+        print(f"  check: no case made the library say anything in {sorted(unheard)}")
+        failures += 1
+
+    # And the older check, which asks of the template alone: what the fuller one says about
+    # the template itself - neither the text nor the output - in the same shape, pointer and
+    # all. It wrote a shape of its own until 4 November 2026.
+    with frisket.Template(api, path=FAULTY) as faulty:
+        alone = faulty.check(accessible=True)
+        fuller = [i for i in faulty.check_for(accessible=True, tagged=True)
+                  if i["rule"].split(".")[0] not in ("read", "can")]
+    agree = alone == fuller and len(alone) > 0
+    print(f"  fk_template_check: {len(alone)}, the template's own part of the fuller check "
+          f"{len(fuller)} - {'the same findings' if agree else 'DIFFERENT'}")
+    return failures + (0 if agree else 1)
+
+
+def compare_render_issues(api, fonts, cli, out):
+    """fk_render_issues and what `frisket render` prints on standard error, over the
+    invoice told it may have one page fewer than it takes - a limit it cannot keep."""
+    data = CASES[0]
+    with open(data, encoding="utf-8") as f:
+        record = f.read()
+    with frisket.Template(api, path=TEMPLATE) as template:
+        pages = len(template.render(fonts, record, format="svg")["pages"])
+
+    with open(TEMPLATE, encoding="utf-8") as f:
+        held = json.load(f)
+    held["Sections"][0]["PageLimit"] = pages - 1
+    limited = os.path.join(out, "limited.template.json")
+    with open(limited, "w", encoding="utf-8") as f:
+        json.dump(held, f, ensure_ascii=False)
+
+    with frisket.Template(api, path=limited) as template:
+        _, native = template.render_with_issues(fonts, record)
+
+    printed = run(command(cli) + ["render", "-t", limited, "-d", data,
+                                  "-o", os.path.join(out, "limited"), "--format", "pdf"]).stderr
+    # "frisket: rule, where: message" - the place may lose a character to the console's
+    # code page on Windows, so the rule and the message are what is held to each other.
+    said = sorted((line.split(",", 1)[0][len("frisket: "):], line.split(": ", 2)[2])
+                  for line in printed.splitlines() if line.startswith("frisket: "))
+    mine = sorted((i["rule"], i["message"]) for i in native)
+    agree = mine == said and any(rule == "fits.pageLimit" for rule, _ in mine)
+    print(f"  render issues: native {[r for r, _ in mine]}, {os.path.basename(cli)} "
+          f"{[r for r, _ in said]} - {'the same warnings' if agree else 'DIFFERENT'}")
+    return 0 if agree else 1
 
 
 def main(library, clis, out):
@@ -74,6 +184,10 @@ def main(library, clis, out):
                 if compared.returncode != 0:
                     print(compared.stdout + compared.stderr)
                     failures += 1
+
+        for cli in clis:
+            failures += compare_checks(api, cli, out)
+            failures += compare_render_issues(api, fonts, cli, out)
 
     print("all agree" if not failures else f"{failures} comparison(s) disagree")
     return 1 if failures else 0

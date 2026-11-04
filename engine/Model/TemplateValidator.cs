@@ -83,7 +83,8 @@ namespace Frisket
         /// <summary>
         /// Findings as a program reads them: an array of objects with rule, level, message,
         /// where and pointer. One shape for `frisket check --json`, the preview server's
-        /// /check and any host writing its own, so a model correcting a template is told the
+        /// /check, the native library's checks and composing findings, and any host writing
+        /// its own, so a model correcting a template is told the
         /// same thing whichever door it came through. Written by hand rather than by the
         /// serializer, so it stays as native AOT builds it.
         /// </summary>

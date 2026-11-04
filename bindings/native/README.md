@@ -22,7 +22,7 @@ nothing to read, so the rule is absolute rather than a matter of care. Failures 
 back as a status, with `fk_last_error()` holding the reason, per thread.
 
 **The library owns what it hands out.** Anything returned through an out parameter is
-freed with the matching `er_*_free`. A pointer into managed memory would be a pointer
+freed with the matching `fk_*_free`. A pointer into managed memory would be a pointer
 the collector is free to move while C is reading it.
 
 ## Building it
@@ -185,6 +185,38 @@ still wanted. What belongs to the host rather than to this library: bounding the
 of what it is handed, how many renders run at once, and how long one may take.
 `Report.Resolve()` composes without drawing, so a page count can be known before a
 document is paid for.
+
+## What the library says, beside what it writes
+
+Two questions, and the command line's answers to both, in the shape it writes them -
+a JSON array of `{ rule, level, message, where, pointer }`, the pointer a JSON Pointer
+into the template a program can act on.
+
+**Before:** `fk_template_check_for` asks what `frisket check` asks. A property the text
+misspells, which reading it drops; what the output about to be made cannot carry - its
+options are `fk_render`'s, so a form flattened or a file untagged is asked about as it
+will be made; which of your fields the template names wrongly, given your catalogue as
+`"fields"`; and what the data brings that cannot be drawn. `fk_template_check` still
+answers from the template alone, as it always has.
+
+**After:** `fk_render_issues` gives what composing the document found - a page limit
+passed, something taller than a page, an imported page nobody read. The document was
+produced: these are warnings, asked of the buffer `fk_render` returned, before it is
+freed.
+
+```c
+fk_buffer doc, found;
+fk_render(tmpl, fonts, data, NULL, NULL, &doc);
+fk_render_issues(doc, &found);    /* "[]" when composing had nothing to say */
+```
+
+Until 4 November 2026 the library dropped both halves. The command line printed the
+warnings, and a host through this library had an imported page missing from its document
+and no word of why - which is every imported page, here: the library carries no PDF
+reader, so such a page is only ever reported. And the check wrote a shape of its own,
+without the pointer, while the engine called its own shape the one for every door.
+`check-against-cli.py` holds both to the command line now, and asks that each side has
+something to say.
 
 ## Checking it works
 

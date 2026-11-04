@@ -52,9 +52,11 @@ class _Api:
         self.template_parse = declare("fk_template_parse", i, [p, ctypes.POINTER(c)])
         self.template_load = declare("fk_template_load", i, [p, ctypes.POINTER(c)])
         self.template_check = declare("fk_template_check", i, [c, i, ctypes.POINTER(c)])
+        self.template_check_for = declare("fk_template_check_for", i, [c, p, p, ctypes.POINTER(c)])
         self.template_free = declare("fk_template_free", None, [c])
 
         self.render = declare("fk_render", i, [c, c, p, p, c, ctypes.POINTER(c)])
+        self.render_issues = declare("fk_render_issues", i, [c, ctypes.POINTER(c)])
         self.token_create = declare("fk_token_create", i, [ctypes.POINTER(c)])
         self.token_cancel = declare("fk_cancel", i, [c])
         self.token_free = declare("fk_token_free", None, [c])
@@ -141,9 +143,24 @@ class Template:
             raise ValueError("a template needs a path or some JSON")
 
     def check(self, accessible=True):
+        """The template alone. check_for asks what `frisket check` asks."""
         out = ctypes.c_void_p()
         self._api.check(self._api.template_check(self._handle, 1 if accessible else 0,
                                                  ctypes.byref(out)))
+        return json.loads(self._api.take(out))
+
+    def check_for(self, data=None, accessible=False, fields=None, **options):
+        """What `frisket check` says: the text, the output about to be made - options are
+        fk_render's, defaulting as a render does - your field catalogue, and the data."""
+        if isinstance(data, (dict, list)):
+            data = json.dumps(data, ensure_ascii=False)
+        asked = dict(options, accessible=accessible)
+        if fields is not None:
+            asked["fields"] = fields
+
+        out = ctypes.c_void_p()
+        self._api.check(self._api.template_check_for(self._handle, _utf8(data),
+                                                     _utf8(json.dumps(asked)), ctypes.byref(out)))
         return json.loads(self._api.take(out))
 
     def render(self, fonts, data=None, token=None, **options):
@@ -151,6 +168,12 @@ class Template:
 
         `token` is a Token another thread may cancel; the render then raises rather
         than handing back half a document."""
+        return self.render_with_issues(fonts, data, token, **options)[0]
+
+    def render_with_issues(self, fonts, data=None, token=None, **options):
+        """The same, and what composing it found - a page limit passed, something taller
+        than a page, an imported page nothing read - as a list. The document was produced
+        all the same: these are warnings."""
         if isinstance(data, (dict, list)):
             data = json.dumps(data, ensure_ascii=False)
 
@@ -159,14 +182,21 @@ class Template:
                                          _utf8(json.dumps(options) if options else None),
                                          token.handle if token else None,
                                          ctypes.byref(out)))
+        # Asked before the buffer goes: the findings belong to the document in it.
+        found = ctypes.c_void_p()
+        status = self._api.render_issues(out, ctypes.byref(found))
+        if status != 0:
+            self._api.buffer_free(out)
+            self._api.check(status)
+        issues = json.loads(self._api.take(found))
         produced = self._api.take(out)
 
         # PDF is bytes; the other two are text, and SVG is text that happens to be an
         # envelope. Decoding here saves every caller the same two lines.
         if options.get("format", "pdf") == "pdf":
-            return produced
+            return produced, issues
         text = produced.decode("utf-8")
-        return json.loads(text) if options.get("format") == "svg" else text
+        return (json.loads(text) if options.get("format") == "svg" else text), issues
 
     def close(self):
         if self._handle:
