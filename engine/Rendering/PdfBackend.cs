@@ -8,10 +8,10 @@ namespace Frisket
     /// No dependency: the container is written by hand and Deflate comes from the
     /// framework.
     ///
-    /// Fonts go in as Type0/Identity-H with the TrueType file embedded whole, which is
-    /// what makes accented text and the euro sign come out right anywhere, and a
-    /// ToUnicode map so the text stays selectable and searchable. Subsetting is not done:
-    /// the file carries each font in full.
+    /// Fonts go in as Type0/Identity-H, which is what makes accented text and the euro
+    /// sign come out right anywhere, with a ToUnicode map so the text stays selectable and
+    /// searchable. Each face carries only the glyphs the document drew, renumbered, in the
+    /// shape ISO 32000-1 9.9 allows - see <see cref="FontSubset"/>.
     ///
     /// Coordinates are handed over in millimetres from the top-left, like everywhere else
     /// in the engine; the page matrix converts to PDF's points-from-the-bottom once.
@@ -1584,8 +1584,31 @@ namespace Frisket
         /// <summary>
         /// Embed only the glyphs the section drew. On by default; turn it off to embed
         /// each face whole, which is what to try first if a reader ever refuses a font.
+        ///
+        /// A face with PostScript outlines keeps every glyph either way, and loses only the
+        /// tables a PDF never reads when this is on.
         /// </summary>
         public bool Subset { get; set; } = true;
+
+        /// <summary>
+        /// Keep the hinting each glyph of a TrueType subset carries - the small program that
+        /// fits its outline to the pixel grid at small sizes on screen. On by default.
+        ///
+        /// Off saves a good deal on a face that has it: Arial's regular and bold, seventy
+        /// characters, go from 46 to 19 KB. It takes nothing else with it: cvt, fpgm and prep
+        /// stay, because ISO 32000-1 9.9 wants them present whenever the face had them, and
+        /// PDF/A-3 and PDF/UA-1 embed by that clause.
+        ///
+        /// What it costs is on screen, and it depends on the reader. Edge, whose viewer is
+        /// Acrobat's engine, ignores hinting: the same invoice at 100% differed by no pixel.
+        /// Firefox uses it, and without it "Montant dû" at 8 pt read "Montant d0" - the
+        /// accent run into the letter. Hence on by default: turn it off when the documents
+        /// are known to be read in something that does not hint, or printed.
+        ///
+        /// None of the faces bundled with Frisket is hinted, so this changes nothing for
+        /// them. Ignored when <see cref="Subset"/> is off: a face embedded whole is whole.
+        /// </summary>
+        public bool Hinting { get; set; } = true;
 
         /// <summary>Six uppercase letters standing for this particular set of glyphs.</summary>
         private static string SubsetTag(IEnumerable<ushort> glyphs)
@@ -1609,19 +1632,35 @@ namespace Frisket
             FontFile file = font.File;
             string name = Sanitise(file.Family) + (file.Bold ? ",Bold" : "") + (file.Italic ? ",Italic" : "");
 
+            // A CID-keyed face draws each glyph by CID through its own charset, so its codes
+            // would have to be CIDs, and the codes here are glyph ids. Written anyway, the
+            // text could come out as other characters in a reader that follows the standard,
+            // with nothing to say so: refused instead, by name.
+            if (FontSubset.IsCidKeyed(file.Data))
+                throw new InvalidOperationException(
+                    $"'{file.Family} {file.Subfamily}' ({file.Source}) has PostScript outlines keyed by CID, as most " +
+                    "Chinese, Japanese and Korean OpenType faces do. A PDF chooses such a face's glyphs through its " +
+                    "charset, which this writer does not read, so the text could come out as other characters. " +
+                    "Use the TrueType build of the face.");
+
             // Only the glyphs this section drew. A whole face is most of an invoice:
             // sixty kilobytes of font against twelve of section, for thirty-seven glyphs
             // out of six hundred.
-            byte[] embedded = Subset ? FontSubset.Build(file.Data, font.Glyphs.Keys) : file.Data;
+            FontProgram program = FontSubset.Prepare(file.Data, font.Glyphs.Keys, Subset, Hinting);
 
             // A partial font must say so, and the tag has to differ per subset: two
             // sections embedding different cuts under one name are why the six letters
             // exist. Derived from the glyphs themselves, so the same section twice gives
             // the same file.
-            if (embedded.Length < file.Data.Length)
+            if (program.Partial)
                 name = SubsetTag(font.Glyphs.Keys) + "+" + name;
 
-            int fontFile = _pdf.AddStream($"/Length1 {embedded.Length}", embedded, Compress);
+            // ISO 32000-1 keeps /FontFile2 for TrueType outlines. PostScript ones go in as an
+            // OpenType file under /FontFile3, and are read by a CIDFontType0, which takes the
+            // codes as glyph ids for a face that is not CID-keyed (9.7.4.2).
+            int fontFile = program.PostScript
+                ? _pdf.AddStream("/Subtype /OpenType", program.Data, Compress)
+                : _pdf.AddStream($"/Length1 {program.Data.Length}", program.Data, Compress);
 
             int flags = 4;                                   // symbolic: Identity-H bypasses the encoding
             if (file.Italic) flags |= 64;
@@ -1632,16 +1671,20 @@ namespace Frisket
                 $"/FontBBox [{Thousandths(file.XMin)} {Thousandths(file.YMin)} {Thousandths(file.XMax)} {Thousandths(file.YMax)}] " +
                 $"/ItalicAngle {(file.Italic ? -12 : 0)} /Ascent {Thousandths(file.Ascender)} " +
                 $"/Descent {-Thousandths(file.Descender)} /CapHeight {Thousandths(file.CapHeight)} " +
-                $"/StemV {(file.Bold ? 160 : 80)} /FontFile2 {fontFile} 0 R >>");
+                $"/StemV {(file.Bold ? 160 : 80)} /{(program.PostScript ? "FontFile3" : "FontFile2")} {fontFile} 0 R >>");
 
+            // Keyed by the codes on the page, which are the file's glyph ids whatever the
+            // subset renumbered them to - and the subset copies each advance with its glyph.
             var widths = new StringBuilder();
             foreach (ushort glyph in font.Glyphs.Keys)
                 widths.Append(glyph).Append(" [").Append(Thousandths(file.AdvanceOfGlyph(glyph))).Append("] ");
 
+            string glyphMap = program.PostScript ? "" : " /CIDToGIDMap " + GlyphMap(font, program);
+
             int descendant = _pdf.Add(
-                "<< /Type /Font /Subtype /CIDFontType2 " +
+                $"<< /Type /Font /Subtype /{(program.PostScript ? "CIDFontType0" : "CIDFontType2")} " +
                 $"/BaseFont /{name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> " +
-                $"/FontDescriptor {descriptor} 0 R /DW 1000 /W [{widths}] /CIDToGIDMap /Identity >>");
+                $"/FontDescriptor {descriptor} 0 R /DW 1000 /W [{widths}]{glyphMap} >>");
 
             int toUnicode = _pdf.AddStream("", PdfWriter.Latin1(ToUnicodeCMap(font)));
 
@@ -1649,6 +1692,29 @@ namespace Frisket
                 "<< /Type /Font /Subtype /Type0 " +
                 $"/BaseFont /{name} /Encoding /Identity-H /DescendantFonts [{descendant} 0 R] " +
                 $"/ToUnicode {toUnicode} 0 R >>");
+        }
+
+        /// <summary>
+        /// /Identity when the embedded glyphs keep the file's ids, and otherwise a stream
+        /// holding, for every code up to the highest drawn, the id that glyph has in the
+        /// subset: two bytes a code, 0 for a code nothing drew. Mostly zeros, so it deflates
+        /// to a hundred-odd bytes where the numbering it replaces cost kilobytes.
+        /// </summary>
+        private string GlyphMap(EmbeddedFont font, FontProgram program)
+        {
+            if (program.Renumbered is not { } renumbered)
+                return "/Identity";
+
+            int top = font.Glyphs.Count > 0 ? font.Glyphs.Keys.Last() : 0;
+            var map = new byte[(top + 1) * 2];
+            for (int code = 0; code <= top; code++)
+            {
+                ushort glyph = code < renumbered.Length ? renumbered[code] : (ushort)0;
+                map[code * 2] = (byte)(glyph >> 8);
+                map[code * 2 + 1] = (byte)glyph;
+            }
+
+            return _pdf.AddStream("", map, Compress) + " 0 R";
         }
 
         /// <summary>

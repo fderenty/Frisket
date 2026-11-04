@@ -294,6 +294,24 @@ namespace test
             AssertEqual(testName, "a short header is refused rather than read past",
                 true, blew is null, 0);
 
+            // A table that claims two gigabytes, in a face that reads perfectly well: the
+            // reader never looks at prep, and the subset copies it. Copied by its claimed
+            // length it was allocated before anything noticed. Built by hand, because a
+            // random edit lands on those four bytes about once in ten thousand runs.
+            byte[] boasting = File.ReadAllBytes(
+                Directory.GetFiles(FontDirectory(), "Mulish-Regular.ttf", SearchOption.AllDirectories).First());
+            int prepRecord = -1;
+            for (int i = 0, count = (boasting[4] << 8) | boasting[5]; i < count; i++)
+                if (System.Text.Encoding.ASCII.GetString(boasting, 12 + i * 16, 4) == "prep")
+                    prepRecord = 12 + i * 16;
+            AssertEqual(testName, "the font has a prep to lie about", true, prepRecord > 0, 0);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(boasting.AsSpan(prepRecord + 12), 0x7FFFFFF0);
+            AssertEqual(testName, "and still reads", true, Record.Exception(() => FontFile.Load(boasting)) == null, 0);
+
+            escaped = Record.Exception(() => FontSubset.Prepare(boasting, new ushort[] { 36, 37 }, true, true));
+            Console.WriteLine($"    a prep claiming 2 GB, subset   -> {escaped?.GetType().Name ?? "embedded as it came"}");
+            AssertEqual(testName, "a table longer than the file is not copied", true, escaped == null, 0);
+
             // --- and the net, for whatever is next -----------------------------------
             var corpus = new List<byte[]>();
             foreach (string f in Directory.EnumerateFiles(FontDirectory(), "*.*", SearchOption.AllDirectories))
@@ -337,7 +355,14 @@ namespace test
                 clock.Restart();
                 try
                 {
-                    if (pick < fonts) FontFile.Load(sample);
+                    if (pick < fonts)
+                    {
+                        // And what the PDF makes of a face that read: the subset walks its
+                        // loca, composites and metrics afresh, numbers out of the same file.
+                        FontFile.Load(sample);
+                        FontSubset.IsCidKeyed(sample);
+                        FontSubset.Prepare(sample, Enumerable.Range(0, 80).Select(g => (ushort)g), true, round % 2 == 0);
+                    }
                     else if (pick < images)
                     {
                         // The planes as well: the header is what a size is believed from, and

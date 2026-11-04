@@ -52,6 +52,9 @@ type
     ArchivablePdfA3b: Boolean;
     Tagged: Boolean;
     SubsetFonts: Boolean;
+    // False leaves out each glyph's hinting: far smaller with a hinted face, drawn
+    // alike by Acrobat and Edge, worse by Firefox at small sizes. See fk_render.
+    FontHinting: Boolean;
     InteractiveFields: Boolean;
     BareHtml: Boolean;
     FrenchNumbers: Boolean;
@@ -246,6 +249,7 @@ begin
   Result.ArchivablePdfA3b := False;
   Result.Tagged := False;
   Result.SubsetFonts := True;
+  Result.FontHinting := True;
   Result.InteractiveFields := True;
   Result.BareHtml := False;
   // Invariant to match the engine's own default; a narrow-space thousands
@@ -268,6 +272,7 @@ begin
   Result := Result
     + ',"tagged":' + BoolJson(Tagged)
     + ',"subset":' + BoolJson(SubsetFonts)
+    + ',"hinting":' + BoolJson(FontHinting)
     + ',"interactive":' + BoolJson(InteractiveFields)
     + ',"bare":' + BoolJson(BareHtml)
     + ',"numbers":"';

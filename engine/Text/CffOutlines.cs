@@ -65,6 +65,30 @@ namespace Frisket
             }
         }
 
+        /// <summary>
+        /// Whether the face is CID-keyed - its Top DICT names a registry, ordering and
+        /// supplement - as most Chinese, Japanese and Korean OpenType faces are. A PDF then
+        /// chooses each glyph by CID through the font's charset rather than by its index,
+        /// so the two numberings have to be told apart. False for anything unreadable.
+        /// </summary>
+        public static bool IsCidKeyed(byte[] data, int cffOffset)
+        {
+            if (cffOffset <= 0 || cffOffset + 4 > data.Length)
+                return false;
+
+            try
+            {
+                int p = cffOffset + data[cffOffset + 2];
+                p = SkipIndex(data, p);
+                (int, int)[] tops = ReadIndex(data, p, out _);
+                return tops.Length > 0 && ReadDict(data, tops[0].Item1, tops[0].Item2).ContainsKey(1230);
+            }
+            catch (Exception e) when (e is IndexOutOfRangeException or ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+        }
+
         // ---- INDEX ----------------------------------------------------------------
 
         private static (int Start, int End)[] ReadIndex(byte[] d, int at, out int next)

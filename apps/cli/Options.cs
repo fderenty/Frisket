@@ -47,7 +47,7 @@ namespace Frisket.Cli
                     case "--max-documents": options._single["max-documents"] = Value("max-documents"); break;
                     case "--fields": options._single["fields"] = Value("fields"); break;
 
-                    case "--tagged" or "--flat" or "--no-subset" or "--bare" or "--accessible" or "--json":
+                    case "--tagged" or "--flat" or "--no-subset" or "--no-hinting" or "--bare" or "--accessible" or "--json":
                         options._flags.Add(arg.TrimStart('-'));
                         break;
 
@@ -83,6 +83,7 @@ namespace Frisket.Cli
         /// </summary>
         public bool Paged => !Formats.Contains("mail");
         public bool NoSubset => _flags.Contains("no-subset");
+        public bool NoHinting => _flags.Contains("no-hinting");
         public bool Bare => _flags.Contains("bare");
         public bool Accessible => _flags.Contains("accessible");
 

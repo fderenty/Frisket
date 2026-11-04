@@ -446,6 +446,28 @@ namespace test
             return offsets;
         }
 
+        /// <summary>
+        /// From a code on the page to the glyph it draws in the embedded font: through the
+        /// CIDToGIDMap stream when there is one, as itself under /Identity. The stream is
+        /// read as written, so the file has to have been written uncompressed.
+        /// </summary>
+        static Func<int, int> GlyphMapOf(byte[] pdf, string raw, int descendant)
+        {
+            // The whole object, not Field's first 600 characters: the widths array comes
+            // first and is longer than that on any real page.
+            int at = raw.IndexOf("\n" + descendant + " 0 obj", StringComparison.Ordinal);
+            string body = raw[at..raw.IndexOf("endobj", at, StringComparison.Ordinal)];
+            var map = System.Text.RegularExpressions.Regex.Match(body, @"/CIDToGIDMap (\d+) 0 R");
+            if (!map.Success)
+            {
+                Assert.Contains("/CIDToGIDMap /Identity", body);
+                return code => code;
+            }
+
+            byte[] table = StreamOf(pdf, raw, int.Parse(map.Groups[1].Value));
+            return code => code * 2 + 1 < table.Length ? (table[code * 2] << 8) | table[code * 2 + 1] : 0;
+        }
+
         static IEnumerable<int> GlyphsDrawnWith(string raw, string font)
         {
             string current = "";
@@ -464,11 +486,13 @@ namespace test
         /// <summary>
         /// For every glyph the first page draws, whether the embedded subset still holds
         /// an outline for it. Reads the file back rather than trusting what was written.
+        /// A drawn glyph comes with the code the page wrote, the file's own id; a component
+        /// comes with -1, being drawn by nothing but its composite.
         /// </summary>
-        static List<(int Gid, bool Present)> DrawnGlyphOutlines(byte[] pdf)
+        static List<(int Code, int Gid, bool Present)> DrawnGlyphOutlines(byte[] pdf)
         {
             string raw = System.Text.Encoding.Latin1.GetString(pdf);
-            var found = new List<(int, bool)>();
+            var found = new List<(int, int, bool)>();
 
             // /Fn -> the subset embedded for it
             foreach (var use in System.Text.RegularExpressions.Regex
@@ -486,14 +510,17 @@ namespace test
                 if (loca.Length == 0) continue;
 
                 int glyf = TableOf(font, "glyf");
+                Func<int, int> glyphOf = GlyphMapOf(pdf, raw, descendant);
 
-                foreach (int gid in GlyphsDrawnWith(raw, use))
+                foreach (int code in GlyphsDrawnWith(raw, use))
                 {
-                    if (gid + 1 >= loca.Length)
-                        continue;
-
-                    bool present = loca[gid + 1] > loca[gid];
-                    found.Add((gid, present));
+                    // The page writes the file's glyph ids; the subset renumbered them. A
+                    // code sent to glyph 0 or past the end draws a box or nothing, so it
+                    // counts as an outline lost - .notdef has one of its own, and finding it
+                    // there would otherwise pass for the glyph.
+                    int gid = glyphOf(code);
+                    bool present = gid > 0 && gid + 1 < loca.Length && loca[gid + 1] > loca[gid];
+                    found.Add((code, gid, present));
 
                     // A composite - e acute, say - is only the instruction to place other
                     // glyphs, and it keeps its own entry whether or not they came along.
@@ -503,8 +530,7 @@ namespace test
                         continue;
 
                     foreach (int part in ComponentsOf(font, glyf + loca[gid]))
-                        if (part + 1 < loca.Length)
-                            found.Add((part, loca[part + 1] > loca[part]));
+                        found.Add((-1, part, part > 0 && part + 1 < loca.Length && loca[part + 1] > loca[part]));
                 }
             }
 
@@ -557,10 +583,10 @@ namespace test
             // family changes.
             ushort blank = library.Resolve(DmsFont, false, false)!.GlyphOf(' ');
 
-            foreach ((int gid, bool present) in outlines)
+            foreach ((int code, int gid, bool present) in outlines)
             {
-                if (gid == blank) continue;
-                AssertEqual(testName, $"glyph {gid} kept its outline", true, present, 0);
+                if (code == blank) continue;
+                AssertEqual(testName, $"glyph {code} (now {gid}) kept its outline", true, present, 0);
             }
 
             Console.WriteLine($"    {outlines.Count} glyphes verifies, contours presents");

@@ -112,6 +112,9 @@ struct options {
     bool archivable_pdf_a3b = false;
     bool tagged = false;
     bool subset_fonts = true;
+    // Off leaves out each glyph's hinting: far smaller with a hinted face, drawn alike
+    // by Acrobat and Edge, worse by Firefox at small sizes. See fk_render.
+    bool font_hinting = true;
     bool interactive_fields = true;
     bool bare_html = false;
     // Invariant to match the engine's own default; a narrow-space thousands
@@ -139,6 +142,7 @@ struct options {
 
         json += std::string(",\"tagged\":") + flag(tagged)
               + ",\"subset\":" + flag(subset_fonts)
+              + ",\"hinting\":" + flag(font_hinting)
               + ",\"interactive\":" + flag(interactive_fields)
               + ",\"bare\":" + flag(bare_html)
               + ",\"numbers\":\"" + (french_numbers ? "french" : "invariant") + "\"}";

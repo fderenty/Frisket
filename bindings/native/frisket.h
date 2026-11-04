@@ -137,6 +137,7 @@ void FK_CALL fk_template_free(fk_template tmpl);
  *       "conformance": "none" | "pdfa3b",          default "none"
  *       "tagged":      true | false,               default false
  *       "subset":      true | false,               default true
+ *       "hinting":     true | false,               default true    (pdf, see below)
  *       "interactive": true | false,               default true
  *       "bare":        true | false,               default false   (html)
  *       "numbers":     "french" | "invariant" }    default "invariant"
@@ -147,6 +148,11 @@ void FK_CALL fk_template_free(fk_template tmpl);
  * used as a C string without copying it.
  *
  * An unknown option is refused rather than ignored.
+ *
+ * "hinting": false leaves out the hinting inside each glyph of a subset - far smaller
+ * with a hinted face such as Arial. Acrobat and Edge draw the page exactly alike; Firefox
+ * draws small text worse without it, and an accent can run into its letter at 8 pt. The
+ * hinting tables themselves stay, as ISO 32000-1 asks. The bundled faces have none.
  */
 fk_status FK_CALL fk_render(fk_template tmpl, fk_fonts fonts,
                             const char* data_json, const char* options_json,

@@ -404,6 +404,7 @@ namespace Frisket.Native
                 Conformance = options.Conformance,
                 Tagged = options.Tagged,
                 Subset = options.Subset,
+                Hinting = options.Hinting,
                 Interactive = options.Interactive,
                 Language = report.Language
             };

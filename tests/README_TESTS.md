@@ -33,6 +33,7 @@ question a file name answers is where a person would look.
 | `Barcodes.cs` | QR and Code 128 held to their published standards rather than to themselves |
 | `BindingAndTokens.cs` | tokens and formats, scope and its fallback, show/hide, mail merge, heading numbers |
 | `Checks.cs` | what frisket check answers: the three profiles, and the rules that must fall silent |
+| `EmbeddedFonts.cs` | what a face becomes in the PDF: cut, renumbered, with or without its hinting, TrueType or OpenType, held glyph by glyph to the file it came from |
 | `EngineTests.cs` | the assertion, the paths, the small builders - and no tests, deliberately |
 | `Fonts.cs` | cap-height sizing and the cascade, measured metrics, family names, a font as bytes, and the typefaces a library nobody filled draws with |
 | `FormsAndSignatures.cs` | the quote fillable or flattened, field names that stay unique, a control inside a table cell, and signature fields fit to hand to a signing platform |
@@ -314,11 +315,17 @@ four is marked with what it used to say and what settled it.
 - The ICC profile is written by the engine rather than shipped as a binary. It is
   a valid v2 matrix/TRC sRGB profile through a plain 2.2 gamma, not a byte copy of
   Adobe's, which differs only in the deepest shadows.
-- `PdfBackend` writes PDF 1.7 directly, embedding the very TrueType files the
-  layout was measured with (Type0/Identity-H plus a ToUnicode map, so text stays
-  selectable). Fonts are embedded whole - there is no subsetting. Images may be
-  JPEG, or non-interlaced 8-bit grayscale/RGB PNG, both passed through
-  uncompressed-and-recompressed; palettes and alpha are refused.
+- `PdfBackend` writes PDF 1.7 directly, embedding the very font files the layout was
+  measured with (Type0/Identity-H plus a ToUnicode map, so text stays selectable). A
+  TrueType face carries only the glyphs drawn, renumbered, with a CIDToGIDMap from the
+  codes on the page, and keeps the nine tables ISO 32000-1 9.9 names (test 117); its
+  per-glyph hinting can be left out with `Hinting`, never cvt, fpgm or prep (test 118). A
+  face with PostScript outlines goes in as OpenType under `/FontFile3`, read by a
+  CIDFontType0, every glyph kept and its layout tables left out; one keyed by CID is
+  refused (test 119). Images may be JPEG, or non-interlaced 8-bit grayscale/RGB PNG with
+  or without alpha, which becomes a soft mask; palettes are refused.
+  *Said fonts were embedded whole with no subsetting, while subsetting had been on by
+  default for months; and said alpha was refused, which stopped being true in 0.3.0.*
 - The SVG backend is the reference and debugging output, not a production one.
   A browser measures text with its own fonts, so the preview matches the layout
   only as closely as the measurer matches the browser.

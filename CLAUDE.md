@@ -391,6 +391,70 @@ default is what was not found. It names the default now, and lists what the libr
 hold - a refusal that says what was missing and not what was there sends people to read
 the code.
 
+## 3d. An embedded face: what the standard keeps, and what the eye wants
+
+Asked on 4 November 2026 by another application's agent, which had measured an Arial
+invoice at 136 KB, 64 of them font, and proposed two cuts: renumber the glyphs of each
+subset, and drop the hinting. Both looked like size questions. Each had a standards
+question under it, and one had a question for the eye.
+
+**Renumbering was refused by a comment that had stopped being true.** `FontSubset` kept
+every glyph id, with a full-length loca and hmtx, because renumbering "would save a few
+hundred bytes more and put four mechanisms at risk at once". True of the faces of the time;
+Arial has 4,652 glyphs, and its regular and bold paid 15 KB of numbering for seventy
+characters. Noto Sans Display paid 13. And the four mechanisms are one if the codes on the
+page stay the file's ids: a CIDToGIDMap stream turns them into the subset's, a hundred-odd
+bytes once deflated, and the widths array, ToUnicode and every page are written as before.
+
+What no validator sees is a composite whose components still point at their old numbers:
+an accented letter drawn as some other glyph's shape. Test 117 holds every code to the
+face's own glyph through its components, with its advance and side bearing - and on two
+faces, because the side bearings of glyphs past hmtx's long metrics are read from another
+place, and Elms Sans has none. Mulish does, and its accents reach them. The second face is
+found by that property and the property is asked to be reached (§10c).
+
+**ISO 32000-1 9.9 settles the hinting, and veraPDF does not check it.** "These TrueType
+tables shall always be present if present in the original TrueType font program: head,
+hhea, loca, maxp, cvt, prep, glyf, hmtx, and fpgm" - and PDF/A-3 (6.2.11.4.1) and PDF/UA-1
+(7.21.4.1) embed "as defined in" that clause. The proposal's 82.6 KB took cvt, fpgm and prep
+out, which would validate and not conform. What no clause names is the program inside each
+glyph, and that is most of the weight: 46 KB to 19 for Arial's pair. `PdfBackend.Hinting`
+takes that and nothing else.
+
+**And then the eye, which is why it is off only on request.** The proposal said readers
+"make little or no use" of hinting. Measured at 100% on an invoice in both forms: Edge, whose
+viewer is Acrobat's engine, differed by **no pixel**; headless Firefox changed every size, and
+at 8 pt "Montant dû" read "Montant d0", the circumflex run into the u, regular and bold. Half
+true, then, and the false half lands on the amount to pay. Foxit, PDFium and print were not
+looked at. No face bundled here is hinted, so the option changes nothing for them, and its
+test hints one for the purpose: a check run on unhinted faces would pass with the option
+doing nothing (§10c, a sample has to differ from the fault).
+
+**Answering it found a face that had never been embedded right.** Glametrix has PostScript
+outlines, and went in under /FontFile2 read by a CIDFontType2 - TrueType's keys - for as long
+as the engine has embedded fonts. veraPDF passed it on both profiles; FreeType-based readers
+sniff the format and draw it anyway. ISO 32000-1 wants /FontFile3 /Subtype /OpenType and a
+CIDFontType0, which takes the codes as glyph ids for a face that is not CID-keyed (9.7.4.2).
+It keeps every glyph - cutting a CFF table means rewriting its indexes - and loses the layout
+tables this engine never reads: 188 KB to 73, kern alone being 102. A face keyed by CID would
+need its codes read through its charset; none is here, so it is refused by name, and test 119
+makes a minimal CFF both ways to show the refusal turns on the key.
+
+Two more of the same family: `--no-subset` embedded a TrueType cmap, which 9.9 says "shall not
+be present" with a CIDFont, and a collection whole. And the subsetter copied a table by the
+length the file claimed: the fuzzer had only ever read fonts, never cut them, and a random edit
+reaches those four bytes about once in ten thousand runs, so test 60 builds the case by hand.
+
+Twenty-three sabotages from a run seen green (§14d), all caught - and three of them only
+because of something added for the purpose: the side bearings by the second face, the
+two-gigabyte table by the hand-built case, a glyph left with its program by the face hinted
+for the test. veraPDF caught six of its own, widths against glyphs among them, and passed
+the CFF face under TrueType's keys exactly as it always had.
+
+*Two comments described none of this*: `PdfBackend` said subsetting was not done, for months
+after it was on by default, and so did the tests' README. A claim in prose drifts as any
+other (§5c).
+
 ## 4. External checks, after any touch to text, fonts or the PDF
 
 **And a warning-free build can be a build that did not happen.** §6 says a stale

@@ -23,6 +23,7 @@ namespace Frisket.Native
         internal PdfConformance Conformance { get; private init; } = PdfConformance.None;
         internal bool Tagged { get; private init; }
         internal bool Subset { get; private init; } = true;
+        internal bool Hinting { get; private init; } = true;
         internal bool Interactive { get; private init; } = true;
         internal bool Bare { get; private init; }
         // Invariant to match the engine's own default. A narrow-space thousands
@@ -48,6 +49,7 @@ namespace Frisket.Native
                     "conformance" => options with { Conformance = Conform(Word(property)) },
                     "tagged" => options with { Tagged = Flag(property) },
                     "subset" => options with { Subset = Flag(property) },
+                    "hinting" => options with { Hinting = Flag(property) },
                     "interactive" => options with { Interactive = Flag(property) },
                     "bare" => options with { Bare = Flag(property) },
                     "numbers" => options with { Numbers = Numbering(Word(property)) },

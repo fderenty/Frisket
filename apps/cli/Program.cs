@@ -271,6 +271,7 @@ namespace Frisket.Cli
                         Conformance = options.Conformance,
                         Tagged = options.Tagged,
                         Subset = !options.NoSubset,
+                        Hinting = !options.NoHinting,
                         Language = report.Language,
                         Interactive = !options.Flat
                     };
@@ -629,6 +630,10 @@ namespace Frisket.Cli
                                                 written that way, which nothing else can see -
                                                 the page looks the same either way.
                   --no-subset                   embed whole fonts rather than the glyphs used
+                  --no-hinting                  leave out each glyph's hinting: much smaller with
+                                                a hinted face such as Arial, drawn alike by
+                                                Acrobat and Edge, and worse by Firefox at small
+                                                sizes - an accented letter can blur
 
             The HTML
 
