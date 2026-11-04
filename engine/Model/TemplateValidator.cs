@@ -563,17 +563,12 @@ namespace Frisket
                     + "container, or drop the columns.", item, where));
             }
 
-            // A hard break inside justified text is stretched to the margin like a
-            // wrapped line, which is not what a break means.
-            if (item is TextItem { Text: not null } justified
-                && justified.Font.HorizontalAlignment == HorizontalAlignment.Justify
-                && justified.Text.Contains('\n'))
-            {
-                found.Add(new TemplateIssue("sound.justifiedBreak", IssueLevel.Warning,
-                    "This text is justified and holds a line break of its own. A break is "
-                    + "stretched to the margin like a wrapped line, which is not what it "
-                    + "means - put each paragraph in its own text.", item, where));
-            }
+            // sound.justifiedBreak lived here until 4 November 2026: a hard break inside
+            // justified text was stretched to the margin like a wrapped line, and the rule
+            // said so - of a plain text only, while every rich text did it in silence. The
+            // layout now says which lines end a paragraph, and none of those is stretched,
+            // so the rule went: one that no longer describes the engine teaches people to
+            // ignore the panel (CLAUDE.md 15).
 
             if (item is BarcodeItem code && string.IsNullOrWhiteSpace(code.Value))
             {

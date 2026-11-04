@@ -60,5 +60,5 @@
   <text x="10" y="266.75" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.926">ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut</text>
   <text x="10" y="271.25" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.677">labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit,</text>
   <text x="10" y="275.75" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.017">sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit</text>
-  <text x="10" y="280.25" font-family="Elms Sans" font-size="4.286" fill="#000000">amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore</text>
+  <text x="10" y="280.25" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.669">amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore</text>
 </svg>

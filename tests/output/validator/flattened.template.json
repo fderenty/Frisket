@@ -323,14 +323,6 @@
             },
             {
               "$type": "TextItem",
-              "Text": "First paragraph.",
-              "Font": {
-                "HorizontalAlignment": "Justify"
-              },
-              "Style": {}
-            },
-            {
-              "$type": "TextItem",
               "Text": "Sign here",
               "Font": {},
               "Style": {}
@@ -413,14 +405,6 @@
                   "Style": {}
                 }
               ],
-              "Style": {}
-            },
-            {
-              "$type": "TextItem",
-              "Text": "Second one.",
-              "Font": {
-                "HorizontalAlignment": "Justify"
-              },
               "Style": {}
             },
             {

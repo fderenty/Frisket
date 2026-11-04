@@ -745,7 +745,8 @@ namespace Frisket
             double width = Math.Max(0, right - left - padding.Left - padding.Right);
 
             string resolved = TextOf(text, page);
-            IReadOnlyList<string> lines = _measurer.BreakLines(resolved, font, width);
+            BrokenText broken = BreakText(resolved, font, width);
+            IReadOnlyList<string> lines = broken.Lines;
             double lineHeight = _measurer.GetMetrics(font).LineHeight;
 
             int first = resume?.LineIndex ?? 0;
@@ -761,7 +762,7 @@ namespace Frisket
                 if (full > available + FitTolerance && !force)
                     return new FlowOutcome(top, resume, false);
 
-                PlaceLines(text, page, left, top, right, top + full, font, lines, first, remaining, width);
+                PlaceLines(text, page, left, top, right, top + full, font, broken, first, remaining, width);
                 return new FlowOutcome(top + full + text.Style.Margin.Bottom, null, true);
             }
 
@@ -776,12 +777,12 @@ namespace Frisket
             if (fitting >= remaining)
             {
                 double height = remaining * lineHeight + frame;
-                PlaceLines(text, page, left, top, right, top + height, font, lines, first, remaining, width);
+                PlaceLines(text, page, left, top, right, top + height, font, broken, first, remaining, width);
                 return new FlowOutcome(top + height + text.Style.Margin.Bottom, null, true);
             }
 
             double part = fitting * lineHeight + frame;
-            PlaceLines(text, page, left, top, right, top + part, font, lines, first, fitting, width);
+            PlaceLines(text, page, left, top, right, top + part, font, broken, first, fitting, width);
             return new FlowOutcome(top + part,
                                    new Continuation { LineIndex = first + fitting },
                                    true);
@@ -829,6 +830,13 @@ namespace Frisket
             public double BaselineOffset;
 
             public double Width;
+
+            /// <summary>
+            /// True when this line ends a paragraph - a break the author typed, or the end of
+            /// the text - rather than being where the layout wrapped. Such a line is never
+            /// justified, which is what tells a reader the paragraph is over.
+            /// </summary>
+            public bool EndsParagraph;
         }
 
         /// <summary>
@@ -988,7 +996,12 @@ namespace Frisket
                 for (int p = 0; p < paragraphs.Length; p++)
                 {
                     if (p > 0)
-                        CloseLine();          // a hard break always starts a fresh line
+                    {
+                        // A hard break always starts a fresh line, and the line it closes
+                        // ends a paragraph.
+                        current.EndsParagraph = true;
+                        CloseLine();
+                    }
 
                     string paragraph = paragraphs[p];
                     int start = 0;
@@ -1024,6 +1037,7 @@ namespace Frisket
                 }
             }
 
+            current.EndsParagraph = true;
             CloseLine();
 
             // An empty paragraph is still one line - a blank AdvancedTextItem takes the
@@ -1032,7 +1046,7 @@ namespace Frisket
             {
                 TextStyle font = ResolveFont(item.Font, double.NaN);
                 FontMetrics metrics = _measurer.GetMetrics(font);
-                lines.Add(new AdvancedLine { Height = metrics.LineHeight,
+                lines.Add(new AdvancedLine { Height = metrics.LineHeight, EndsParagraph = true,
                                              BaselineOffset = (metrics.LineHeight + metrics.CapHeight) / 2 });
             }
 
@@ -1089,11 +1103,14 @@ namespace Frisket
 
                 HorizontalAlignment alignment = item.Font.HorizontalAlignment ?? HorizontalAlignment.Left;
 
-                // The last line of a block is never stretched - a closing line pulled
-                // out to the margin is what tells a reader the paragraph is over. Same
-                // rule, same reason, as a plain text's.
+                // A line that ends a paragraph is never stretched - a closing line pulled
+                // out to the margin is what tells a reader the paragraph is over. Every
+                // paragraph, and not only the text's last: until 4 November 2026 a line the
+                // author ended with Enter was stretched like a wrapped one, which is every
+                // line break the content editor writes. Same rule, same reason, as a plain
+                // text's.
                 bool justify = alignment == HorizontalAlignment.Justify
-                            && i < lines.Count - 1
+                            && !line.EndsParagraph
                             && lineRight > lineLeft;
 
                 double startX = alignment switch
@@ -1753,11 +1770,11 @@ namespace Frisket
         }
 
         /// <summary>A text cell broken to its column width, with the font it was broken at.</summary>
-        private (IReadOnlyList<string> Lines, TextStyle Font) CellLines(TextItem text, double width, Page page)
+        private (BrokenText Broken, TextStyle Font) CellLines(TextItem text, double width, Page page)
         {
             TextStyle font = ResolveFont(text.Font, double.NaN);
             double inner = Math.Max(0, width - text.Style.Padding.Left - text.Style.Padding.Right);
-            return (_measurer.BreakLines(TextOf(text, page), font, inner), font);
+            return (BreakText(TextOf(text, page), font, inner), font);
         }
 
         /// <summary>A rich cell broken to its column width. Each line has a height of its own.</summary>
@@ -1790,7 +1807,8 @@ namespace Frisket
 
                 if (cell is TextItem text)
                 {
-                    (IReadOnlyList<string> lines, TextStyle font) = CellLines(text, width, page);
+                    (BrokenText broken, TextStyle font) = CellLines(text, width, page);
+                    IReadOnlyList<string> lines = broken.Lines;
                     double[] heights = new double[lines.Count];
                     Array.Fill(heights, _measurer.GetMetrics(font).LineHeight);
                     cut.Add((heights, box));
@@ -1859,7 +1877,8 @@ namespace Frisket
                 if (cell is TextItem text && (skip > 0 || maxLines != int.MaxValue))
                 {
                     double width = box.Width - text.Style.Margin.Left - text.Style.Margin.Right;
-                    (IReadOnlyList<string> lines, TextStyle font) = CellLines(text, Math.Max(0, width), page);
+                    (BrokenText broken, TextStyle font) = CellLines(text, Math.Max(0, width), page);
+                    IReadOnlyList<string> lines = broken.Lines;
 
                     // A cell whose lines all went down on an earlier page has nothing
                     // left to draw - but it is still one of this row's cells, and a row
@@ -1873,7 +1892,7 @@ namespace Frisket
 
                     PlaceLines(text, page, box.Left + text.Style.Margin.Left, cellTop,
                                box.Right - text.Style.Margin.Right, cellTop + part,
-                               font, lines, skip, count, Math.Max(0, width));
+                               font, broken, skip, count, Math.Max(0, width));
                     continue;
                 }
 
@@ -2172,12 +2191,53 @@ namespace Frisket
         /// {Pages} token can be rewritten once the page count is known.
         /// </summary>
         private void PlaceLines(TextItem text, Page page, double left, double top, double right, double bottom,
-                                TextStyle font, IReadOnlyList<string> lines, int first, int count, double width)
+                                TextStyle font, BrokenText broken, int first, int count, double width)
         {
-            PlacedItem placed = Place(text, page, left, top, right, bottom, Join(lines, first, count), font);
+            PlacedItem placed = Place(text, page, left, top, right, bottom, Join(broken.Lines, first, count), font);
             placed.LineStart = first;
             placed.LineCount = count;
             placed.MeasureWidth = width;
+            placed.ParagraphEnds = broken.Slice(first, count);
+        }
+
+        /// <summary>
+        /// A text broken into the lines it is drawn as, each said to end a paragraph or not.
+        /// </summary>
+        private readonly record struct BrokenText(IReadOnlyList<string> Lines, bool[] Ends)
+        {
+            /// <summary>
+            /// The ends of the lines a fragment carries. Its last is whatever it is in the
+            /// whole text: a paragraph cut by the foot of a page goes on overleaf, so the
+            /// line above the cut is a wrapped one and is justified like any other.
+            /// </summary>
+            public bool[] Slice(int first, int count)
+                => Ends.Skip(first).Take(Math.Max(0, count)).ToArray();
+        }
+
+        /// <summary>
+        /// Breaks a text paragraph by paragraph, so its lines come back knowing which of them
+        /// end one. The measurer splits on the author's breaks and wraps each piece in turn,
+        /// so the lines are the ones it always gave; but joined for drawing, a wrapped line
+        /// and a typed one are both a newline, and justification has to tell them apart. It
+        /// could not until 4 November 2026: every line the author ended was stretched, and the
+        /// last line of every page a paragraph crossed was left ragged.
+        /// </summary>
+        private BrokenText BreakText(string? text, TextStyle font, double width)
+        {
+            var lines = new List<string>();
+            var ends = new List<bool>();
+
+            foreach (string paragraph in (text ?? string.Empty).Split('\n'))
+            {
+                IReadOnlyList<string> broken = _measurer.BreakLines(paragraph, font, width);
+                for (int i = 0; i < broken.Count; i++)
+                {
+                    lines.Add(broken[i]);
+                    ends.Add(i == broken.Count - 1);
+                }
+            }
+
+            return new BrokenText(lines, ends.ToArray());
         }
 
         // ------------------------------------------------------------------
@@ -2195,9 +2255,22 @@ namespace Frisket
             if (item.Style.Visibility == Visibility.Gone)
                 return false;
 
-            Rect frame = ComputeFrame(item, available, page, out TextStyle? font, out string? fragment);
+            Rect frame = ComputeFrame(item, available, page, out TextStyle? font, out string? fragment,
+                                      out var wrapped);
             SetFrame(item, frame);
-            page.Place(item, frame, fragment, font);
+            PlacedItem placed = page.Place(item, frame, fragment, font);
+
+            // Remembered as a flowed text's lines are: which of them end a paragraph, for
+            // justification, and where they were broken, so the pass that fills in {Pages}
+            // breaks them again rather than drawing the text as it was before it was wrapped.
+            if (wrapped is { } broken)
+            {
+                placed.ParagraphEnds = broken.Text.Ends;
+                placed.LineStart = 0;
+                placed.LineCount = broken.Text.Lines.Count;
+                placed.MeasureWidth = broken.Width;
+            }
+
             NoteOutline(item, page, frame);
 
             if (item is TableItem fixedTable)
@@ -2380,10 +2453,12 @@ namespace Frisket
         }
 
         private Rect ComputeFrame(BaseItem item, Rect available, Page page,
-                                  out TextStyle? resolvedFont, out string? resolvedText)
+                                  out TextStyle? resolvedFont, out string? resolvedText,
+                                  out (BrokenText Text, double Width)? wrapped)
         {
             resolvedFont = null;
             resolvedText = null;
+            wrapped = null;
             FrameDimension loc = item.Style.Location4Calc;
 
             // Margin sits outside the frame: it shrinks what the item may occupy. The
@@ -2565,8 +2640,11 @@ namespace Frisket
             {
                 double content = right - left - padding.Left - padding.Right;
                 if (!double.IsNaN(content) && content > 0)
-                    resolvedText = string.Join("\n",
-                        _measurer.BreakLines(resolvedText, resolvedFont!, content));
+                {
+                    BrokenText broken = BreakText(resolvedText, resolvedFont!, content);
+                    resolvedText = string.Join("\n", broken.Lines);
+                    wrapped = (broken, content);
+                }
             }
 
             return new Rect(left, top, right, bottom);
@@ -2660,13 +2738,21 @@ namespace Frisket
 
                     if (placed.LineCount < 0 || placed.Font == null)
                     {
+                        // Never broken by the layout, so every newline in it is the author's.
                         placed.Fragment = full;
+                        placed.ParagraphEnds = null;
                         continue;
                     }
 
-                    IReadOnlyList<string> lines = _measurer.BreakLines(full, placed.Font, placed.MeasureWidth);
-                    int available = Math.Max(0, lines.Count - placed.LineStart);
-                    placed.Fragment = Join(lines, placed.LineStart, Math.Min(placed.LineCount, available));
+                    BrokenText broken = BreakText(full, placed.Font, placed.MeasureWidth);
+                    int available = Math.Max(0, broken.Lines.Count - placed.LineStart);
+                    int count = Math.Min(placed.LineCount, available);
+                    placed.Fragment = Join(broken.Lines, placed.LineStart, count);
+                    // The same ends the first pass found, as long as the placeholder held the
+                    // total's digits - which it always does, so nothing can make this line
+                    // fail. Kept because a fragment and its ends come from one break or they
+                    // can drift apart.
+                    placed.ParagraphEnds = broken.Slice(placed.LineStart, count);
                 }
             }
         }

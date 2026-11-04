@@ -1359,6 +1359,18 @@ function breakLines(text, font, report, width) {
   return out;
 }
 
+/// The same lines, each said to end a paragraph or not, as the engine's layout says them:
+/// a justified text stretches only the lines that were wrapped, never one the author ended
+/// or the last of the text.
+function breakParagraphs(text, font, report, width) {
+  const lines = [], ends = [];
+  for (const para of String(text ?? "").split("\n")) {
+    const broken = breakLines(para, font, report, width);
+    broken.forEach((line, i) => { lines.push(line); ends.push(i === broken.length - 1); });
+  }
+  return { lines, ends };
+}
+
 /// What the data pane holds, parsed once per refresh. Null when it is empty or
 /// not yet valid JSON - which it will not be, half the time somebody is typing.
 let bound = null;
@@ -2343,7 +2355,9 @@ function breakAdvancedRuns(item, width, report) {
   let current = [];
   let currentWidth = 0;
 
-  const closeLine = () => {
+  // `endsParagraph` as the engine's AdvancedLine has it: a break the author typed, or the end
+  // of the text, as against where the line was wrapped.
+  const closeLine = (endsParagraph = false) => {
     mergeAdvancedPieces(current, report);
     let tallestLine = 0, tallestCap = 0, lineWidth = 0;
     for (const piece of current) {
@@ -2352,7 +2366,7 @@ function breakAdvancedRuns(item, width, report) {
       lineWidth += piece.width;
     }
     lines.push({ pieces: current, height: tallestLine,
-                baselineOffset: (tallestLine + tallestCap) / 2, width: lineWidth });
+                baselineOffset: (tallestLine + tallestCap) / 2, width: lineWidth, endsParagraph });
     current = [];
     currentWidth = 0;
   };
@@ -2371,7 +2385,7 @@ function breakAdvancedRuns(item, width, report) {
     const paragraphs = resolved.split("\n");
 
     for (let p = 0; p < paragraphs.length; p++) {
-      if (p > 0) closeLine();   // a hard break always starts a fresh line
+      if (p > 0) closeLine(true);   // a hard break starts a fresh line, and ends a paragraph
 
       const paragraph = paragraphs[p];
       let start = 0;
@@ -2399,12 +2413,13 @@ function breakAdvancedRuns(item, width, report) {
     }
   }
 
-  closeLine();
+  closeLine(true);
 
   if (!lines.length || (lines.length === 1 && lines[0].pieces.length === 0)) {
     const font = fontOf(item.Font, report);
     const lh = lineHeight(font, report);
-    return [{ pieces: [], height: lh, baselineOffset: (lh + emMm(font, report) * CAP_RATIO) / 2, width: 0 }];
+    return [{ pieces: [], height: lh, baselineOffset: (lh + emMm(font, report) * CAP_RATIO) / 2, width: 0,
+              endsParagraph: true }];
   }
 
   return lines;
@@ -2422,23 +2437,34 @@ function advancedText(item, frame, placed, report) {
 
   let cursor = inner.top;
   for (const line of lines) {
-    const startX = (item.Font.HorizontalAlignment || "Left") === "Center"
+    const alignment = item.Font.HorizontalAlignment || "Left";
+    const startX = alignment === "Center"
       ? inner.left + Math.max(0, (inner.right - inner.left - line.width) / 2)
-      : (item.Font.HorizontalAlignment || "Left") === "Right"
+      : alignment === "Right"
       ? inner.right - line.width
       : inner.left;
 
     const baselineY = cursor + line.baselineOffset;
     let x = startX;
 
+    // Justified as the engine's PlaceAdvancedLines justifies: what each space grows by,
+    // counted over the whole line, and never on a line that ends a paragraph. Drawn
+    // left-aligned here, under a note saying Justify did nothing, for three months after
+    // the engine learnt to do it (5 August - 4 November 2026).
+    const pad = alignment === "Justify" && !line.endsParagraph && width > 0
+      ? spacePadOf(line, width) : 0;
+
     for (const piece of line.pieces) {
       const lh = lineHeight(piece.font, report);
       const pieceFirst = (lh + emMm(piece.font, report) * CAP_RATIO) / 2;
       const pieceTop = baselineY - pieceFirst;
-      const pieceFrame = rect(x, pieceTop, x + piece.width, pieceTop + lh);
-      placed.push({ item: { $type: "TextItem", Text: piece.text, Font: piece.font,
-                            Style: { Padding: edges(), Visibility: "Visible" } },
-                    frame: pieceFrame });
+
+      if (pad > 0 && piece.text.includes(" ")) {
+        x = placeJustifiedPiece(piece, x, pieceTop, lh, pad, placed, report);
+        continue;
+      }
+
+      placed.push(drawnPiece(piece.text, piece.font, rect(x, pieceTop, x + piece.width, pieceTop + lh)));
       x += piece.width;
     }
 
@@ -2446,6 +2472,47 @@ function advancedText(item, frame, placed, report) {
   }
 
   frame.bottom = Math.max(frame.bottom, cursor + item.Style.Padding.Bottom);
+}
+
+/// One drawn piece of a rich text, as a plain text the renderer already knows how to draw.
+function drawnPiece(text, font, frame) {
+  return { item: { $type: "TextItem", Text: text, Font: font,
+                   Style: { Padding: edges(), Visibility: "Visible" } },
+           frame };
+}
+
+/// What each space on a line grows by so it reaches the far margin - the engine's
+/// SpacePadOf. Nothing when the line is already there, or past it: closing its gaps would
+/// only hide a line broken wrongly.
+function spacePadOf(line, available) {
+  const spaces = line.pieces.reduce((n, piece) => n + (piece.text.match(/ /g) || []).length, 0);
+  if (!spaces) return 0;
+  const slack = available - line.width;
+  return slack <= 0 ? 0 : slack / spaces;
+}
+
+/// A justified piece, placed a word at a time - the engine's PlaceJustifiedPiece. The
+/// spaces are not drawn, so widening them is a matter of where the next word goes; a run
+/// of spaces stays a run, each one widened. Answers where the next piece starts.
+function placeJustifiedPiece(piece, x, top, lh, pad, placed, report) {
+  const space = textWidth(" ", piece.font, report);
+  const text = piece.text;
+  let at = 0;
+  while (at < text.length) {
+    const next = text.indexOf(" ", at);
+    const word = next < 0 ? text.slice(at) : text.slice(at, next);
+    if (word.length) {
+      const w = textWidth(word, piece.font, report);
+      placed.push(drawnPiece(word, piece.font, rect(x, top, x + w, top + lh)));
+      x += w;
+    }
+    if (next < 0) break;
+    let run = 0;
+    while (next + run < text.length && text[next + run] === " ") run++;
+    x += run * (space + pad);
+    at = next + run;
+  }
+  return x;
 }
 
 // ---------------------------------------------------------------------------
@@ -2574,7 +2641,6 @@ const STRINGS = {
     "hint.pieceLoading": "Asking the library for {reference}…",
     "hint.pieceMissing": "The library does not know {reference}, so nothing is drawn here. Whatever composes the document will have to.",
     "hint.pieceNoLibrary": "This page has no library to ask, so {reference} is drawn as an empty box. The program that composes the document looks it up.",
-    "hint.advancedJustify": "Justify does nothing on an advanced text - it stretches the gaps of a plain text's one line, and this places each run's own box instead. Drawn left-aligned.",
     "field.value": "Value", "field.kind": "Kind", "field.correction": "Correction",
     "field.showText": "Readable value", "field.quietZone": "Margin (modules)",
     "field.name": "Name", "field.tooltip": "Tooltip", "field.multiline": "Multiline",
@@ -2706,7 +2772,6 @@ const STRINGS = {
     "issue.sound.noPageSize": "This section has no page size, so it is laid out on a sheet of nothing: every column too narrow to divide, one item to a page and the rest thrown away. Give it a page size - 210 by 297 is A4.",
     "issue.sound.emptySubTemplate": "This sub-template names nothing and carries nothing, so nothing will ever be inserted here. Give it a path, a st:// reference, or the other template's own JSON.",
     "issue.sound.emptyAdvancedText": "This advanced text has no runs with anything in them, so nothing will ever be drawn here.",
-    "issue.sound.justifiedBreak": "This text is justified and holds a line break of its own. A break is stretched to the margin like a wrapped line, which is not what it means - put each paragraph in its own text.",
     "issue.sound.nestedSection": "A section cannot sit inside another. Sections are a list on the report, never nested - a page size means nothing inside a page.",
     "issue.sound.headingNumberNoFormat": "This text asks for a heading number, and the report does not say how one is written. Set the numbering format - \"1.1.1\", \"A.a.1\" - or drop the token; until then it stays on the page as it was typed.",
     "issue.sound.headingNumberOutsideHeading": "This is not a heading, so there is no level for the number to be. Give it a heading role, or name the level in the token itself - {HeadingNumber[1]} for the chapter this sits under.",
@@ -2905,7 +2970,6 @@ const STRINGS = {
     "hint.pieceLoading": "Demande de {reference} à la bibliothèque…",
     "hint.pieceMissing": "La bibliothèque ne connaît pas {reference}, donc rien n'est dessiné ici. Ce qui compose le document devra le connaître.",
     "hint.pieceNoLibrary": "Cette page n'a pas de bibliothèque à interroger, donc {reference} s'affiche en cadre vide. Le programme qui compose le document va le chercher.",
-    "hint.advancedJustify": "Justifié ne fait rien sur un texte avancé - cela étire les espaces de l'unique ligne d'un texte simple, alors qu'ici chaque segment place sa propre boîte. Dessiné aligné à gauche.",
     "field.value": "Valeur", "field.kind": "Type", "field.correction": "Correction",
     "field.showText": "Valeur lisible", "field.quietZone": "Marge (modules)",
     "field.name": "Nom", "field.tooltip": "Info-bulle", "field.multiline": "Multiligne",
@@ -3124,7 +3188,6 @@ const STRINGS = {
     "issue.sound.noPageSize": "Cette section n'a pas de format de page : elle est mise en page sur une feuille de rien, chaque colonne trop étroite pour être divisée, un élément par page et le reste perdu. Lui donner un format - 210 par 297 pour l'A4.",
     "issue.sound.emptySubTemplate": "Ce sous-gabarit ne nomme rien et ne porte rien, donc rien n'y sera jamais inséré. Lui donner un chemin, une référence st:// ou le JSON de l'autre gabarit.",
     "issue.sound.emptyAdvancedText": "Ce texte avancé n'a aucun segment avec quelque chose dedans, donc rien n'y sera jamais dessiné.",
-    "issue.sound.justifiedBreak": "Ce texte est justifié et contient un saut de ligne. Un saut est étiré jusqu'à la marge comme une ligne repliée, ce qui n'est pas son sens - mettre chaque paragraphe dans son propre texte.",
     "issue.sound.nestedSection": "Une section ne peut pas se trouver dans une autre. Les sections sont une liste sur le rapport, jamais imbriquées - un format de page ne veut rien dire à l'intérieur d'une page.",
     "issue.sound.headingNumberNoFormat": "Ce texte demande un numéro de titre, et le rapport ne dit pas comment on l'écrit. Régler le format de numérotation - \"1.1.1\", \"A.a.1\" - ou retirer le jeton ; en attendant il reste sur la page tel qu'il a été tapé.",
     "issue.sound.headingNumberOutsideHeading": "Ce n'est pas un titre, donc le numéro n'a aucun niveau où se placer. Lui donner un rôle de titre, ou nommer le niveau dans le jeton lui-même - {HeadingNumber[1]} pour le chapitre auquel il appartient.",
@@ -3571,7 +3634,7 @@ function decoration(font) {
 function text(item, r, report) {
   const font = fontOf(item.Font, report);
   const resolved = tokens(item.Text, report, 1, 1, item);
-  const lines = breakLines(resolved, font, report, r.width);
+  const { lines, ends } = breakParagraphs(resolved, font, report, r.width);
   const lh = lineHeight(font, report);
   // Same rule as the engine: the cap is centred in its line.
   const cap = emMm(font, report) * CAP_RATIO;
@@ -3586,7 +3649,7 @@ function text(item, r, report) {
     `<text x="${n3(x)}" y="${n3(r.top + offset + first + i * lh)}" font-family="${esc(font.Family || unnamedFace)}"` +
     ` font-size="${n3(emMm(font, report))}" fill="${hex(font.Color)}"` +
     (anchor !== "start" ? ` text-anchor="${anchor}"` : "") +
-    justify(line, font, report, r.width, i === lines.length - 1) +
+    justify(line, font, report, r.width, ends[i]) +
     (font.Bold ? ` font-weight="bold"` : "") + (font.Italic ? ` font-style="italic"` : "") +
     decoration(font) +
     `>${esc(line)}</text>`).join("\n");
@@ -3595,11 +3658,11 @@ function text(item, r, report) {
 /// What to add to each space so the line reaches the far margin, as an attribute.
 ///
 /// The engine works out the same number and both widen every space by it - the PDF
-/// by moving the gaps between words, this by naming a word spacing. The last line of
-/// a block is never stretched: a closing line pulled out to the margin is what tells
-/// a reader nothing follows.
-function justify(line, font, report, width, isLast) {
-  if (font.HorizontalAlignment !== "Justify" || isLast) return "";
+/// by moving the gaps between words, this by naming a word spacing. A line that ends a
+/// paragraph is never stretched: a closing line pulled out to the margin is what tells
+/// a reader the paragraph is over - every paragraph's, and not only the text's last.
+function justify(line, font, report, width, endsParagraph) {
+  if (font.HorizontalAlignment !== "Justify" || endsParagraph) return "";
 
   const spaces = (line.match(/ /g) || []).length;
   if (!spaces) return "";
@@ -5382,11 +5445,9 @@ function walkFor(container, where, profile, add, numbering) {
           && (child.Layout !== "Stack" || child.$type === "TableItem" || child.$type === "ImageGridItem"))
         add("sound.columnsIgnored", "warning", child, here);
 
-      // A hard break inside justified text is stretched like a wrapped line, which
-      // is not what a break means. One paragraph per text item.
-      if (child.$type === "TextItem" && (child.Font || {}).HorizontalAlignment === "Justify"
-          && (child.Text || "").includes("\n"))
-        add("sound.justifiedBreak", "warning", child, here);
+      // sound.justifiedBreak went on 4 November 2026, from the engine and from here: a line
+      // that ends a paragraph is no longer stretched, so a break in justified text is
+      // nothing to warn about.
 
       // A heading number asked for and not answerable. All three leave the token
       // visible on the page rather than resolving to something wrong, which is loud -

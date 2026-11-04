@@ -255,14 +255,6 @@
             },
             {
               "$type": "TextItem",
-              "Text": "First paragraph.\nSecond one.",
-              "Font": {
-                "HorizontalAlignment": "Justify"
-              },
-              "Style": {}
-            },
-            {
-              "$type": "TextItem",
               "Text": "Sign here",
               "Font": {},
               "Role": "Form",

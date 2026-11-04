@@ -52,6 +52,15 @@ namespace Frisket
         internal double MeasureWidth = double.NaN;
 
         /// <summary>
+        /// For text the layout broke into lines, one entry per line of <see cref="Fragment"/>:
+        /// whether that line ends a paragraph - a break the author typed, or the end of the
+        /// text - rather than being where the layout wrapped. Justified text stretches only
+        /// the second kind. Null when the layout broke nothing, so that every newline in the
+        /// fragment is the author's.
+        /// </summary>
+        public IReadOnlyList<bool>? ParagraphEnds { get; internal set; }
+
+        /// <summary>
         /// Column boundaries, set on a placed table row so the renderer can stroke a grid
         /// spanning the full row height - the cells themselves are inset by the padding.
         /// </summary>

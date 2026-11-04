@@ -1320,6 +1320,13 @@ does not - the harnesses had run them strict all along, behind the core's direct
 a browser ran three of the four sloppy. A browser test loads the file alone into a page
 that declares its own `t` and `esc`, and asks that nothing else is fetched.
 
+**The parts loaded one by one still share the page's names, and the first new one hit.**
+The same evening the core gained a function `pieceOf`, which the demonstration host page
+already declared as a `const`: the browser refused the page's script, and both designers on
+it came up blank. 366 harness checks were green, because no harness ran a host page's own
+script; only a browser test saw it. The harness now declares the parts and every page's
+inline scripts in one context, as a browser does, and refuses a name declared twice.
+
 ## 5c-bis. The face was narrower than the engine, twice
 
 Two refusals that looked alike, and were the same: the flow editor forbade what the
@@ -2317,10 +2324,31 @@ unavoidable:
 Test 46 sets the two against each other in millimetres, to within 0.002. It is the only
 check that catches "one stretches, the other does not".
 
-The last line of a block is never stretched: it is what tells the reader the paragraph
-is finished. A **hard** line break inside justified text is stretched like a wrapped
-line, though — the validator flags it (`sound.justifiedBreak`), for want of being able
-to tell the two apart once the lines are assembled.
+A line that ends a paragraph is never stretched: it is what tells the reader the
+paragraph is finished. **That is every paragraph's last line, not the text's**, and for
+three months it was the text's. The backends split the text they are handed on newlines,
+and by then a line the layout wrapped and one the author ended are the same character, so
+they stretched every line but the last. Three faults came of that one cause, measured on 4
+November 2026:
+
+- a line the author ended was stretched across the page - "Short first line." pulled to
+  170 mm - and `sound.justifiedBreak` said so, of a plain text only;
+- a rich text did it too, with no rule to say so. That is everything the content editor
+  writes, where Enter goes to a new line - and the editor's own sheet, being CSS, never
+  stretched such a line, so the screen and the PDF disagreed;
+- the last line a page held of a paragraph that went on overleaf was left ragged, being
+  the last of its fragment, in every long justified document.
+
+The layout knows which is which, so it says so: `PlacedItem.ParagraphEnds`, one flag per
+line of the fragment, and `IReportBackend.DrawText` with the flags beside the text. Its
+default draws as the old call did, so a surface written elsewhere is unchanged. The rule
+went from both validators, as `sound.advancedTextJustify` had: one that no longer
+describes the engine teaches people to ignore the panel. And the designer's echo had not
+justified a rich text at all, under a note in its panel saying Justify did nothing on one -
+three months after the engine learnt to (§15). It does now, word by word as the engine
+does, and the note is gone. Test 74 asserted the old behaviour until the same day, to keep
+the rule honest; it asks for the new one now, plain and rich, across a typed break, across
+a page, at coordinates and in a cell.
 
 ## 10b. `KeepTogether` was read in two paths out of five
 

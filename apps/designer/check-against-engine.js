@@ -1004,6 +1004,75 @@ if (coreParts.length) {
           titledEn !== titledFr && ![titledEn, titledFr].some(s => !s || s.startsWith('report.')),
           `en "${titledEn}", fr "${titledFr}"`);
 
+    // Justified text and the paragraphs in it (4 November 2026). A line that ends one - a
+    // break the author typed, or the end of the text - is never stretched; a line the
+    // layout wrapped is. The engine stretched every line the author ended, and this echo,
+    // which drew a rich text left-aligned under a note saying Justify did nothing, three
+    // months after the engine learnt it. Asked of the echo's own geometry, since this ruler
+    // is not the engine's fonts: which lines reach the margin, not where the words fall.
+    {
+      const long = 'mot '.repeat(70).trim();
+      const words = `Deux mots\n${long}\nEncore deux\n${long}\nLe dernier`;
+      const shortLines = ['Deux mots', 'Encore deux', 'Le dernier'];
+      const holding = item => {
+        const report = held.blankReport();
+        report.Sections[0].Childs.find(c => c.$type === 'Body').Childs.push(item);
+        return report;
+      };
+
+      // Rich: every word is a piece of its own once a line is justified, so a line's right
+      // edge is where its last piece ends.
+      const rich = holding({ $type: 'AdvancedTextItem', Font: { HorizontalAlignment: 'Justify' },
+                             Runs: [{ Text: words }] });
+      const vocabulary = new Set(words.split(/\s+/));
+      const rows = new Map();
+      const laidRich = held.layout(rich, 0).placed;
+      // The margin is the column's edge, taken from the text's own frame. Taken from the
+      // longest line, it was whatever the wrapped lines reached - and every wrapped line of
+      // this sample is the same words, so with justification taken out they all reached it
+      // left-aligned and the check passed.
+      const owner = laidRich.find(p => p.item.$type === 'AdvancedTextItem');
+      const padRight = ((owner && owner.item.Style && owner.item.Style.Padding) || {}).Right || 0;
+      const margin = owner ? owner.frame.right - padRight : NaN;
+      for (const p of laidRich) {
+        if (p.item.$type !== 'TextItem' || !(p.item.Text || '').trim()) continue;
+        if (!p.item.Text.trim().split(/\s+/).every(w => vocabulary.has(w))) continue;
+        const key = Math.round(p.frame.top * 100);
+        const row = rows.get(key) || { text: [], right: -Infinity };
+        row.text.push(p.item.Text.trim());
+        row.right = Math.max(row.right, p.frame.right);
+        rows.set(key, row);
+      }
+      const lines = [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, r]) => r);
+      const isShort = l => shortLines.includes(l.text.join(' '));
+      // Inside a long paragraph: every line of it but its last, which ends it.
+      const inside = lines.filter((l, i) => !isShort(l) && i + 1 < lines.length && !isShort(lines[i + 1]));
+      const ended = lines.filter(isShort);
+
+      check('a justified rich text stretches the lines it wrapped to the margin',
+            Number.isFinite(margin) && inside.length >= 2 && inside.every(l => Math.abs(l.right - margin) < 0.01),
+            `${inside.length} wrapped, right edges ${inside.map(l => l.right.toFixed(2)).join(', ')} against ${margin.toFixed(2)}`);
+      check('and leaves every line the author ended where it ends',
+            ended.length === 3 && ended.every(l => l.right < margin - 1),
+            ended.map(l => `"${l.text.join(' ')}" at ${l.right.toFixed(2)}`).join(', '));
+
+      // Plain: the lines and their word spacing, as the echo's SVG says them.
+      const svg = held.render(holding({ $type: 'TextItem', Text: words,
+                                        Font: { HorizontalAlignment: 'Justify' } }), null, 0);
+      const drawn = [...svg.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)]
+        .map(m => ({ text: m[2].trim(), spaced: /word-spacing="/.test(m[1]) }))
+        .filter(l => l.text && l.text.split(/\s+/).every(w => vocabulary.has(w)));
+      const plainInside = drawn.filter((l, i) => !shortLines.includes(l.text) && i + 1 < drawn.length
+                                                 && !shortLines.includes(drawn[i + 1].text));
+      const plainEnded = drawn.filter(l => shortLines.includes(l.text));
+      check('a justified plain text widens the spaces of the lines it wrapped',
+            plainInside.length >= 2 && plainInside.every(l => l.spaced),
+            `${plainInside.filter(l => l.spaced).length} of ${plainInside.length} wrapped lines spaced`);
+      check('and of no line the author ended',
+            plainEnded.length === 3 && plainEnded.every(l => !l.spaced),
+            plainEnded.map(l => `"${l.text}" ${l.spaced ? 'spaced' : 'left alone'}`).join(', '));
+    }
+
     // Where a line may break, asked of the engine's own list rather than a copy of it:
     // each space LineBreaks.Glue names must hold an amount together in both of the
     // echo's breakers. The plain space has to break inside the same amount at the same
@@ -2411,6 +2480,41 @@ setTimeout(() => {
           `${sent.length - count} request(s), control ${sandbox.ui.live.hidden ? 'hidden' : 'shown'}`);
 
     global.alert = quiet;
+  }
+
+  // --- a page's own names, and the parts' -------------------------------------------
+  // The parts are classic scripts, so every name they declare at the top level - some two
+  // hundred - is a global of the page that loads them, and a page declaring one of them as
+  // a const or a let does not run: the browser refuses the second declaration before a line
+  // of that script executes. The first new name the core took after this was written down
+  // (4 November 2026), `pieceOf`, was one the demonstration host page already had - both
+  // designers on it came up blank, and only a browser test saw it. Asked here of every page
+  // beside the parts, found rather than named, by declaring both in one context the way a
+  // browser does; what fails for want of a document is not a clash and is let go.
+  {
+    const vmod = require('vm');
+    const clashes = [];
+    let pages = 0;
+    for (const name of fs.readdirSync(PARTS).filter(f => f.endsWith('.html'))) {
+      const html = readText(path.join(PARTS, name));
+      const linked = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]);
+      const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+      if (!linked.length || !inline.length) continue;
+      pages++;
+
+      const context = vmod.createContext({});
+      for (const source of [...linked.map(src => readText(path.join(PARTS, src))), ...inline]) {
+        try {
+          vmod.runInContext(source, context, { timeout: 2000 });
+        } catch (e) {
+          if (e && e.name === 'SyntaxError' && /already been declared/.test(e.message))
+            clashes.push(`${name}: ${e.message}`);
+        }
+      }
+    }
+    check('no page declares a name the parts it loads already declare',
+          pages > 0 && clashes.length === 0,
+          clashes.join(' | ') || `${pages} page(s) with scripts of their own`);
   }
 
   console.log(failures ? `\n${checked} checks, ${failures} FAILED`

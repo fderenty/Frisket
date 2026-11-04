@@ -205,6 +205,9 @@ namespace Frisket
         }
 
         public void DrawText(Rect frame, string text, TextStyle style)
+            => DrawText(frame, text, style, Justification.LastOnly(text));
+
+        public void DrawText(Rect frame, string text, TextStyle style, IReadOnlyList<bool> endsParagraph)
         {
             if (string.IsNullOrEmpty(text))
                 return;
@@ -254,7 +257,7 @@ namespace Frisket
                 // two files describing one document.
                 double padding = Justification.SpacePadding(lines[i],
                     Measurer.Measure(lines[i], style, double.PositiveInfinity).Width,
-                    frame.Width, i == lines.Length - 1, style);
+                    frame.Width, Justification.Ends(endsParagraph, i), style);
 
                 if (padding > 0)
                     _current.Append(" word-spacing=\"").Append(N(padding)).Append('"');

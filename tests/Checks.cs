@@ -104,18 +104,10 @@ namespace test
             looseRich.Runs.Add(new TextRun { Text = "{HeadingNumber} below" });
             report.Body!.Add(looseRich);
 
-            // Justified text carrying a hard break of its own. The break is stretched to
-            // the margin like a wrapped line, which is not what a break means - and the
-            // engine cannot tell the two apart once the lines are assembled, which is why
-            // this is a rule rather than a fix.
-            //
-            // It is here because the rule had no assertion anywhere: it lived in both
-            // validators and in both languages, and no fixture ever built the shape, so
-            // nothing could have noticed it going wrong. The same gap sound.nestedSection
-            // sat in for eight months, twenty lines above.
-            var broken = new TextItem { Text = "First paragraph.\nSecond one." };
-            broken.Font.HorizontalAlignment = HorizontalAlignment.Justify;
-            report.Body!.Add(broken);
+            // Justified text carrying a hard break of its own was here, for
+            // sound.justifiedBreak: the engine stretched the line before the break like a
+            // wrapped one. It went on 4 November 2026 with the rule, once the layout could
+            // say which lines end a paragraph - Test 74 asks the engine instead.
 
             // A role naming a control, on a paragraph. An authored role is taken before
             // anything else is asked, so it walks straight past the guard PdfRoles.Resolve
@@ -189,8 +181,6 @@ namespace test
             AssertEqual(testName, "a table whose rows disagree", true, Has("sound.raggedTable"), 0);
             AssertEqual(testName, "a table with no heading row", true, Has("ua.tableHeader"), 0);
             AssertEqual(testName, "columns that will do nothing", true, Has("sound.columnsIgnored"), 0);
-            AssertEqual(testName, "a hard break inside justified text",
-                true, Has("sound.justifiedBreak"), 0);
             AssertEqual(testName, "an image with nothing to draw", true, Has("sound.emptyImage"), 0);
             AssertEqual(testName, "a grid asking for fewer than one column", true, Has("sound.emptyImageGrid"), 0);
             AssertEqual(testName, "a sub-template naming no file", true, Has("sound.emptySubTemplate"), 0);
@@ -362,19 +352,11 @@ namespace test
             run.Style.PageBreak = PageBreak.None;
             letter.Style.PageBreak = PageBreak.Before;
 
-            // One paragraph per text, which is what the rule asks for. Mended in place
-            // rather than by dropping the item, so the shape that fired it is still in
-            // the fixture and the silence below is about the rule and not about an
-            // absence - section 5, and section 8f for why it has to fall silent at all.
             // Mended in place like every other fault here: the paragraph stays, and only
             // the role it could never carry goes. Deleting the item would leave the rule
-            // silent about an absence rather than about a fault put right.
+            // silent about an absence rather than about a fault put right - section 5, and
+            // section 8f for why it has to fall silent at all.
             notAControl.Role = PdfRole.Auto;
-
-            broken.Text = "First paragraph.";
-            var secondParagraph = new TextItem { Text = "Second one." };
-            secondParagraph.Font.HorizontalAlignment = HorizontalAlignment.Justify;
-            report.Body!.Add(secondParagraph);
 
             var inARow = new ContainerItem { Layout = LayoutMode.Absolute };
             var rowLeft = new TextItem { Text = "left column" };

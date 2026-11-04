@@ -819,6 +819,9 @@ namespace Frisket
         }
 
         public void DrawText(Rect frame, string text, TextStyle style)
+            => DrawText(frame, text, style, Justification.LastOnly(text));
+
+        public void DrawText(Rect frame, string text, TextStyle style, IReadOnlyList<bool> endsParagraph)
         {
             if (string.IsNullOrEmpty(text))
                 return;
@@ -863,7 +866,7 @@ namespace Frisket
                         .Append(PdfWriter.N(baseline)).Append(" Tm\n");
 
                 double padding = Justification.SpacePadding(lines[i], width, frame.Width,
-                                                            i == lines.Length - 1, style);
+                                                            Justification.Ends(endsParagraph, i), style);
 
                 if (padding > 0)
                 {

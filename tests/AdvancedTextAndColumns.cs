@@ -563,21 +563,23 @@ namespace test
         }
 
         /// <summary>
-        /// The line before a hard break really is stretched, which is what makes
-        /// <c>sound.justifiedBreak</c> a rule worth having rather than one that accuses a
-        /// template that is right.
+        /// A line the author ended is not stretched, in a plain text or a rich one; a line the
+        /// layout wrapped is, including the last one a page holds of a paragraph that goes on.
         ///
-        /// Section 8f is why this exists: a rule that no longer describes the engine
-        /// teaches people to ignore the panel, and the only way to know it still
-        /// describes it is to measure what the engine does. The rule had no assertion of
-        /// any kind until 25 August 2026 - it lived in both validators, in both
-        /// languages, and nothing anywhere built the shape it fires on.
+        /// This test asserted the opposite until 4 November 2026 - "the line before a hard
+        /// break really is stretched" - to keep <c>sound.justifiedBreak</c> honest, since the
+        /// engine could not tell a typed break from a wrapped one once the lines were joined.
+        /// Rich text, which is everything the content editor writes and where Enter goes to a
+        /// new line, did the same with no rule to say so; and the last line on a page of a
+        /// plain paragraph crossing it was left ragged, being the last of its fragment. The
+        /// layout now says which lines end a paragraph, the rule went, and this asks what it
+        /// used to excuse.
         /// </summary>
         [Fact]
-        public void Test74_AHardBreakIsStretchedLikeAWrappedLine()
+        public void Test74_ALineTheAuthorEndedIsNotStretched()
         {
             const string testName = "Test 74";
-            Console.WriteLine("Test 74: a hard break in justified text is stretched like a wrapped line");
+            Console.WriteLine("Test 74: a line the author ended is not stretched, and a wrapped one is");
             Console.WriteLine();
 
             var library = new FontLibrary();
@@ -597,16 +599,11 @@ namespace test
                         : 0)
                     .ToList();
 
-            // One short line, then a break, then enough to wrap. The short line is the
-            // one the rule is about: broken by hand it is the middle of a paragraph as
-            // far as the engine can tell, so it is stretched to the margin; put in a
-            // text of its own - which is exactly what the message recommends - it is a
-            // last line and is left alone.
             const string opening = "Short first line.";
             const string rest = "The supplier undertakes to deliver every part listed above "
                               + "and to invoice them monthly without further notice.";
 
-            List<double> Spacings(HorizontalAlignment how, params string[] texts)
+            Report Page(params BaseItem[] items)
             {
                 var report = new Report
                 {
@@ -615,49 +612,131 @@ namespace test
                     Body = new() { Layout = LayoutMode.Stack }
                 };
                 report.Section.Style.Padding = new() { Left = 20, Top = 20, Right = 20, Bottom = 20 };
-
-                foreach (string text in texts)
-                {
-                    var item = new TextItem { Text = text, Font = new() { Size = 3 } };
-                    item.Font.HorizontalAlignment = how;
+                foreach (BaseItem item in items)
                     report.Body!.Add(item);
-                }
                 report.Reattach();
-
-                var svg = new SvgBackend(measurer) { EmbeddedFonts = library };
-                ReportRenderer.Render(report, svg);
-
-                return Drawn(svg.Pages[0]);
+                return report;
             }
 
-            var broken = Spacings(HorizontalAlignment.Justify, opening + "\n" + rest);
-            var apart = Spacings(HorizontalAlignment.Justify, opening, rest);
-            var plain = Spacings(HorizontalAlignment.Left, opening + "\n" + rest);
+            TextItem Plain(HorizontalAlignment how, string text)
+            {
+                var item = new TextItem { Text = text, Font = new() { Size = 3 } };
+                item.Font.HorizontalAlignment = how;
+                return item;
+            }
+
+            List<string> Pages(Report report)
+            {
+                var svg = new SvgBackend(measurer) { EmbeddedFonts = library };
+                ReportRenderer.Render(report, svg);
+                return svg.Pages.ToList();
+            }
+
+            // --- plain: a typed break is two paragraphs --------------------------------
+            var broken = Drawn(Pages(Page(Plain(HorizontalAlignment.Justify, opening + "\n" + rest)))[0]);
+            var apart = Drawn(Pages(Page(Plain(HorizontalAlignment.Justify, opening),
+                                         Plain(HorizontalAlignment.Justify, rest)))[0]);
+            var left = Drawn(Pages(Page(Plain(HorizontalAlignment.Left, opening + "\n" + rest)))[0]);
 
             Console.WriteLine($"    coupe a la main {string.Join(", ", broken.Select(v => $"{v:0.00}"))}");
             Console.WriteLine($"    deux textes     {string.Join(", ", apart.Select(v => $"{v:0.00}"))}");
-            Console.WriteLine($"    aligne a gauche {string.Join(", ", plain.Select(v => $"{v:0.00}"))}");
 
-            // The control first, and it is not a formality: without it every assertion
-            // below could hold because nothing is stretched anywhere, and the check
-            // would be about an absence.
+            // The control, and the matter: left-aligned nothing is stretched, and justified
+            // something is - or every assertion below could hold for want of a stretch.
             AssertEqual(testName, "left-aligned, nothing is stretched at all",
-                true, plain.Count > 1 && plain.All(v => v == 0), 0);
+                true, left.Count > 2 && left.All(v => v == 0), 0);
+            AssertEqual(testName, "justified, the wrapped lines are stretched",
+                true, apart.Skip(1).SkipLast(1).Any() && apart.Skip(1).SkipLast(1).All(v => v > 0), 0);
 
-            // The fault, and it is not subtle: seventeen characters pulled across a
-            // hundred and seventy millimetres.
-            AssertEqual(testName, "the line before a hand-typed break is stretched",
-                true, broken[0] > 10, 0);
+            AssertEqual(testName, "the line before a typed break is left alone", 0.0, broken[0], 0.0001);
+            AssertEqual(testName, "and the text is drawn as two paragraphs would be",
+                string.Join(",", apart.Select(v => v.ToString("0.0000"))),
+                string.Join(",", broken.Select(v => v.ToString("0.0000"))), 0);
 
-            // And the remedy the message names really is one: the same words in a text
-            // of their own are a last line, which is never stretched.
-            AssertEqual(testName, "and in a text of its own it is left alone",
-                0.0, apart[0], 0.0001);
+            // --- plain: a paragraph the foot of a page cuts goes on overleaf -------------
+            // So the last line the first page holds is a wrapped one. It was drawn ragged,
+            // being the last of its fragment, which is all a backend could see.
+            string longer = string.Join(" ", Enumerable.Repeat(rest, 40));
+            List<string> crossing = Pages(Page(Plain(HorizontalAlignment.Justify, longer)));
+            var first = Drawn(crossing[0]);
+            var second = Drawn(crossing[^1]);
+            Console.WriteLine($"    a cheval : {crossing.Count} pages, bas de la premiere {first[^1]:0.00}, "
+                            + $"fin du paragraphe {second[^1]:0.00}");
 
-            // The rest of the document is not disturbed by either arrangement - so the
-            // difference above is about that one line and not about a re-flow.
-            AssertEqual(testName, "with the same number of lines drawn either way",
-                apart.Count, broken.Count, 0);
+            AssertEqual(testName, "the paragraph does cross a page", true, crossing.Count > 1, 0);
+            AssertEqual(testName, "every line on the first page is stretched, the last included",
+                true, first.Count > 1 && first.All(v => v > 0), 0);
+            AssertEqual(testName, "while the paragraph's own last line is not", 0.0, second[^1], 0.0001);
+
+            // --- at coordinates, and in a cell -----------------------------------------
+            // Two more roads to the same lines: a text given a width where it is placed, and a
+            // table cell, are both broken by the arrangement rather than by the flow, and have
+            // to say the same about which lines end a paragraph. The first carries {Pages}, so
+            // the pass that fills the total breaks it again - which drew it as one line, the
+            // text as it was before it was wrapped, until the same day.
+            bool Shaped(List<double> drawn) =>
+                drawn.Count > 2 && drawn[0] == 0 && drawn[^1] == 0
+                && drawn.Skip(1).SkipLast(1).All(v => v > 0);
+
+            var atCoordinates = new ContainerItem { Layout = LayoutMode.Absolute };
+            TextItem placedText = Plain(HorizontalAlignment.Justify, opening + "\n" + rest + " Page {Page} of {Pages}.");
+            placedText.Style.Location.LeftValue = 0;
+            placedText.Style.Location.TopValue = 0;
+            placedText.Style.Location.WidthValue = 120;
+            atCoordinates.Add(placedText);
+            var placedDrawn = Drawn(Pages(Page(atCoordinates))[0]);
+
+            var table = new TableItem();
+            table.Columns.Add(new TableColumn { Width = 120, WidthUnit = Units.Millimeter });
+            var row = new TableRow();
+            row.Add(Plain(HorizontalAlignment.Justify, opening + "\n" + rest));
+            table.Add(row);
+            var cellDrawn = Drawn(Pages(Page(table))[0]);
+
+            Console.WriteLine($"    a des coordonnees {string.Join(", ", placedDrawn.Select(v => $"{v:0.00}"))}");
+            Console.WriteLine($"    dans une cellule  {string.Join(", ", cellDrawn.Select(v => $"{v:0.00}"))}");
+
+            AssertEqual(testName, "at coordinates, wrapped and justified but where the author ended it",
+                true, Shaped(placedDrawn), 0);
+            AssertEqual(testName, "and in a table cell the same", true, Shaped(cellDrawn), 0);
+
+            // --- rich: the same, in the geometry ------------------------------------------
+            // A justified rich line is placed word by word, so a line reaches the margin or it
+            // does not. Read off the layout, where each word is a placed piece of the item.
+            List<(double Top, double Right)> Rows(AdvancedTextItem rich, int page)
+            {
+                LayoutResult laid = Page(rich).Resolve(measurer);
+                return laid.Pages[page].Items
+                    .Where(p => p.Source is TextItem { PieceOf: not null } piece && piece.PieceOf == rich)
+                    .GroupBy(p => Math.Round(p.Frame.Top, 3))
+                    .OrderBy(g => g.Key)
+                    .Select(g => (g.Key, g.Max(p => p.Frame.Right)))
+                    .ToList();
+            }
+
+            AdvancedTextItem Rich(string text)
+            {
+                var item = new AdvancedTextItem();
+                item.Font.HorizontalAlignment = HorizontalAlignment.Justify;
+                item.Runs.Add(new TextRun { Text = text });
+                return item;
+            }
+
+            const double margin = 190;
+            var richRows = Rows(Rich(opening + "\n" + rest), 0);
+            Console.WriteLine($"    riche : {string.Join(", ", richRows.Select(r => $"{r.Right:0.00}"))}");
+
+            AssertEqual(testName, "a rich text has a typed break and wrapped lines to ask about",
+                true, richRows.Count >= 3, 0);
+            AssertEqual(testName, "the rich line before a typed break is left alone",
+                true, richRows[0].Right < margin - 1, 0);
+            AssertEqual(testName, "its wrapped lines reach the margin",
+                true, richRows.Skip(1).SkipLast(1).All(r => Math.Abs(r.Right - margin) < 0.01), 0);
+            AssertEqual(testName, "and its last line does not", true, richRows[^1].Right < margin - 1, 0);
+
+            var richFirstPage = Rows(Rich(longer), 0);
+            AssertEqual(testName, "a rich paragraph the page cuts reaches the margin on its last line there",
+                true, richFirstPage.Count > 1 && Math.Abs(richFirstPage[^1].Right - margin) < 0.01, 0);
 
             Console.WriteLine();
         }
@@ -686,9 +765,11 @@ namespace test
                 };
                 report.Section.Style.Padding = new() { Left = 20, Top = 20, Right = 70, Bottom = 20 };
 
+                // A short paragraph the author ended, then a long one: the two backends have to
+                // agree on which lines end a paragraph as well as on how far the rest stretch.
                 report.Body!.Add(new TextItem
                 {
-                    Text = string.Join(" ", Enumerable.Repeat(
+                    Text = "A short opening paragraph.\n" + string.Join(" ", Enumerable.Repeat(
                         "the supplier carries out the work to the standards of the trade", 6)) + ".",
                     Font = new()
                     {
@@ -723,9 +804,11 @@ namespace test
             AssertEqual(testName, "left alignment stretches nothing", 0,
                 System.Text.RegularExpressions.Regex.Matches(plain.Pages[0], "word-spacing").Count, 0);
 
-            // Every line but the last. A closing line pulled out to the margin is what
-            // tells a reader the paragraph has ended.
-            AssertEqual(testName, "every line but the last is stretched", lines - 1, spacings.Count, 0);
+            // Every line but the two that end a paragraph. A closing line pulled out to the
+            // margin is what tells a reader the paragraph has ended - and a PDF that still
+            // stretched every line but the last would stretch one more than this.
+            AssertEqual(testName, "every line but the two ending a paragraph is stretched",
+                lines - 2, spacings.Count, 0);
             AssertEqual(testName, "and every stretch is a real one", true, spacings.All(v => v > 0), 0);
 
             // The point of justifying: the line reaches the far margin.

@@ -1553,8 +1553,9 @@ function frisketDesigner(seams = {}) {
         p.appendChild(field2(t("field.alignH"), select(["Left", "Center", "Right", "Justify"],
           item.Font.HorizontalAlignment || "Left",
           v => { item.Font.HorizontalAlignment = v; refresh(); }, "HorizontalAlignment")));
-        if (item.Font.HorizontalAlignment === "Justify")
-          p.appendChild(field2("", note(t("hint.advancedJustify"))));
+        // A note said here that Justify did nothing on a rich text and was drawn left-aligned,
+        // for three months after the engine learnt to justify one (5 August 2026) - and the
+        // canvas agreed with the note, not with the PDF. Both justify now (4 November 2026).
 
         const runsHeading = document.createElement("h2");
         runsHeading.textContent = t("field.runs");

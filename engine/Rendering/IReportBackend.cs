@@ -12,6 +12,19 @@ namespace Frisket
         void BeginDocument(Report report);
         void BeginPage(Page page);
         void DrawText(Rect frame, string text, TextStyle style);
+
+        /// <summary>
+        /// Draws text told which of its lines end a paragraph, one entry per line: a break the
+        /// author typed or the end of the text, as against where the layout wrapped. Justified
+        /// text stretches only the second kind, and the text alone cannot say which is which -
+        /// by the time it arrives, both are a newline. A line past the end of the list ends one.
+        ///
+        /// The default draws as <see cref="DrawText(Rect, string, TextStyle)"/> does, which
+        /// stretches every line but the last: what any surface did before the layout said.
+        /// </summary>
+        void DrawText(Rect frame, string text, TextStyle style, IReadOnlyList<bool> endsParagraph)
+            => DrawText(frame, text, style);
+
         void DrawLine(double x1, double y1, double x2, double y2, PenStyle pen);
         void DrawRectangle(Rect frame, PenStyle? pen, BrushStyle? fill);
 

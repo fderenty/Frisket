@@ -40,5 +40,5 @@
   <text x="10" y="183.25" font-family="Elms Sans" font-size="4.286" fill="#000000">sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</text>
   <text x="10" y="189.75" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.148">Paragraph 7. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna</text>
   <text x="10" y="194.25" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.079">aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</text>
-  <text x="10" y="198.75" font-family="Elms Sans" font-size="4.286" fill="#000000">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem</text>
+  <text x="10" y="198.75" font-family="Elms Sans" font-size="4.286" fill="#000000" word-spacing="0.116">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem</text>
 </svg>

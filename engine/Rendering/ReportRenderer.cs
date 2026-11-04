@@ -303,8 +303,15 @@ namespace Frisket
             switch (source)
             {
                 case TextItem text:
-                    backend.DrawText(content, placed.Fragment ?? text.Text, placed.Font ?? text.Font);
+                {
+                    // Told which lines end a paragraph, so a justified text stretches only the
+                    // ones the layout wrapped. A text the layout never broke has nothing but the
+                    // author's breaks in it.
+                    string drawn = placed.Fragment ?? text.Text;
+                    backend.DrawText(content, drawn, placed.Font ?? text.Font,
+                                     placed.ParagraphEnds ?? Justification.Every(drawn));
                     break;
+                }
 
                 case LineItem line:
                     DrawLine(line, content, backend);
