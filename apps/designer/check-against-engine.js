@@ -992,7 +992,17 @@ if (coreParts.length) {
     check('and words its findings in either language',
           flat.length > 0 && !flat[0].message.startsWith('issue.'),
           flat.map(i => i.rule).join(', '));
+
+    // A blank report's title is the one word of the page's own that goes into the
+    // document - its /Title, and {Title} in the header - so it is in the language the
+    // page is read in when the report is made. French whatever the language until
+    // 4 November 2026. Two languages that answer alike, or answer the key, fail.
+    const titledFr = held.blankReport().Title;
     held.setLang('en');
+    const titledEn = held.blankReport().Title;
+    check('a blank report is titled in the language it is made in',
+          titledEn !== titledFr && ![titledEn, titledFr].some(s => !s || s.startsWith('report.')),
+          `en "${titledEn}", fr "${titledFr}"`);
 
     // Where a line may break, asked of the engine's own list rather than a copy of it:
     // each space LineBreaks.Glue names must hold an amount together in both of the
@@ -1219,7 +1229,7 @@ if (styles !== null) {
   // And a name used is a name declared - drawn round the paper family, which is the
   // one where a typo is invisible: a var(--on-paper-...) that resolves to nothing
   // inherits instead, and inheriting on white paper looks very nearly right. The rule
-  // stops at this family on purpose, because --sheet-pad and --sheet-width are set
+  // stops at this family on purpose, because --sheet-pad-* and --sheet-width are set
   // from JS and carry their own fallback: widening it to every custom property would
   // mean exempting those, and an exemption is where the next hole goes.
   const paperDeclared = new Set([...styles.matchAll(/(--on-paper[a-z-]*)\s*:/g)].map(m => m[1]));

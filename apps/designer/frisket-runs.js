@@ -10,6 +10,11 @@
 // promise not to be. It takes its surface as an argument for the same reason: an
 // element found by id belongs to one face, and this belongs to neither.
 
+// Strict, as the core is: the one-file editor in release/ runs every part strict, and
+// so do the harnesses, which read the parts after the core's own directive. A part that
+// was sloppy only on a page would be the one place its faults could hide.
+"use strict";
+
 /// Renders a Runs list as spans (one per run, styled inline) plus bare text nodes
 /// for a run with no override - so a plain read of textContent, run by run, is
 /// already what saving needs.

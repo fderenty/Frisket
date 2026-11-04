@@ -207,8 +207,13 @@ function blankReport() {
 
   doc.Dimension = { Width: 210, Height: 297 };
 
+  // In the language the page is read in, asked at the moment the report is made. The
+  // title is the document's from then on - its /Title, and what {Title} prints in the
+  // header above - so it does not follow a later change of language. It was French
+  // whatever the language until 4 November 2026: the one word of the page's own that
+  // went into the document, and so the one the dictionary never saw.
   return {
-    Title: "Nouveau rapport",
+    Title: t("report.new"),
     RootFontSize: 3,
     Fields: {},
     GeneratedAt: null,
@@ -1824,6 +1829,7 @@ const STRINGS = {
     "alert.unreadable": "Cannot read: ", "alert.badData": "Unreadable data: ",
     "alert.noData": "Nothing to save.", "alert.badDataKept": "Unreadable data, nothing written: ",
     "confirm.new": "Start again from an empty template?", "confirm.clearData": "Clear the data?",
+    "report.new": "New report",
 
     // Enum labels. The values themselves are never translated.
     "Units.Millimeter": "Millimetres", "Units.Percentage": "Percentage",
@@ -2041,6 +2047,7 @@ const STRINGS = {
     "alert.noData": "Aucune donnée à enregistrer.",
     "alert.badDataKept": "Données illisibles, rien n'a été écrit : ",
     "confirm.new": "Repartir d'un gabarit vide ?", "confirm.clearData": "Vider les données ?",
+    "report.new": "Nouveau rapport",
 
     "Units.Millimeter": "Millimètres", "Units.Percentage": "Pourcentage",
     "FontSizeUnit.Rem": "Rem", "FontSizeUnit.Millimeter": "Millimètres de capitale",

@@ -31,6 +31,9 @@
 // and no conversion step.
 // ---------------------------------------------------------------------------
 
+// Strict, as the core is - see frisket-runs.js.
+"use strict";
+
 // The core needs one thing from whoever loads it, and a browser has it.
 setTextRuler((text, font) => {
   const ruler = setTextRuler.canvas ??= document.createElement("canvas").getContext("2d");
@@ -502,11 +505,14 @@ function frisketEditor(seams = {}) {
     const bodyItem = body();
     const pad = (bodyItem && bodyItem.Style && bodyItem.Style.Padding) || {};
 
-    el("frame").style.setProperty("--sheet-width", (section.Dimension.Width || 210) + "mm");
+    // Side by side rather than one shorthand: the stylesheet works out from each margin
+    // how much room the handles and a table's rails still need beside it.
+    const frame = el("frame");
+    frame.style.setProperty("--sheet-width", (section.Dimension.Width || 210) + "mm");
+    for (const side of ["Top", "Right", "Bottom", "Left"])
+      frame.style.setProperty("--sheet-pad-" + side.toLowerCase(), (pad[side] ?? 20) + "mm");
 
     const sheet = el("sheet");
-    sheet.style.setProperty("--sheet-pad",
-      `${pad.Top ?? 20}mm ${pad.Right ?? 20}mm ${pad.Bottom ?? 20}mm ${pad.Left ?? 20}mm`);
 
     // The document's own type size, so what is typed is the size it will print at.
     const rem = report.RootFontSize || 3;
@@ -1208,8 +1214,9 @@ function frisketEditor(seams = {}) {
   /// page is the host's decision, not this editor's.
   ///
   /// Two rather than zero, because zero is not a margin but the absence of one: a
-  /// paragraph whose first letter touches the edge of the sheet reads as a fault, and the
-  /// handles in the gutter would have nothing to sit beside.
+  /// paragraph whose first letter touches the edge of the sheet reads as a fault. The
+  /// handles are not a reason any more: they have room of their own beside the paper
+  /// when the margin is too narrow to hold them (frisket-editor.css, #frame).
   function chooseMargins(declared) {
     // Nothing asked is not zero asked, and Number() disagrees: Number(null) and Number("")
     // are both 0, which is finite and in range - so "you decide" came back as "touch the

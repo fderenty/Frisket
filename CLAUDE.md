@@ -864,7 +864,7 @@ that were missing live in the paper block — the ink, a rule, a table's borders
 header tint, two greys for notes about the page, and the shadow under a chip. And since
 `var(--on-paper-tekst)` resolves to nothing and *inherits*, which on white paper looks
 very nearly right, a second rule says every `--on-paper-*` used must be declared. Drawn
-round that family on purpose: `--sheet-pad` and `--sheet-width` are set from JS and carry
+round that family on purpose: `--sheet-pad-*` and `--sheet-width` are set from JS and carry
 their own fallback, so widening the rule would mean writing an exemption — and an
 exemption is where the next hole goes.
 
@@ -1139,6 +1139,19 @@ its own corner**, with a background of its own: over a photograph the gutter was
 legible anyway. The harness reads the stylesheet, because that is where the collision
 was and nothing in the model can see it.
 
+**The gutter was the document's margin, and the face that ships gives a document 2mm.**
+Every handle and a table's rails sat in the sheet's padding, which is the template's margin
+- 20mm in the full face, 2mm wherever there is no panel (`chooseMargins`). At 2mm they were
+drawn off the sheet and clipped by its scrolling: no block could be dragged, no row added or
+taken away, and the plus adding a column stood outside on the right, where all that showed
+of it was a horizontal scrollbar. That scrollbar was noted on 18 October as a fault of the
+*full* editor, and was looked at again only on 4 November: it was the face that ships, and
+the scrollbar was the least of it. What the margin cannot hold, the stylesheet now adds
+beside the paper as desk (`--room`), never as paper, or every line would wrap where the PDF
+does not; and a handle at rest wears the paper's colour, or its ink vanishes on a dark desk.
+A browser test asks both faces that every handle and every rail button is on the sheet and
+reached by a click there, and that a table with no widths spans the page less its margins.
+
 **An editor that draws a photograph at its size in pixels is talking about the file,
 not the page.** The picture is shown at its width in millimetres, the one that will be
 printed, and a corner is dragged to change it — width only, the height following the
@@ -1294,6 +1307,18 @@ with no matching option leaves a real select at `selectedIndex -1`. `themeOrAuto
 it. Its check was the one sabotage of four that **went green on the first writing**: three
 lists confronting each other cannot see a guard, and replacing it with `name => name ||
 "auto"` changed no count and no line of the run. It is asked of the function now.
+
+**The element is built too, and enclosed** (4 November 2026). `<frisket-editor>` took four
+scripts and two sheets served side by side - the very thing the pages above were built to
+stop asking - so test 93 writes `release/frisket-editor-element.standalone.js`: the scripts
+`frisket-editor-embedded.html` loads, in its order, and the sheets the element names in
+`SHEETS`, carried as text and worn by its shadow root. One function encloses it all,
+because the parts declare some two hundred names at the top level and on a host's page
+those are the host's globals: a host with its own `esc` loses either its script or ours.
+Strict inside, so every part says `"use strict"` on its own and test 93 refuses one that
+does not - the harnesses had run them strict all along, behind the core's directive, while
+a browser ran three of the four sloppy. A browser test loads the file alone into a page
+that declares its own `t` and `esc`, and asks that nothing else is fetched.
 
 ## 5c-bis. The face was narrower than the engine, twice
 

@@ -104,6 +104,56 @@ namespace test
                     true, built.Contains("generated", StringComparison.OrdinalIgnoreCase), 0);
             }
 
+            // --- and the editor as an element, in one script -----------------------------
+            // A host puts the editor in its own pages as <frisket-editor>, and that took four
+            // scripts and two stylesheets served side by side - what the pages above were
+            // built to stop asking. So the element is built too, from what its own host page
+            // loads, in that page's order, and the sheets the element names, carried as text.
+            string host = File.ReadAllText(Path.Combine(designer, "frisket-editor-embedded.html"));
+            var scripts = Parts(host).Where(p => p.EndsWith(".js", StringComparison.Ordinal)).ToList();
+            string elementSource = Normalised(Path.Combine(designer, ElementPart));
+            var sheets = System.Text.RegularExpressions.Regex
+                .Matches(System.Text.RegularExpressions.Regex.Match(elementSource,
+                         @"const SHEETS = \[([^\]]*)\]").Groups[1].Value, @"""([^""]+)""")
+                .Select(m => m.Groups[1].Value)
+                .ToList();
+
+            string bundle = Element(designer, scripts, sheets);
+            File.WriteAllText(Path.Combine(release, ElementBuilt), bundle);
+            Console.WriteLine($"    {ElementPart,-24} {scripts.Count} script(s), {sheets.Count} sheet(s) "
+                            + $"-> release/{ElementBuilt} ({bundle.Length / 1024} kB)");
+
+            // Matter first: the page names the element last, after what it calls, and the
+            // element names the sheets it wears. Either list empty and every check below
+            // would hold of nothing.
+            AssertEqual(testName, "the host page loads the element, last",
+                ElementPart, scripts.LastOrDefault() ?? "", 0);
+            AssertEqual(testName, "and the element names its sheets",
+                true, sheets.Count > 0 && sheets.All(s => File.Exists(Path.Combine(designer, s))), 0);
+
+            // Every part strict on its own, because in one function they are strict
+            // together: a part that was sloppy on a page would change meaning in this file
+            // and nowhere else.
+            var sloppy = scripts
+                .Where(p => !System.Text.RegularExpressions.Regex.IsMatch(
+                    Normalised(Path.Combine(designer, p)),
+                    @"^(?:\s+|//[^\n]*\n|/\*[\s\S]*?\*/)*""use strict"";"))
+                .ToList();
+            AssertEqual(testName, "every part it carries is strict on its own",
+                "", string.Join(", ", sloppy), 0);
+
+            var missing = scripts
+                .Where(p => !bundle.Contains(Marker(Normalised(Path.Combine(designer, p))), StringComparison.Ordinal))
+                .Concat(sheets.Where(s => !bundle.Contains(
+                    System.Text.Json.JsonSerializer.Serialize(Normalised(Path.Combine(designer, s))),
+                    StringComparison.Ordinal)))
+                .ToList();
+            AssertEqual(testName, "every script and every sheet came across",
+                "", string.Join(", ", missing), 0);
+
+            AssertEqual(testName, "and nothing in it ends a script it is written into",
+                false, bundle.Contains("</script", StringComparison.OrdinalIgnoreCase), 0);
+
             // --- and the escaping, given something to escape --------------------------
             // No part carries "</script>" today, so the assertion above is true of every
             // face for want of matter - taking the escaping out left it green. That is
@@ -141,6 +191,54 @@ namespace test
                 kept.Groups[1].Value.Contains("<\\/script>", StringComparison.Ordinal), 0);
 
             Console.WriteLine();
+        }
+
+        private const string ElementPart = "frisket-editor-element.js";
+        private const string ElementBuilt = "frisket-editor-element.standalone.js";
+
+        /// <summary>
+        /// A file's text with its line endings as git keeps them. The sheets go into the
+        /// element as string literals, where a carriage return is an escape and not a line
+        /// ending - so a Windows checkout would write a different file from the one git
+        /// holds, and no normalisation would ever bring the two together.
+        /// </summary>
+        private static string Normalised(string file) =>
+            File.ReadAllText(file).Replace("\r\n", "\n", StringComparison.Ordinal);
+
+        /// <summary>
+        /// The element and everything it needs, as one script that adds nothing to a page
+        /// but the tag.
+        ///
+        /// One function around all of it, so the names the parts declare at the top level -
+        /// some two hundred, <c>t</c> and <c>esc</c> among them - stay inside it: on a host's
+        /// page they would be its globals too, and a host with one of its own would lose
+        /// either its script or ours. Strict inside, as every part already is on its own.
+        /// The sheets come first, so they are there before the element can be connected.
+        /// </summary>
+        private static string Element(string directory, IEnumerable<string> scripts, IEnumerable<string> sheets)
+        {
+            var built = new System.Text.StringBuilder();
+            built.Append("/* Generated from the parts in apps/designer/, by test 93. Do not edit: what you\n")
+                 .Append("   change here is overwritten the next time the suite runs, and the parts are\n")
+                 .Append("   what everybody else uses.\n\n")
+                 .Append("   <frisket-editor> in one file: load it, write the tag. Nothing is fetched beside\n")
+                 .Append("   it, and the tag is all it adds to the page. The attributes are listed in\n")
+                 .Append("   apps/designer/README.md. */\n")
+                 .Append("(function () {\n\"use strict\";\n\n")
+                 .Append("const FRISKET_EDITOR_SHEETS = {\n")
+                 .Append(string.Join(",\n", sheets.Select(name =>
+                     System.Text.Json.JsonSerializer.Serialize(name) + ": "
+                     + System.Text.Json.JsonSerializer.Serialize(Normalised(Path.Combine(directory, name))))))
+                 .Append("\n};\n");
+
+            // Broken up for the reason Standalone gives: a host may yet write this file
+            // into a page rather than link it.
+            foreach (string name in scripts)
+                built.Append($"\n/* {name} */\n")
+                     .Append(Normalised(Path.Combine(directory, name)).Replace("</script", "<\\/script", StringComparison.Ordinal))
+                     .Append('\n');
+
+            return built.Append("})();\n").ToString();
         }
 
         /// <summary>The stylesheets and scripts a page names, in the order it names them.</summary>

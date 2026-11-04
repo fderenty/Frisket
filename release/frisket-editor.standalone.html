@@ -399,8 +399,23 @@
        reported it from inside a host page. A count kept beside the thing it counts is
        the drift this project keeps paying for (CLAUDE.md 16); asking the row is not. */
     width: max-content;
-    min-width: min(var(--sheet-width, 210mm), 100%);
+    min-width: min(calc(var(--sheet-width, 210mm) + var(--gutter-left) + var(--gutter-right)), 100%);
     max-width: 100%;
+
+    /* The handles and a table's rails sit beside the text, in the margin - and the margin
+       is the DOCUMENT's: 20mm in the full face, 2mm in the face that ships, whatever a
+       template says once it is opened. At 2mm they were drawn off the sheet and clipped
+       by its scrolling: no block could be dragged, a table's rows could be neither added
+       nor removed, and the plus that adds a column stood outside on the right, where the
+       only trace of it was a horizontal scrollbar. Reported as the scrollbar.
+
+       So what the margin cannot hold, the sheet adds beside the paper, as desk: never
+       paper, or the page would claim to be wider than it is and every line would wrap
+       somewhere the PDF does not. --room is the deepest any of it reaches - a block's
+       handle, 28px - and a margin that already holds that adds nothing. */
+    --room: 30px;
+    --gutter-left: max(0px, var(--room) - var(--sheet-pad-left, 20mm));
+    --gutter-right: max(0px, var(--room) - var(--sheet-pad-right, 20mm));
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -620,13 +635,18 @@
   /* ---- the sheet ---- */
   #sheet {
     flex: 1; min-height: 0; overflow: auto;
-    width: min(var(--sheet-width, 210mm), 100%); margin: 0 auto;
+    width: min(calc(var(--sheet-width, 210mm) + var(--gutter-left) + var(--gutter-right)), 100%);
+    margin: 0 auto;
     /* The text on the paper must not widen the frame: the frame asks its contents how
        wide they want to be, and a paragraph's answer is its whole length on one line.
        Its own width is set above; this only stops it voting. */
     contain: inline-size;
-    background: var(--paper);
-    padding: var(--sheet-pad, 20mm);
+    /* Paper between the gutters, and the frame's desk showing through them. */
+    background: linear-gradient(to right,
+      transparent var(--gutter-left), var(--paper) var(--gutter-left),
+      var(--paper) calc(100% - var(--gutter-right)), transparent calc(100% - var(--gutter-right)));
+    padding: var(--sheet-pad-top, 20mm) calc(var(--sheet-pad-right, 20mm) + var(--gutter-right))
+             var(--sheet-pad-bottom, 20mm) calc(var(--sheet-pad-left, 20mm) + var(--gutter-left));
     color: var(--on-paper-text);   /* the sheet's ink, never var(--ink) */
     /* A face with no bold or italic cut falls back to another cut of its family, as
        the engine does, rather than to a bold or a slant the browser invents - which
@@ -721,6 +741,10 @@
     position: absolute; left: -28px; top: 0;
     width: 28px; padding-right: 6px; height: 22px; cursor: grab;
     background-clip: content-box;
+    /* The paper's own colour at rest: nothing on the paper, and a chip of it where the
+       margin is too narrow and the handle stands on the desk beside the sheet - where
+       its ink on a dark desk was all but invisible. */
+    background-color: var(--paper);
     display: flex; align-items: center; justify-content: center;
     color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;
     border: 1px solid transparent; border-radius: var(--radius);
@@ -1122,8 +1146,13 @@ function blankReport() {
 
   doc.Dimension = { Width: 210, Height: 297 };
 
+  // In the language the page is read in, asked at the moment the report is made. The
+  // title is the document's from then on - its /Title, and what {Title} prints in the
+  // header above - so it does not follow a later change of language. It was French
+  // whatever the language until 4 November 2026: the one word of the page's own that
+  // went into the document, and so the one the dictionary never saw.
   return {
-    Title: "Nouveau rapport",
+    Title: t("report.new"),
     RootFontSize: 3,
     Fields: {},
     GeneratedAt: null,
@@ -2739,6 +2768,7 @@ const STRINGS = {
     "alert.unreadable": "Cannot read: ", "alert.badData": "Unreadable data: ",
     "alert.noData": "Nothing to save.", "alert.badDataKept": "Unreadable data, nothing written: ",
     "confirm.new": "Start again from an empty template?", "confirm.clearData": "Clear the data?",
+    "report.new": "New report",
 
     // Enum labels. The values themselves are never translated.
     "Units.Millimeter": "Millimetres", "Units.Percentage": "Percentage",
@@ -2956,6 +2986,7 @@ const STRINGS = {
     "alert.noData": "Aucune donnée à enregistrer.",
     "alert.badDataKept": "Données illisibles, rien n'a été écrit : ",
     "confirm.new": "Repartir d'un gabarit vide ?", "confirm.clearData": "Vider les données ?",
+    "report.new": "Nouveau rapport",
 
     "Units.Millimeter": "Millimètres", "Units.Percentage": "Pourcentage",
     "FontSizeUnit.Rem": "Rem", "FontSizeUnit.Millimeter": "Millimètres de capitale",
@@ -5543,6 +5574,11 @@ function splitRunsAt(runs, offsets) {
 // promise not to be. It takes its surface as an argument for the same reason: an
 // element found by id belongs to one face, and this belongs to neither.
 
+// Strict, as the core is: the one-file editor in release/ runs every part strict, and
+// so do the harnesses, which read the parts after the core's own directive. A part that
+// was sloppy only on a page would be the one place its faults could hide.
+"use strict";
+
 /// Renders a Runs list as spans (one per run, styled inline) plus bare text nodes
 /// for a run with no override - so a plain read of textContent, run by run, is
 /// already what saving needs.
@@ -5643,6 +5679,9 @@ function surfaceToRuns(surface) {
 // inserting a picture makes an ImageItem with its bytes; there is no second format
 // and no conversion step.
 // ---------------------------------------------------------------------------
+
+// Strict, as the core is - see frisket-runs.js.
+"use strict";
 
 // The core needs one thing from whoever loads it, and a browser has it.
 setTextRuler((text, font) => {
@@ -6115,11 +6154,14 @@ function frisketEditor(seams = {}) {
     const bodyItem = body();
     const pad = (bodyItem && bodyItem.Style && bodyItem.Style.Padding) || {};
 
-    el("frame").style.setProperty("--sheet-width", (section.Dimension.Width || 210) + "mm");
+    // Side by side rather than one shorthand: the stylesheet works out from each margin
+    // how much room the handles and a table's rails still need beside it.
+    const frame = el("frame");
+    frame.style.setProperty("--sheet-width", (section.Dimension.Width || 210) + "mm");
+    for (const side of ["Top", "Right", "Bottom", "Left"])
+      frame.style.setProperty("--sheet-pad-" + side.toLowerCase(), (pad[side] ?? 20) + "mm");
 
     const sheet = el("sheet");
-    sheet.style.setProperty("--sheet-pad",
-      `${pad.Top ?? 20}mm ${pad.Right ?? 20}mm ${pad.Bottom ?? 20}mm ${pad.Left ?? 20}mm`);
 
     // The document's own type size, so what is typed is the size it will print at.
     const rem = report.RootFontSize || 3;
@@ -6821,8 +6863,9 @@ function frisketEditor(seams = {}) {
   /// page is the host's decision, not this editor's.
   ///
   /// Two rather than zero, because zero is not a margin but the absence of one: a
-  /// paragraph whose first letter touches the edge of the sheet reads as a fault, and the
-  /// handles in the gutter would have nothing to sit beside.
+  /// paragraph whose first letter touches the edge of the sheet reads as a fault. The
+  /// handles are not a reason any more: they have room of their own beside the paper
+  /// when the margin is too narrow to hold them (frisket-editor.css, #frame).
   function chooseMargins(declared) {
     // Nothing asked is not zero asked, and Number() disagrees: Number(null) and Number("")
     // are both 0, which is finite and in range - so "you decide" came back as "touch the

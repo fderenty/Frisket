@@ -539,8 +539,25 @@ downloads had better say what it is.
 Do not edit them: the next run of the suite overwrites what you changed, and the page
 everybody else works on is the split one.
 
+### The element, as one script
+
+`release/frisket-editor-element.standalone.js` is `<frisket-editor>` for a host to load
+alone. It holds the scripts `frisket-editor-embedded.html` loads, in that page's order,
+and the sheets the element names in `SHEETS`, carried as text: its shadow root wears them
+instead of linking them, so nothing is fetched beside the file.
+
+One function encloses all of it. The parts declare some two hundred names at the top
+level - `t`, `esc`, `STRINGS` - which on a host's page are the host's globals too, and a
+host with its own `esc` would lose either its script or ours. Enclosed, the tag is all the
+file adds to a page.
+
+Inside that function the parts are strict together, so each says `"use strict"` on its
+own: a part that was sloppy on a page would change meaning in this file and nowhere else,
+and test 93 refuses one that does not say it. The harnesses had been running them strict
+all along, since they read the parts after the core's own directive.
+
 ```bash
-dotnet test tests/test.csproj --filter Test93     # rebuilds both
+dotnet test tests/test.csproj --filter Test93     # rebuilds all three
 
 # and either face can be handed to its own harness, split or whole. A bare name is one
 # of this directory's faces; anything with a separator is a path from the repository.

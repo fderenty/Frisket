@@ -4,6 +4,12 @@
 /// gets an editor by writing one tag. Everything it draws lives in a shadow root, so
 /// the host's stylesheet cannot reach in and this one cannot leak out.
 ///
+/// Or load release/frisket-editor-element.standalone.js alone: the same four parts and
+/// both sheets in one file, built by test 93, enclosed so that the tag is all it adds to
+/// the host's page - the parts declare some two hundred names at the top level (`t`,
+/// `esc`, `STRINGS`...), and a host with one of its own would lose either its script or
+/// ours.
+///
 /// What a host CAN reach in with, and is meant to, is the palette: every colour the
 /// chrome uses is a custom property (`--accent`, `--panel`, `--ink`…), and custom
 /// properties inherit through a shadow boundary. Setting them on the element - or on
@@ -24,10 +30,20 @@
 /// It used to SET those seams instead, as variables of the one editor the page had - so
 /// a second element set them over the first one's. That is the whole reason this is a
 /// call now.
+"use strict";   // as every part is - see frisket-runs.js
+
 (function () {
+  // The sheets its shadow root wears, named once. Linked from beside this script; or,
+  // in the one-file build test 93 writes to release/, carried in FRISKET_EDITOR_SHEETS,
+  // so a host loading that file fetches nothing else. The build reads this list.
+  const SHEETS = ["frisket-chrome.css", "frisket-editor.css"];
+  const inline = typeof FRISKET_EDITOR_SHEETS === "object" ? FRISKET_EDITOR_SHEETS : null;
+
   // Where our own files are, taken from this script's own URL rather than assumed to be
-  // beside the host page - an element is meant to be loaded from somewhere else.
-  const here = new URL(".", document.currentScript.src).href;
+  // beside the host page - an element is meant to be loaded from somewhere else. None
+  // for a script written into the page itself, which has no URL of its own.
+  const script = document.currentScript;
+  const here = script && script.src ? new URL(".", script.src).href : "";
 
   class FrisketEditor extends HTMLElement {
     connectedCallback() {
@@ -51,10 +67,14 @@
         : fallback;
 
       const root = this.attachShadow({ mode: "open" });
-      root.innerHTML =
-        '<link rel="stylesheet" href="' + here + 'frisket-chrome.css">' +
-        '<link rel="stylesheet" href="' + here + 'frisket-editor.css">' +
-        '<div id="frisket-editor-root"></div>';
+      root.innerHTML = SHEETS.map(name => inline ? "<style></style>"
+          : '<link rel="stylesheet" href="' + here + name + '">').join("")
+        + '<div id="frisket-editor-root"></div>';
+      // Set as text, never written into the markup: a style's text cannot close it early,
+      // whatever the sheet happens to say.
+      if (inline) root.querySelectorAll("style").forEach((style, i) => {
+        style.textContent = inline[SHEETS[i]];
+      });
 
       this._editor = frisketEditor({
         root,

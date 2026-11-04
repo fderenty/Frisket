@@ -1,0 +1,8055 @@
+/* Generated from the parts in apps/designer/, by test 93. Do not edit: what you
+   change here is overwritten the next time the suite runs, and the parts are
+   what everybody else uses.
+
+   <frisket-editor> in one file: load it, write the tag. Nothing is fetched beside
+   it, and the tag is all it adds to the page. The attributes are listed in
+   apps/designer/README.md. */
+(function () {
+"use strict";
+
+const FRISKET_EDITOR_SHEETS = {
+"frisket-chrome.css": "/* Frisket - the chrome every face wears.\n *\n * The palette and the handful of controls each page needs, in one file because two\n * copies of a palette are two palettes: the moment the designer and the flow editor\n * each kept their own, an accent set in one would stop meaning anything in the other.\n * Each page still owns its own layout - a tree and two panels is not a column of\n * blocks - and this owns only what they must agree on.\n *\n * The line inside it matters more than the file: the CHROME follows the theme, and\n * one day the theme of whatever page embeds a face; the PAPER does not follow\n * anything, because what the canvas shows is a printed page. See the comment on the\n * palette itself, and the audit in check-against-engine.js that keeps both honest.\n */\n\n  /* ---------------------------------------------------------------------\n     The palette. Two families, and the line between them is the point.\n\n     THE CHROME follows the theme, and one day the theme of whatever page this\n     is embedded in: every one of these is a name, never a literal, so a host\n     can set \u0060--accent\u0060 and have the whole interface agree. Semantic rather\n     than literal - \u0060--accent\u0060, not \u0060--blue\u0060 - because a host overriding\n     \u0060--blue\u0060 with an orange is a sentence nobody should have to write.\n\n     THE PAPER does not, and must not. What the canvas shows is a printed page:\n     white stock, ink, and the marks this tool draws over them. Tie those to the\n     theme and a dark interface makes the designer lie about what comes out of\n     the printer - the same fault this project chases everywhere else, wearing\n     CSS. They are named too, so that \u0022these do not follow\u0022 is a rule with a\n     place rather than an intention, but they hold one value in all themes.\n\n     Anything hex outside these blocks is a drift; the harness refuses it.\n\n     FOUR rooms: Auto, Graphite, Light, Frost - and Auto is not a fourth palette\n     but the machine\u0027s own answer, which is why it is the default (section 2b: a\n     preference stored somewhere is still a preference).\n\n     There were seven. Four dark ones were proposed against stated directions and\n     measured rather than admired, which was the right way to build them and told\n     nobody which to live in - that took using them. Graphite won and the other\n     three went, along with the blue-leaning dark that was here first: every grey\n     literally R=G=B, one steel blue carrying the interface, and nothing else with\n     an opinion. The argument for it is the same one this palette makes everywhere -\n     the sheet on the canvas is white, and any tint in the chrome makes the paper\n     look tinted the other way.\n\n     So Graphite IS the dark room, declared here where \u0060auto\u0060 reads it and again\n     under its own name where the selector does. Light is the plain one people\n     expect on paper; Frost is the light one taken the way the darks were, for a\n     bright screen. A room removed is not a room lost: four palettes that get used\n     say more than seven that get looked at once.\n     --------------------------------------------------------------------- */\n\n  /* --- Graphite: the dark room, and what \u0060auto\u0060 gives on a dark machine ---- */\n  /* :root AND :host, on every one of these.\n   *\n   * :root matches the document element and nothing else, so inside a shadow root it\n   * matches nothing at all and not one of these names is set. The editor packaged as\n   * an element therefore came up with no palette: the only colours it had were the\n   * handful the host page happened to set on the tag, --paper was not among them, and\n   * the text came out the colour of the sheet it was written on.\n   *\n   * The contract - \u0022every colour is a custom property a host can override, and one day\n   * the theme of whatever page embeds this\u0022 - was written in July and was right. The\n   * selector was not, and nothing could say so until there was a shadow root to fail\n   * in. :host is the same rule for the other side of the boundary. */\n  :root, :host {\n    color-scheme: dark;\n\n    /* Every grey literally R=G=B, and that is the whole argument: the sheet on the\n       canvas is white, and any tint in the chrome makes the paper look tinted the\n       other way. One steel blue carries the interface; nothing else has an opinion. */\n    --bg: #1a1a1a;          /* the application\u0027s own ground */\n    --panel: #242424;       /* header, side panels - lifted, not outlined */\n    --sunken: #141414;      /* a column set back from the rest */\n    --control: #202020;     /* buttons, inputs, selects at rest */\n    /* The line sits \u002B4.7 L* above the panel it bounds and the control -1.9 below it:\n       a gentle well with a hairline round it. That is the elevation rule this project\n       paid for once already - the first dark theme had the signs the other way up and\n       drew every field as a lit box, which was reported as heavy and cluttered. */\n    --line: #2e2e2e;\n    --ink: #e6e6e6;\n    --muted: #9c9c9c;\n\n    /* At full saturation, not the 60% it was first drawn at: \u0022one saturated colour\n       doing the work of ten greys\u0022 is what the base palette says it is for, and a\n       steel tint is not that - least of all on a field with no hue of its own to lend\n       it any. It also stands 11.2 L* clear of --muted where it stood 9.2, which is\n       the adjacency that matters most here: a label beside a lit control. */\n    --accent: #7cc0ff;\n    --on-accent: #121212;\n    --drop: #26374d;\n\n    --warn: #e0b13f;\n    --warn-bg: #2f2819;\n    --warn-line: #4a3e22;\n    --error: #f08a82;\n    --caution: #f5c463;\n    --danger: #f08a82;\n    --ok: #7bc98f;\n    --bad: #ef7f8e;\n    --idle: #5a5a5a;\n\n    --scrim: rgba(0, 0, 0, .66);\n    /* A shadow at .55 of black, on a ground that is already near black, reads as\n       soot rather than as depth. The light theme casts at .14. */\n    --shadow: 0 6px 20px rgba(0, 0, 0, .42);\n    --shadow-modal: 0 20px 56px rgba(0, 0, 0, .46);\n    --hover-wash: rgba(124, 192, 255, .11);\n\n    /* The desk the sheet sits on. Chrome, not paper - it is the room, and a\n       document\u0027s own non-printing background is a separate idea that belongs\n       to the template rather than to the viewer\u0027s taste. */\n    --surround: #0d0d0d;\n  }\n\n  @media (prefers-color-scheme: light) {\n    :root, :host {\n      color-scheme: light;\n\n      --bg: #eef1f5;\n      --panel: #ffffff;\n      --sunken: #f7f9fb;\n      --control: #ffffff;\n      --line: #dde3ea;\n      --ink: #10161f;\n      --muted: #5d6b7d;\n\n      --accent: #0f766e;\n      --on-accent: #ffffff;\n      --drop: #d7f0ec;\n\n      --warn: #a45c00;\n      --warn-bg: #fdf5e6;\n      --warn-line: #ecd9ab;\n      --error: #b3261e;\n      --caution: #8a5a00;\n      --danger: #b3261e;\n      --ok: #12734a;\n      --bad: #c62828;\n      --idle: #a6b1bf;\n\n      --scrim: rgba(16, 22, 31, .34);\n      --shadow: 0 2px 12px rgba(16, 22, 31, .14);\n      --shadow-modal: 0 18px 48px rgba(16, 22, 31, .2);\n      --hover-wash: rgba(15, 118, 110, .09);\n\n      --surround: #9aa5b1;   /* mid grey: white paper is judged against it */\n    }\n  }\n\n  /* The explicit choice wins over the system\u0027s, in both directions, so \u0022light\u0022\n     stays light on a machine set to dark. Written out rather than derived, because a\n     preference has to be able to disagree - and the harness compares them name for\n     name, so none can drift from the others. */\n  :root[data-theme=\u0022light\u0022], :host([data-theme=\u0022light\u0022]) {\n    color-scheme: light;\n    --bg: #eef1f5; --panel: #ffffff; --sunken: #f7f9fb; --control: #ffffff;\n    --line: #dde3ea; --ink: #10161f; --muted: #5d6b7d;\n    --accent: #0f766e; --on-accent: #ffffff; --drop: #d7f0ec;\n    --warn: #a45c00; --warn-bg: #fdf5e6; --warn-line: #ecd9ab;\n    --error: #b3261e; --caution: #8a5a00; --danger: #b3261e;\n    --ok: #12734a; --bad: #c62828; --idle: #a6b1bf;\n    --scrim: rgba(16, 22, 31, .34);\n    --shadow: 0 2px 12px rgba(16, 22, 31, .14);\n    --shadow-modal: 0 18px 48px rgba(16, 22, 31, .2);\n    --hover-wash: rgba(15, 118, 110, .09);\n    --surround: #9aa5b1;\n  }\n\n  /* Frost: the light one taken the way the dark one was. Near-white grounds with\n     a blue cast, lines that barely draw, and the same saturated accent - for a\n     bright room, where the plain light theme is the safer, more paper-like\n     choice and this is the one that looks like now. */\n  :root[data-theme=\u0022frost\u0022], :host([data-theme=\u0022frost\u0022]) {\n    color-scheme: light;\n    --bg: #eaf0f4; --panel: #f8fbfd; --sunken: #ffffff; --control: #ffffff;\n    --line: #d5e2ea; --ink: #0d1b24; --muted: #5b7183;\n    --accent: #0891b2; --on-accent: #ffffff; --drop: #d3f0f7;\n    --warn: #a35a00; --warn-bg: #fef6e7; --warn-line: #ead6a8;\n    --error: #b02418; --caution: #8a5800; --danger: #b02418;\n    --ok: #0f7357; --bad: #c22a2a; --idle: #a3b4c0;\n    --scrim: rgba(9, 26, 36, .3);\n    --shadow: 0 2px 14px rgba(9, 26, 36, .12);\n    --shadow-modal: 0 18px 52px rgba(9, 26, 36, .18);\n    --hover-wash: rgba(8, 145, 178, .09);\n    --surround: #93a6b2;\n  }\n\n  /* Graphite under its own name, and the same values the base sets - which is not a\n     duplication to remove. The base is what \u0060auto\u0060 reads on a dark machine; this is\n     what the SELECTOR reads when somebody picks Graphite on a light one. A preference\n     has to be able to disagree with the machine, and it cannot do that by inheritance.\n\n     The reasoning for the colours is on the base block, where a reader meets it first. */\n  :root[data-theme=\u0022graphite\u0022], :host([data-theme=\u0022graphite\u0022]) {\n    color-scheme: dark;\n    --bg: #1a1a1a; --panel: #242424; --sunken: #141414; --control: #202020;\n    --line: #2e2e2e; --ink: #e6e6e6; --muted: #9c9c9c;\n    --accent: #7cc0ff; --on-accent: #121212; --drop: #26374d;\n    --warn: #e0b13f; --warn-bg: #2f2819; --warn-line: #4a3e22;\n    --error: #f08a82; --caution: #f5c463; --danger: #f08a82;\n    --ok: #7bc98f; --bad: #ef7f8e; --idle: #5a5a5a;\n    --scrim: rgba(0, 0, 0, .66);\n    --shadow: 0 6px 20px rgba(0, 0, 0, .42);\n    --shadow-modal: 0 20px 56px rgba(0, 0, 0, .46);\n    --hover-wash: rgba(124, 192, 255, .11);\n    --surround: #0d0d0d;\n  }\n\n  /* A CHROME that is neither the document nor a label.\n     ---------------------------------------------------------------------------\n     Reported twice from the browser, once in each direction, which is what makes it\n     worth a name at all.\n\n     The toolbar was painted at --ink: the strength of the text it edits, so it drew\n     the eye away from the page. Moved to --muted it read as GREYED OUT - and that was\n     not a matter of taste either. --muted is what labels, hints, section headings and\n     counts are painted in throughout this chrome, so an interactive row wearing it is\n     wearing the colour of things you cannot click.\n\n     So: between the two, and DERIVED from them rather than typed. Not a\n     twenty-fifth palette name - a theme has nothing new to decide here, and \u00A75b is\n     plain that too many names make the contract unspecifiable. The mix follows every\n     theme for nothing, present and future.\n\n     70%, measured across the four that remain: 10.1:1 to 13.4:1 on the panel, and\n     well clear of --muted, which is the whole point - it can no longer be mistaken\n     for the label colour, and it is still a step below the document. (It was measured\n     over seven when there were seven; a number carried past the thing it was measured\n     on is a claim about a repository that no longer exists.)\n\n     The plain --ink declaration above it is the fallback for a browser with no\n     color-mix, and it is the right one: too loud is what this looked like before\n     anybody complained, and it is a great deal better than invisible. */\n  :root, :host {\n    --chrome-ink: var(--ink);\n    --chrome-ink: color-mix(in srgb, var(--ink) 70%, var(--muted));\n  }\n\n  /* THE PAPER, and the one shape constant. Both are one value in every theme, and\n     for the same reason: a corner is not brighter in a dark room. Named so that\n     \u0022slightly rounded\u0022 is decided once rather than typed at nine call sites and\n     drifting into three different roundnesses. */\n  :root, :host,\n  :root[data-theme=\u0022light\u0022], :host([data-theme=\u0022light\u0022]),\n  :root[data-theme=\u0022frost\u0022], :host([data-theme=\u0022frost\u0022]),\n  :root[data-theme=\u0022graphite\u0022], :host([data-theme=\u0022graphite\u0022]) {\n    --paper: #ffffff;\n\n    /* What is laid on top of the sheet, and is therefore on white whatever the theme\n       is doing everywhere else. The rails and the drag handles float over the page;\n       given the panel\u0027\u0022\u0027\u0022\u0027s colours they came out as a dark chip with darker ink on white\n       paper, and were reported as simply not visible. The paper does not follow the\n       theme, so neither can anything drawn on it. */\n    --on-paper: #ffffff;\n    --on-paper-ink: #3a4048;\n    --on-paper-line: #c7ccd4;\n    --on-paper-wash: #eef2f7;\n    --on-paper-accent: #2f6fb0;\n    --on-paper-shadow: rgba(0, 0, 0, .2);\n\n    /* And the marks the page itself carries, which are not chrome at all: they are\n       what the printer will put on the sheet. They live here rather than in the\n       editor\u0027s own sheet because there is one paper, and because the check that\n       forbids a loose colour has to have somewhere to send this one.\n\n       --on-paper-muted replaces a #666 and a #555 that were doing the same job a\n       shade apart, nobody\u0027s decision - section 5b, in the face that ships. */\n    --on-paper-text: #111111;      /* the document\u0027s own ink */\n    --on-paper-muted: #666f7a;     /* a note about the page rather than on it */\n    --on-paper-faint: #b0b0b0;     /* the kind labels, out in the margin */\n    --on-paper-rule: #888888;      /* a rule the document draws */\n    --on-paper-grid: #cccccc;      /* a table\u0027s own borders */\n    --on-paper-head: #f4f6f8;      /* a table header\u0027s tint */\n\n    --radius: 5px;\n  }\n\n  * { box-sizing: border-box; }\n\n  /* The browser\u0027s own rule for \u0060hidden\u0060, restated so an author rule cannot beat it.\n     \u0060hidden\u0060 works by way of \u0060display: none\u0060 in the user-agent sheet, which sits at\n     the very bottom of the cascade - so any selector in either face that sets a\n     display silently un-hides whatever it matches, and the element is toggled by a\n     button that then appears to do nothing at all. Reported exactly that way, as a\n     colour menu that would not close: it had never been closed, because it had never\n     been hidden.\n\n     Once, here, rather than every rule that sets a display having to remember. */\n  [hidden] { display: none !important; }\n  body {\n    margin: 0; height: 100vh; display: flex; flex-direction: column;\n    background: var(--bg); color: var(--ink);\n    font: 13px/1.45 system-ui, -apple-system, \u0022Segoe UI\u0022, sans-serif;\n  }\n  header {\n    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;\n    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);\n  }\n  /* 500, not 600. The header is a label on a room, not a heading in a document, and\n     at semibold it was the loudest thing on a page whose subject is somebody else\u0027s\n     text. The letter-spacing does the work a heavier weight was doing. */\n  header h1 { font-size: 14px; margin: 0 12px 0 0; font-weight: 500; letter-spacing: .3px; }\n  header .grow { flex: 1; }\n  button, select, input {\n    background: var(--control); color: var(--ink); border: 1px solid var(--line);\n    border-radius: var(--radius); padding: 4px 9px; font: inherit;\n  }\n  button { cursor: pointer; transition: border-color .12s, background .12s; }\n  button:hover { border-color: var(--accent); }\n  button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }\n  input[type=number] { width: 72px; }\n  input[type=text] { width: 100%; }\n  input:focus, select:focus, button:focus-visible {\n    outline: none; border-color: var(--accent);\n    box-shadow: 0 0 0 2px var(--hover-wash);\n  }\n",
+"frisket-editor.css": "/* The content editor\u0027s own rules.\n *\n * Lifted out of frisket-editor.html on 24 August 2026 so that a shadow root can be\n * given the same sheet the page gets, rather than the two keeping copies. Every colour\n * here is a custom property from frisket-chrome.css, which is what lets a host theme\n * this without touching it - and what the palette audit holds it to.\n */\n  /* The flow editor\u0027s own layout. No tree and no coordinates: this face edits a\n     Stack, and a Stack has no coordinates to show. What it does have is the shape\n     every rich-text editor has and people already know - a strip of tools sitting on\n     top of the thing being written, both inside one frame. */\n  main { flex: 1; display: grid; min-height: 0; grid-template-columns: 1fr 300px; }\n\n  /* Without the panel the desk is the whole room. The two columns were declared\n     whatever the markup held, so a face with no panel kept 300 empty pixels on its\n     right - unseen while an editor had the window to itself, half of every editor the\n     day two sat side by side. */\n  main.alone { grid-template-columns: 1fr; }\n\n  /* The div the editor is planted in - the page\u0027s own, or the one in a shadow root -\n     takes the room it is given and hands it down to main. It was a plain block, so the\n     editor stopped where its content did and left the rest of the window, or of the\n     element a host had sized, empty below it. */\n  #frisket-editor-root { height: 100%; min-height: 0; display: flex; flex-direction: column; }\n\n  /* An element is inline until somebody says otherwise; an editor never wants to be. A\n     host\u0027s own rule for the tag still wins, being outside. */\n  :host { display: block; }\n\n  /* The desk does not scroll; the sheet inside the frame does. A scrollbar riding\n     the window edge says \u0022this page is long\u0022, and what is long is the document -\n     which is a thing inside the frame, with a toolbar pinned above it. */\n  #desk {\n    display: flex; justify-content: center;\n    padding: 24px 20px; min-height: 0; overflow: hidden;\n    background: var(--surround);\n  }\n\n  /* Toolbar and sheet are one object, not two regions of the window. That is the\n     whole difference in feel between this and the designer, and it is mostly this\n     border. */\n  #frame {\n    display: flex; flex-direction: column; min-height: 0;\n\n    /* At least as wide as the strip of tools needs, and never wider than the room\n       there is. The frame used to be exactly the sheet, so on A4 portrait the tools\n       wrapped onto a second line - and a toolbar that reflows is one whose buttons\n       are somewhere different depending on the paper. The sheet keeps its true width\n       inside and is centred; what shows beside it is desk, not paper, or the page\n       would be claiming to be wider than it is.\n\n       An A3 landscape sheet still shrinks to fit rather than pushing a scrollbar\n       onto the window. */\n    /* The floor is what the TOOLBAR needs, and the toolbar says so itself: the frame is\n       as wide as the row of tools on one line (max-content), never narrower than the\n       paper, never wider than the room. \u0060flex-wrap\u0060 on the toolbar stays the last resort\n       for a room that is genuinely narrower than the row - two editors side by side -\n       where nothing is squeezed out of square or cut off; it goes to a second row.\n\n       It was a number, and a number in the wrong unit. 60rem was the row counted by hand\n       at about 960px - but every control in the row is sized in px, and a rem follows the\n       root font of the DOCUMENT, a shadow root included. A host page at 13.6px made it\n       816px against a row of 820 (the full face) or 896 (the one that ships), and the\n       tools wrapped; at 16px the same number left 140px of desk beside the full face for\n       nothing. Measured in Edge on 20 October 2026, after another project\u0027s agent\n       reported it from inside a host page. A count kept beside the thing it counts is\n       the drift this project keeps paying for (CLAUDE.md 16); asking the row is not. */\n    width: max-content;\n    min-width: min(calc(var(--sheet-width, 210mm) \u002B var(--gutter-left) \u002B var(--gutter-right)), 100%);\n    max-width: 100%;\n\n    /* The handles and a table\u0027s rails sit beside the text, in the margin - and the margin\n       is the DOCUMENT\u0027s: 20mm in the full face, 2mm in the face that ships, whatever a\n       template says once it is opened. At 2mm they were drawn off the sheet and clipped\n       by its scrolling: no block could be dragged, a table\u0027s rows could be neither added\n       nor removed, and the plus that adds a column stood outside on the right, where the\n       only trace of it was a horizontal scrollbar. Reported as the scrollbar.\n\n       So what the margin cannot hold, the sheet adds beside the paper, as desk: never\n       paper, or the page would claim to be wider than it is and every line would wrap\n       somewhere the PDF does not. --room is the deepest any of it reaches - a block\u0027s\n       handle, 28px - and a margin that already holds that adds nothing. */\n    --room: 30px;\n    --gutter-left: max(0px, var(--room) - var(--sheet-pad-left, 20mm));\n    --gutter-right: max(0px, var(--room) - var(--sheet-pad-right, 20mm));\n    border: 1px solid var(--line);\n    border-radius: var(--radius);\n    box-shadow: var(--shadow);\n    overflow: hidden;\n    background: var(--surround);\n  }\n\n  /* ---- the strip ---- */\n  #toolbar {\n    flex: none;                        /* pinned: the sheet moves under it */\n    /* WRAPS rather than squeezing. A flex row with nothing said about it shrinks its\n       items when it runs out of width, and it shrinks them in ONE direction - so every\n       icon button came out narrower than it is tall while every height stayed 28px.\n       Reported as \u0022the buttons are not square\u0022, which is exactly what it was. Two rows\n       of square buttons is the honest answer to a narrow editor. */\n    display: flex; flex-wrap: wrap; align-items: center; gap: 2px;\n    padding: 5px 8px;\n    background: var(--panel);\n    border-bottom: 1px solid var(--line);\n  }\n\n  /* Toolbar buttons carry an icon and nothing else: a row of words reads as a menu,\n     a row of glyphs reads as a toolbar, and the difference is what tells somebody\n     which kind of thing they are looking at before they have read any of it. */\n  /* Three states, three strengths: --chrome-ink at rest, --ink under the pointer,\n     the accent when it is on.\n\n     Both ends of that were found by looking rather than by measuring. At --ink the\n     row was as loud as the text it edits; at --muted it read as greyed out, because\n     --muted is the colour of labels and hints everywhere else in this chrome and an\n     interactive row wearing it is wearing the colour of things you cannot click.\n     --chrome-ink is the value in between, derived from the two rather than typed. */\n  #toolbar button {\n    /* \u0060flex: none\u0060 because 28 by 28 is a claim, and a flex item makes no such claim by\n       default: it shrinks. The chevron below carried a min-width for exactly this and\n       nothing else did - a symptom plastered over in the one place somebody saw it. */\n    flex: none;\n    width: 28px; height: 28px; padding: 0;\n    display: inline-flex; align-items: center; justify-content: center;\n    background: none; border: 1px solid transparent; border-radius: var(--radius);\n    color: var(--chrome-ink, var(--ink)); cursor: pointer;\n    transition: color .12s, background .12s;\n  }\n  #toolbar button:hover,\n  #toolbar button:focus-visible { color: var(--ink); background: var(--hover-wash);\n                                  border-color: transparent; }\n  /* An ACTIVE button has a ground of its own, and until now it did not: it wore\n     var(--hover-wash), the very thing a merely hovered button wears, so \u0022this style\n     is on\u0022 and \u0022your pointer is here\u0022 were painted identically. Reported from the\n     browser with a screenshot, and visible in it - the left-align button is on, and\n     it takes a moment to see which one.\n\n     So three grounds for three states, the way there are already three strengths of\n     ink: nothing at rest, the wash under the pointer, and a real tint with an edge\n     when it is on. The tint is derived from the accent rather than typed, so it\n     follows every theme there is, present and future - and it is 16% against the\n     hover\u0027s 9-11%, which is the\n     gap that makes them tell apart at a glance rather than on inspection.\n\n     The edge matters as much as the fill. At 16% a tint is a whisper on a light\n     theme and a bruise on a dark one; a border at 38% reads the same on both, and it\n     is what turns a patch of colour into a pressed key. */\n  #toolbar button.on {\n    color: var(--accent);\n    background: color-mix(in srgb, var(--accent) 16%, transparent);\n    border-color: color-mix(in srgb, var(--accent) 38%, transparent);\n  }\n  #toolbar button.on:hover {\n    background: color-mix(in srgb, var(--accent) 24%, transparent);\n    border-color: color-mix(in srgb, var(--accent) 52%, transparent);\n  }\n  /* Thin, and thinner than it was. The first pass drew at 1.6, the second at 1.15,\n     and 1.15 on a 16-unit box shown at 17px is 1.22 device pixels - heavier than the\n     hairline it was meant to be. At 1 it is one pixel, which is what \u0022drawn rather\n     than built\u0022 was always asking for. */\n  #toolbar button svg { width: 17px; height: 17px; fill: none;\n                        stroke: currentColor; stroke-width: 1;\n                        stroke-linecap: round; stroke-linejoin: round; }\n\n  /* The letters, and the fallback nobody had looked at. The stack read \u0022Iowan Old\n     Style\u0022, Georgia, serif - Iowan is a Mac face, so on Windows every B, I, U and S\n     was set in GEORGIA, which is the heaviest-stemmed serif of the three and exactly\n     the \u0022pataud\u0022 that was reported. The list now runs from the finest-stemmed face\n     down: Didot and Bodoni are hairline-thin, Iowan is moderate, and Times is a long\n     way lighter than Georgia, which is no longer in it at all.\n\n     15px of a high-contrast serif also sets smaller than 15px of Georgia, so the size\n     goes up a touch to keep the mark the same size while its strokes get finer - the\n     point is the weight, not the footprint. */\n  #toolbar .glyph { font: 400 16px/1 Didot, \u0022Bodoni 72\u0022, \u0022Iowan Old Style\u0022,\n                              \u0022Times New Roman\u0022, Times, serif;\n                    letter-spacing: .3px; }\n\n  #toolbar .sep { width: 1px; height: 18px; background: var(--line); margin: 0 5px; }\n\n  /* The selects sit at the same strength as the buttons and come forward under the\n     pointer. They show a value rather than an action - which font, which size - so\n     they carry the row\u0027s only words, and words at full ink were half of what made it\n     loud in the first place. */\n  /* A GROUND OF ITS OWN, even at rest, and even though it is the toolbar\u0027s own colour.\n     \u0060background: none\u0060 reads as \u0022let the toolbar show through\u0022 and means something else\n     to a \u003Cselect\u003E: with no background declared the browser paints its native widget,\n     and the only reason that was invisible is that a background WAS declared on hover.\n     Open the list and the pointer moves onto the list, so the hover falls away - and\n     the closed box came back as a pale native control under a dark menu. Reported from\n     the browser, with a screenshot.\n\n     --panel is what the toolbar is painted in, so at rest it looks exactly as it did.\n     The difference is only that the browser is no longer deciding. */\n  #toolbar select {\n    /* And the lists are what gives way when something must: a narrower list is still a\n       list, where a squeezed icon is a broken icon. \u0060min-width: 0\u0060 because a flex item\n       will not shrink below its own content otherwise - which is what left the buttons\n       as the only thing there was to squeeze. */\n    flex: 0 1 auto; min-width: 0;\n    height: 28px; padding: 0 4px; border: 1px solid transparent;\n    background: var(--panel); color: var(--chrome-ink, var(--ink));\n    border-radius: var(--radius);\n    transition: color .12s, background .12s;\n  }\n  /* Focus is also the state a select is in while its list is open, so it needs the\n     lifted ground the hover gives - otherwise opening the list makes the box recede\n     exactly when it is the thing being used. */\n  #toolbar select:focus { background: var(--control); color: var(--ink); }\n  /* An opaque hover rather than the wash the buttons take, and named colours on the\n     options - because the list a select opens is painted by the browser out of the\n     control\u0027s own colours. With \u0060background: none\u0060 and a translucent mint hover, the\n     open list came out a pale mint sheet with light grey text on it: illegible, and\n     only in the dark theme, because only there is the ink light enough to disappear\n     into it. Reported from the browser, with a screenshot. */\n  #toolbar select:hover { background: var(--control); color: var(--ink); }\n  #toolbar select option { background: var(--panel); color: var(--ink); }\n\n  /* A colour well rather than a raw colour input: the browser\u0027s own control is a\n     bordered box the size of a button and looks nothing like the rest. */\n  /* The colour control, in two halves: the swatch applies what is on it, the chevron\n     opens the choice. One button could only ever answer one of those two questions,\n     and it answered the wrong one - a native picker raises \u0060change\u0060 when it closes,\n     so pressing it again with the same colour already chosen raised nothing. */\n  #toolbar .ink { position: relative; display: flex; align-items: center; }\n  /* Over the control and out of the way: the browser opens the picker beside this\n     box, so it has to have one and it has to be here. */\n  #toolbar .ink \u003E input[type=\u0022color\u0022] {\n    position: absolute; inset: 0; opacity: 0; pointer-events: none;\n    padding: 0; border: none; background: none;\n  }\n  /* The min-width that used to be here was this same fault, patched on the one control\n     somebody noticed it on. \u0060flex: none\u0060 above says it for all of them. */\n  #toolbar .ink .chevron { width: 18px; }\n  #toolbar .ink .chevron svg { width: 12px; height: 12px; }\n  #toolbar #well {\n    display: block; width: 17px; height: 17px; border-radius: 3px;\n    border: 1px solid var(--line); background: var(--ink);\n  }\n\n  /* Declared plainly: the shared sheet restates the browser\u0027s [hidden] rule with an\n     !important, so a display here can no longer un-hide it. Guarding this one rule as\n     well would leave two mechanisms of which neither could be shown to fail. */\n  #toolbar #inkMenu {\n    position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;\n    display: flex; flex-direction: column; gap: 7px; padding: 8px;\n    background: var(--panel); border: 1px solid var(--line);\n    border-radius: var(--radius); box-shadow: var(--shadow-modal);\n  }\n  /* Eight to a row: two rows hold the sixteen a document remembers, and two rows are\n     still one glance. */\n  /* A table repeated over a list, said above it - on the paper, so in the paper\u0027s ink. */\n  .repeat-mark { color: var(--on-paper-muted); font-size: 11px; margin: 0 0 3px; }\n\n  /* The host\u0027s merge fields: placed as the colours\u0027 menu is, a list grouped by kind, each\n     entry its label over its token. */\n  #toolbar .fields { position: relative; display: flex; align-items: center; }\n  #toolbar #fieldMenu {\n    position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;\n    display: flex; flex-direction: column; gap: 2px; padding: 6px;\n    min-width: 220px; max-height: 60vh; overflow: auto;\n    background: var(--panel); border: 1px solid var(--line);\n    border-radius: var(--radius); box-shadow: var(--shadow-modal);\n  }\n  #toolbar #fieldMenu .kind { font-size: 11px; color: var(--muted); text-transform: uppercase;\n                              letter-spacing: .06em; margin: 6px 4px 2px; }\n  #toolbar #fieldMenu button { display: flex; flex-direction: column; align-items: flex-start;\n                               width: 100%; height: auto; padding: 4px 6px; text-align: left; }\n  #toolbar #fieldMenu button small { color: var(--muted); font-size: 11px; }\n  #toolbar #inkSwatches { display: grid; grid-template-columns: repeat(8, 18px); gap: 4px; }\n  /* Never empty now - the \u0022no colour\u0022 cell is always in it - so the rule that hid\n     it when a document had no colours yet would hide the one cell that is always\n     worth offering. */\n  /* The one that is on, marked the way the toolbar marks a pressed button - the\n     accent, and an edge rather than a fill, because a fill would be a second colour\n     on a cell whose whole job is to show one. The ring sits outside the cell so it\n     covers none of it. */\n  #toolbar #inkSwatches button.chosen {\n    outline: 2px solid var(--accent);\n    outline-offset: 1px;\n  }\n\n  #toolbar #inkSwatches button.none {\n    background: var(--control);\n    background-image: linear-gradient(to top right,\n      transparent calc(50% - 1px), var(--muted) calc(50% - 1px),\n      var(--muted) calc(50% \u002B 1px), transparent calc(50% \u002B 1px));\n  }\n  #toolbar #inkSwatches button {\n    width: 18px; height: 18px; min-width: 0; padding: 0; border-radius: 3px;\n    border: 1px solid var(--line);\n  }\n  /* The errand, under a rule: one gesture opens a picker and the rest choose a\n     colour, and a line is what says they are different kinds of thing. */\n  #toolbar #inkMenu \u003E button {\n    width: auto; height: auto; padding: 6px 6px 2px; font: 12px system-ui;\n    color: var(--chrome-ink, var(--ink)); justify-content: flex-start;\n    border-top: 1px solid var(--line); border-radius: 0;\n  }\n  #toolbar #inkMenu \u003E button:hover { background: var(--hover-wash); }\n\n  /* ---- the sheet ---- */\n  #sheet {\n    flex: 1; min-height: 0; overflow: auto;\n    width: min(calc(var(--sheet-width, 210mm) \u002B var(--gutter-left) \u002B var(--gutter-right)), 100%);\n    margin: 0 auto;\n    /* The text on the paper must not widen the frame: the frame asks its contents how\n       wide they want to be, and a paragraph\u0027s answer is its whole length on one line.\n       Its own width is set above; this only stops it voting. */\n    contain: inline-size;\n    /* Paper between the gutters, and the frame\u0027s desk showing through them. */\n    background: linear-gradient(to right,\n      transparent var(--gutter-left), var(--paper) var(--gutter-left),\n      var(--paper) calc(100% - var(--gutter-right)), transparent calc(100% - var(--gutter-right)));\n    padding: var(--sheet-pad-top, 20mm) calc(var(--sheet-pad-right, 20mm) \u002B var(--gutter-right))\n             var(--sheet-pad-bottom, 20mm) calc(var(--sheet-pad-left, 20mm) \u002B var(--gutter-left));\n    color: var(--on-paper-text);   /* the sheet\u0027s ink, never var(--ink) */\n    /* A face with no bold or italic cut falls back to another cut of its family, as\n       the engine does, rather than to a bold or a slant the browser invents - which\n       the PDF would never draw. */\n    font-synthesis: none;\n  }\n\n  /* A block. One per child of the Body, and exactly one of them is contenteditable\n     at a time - the sheet never is. That single decision is what keeps a picture or\n     a table from being a foreign body inside flowing text, which is where every\n     contenteditable editor comes apart. */\n  /* pre-wrap so a newline inside a paragraph is drawn as one. The engine has always\n     understood a hard break inside a run - BreakAdvancedText splits on it - and this\n     is what makes the page agree. */\n  .block { position: relative; padding: 1px 0; }\n\n  /* The editable, and nothing else in it.\n     Twice now something was appended to a block that turned out to be the editable\n     itself - the kind label, then the drag handle - and both times it became part of\n     the paragraph and was read back into the document. A block is furniture; the\n     surface inside it is the text. Anything can be added to the first without\n     touching the second. */\n  .surface { outline: none; white-space: pre-wrap; }\n  .surface[contenteditable] { min-height: 1.2em; }\n\n  /* THE KIND IS IN THE HANDLE\u0027S TOOLTIP, and no longer floating on the paper.\n     It was a pseudo-element in the margin - deliberately ::after and not a child,\n     because an element inside a contenteditable is part of the text: it showed up in\n     the block, it could be typed over, and reading the runs back concatenated\n     \u0022Advanced text\u0022 into the paragraph and saved it into the document.\n\n     That was the right answer to the wrong question. The kind is reference: you want\n     it once, about a block you cannot identify by looking. Hovering anything printed\n     it beside the text, in the page\u0027s own margin, where nothing else in this face\n     draws - so the sheet carried a running commentary while you typed. The handle\u0027s\n     \u0060title\u0060 says it now, at the moment somebody is actually asking. */\n  .block.here { box-shadow: -10px 0 0 -8px var(--accent); }\n\n  /* Where a dragged block would land. A line rather than a highlight, because what\n     is being chosen is a position between two blocks, not one of them. */\n  /* Where a dragged block would land, shown as the arrangement it will make.\n     A line at the edge said which side and left the rest to be inferred: dropping\n     beside a paragraph pairs the two into one container, dropping above it reorders\n     the body, and those are different enough that guessing between them is a poor\n     way to spend a drag. So the target draws the shape of the result - the half the\n     dragged block would take, filled, with the target\u0027s own half beside it. */\n  .block .zones {\n    position: absolute; inset: 0; z-index: 3; pointer-events: none;\n    opacity: 0; transition: opacity .1s;\n  }\n  .block.landing .zones { opacity: 1; }\n\n  .block .zone {\n    position: absolute; border-radius: var(--radius);\n    background: var(--hover-wash);\n    border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);\n    transition: inset .1s;\n  }\n  /* Filled where the block would go, outlined where the target would end up: which\n     one is which is the whole question, and two weights answer it without a word. */\n  .block .zone.taken {\n    background: color-mix(in srgb, var(--accent) 26%, transparent);\n    border-style: solid;\n  }\n\n  .block.lifted { opacity: .35; }\n\n  /* The one thing a block is dragged by.\n     Before this, a block was its own handle - which meant a paragraph was dragged by\n     its contenteditable, where the browser would rather be selecting text, and a pair\n     was dragged by the picture inside one of its cells, where it is not even clear\n     whether the gesture means \u0022move the pair\u0022 or \u0022take the picture out of it\u0022. Both\n     read as \u0022dragging stopped working\u0022 without either being obviously broken.\n     A handle answers all of it: one element, outside the editable, on every block\n     alike. */\n  /* Its box REACHES the block. At \u0060left: -24px\u0060 and 18 wide it stopped at -6, leaving\n     six pixels of nothing between the two - and crossing that gap on the way to the\n     handle ends \u0060.block:hover\u0060, so it faded exactly as you reached for it. A wider box\n     with the extra as padding closes it: the glyph does not move, and the handle stays\n     lit because it is a CHILD of the block, so pointing at it is still pointing at the\n     block.\n\n     Geometry rather than a timer. A control that lingers after the pointer has left is\n     a control drawn over whatever is being pointed at now, which is the fault the cell\n     handles were just mended for. */\n  .block \u003E .handle {\n    /* The BOX reaches the block and the CHIP is square, which are two different things\n       and were one until somebody looked: the padding that closes the gap is inside the\n       box, and a background paints the box - so the wash under the pointer came out 24\n       by 20 where a cell\u0027s is 18 by 18. \u0060background-clip: content-box\u0060 paints the\n       content alone, and the content is 20 by 20. */\n    position: absolute; left: -28px; top: 0;\n    width: 28px; padding-right: 6px; height: 22px; cursor: grab;\n    background-clip: content-box;\n    /* The paper\u0027s own colour at rest: nothing on the paper, and a chip of it where the\n       margin is too narrow and the handle stands on the desk beside the sheet - where\n       its ink on a dark desk was all but invisible. */\n    background-color: var(--paper);\n    display: flex; align-items: center; justify-content: center;\n    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;\n    border: 1px solid transparent; border-radius: var(--radius);\n    opacity: 0; transition: opacity .12s, color .12s, background .12s;\n  }\n  .block:hover \u003E .handle, .block.here \u003E .handle { opacity: 1; }\n  .block \u003E .handle:hover {\n    color: var(--on-paper-accent); background: var(--on-paper-wash);\n    border-color: var(--on-paper-line);\n  }\n  .block \u003E .handle:active { cursor: grabbing; }\n\n  /* Half of a pair takes hold of itself, inside its own corner.\n     In the gutter it would land under the pair\u0027s own handle - the left-hand cell\n     starts at the block\u0027s left edge, so the two were exactly on top of one another\n     and the picture, which is the cell on the left, could not be grabbed at all.\n     Inside also means it is legible over a photograph, which the gutter never was. */\n  .cell \u003E .handle {\n    position: absolute; left: 3px; top: 3px; z-index: 2;\n    width: 18px; height: 18px; cursor: grab;\n    display: flex; align-items: center; justify-content: center;\n    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;\n    background: var(--on-paper); border: 1px solid var(--on-paper-line);\n    border-radius: var(--radius); box-shadow: 0 1px 3px var(--on-paper-shadow);\n    opacity: 0; transition: opacity .12s, color .12s;\n  }\n  /* On hover ALONE, unlike a block\u0027s. A block\u0027s handle lives in the gutter, where\n     leaving it showing for the current block costs nothing; a cell\u0027s was moved into its\n     own corner precisely because the gutter is taken - so it sits OVER the text, and\n     leaving it there for whichever cell was last clicked puts a second handle on the\n     page while you are looking at another block. Reported exactly that way. */\n  .cell:hover \u003E .handle { opacity: .95; }\n  .cell \u003E .handle:hover { opacity: 1; color: var(--on-paper-accent); }\n  .cell \u003E .handle:active { cursor: grabbing; }\n\n  /* One block above another, which is what a cell holding a caption under a picture\n     is. No flex and no gap of its own: the parts are ordinary blocks in order, exactly\n     as the engine will stack them, and each carries its own handle so nothing put in a\n     stack is stuck in it. */\n  .block.stack, .cell.stack, td.stack { display: block; }\n  .stack \u003E .slot { position: relative; padding: 1px 0; }\n  .stack \u003E .slot \u002B .slot { margin-top: 1.5mm; }\n  .stack \u003E .slot.here { box-shadow: -8px 0 0 -6px var(--accent); }\n\n  /* Its handle sits in the slot\u0027s own corner, for the reason a cell\u0027s does: the\n     gutter belongs to the block, and two handles in one gutter hide each other. */\n  .slot \u003E .handle {\n    position: absolute; left: 3px; top: 3px; z-index: 2;\n    width: 18px; height: 18px; cursor: grab;\n    display: flex; align-items: center; justify-content: center;\n    color: var(--on-paper-ink); font: 13px/1 system-ui; user-select: none;\n    background: var(--on-paper); border: 1px solid var(--on-paper-line);\n    border-radius: var(--radius); box-shadow: 0 1px 3px var(--on-paper-shadow);\n    opacity: 0; transition: opacity .12s, color .12s;\n  }\n  .slot:hover \u003E .handle { opacity: .95; }   /* over the text too - see .cell above */\n  .slot \u003E .handle:hover { opacity: 1; color: var(--on-paper-accent); }\n  .slot \u003E .handle:active { cursor: grabbing; }\n\n  /* A picture beside a paragraph. Flex here mirrors what the engine does with\n     coordinates: the picture keeps its width, the paragraph takes what is left. */\n  .block.pair { display: flex; gap: 4mm; align-items: flex-start; }\n  .block.pair .cell { position: relative; outline: none; min-width: 0; }\n  .block.pair .cell.here { box-shadow: -8px 0 0 -6px var(--accent); }\n\n  /* Shown at the width it will be printed at, never at the file\u0027s pixel size: an\n     editor that draws a 2000-pixel photograph full-bleed is telling you something\n     about the file, not about the page. */\n  .block img { display: block; max-width: 100%; }\n\n  /* The grip, on the picture being edited. Bottom-right because that is where every\n     other program puts it. */\n  .block .grip {\n    position: absolute; width: 14px; height: 14px; z-index: 2;\n    background: var(--accent); border: 2px solid var(--paper); border-radius: var(--radius);\n    cursor: nwse-resize; opacity: 0; transition: opacity .12s;\n  }\n  .block.here .grip, .block:hover .grip { opacity: 1; }\n  .block.resizing { user-select: none; }\n  .block hr { border: none; border-top: 1px solid var(--on-paper-rule); margin: 8px 0; }\n\n  /* A table, drawn as one. Cells are editable one at a time, the same rule the whole\n     face rests on: the sheet is never one editable surface, so a picture in a cell is\n     a picture and not a foreign body in somebody\u0027s text. */\n  .block table.grid { width: 100%; border-collapse: collapse; margin: 2px 0; }\n  .block table.grid td, .block table.grid th {\n    border: 1px solid var(--on-paper-grid); padding: 1.5mm 2mm; vertical-align: top;\n    outline: none; min-width: 8mm;\n  }\n  .block table.grid th { background: var(--on-paper-head); font-weight: 600; text-align: left; }\n  .block table.grid td.here, .block table.grid th.here { box-shadow: inset 0 0 0 2px var(--accent); }\n\n  /* The handles for a row and a column, in the margins. They appear on the table being\n     edited, because a grid of buttons over every table would be a grid of buttons. */\n  /* A table keeps room for its own rails. Without it the column rail sat at -20px,\n     which is over whatever block is above - and the paragraph above a table is where\n     somebody is reading. */\n  .block.tabular { padding-top: 22px; }\n  .block.tabular \u003E .handle { left: -22px; top: 0; }\n\n  .block .rail { position: absolute; opacity: 0; transition: opacity .12s; }\n  .block:hover .rail, .block.here .rail { opacity: 1; }\n  .block .rail button {\n    position: absolute; width: 16px; height: 16px; padding: 0; font: 11px/1 system-ui;\n    display: flex; align-items: center; justify-content: center;\n    border: 1px solid var(--on-paper-line); border-radius: var(--radius);\n    background: var(--on-paper); color: var(--on-paper-ink); cursor: pointer;\n    box-shadow: 0 1px 2px var(--on-paper-shadow);\n  }\n  .block .rail button:hover {\n    color: var(--on-paper-accent); border-color: var(--on-paper-accent);\n    background: var(--on-paper-wash);\n  }\n  /* A cell lit as a place a picture would land. Only ever shown where the drop will\n     actually be taken, so what is offered and what happens cannot disagree. */\n  .grid td.landing, .grid th.landing {\n    outline: 2px solid var(--on-paper-accent); outline-offset: -2px;\n    background: var(--on-paper-wash);\n  }\n\n  .block .rail.columns { top: 2px; left: 0; right: 0; height: 16px; }\n  .block .rail.rows { left: -22px; top: 22px; bottom: 0; width: 16px; }\n\n  /* What this face cannot edit says so, rather than showing half of it - the same\n     gesture the designer already makes for a sub-template it cannot resolve. */\n  .foreign {\n    border: 1px dashed var(--on-paper-line); border-radius: var(--radius); padding: 9px 12px;\n    color: var(--on-paper-muted); font: italic 12px/1.5 system-ui; background: var(--on-paper-wash);\n  }\n  .foreign b { font-style: normal; color: var(--on-paper-text); }\n\n  /* Alternative text sits under the picture rather than in a panel: a picture\n     without it is refused by PDF/UA, and the moment to write it is while looking\n     at the picture. */\n  .alt {\n    display: block; width: 100%; margin-top: 3px;\n    font: 11px system-ui; color: var(--on-paper-muted);\n    background: none; border: none; border-bottom: 1px dotted var(--on-paper-line);\n    padding: 2px 0; border-radius: 0;\n  }\n  .alt:focus { outline: none; border-bottom-color: var(--accent); }\n\n  /* ---- the panel ---- */\n  aside { background: var(--panel); border-left: 1px solid var(--line);\n          overflow: auto; padding: 14px; }\n  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;\n             color: var(--muted); margin: 18px 0 8px; }\n  aside h2:first-child { margin-top: 0; }\n  .field { display: grid; grid-template-columns: 84px 1fr; gap: 6px;\n           align-items: center; margin-bottom: 6px; }\n  .field label { color: var(--muted); font-size: 12px; }\n  .check { display: flex; align-items: center; gap: 6px; margin: 5px 0; font-size: 12px; }\n  .hint { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 8px 0; }\n\n  .issues { list-style: none; margin: 0; padding: 0; }\n  .issue { display: flex; gap: 8px; padding: 6px 4px; border-radius: var(--radius);\n           cursor: pointer; font-size: 12px; line-height: 1.45; }\n  .issue:hover { background: var(--hover-wash); }\n  .issue .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; }\n  .issue.error .dot { background: var(--error); }\n  .issue.warning .dot { background: var(--caution); }\n  .count { font-size: 12px; margin: 10px 0 6px; }\n  .count.bad { color: var(--error); }\n  .count.warn { color: var(--caution); }\n  .count.good { color: var(--muted); }\n"
+};
+
+/* frisket-core.js */
+// Frisket designer - the core.
+//
+// Everything here answers a question about a document rather than about a page in a
+// browser: the model and its defaults, the layout echo of LayoutResolver, the SVG
+// rendering, the data binding, the template validator, and the wording all three
+// speak. It touches no element, reads no control and stores no preference.
+//
+// That is not tidiness. It is what lets the same code carry two faces - the full
+// designer and a flow editor - without either growing a second copy of the engine's
+// echo, which would drift the way two of anything drift. It is also what
+// `check-against-engine.js` has been loading all along with a stubbed document,
+// which is why the seam was already most of the way here before it was drawn.
+//
+// The one exception is deliberate and marked: the text measurer is a canvas, so it
+// is made of DOM. It is a ruler, not chrome, and it waits until it is needed.
+//
+// Loaded as a classic script, never a module: this page is opened from a file:// URL
+// as often as not, and a module there is refused outright by CORS.
+
+"use strict";
+
+// ---------------------------------------------------------------------------
+// The engine writes NaN as the string "NaN" (AllowNamedFloatingPointLiterals),
+// so every number crossing the JSON boundary goes through these two.
+// ---------------------------------------------------------------------------
+const num = v => (v === "NaN" || v === null || v === undefined || v === "") ? NaN : Number(v);
+const ser = v => Number.isFinite(v) ? v : "NaN";
+const has = v => Number.isFinite(num(v));
+
+const DOCK = { Left: 1, Top: 2, Right: 4, Bottom: 8 };
+
+function dockOf(loc) {
+  const a = loc.Dock;
+  if (typeof a === "number") return a;
+  if (!a || a === "None") return 0;
+  if (a === "Fill") return 15;
+  return String(a).split(",").reduce((m, n) => m | (DOCK[n.trim()] || 0), 0);
+}
+function dockToString(mask) {
+  if (mask === 0) return "None";
+  if (mask === 15) return "Fill";
+  return Object.keys(DOCK).filter(k => mask & DOCK[k]).join(", ");
+}
+
+const edges = (l = 0, t = 0, r = 0, b = 0) => ({ Left: l, Top: t, Right: r, Bottom: b });
+const corners = (tl = 0, tr = 0, br = 0, bl = 0) => ({ TopLeft: tl, TopRight: tr, BottomRight: br, BottomLeft: bl });
+
+// The sides a border is drawn on: Dock's four bits under the engine's own Sides enum, whose
+// all-four is All where Dock's is Fill. Absent is All, which is what a border always was.
+const SIDES = { Left: 1, Top: 2, Right: 4, Bottom: 8 };
+
+function sidesOf(style) {
+  const a = style.BorderSides;
+  if (a === undefined || a === null) return 15;
+  if (typeof a === "number") return a & 15;
+  const named = Object.assign({ None: 0, All: 15 }, SIDES);
+  return String(a).split(",").reduce((m, n) => m | (named[n.trim()] || 0), 0);
+}
+function sidesToString(mask) {
+  if (mask === 0) return "None";
+  if (mask === 15) return "All";
+  return Object.keys(SIDES).filter(k => mask & SIDES[k]).join(", ");
+}
+
+// The presets offered for a section's Dimension - a plain width/height, chosen once
+// when a template is created and rarely revisited, which is why it lives with
+// Title and Language in the section panel rather than in the toolbar.
+/// The sheets a person actually asks for, in the order they ask for them.
+///
+/// One list, read by both faces: the flow editor kept a second array of its own and the
+/// two had already drifted - it offered A3 and Letter landscape, this offered A5, and
+/// neither offered Legal. Section 1 at the scale of a constant.
+const PAPER_SIZES = {
+  a4p: [210, 297], a4l: [297, 210],
+  a3p: [297, 420], a3l: [420, 297],
+  a5p: [148, 210], a5l: [210, 148],
+  a6p: [105, 148],
+  letter: [216, 279], letterl: [279, 216],
+  legal: [216, 356], tabloid: [279, 432]
+};
+
+function newStyle() {
+  return {
+    Location: {
+      LeftValue: "NaN", LeftUnit: "Millimeter", RightValue: "NaN", RightUnit: "Millimeter",
+      WidthValue: "NaN", WidthUnit: "Millimeter", TopValue: "NaN", TopUnit: "Millimeter",
+      BottomValue: "NaN", BottomUnit: "Millimeter", HeightValue: "NaN", HeightUnit: "Millimeter",
+      AutoWidth: false, AutoHeight: false, Dock: "None"
+    },
+    Margin: edges(), Padding: edges(),
+    Constraints: { MinWidth: 0, MinHeight: 0, MaxWidth: 0, MaxHeight: 0 },
+    Visibility: "Visible", PageBreak: "None", Splitting: "Auto", PageScope: "All",
+    PageRange: null, Border: null, BorderSides: "All", CornerRadius: corners(), Background: null
+  };
+}
+const newFont = () => ({
+  Family: "", Size: 1, SizeUnit: "Rem", Bold: false, Italic: false, Underline: false,
+  Strikethrough: false,
+  Color: { R: 0, G: 0, B: 0, A: 255 },
+  HorizontalAlignment: "Left", VerticalAlignment: "Top", Wrap: true, LineSpacing: null
+});
+const newPen = () => ({ Color: { R: 0, G: 0, B: 0, A: 255 }, Width: 0.2, DashStyle: "Solid" });
+
+function newItem(kind) {
+  const item = { $type: kind, Style: newStyle() };
+  if (kind === "TextItem") { item.Text = "Nouveau texte"; item.Font = newFont(); }
+  if (kind === "LineItem") { item.Orientation = "Horizontal"; item.Pen = newPen(); }
+  if (kind === "ImageItem") {
+    Object.assign(item, { Source: { Data: "", SourcePath: null, MediaType: "image/png" },
+                          NaturalWidth: 40, NaturalHeight: 20, Scaling: "Uniform" });
+    item.Style.Location.WidthValue = 40;
+  }
+  if (kind === "ContainerItem") { item.Layout = "Absolute"; item.Childs = []; }
+  if (kind === "BarcodeItem") {
+    Object.assign(item, {
+      Value: "{InvoiceNumber}", Symbology: "Qr", Correction: "Medium",
+      QuietZone: 0, ShowText: true,
+      Ink: { R: 0, G: 0, B: 0, A: 255 }, Font: newFont()
+    });
+    item.Style.Location.WidthValue = 30;
+    item.Style.Location.HeightValue = 30;
+  }
+  if (kind === "FieldItem") {
+    Object.assign(item, {
+      Name: "champ", Kind: "Text", Value: null, Tooltip: null,
+      ReadOnly: false, Required: false, Multiline: false, MaxLength: 0,
+      Signing: "ByHand",
+      Font: newFont(),
+      Outline: { Color: { R: 90, G: 90, B: 90, A: 255 }, Width: 0.2, DashStyle: "Solid" },
+      Fill: null
+    });
+  }
+  if (kind === "TableItem") {
+    item.Layout = "Stack";
+    item.Childs = [];
+    item.Columns = [{ Width: "NaN", WidthUnit: "Millimeter" }, { Width: "NaN", WidthUnit: "Millimeter" }];
+    item.RepeatHeader = true;
+    item.Grid = { Color: { R: 180, G: 180, B: 180, A: 255 }, Width: 0.15, DashStyle: "Solid" };
+    item.Childs.push(tableRow(["Colonne A", "Colonne B"], true));
+    item.Childs.push(tableRow(["valeur", "valeur"], false));
+  }
+  if (kind === "ImageGridItem") {
+    item.Layout = "Stack";
+    item.GridColumns = 3;
+    item.RowHeight = 40;
+    item.Gap = 4;
+    item.Childs = [newItem("ImageItem")];
+  }
+  if (kind === "ImportedPageItem") {
+    item.Data = "";
+    item.SourcePath = "";
+    item.Page = 1;
+    item.Scaling = "Uniform";
+    item.Width = 120;
+  }
+  if (kind === "SubTemplateItem") {
+    item.Layout = "Stack";
+    item.Mode = "Splice";
+    item.TemplatePath = "";
+    item.TemplateData = "";
+    item.Childs = [];
+  }
+  if (kind === "AdvancedTextItem") {
+    item.Font = newFont();
+    item.Runs = [{ Text: "Nouveau texte", Font: null }];
+  }
+  return item;
+}
+function tableRow(texts, header) {
+  const row = { $type: "TableRow", Style: newStyle(), Layout: "Absolute", IsHeader: !!header, Childs: [] };
+  row.Style.Padding = edges(1.5, 1.2, 1.5, 1.2);
+  for (const t of texts) {
+    const cell = newItem("TextItem");
+    cell.Text = t;
+    cell.Font.Bold = !!header;
+    row.Childs.push(cell);
+  }
+  return row;
+}
+
+function blankReport() {
+  const header = { $type: "Header", Style: newStyle(), Layout: "Absolute", RepeatedReading: "Once", Childs: [] };
+  header.Style.Location.Dock = "Left, Top, Right";
+  header.Style.Location.HeightValue = 25;
+
+  const body = { $type: "Body", Style: newStyle(), Layout: "Stack", Childs: [] };
+  body.Style.Location.Dock = "Fill";
+
+  const footer = { $type: "Footer", Style: newStyle(), Layout: "Absolute", RepeatedReading: "Once", Childs: [] };
+  footer.Style.Location.Dock = "Left, Right, Bottom";
+  footer.Style.Location.HeightValue = 14;
+
+  const title = newItem("TextItem");
+  title.Text = "{Title}";
+  title.Font.Size = 2; title.Font.Bold = true;
+  title.Style.Location.LeftValue = 0; title.Style.Location.TopValue = 0;
+  header.Childs.push(title);
+
+  const counter = newItem("TextItem");
+  counter.Text = "Page {Page} / {Pages}";
+  counter.Font.HorizontalAlignment = "Right"; counter.Font.Size = 0.85;
+  counter.Style.Location.RightValue = 0; counter.Style.Location.BottomValue = 0;
+  footer.Childs.push(counter);
+
+  const doc = { $type: "Section", Style: newStyle(), Layout: "Absolute", Childs: [header, footer, body] };
+  doc.Style.Padding = edges(15, 12, 15, 12);
+
+  doc.Dimension = { Width: 210, Height: 297 };
+
+  // In the language the page is read in, asked at the moment the report is made. The
+  // title is the document's from then on - its /Title, and what {Title} prints in the
+  // header above - so it does not follow a later change of language. It was French
+  // whatever the language until 4 November 2026: the one word of the page's own that
+  // went into the document, and so the one the dictionary never saw.
+  return {
+    Title: t("report.new"),
+    RootFontSize: 3,
+    Fields: {},
+    GeneratedAt: null,
+    Sections: [doc]
+  };
+}
+
+// The section being edited lived here until 20 October 2026 - doc0, setSectionIndex and
+// sectionIndex - and read the designer's `report` as a free variable, which worked only
+// while that report was a global of the page. It is the designer's, inside
+// frisketDesigner, now: the core knows nothing of the page (CLAUDE.md 5c).
+
+// A file written before sections carries "Section" and "Dimension" at the root. The
+// engine reads both and writes neither; this does the same so an old template opens
+// here and is saved in the new shape.
+function normaliseReport(r) {
+  // Not a compatibility shim - there is no older shape to read - but the guarantee
+  // the rest of the page relies on: there is always a section, and it always has a
+  // page size. A template that says neither would otherwise lay out on nothing.
+  if (!Array.isArray(r.Sections) || r.Sections.length === 0)
+    r.Sections = [{ $type: "Section", Style: newStyle(), Layout: "Absolute", Childs: [] }];
+
+  // Every section, not only the first: a section without a size lays out on nothing,
+  // and the second one is exactly the one nobody thinks to check.
+  for (const section of r.Sections)
+    if (!section.Dimension) section.Dimension = { Width: 210, Height: 297 };
+
+  return r;
+}
+
+// ---------------------------------------------------------------------------
+// Layout — a deliberately small echo of LayoutResolver: reserve the bands,
+// arrange absolutely, stack a flow. It does not paginate and it measures with
+// the browser's fonts, so it is a guide, not the truth.
+// ---------------------------------------------------------------------------
+// Colours drawn onto the sheet, and therefore fixed in both themes. What the canvas
+// shows is a printed page: white stock, ink, and the marks this tool lays over them.
+// A mark that changed with the interface's theme would make the preview disagree with
+// the printer, which is the one thing a proofing tool may not do.
+//
+// Named here rather than spelled out at each site so that "these do not follow the
+// theme" is a place with a rule attached - the harness refuses a hex literal anywhere
+// outside this block and the CSS palette.
+//
+// The selection marker is deliberately in here rather than tied to --accent: a host
+// setting a pale accent would make the selection invisible on white paper.
+const ON_PAPER = {
+  headerBand: "#c8e6c9", bodyBand: "#e3f2fd", footerBand: "#ffe0b2",
+  outline: "#c0c0c0",            // the optional box around every element
+  selection: "#4c9be8",
+
+  // One set for both placeholders. They say the same thing - "nothing here yet" -
+  // and were saying it in two slightly different greys for no reason anybody chose.
+  placeholderFill: "#f4f4f4", placeholderLine: "#9a9a9a", placeholderInk: "#7a7a7a",
+
+  defaultInk: "#000000"          // a run with no colour of its own
+};
+
+const CAP_RATIO = 0.70;            // stand-in: the real value comes from the font's OS/2
+// The one thing this file needs from whoever loads it: a way to measure a run of
+// text. The engine draws the same boundary and calls it ITextMeasurer, for the same
+// reason - layout and drawing have to agree on widths or text overflows its frame.
+//
+// A browser has a canvas, so that is the default and no caller has to think about it.
+// Anywhere else - a harness, a server, a host embedding only the core - hands one in
+// and the file needs no document at all. Naming the seam is what turns "it happens to
+// work if you stub a canvas" into a declared dependency.
+let ruler = null;
+
+/// Supplies the measurer: (text, cssFont) -> width in CSS pixels.
+function setTextRuler(fn) { ruler = fn; }
+
+// What text that names no family is drawn in - declared, like the ruler, because only
+// the page knows which output it is showing. The engine gives such text the default
+// its font directory names (engine/Fonts/default-family.txt); a mail reader gets the
+// stack FlowingHtml writes, which the harness reads out of that file rather than
+// trusting this copy. Until the page says, the browser's own sans-serif.
+//
+// It used to be assumed, and three ways at once: this file drew "sans-serif", the
+// content editor "Georgia, serif", and the PDF came out in Mulish.
+const MAIL_FACE = "Helvetica, Arial, sans-serif";
+let unnamedFace = "sans-serif";
+
+/// Supplies the face for text that names no family, as a CSS font-family list.
+function setDefaultFace(face) { unnamedFace = face || "sans-serif"; }
+function defaultFace() { return unnamedFace; }
+
+/// A family as a CSS font-family list, quoted, with a generic face behind it: a family
+/// the browser has no file for falls back to its default, which is a serif.
+const faceOf = family => `'${String(family).replace(/'/g, "")}', sans-serif`;
+
+/// What a font server's list (GET /fonts) asks a page to load: one face per cut, at the
+/// address the server hands that file out from, and the family it gives text that names
+/// none. Pure, so the harness can ask it; loading is the browser's, so the page does it.
+/// Either spelling of each field: the model says Family and ASP.NET publishes family.
+function fontsFromServer(list, base) {
+  const field = (f, name) => f[name] ?? f[name[0].toLowerCase() + name.slice(1)];
+  const faces = [];
+  for (const f of list || []) {
+    const family = field(f, "Family");
+    if (!family) continue;
+    const bold = !!field(f, "Bold"), italic = !!field(f, "Italic");
+    faces.push({
+      family, weight: bold ? "700" : "400", style: italic ? "italic" : "normal",
+      url: `${base}/fonts/file?family=${encodeURIComponent(family)}&bold=${bold}&italic=${italic}`
+    });
+  }
+  const marked = (list || []).find(f => field(f, "IsDefault"));
+  return {
+    families: [...new Set(faces.map(f => f.family))].sort(),
+    faces,
+    defaultFamily: marked ? field(marked, "Family") : null
+  };
+}
+
+let _gauge = null;
+function measureRun(text, font) {
+  if (ruler) return ruler(text, font);
+  _gauge ??= document.createElement("canvas").getContext("2d");
+  _gauge.font = font;
+  return _gauge.measureText(text).width;
+}
+
+const rect = (l, t, r, b) => ({ left: l, top: t, right: r, bottom: b, get width() { return r - l; }, get height() { return b - t; } });
+const deflate = (x, e) => rect(x.left + e.Left, x.top + e.Top, x.right - e.Right, x.bottom - e.Bottom);
+const mm = (value, unit, ref) => unit === "Percentage" ? ref * value / 100 : value;
+
+// Anything a text leaves undecided comes from the document's default, and what
+// neither settles falls back to the built-in value - the same cascade the engine
+// applies. Without it an unset size reads as undefined and every measurement is NaN.
+function fontOf(font, report) {
+  const d = (report && report.DefaultFont) || {};
+  const f = font || {};
+  const pick = (a, b, fallback) => a ?? b ?? fallback;
+
+  return {
+    Family: pick(f.Family, d.Family, ""),
+    Size: pick(f.Size, d.Size, 1),
+    SizeUnit: pick(f.SizeUnit, d.SizeUnit, "Rem"),
+    Bold: pick(f.Bold, d.Bold, false),
+    Italic: pick(f.Italic, d.Italic, false),
+    Underline: pick(f.Underline, d.Underline, false),
+    Strikethrough: pick(f.Strikethrough, d.Strikethrough, false),
+    Color: pick(f.Color, d.Color, { R: 0, G: 0, B: 0, A: 255 }),
+    HorizontalAlignment: pick(f.HorizontalAlignment, d.HorizontalAlignment, "Left"),
+    VerticalAlignment: pick(f.VerticalAlignment, d.VerticalAlignment, "Top"),
+    Wrap: pick(f.Wrap, d.Wrap, true),
+    LineSpacing: pick(f.LineSpacing, d.LineSpacing, 1.5)
+  };
+}
+
+function emMm(font, report) {
+  const f = fontOf(font, report);
+  const cap = f.SizeUnit === "Point" ? f.Size * 25.4 / 72 * CAP_RATIO
+            : f.SizeUnit === "Millimeter" ? f.Size
+            : f.Size * (report.RootFontSize || 3);
+  return cap / CAP_RATIO;
+}
+function cssFont(font, report) {
+  const f = fontOf(font, report);
+  const px = emMm(font, report) * 3.7795;      // 1mm at 96dpi
+  return `${f.Italic ? "italic " : ""}${f.Bold ? "700 " : ""}${px}px ${f.Family || unnamedFace}`;
+}
+function textWidth(text, font, report) {
+  return measureRun(text, cssFont(font, report)) / 3.7795;
+}
+// A line is a multiple of the cap height - the size that was asked for - not of the
+// em and not of the font's own line height, so a row keeps its height whatever the
+// typeface. Same rule as the engine.
+function lineHeight(font, report) {
+  return emMm(font, report) * CAP_RATIO * fontOf(font, report).LineSpacing;
+}
+
+// A box auto-sized to its own text is measured twice - once to size it, once
+// to wrap into it - and the two measurements are not always bit-identical:
+// a subtraction and a re-addition a few lines apart can land a ULP short of
+// the original value. Real wrapping decisions differ by far more than a
+// micron, so a micron of slack absorbs that noise without ever masking an
+// actual overflow.
+const WRAP_SLACK_MM = 1e-6;
+
+// Where a line may break: the engine's LineBreaks.At, which is char.IsWhiteSpace less
+// the three spaces Unicode calls glue (U+00A0, U+2007, U+202F). Spelled out rather than
+// written as \s, which differs from .NET on two characters: it counts U+FEFF, which .NET
+// does not, and misses U+0085, which it does. The harness reads LineBreaks.Glue and asks
+// this pattern about each of them.
+const BREAK_CHARS = "\\t\\n\\v\\f\\r \\u0085\\u1680\\u2000-\\u2006\\u2008-\\u200A\\u2028\\u2029\\u205F\\u3000";
+const BREAKS_AT = new RegExp("[" + BREAK_CHARS + "]");
+const BREAK_RUN = new RegExp("([" + BREAK_CHARS + "]+)");
+
+function breakLines(text, font, report, width) {
+  const out = [];
+  const wraps = fontOf(font, report).Wrap;
+  for (const para of String(text ?? "").split("\n")) {
+    if (!wraps || !(width > 0) || textWidth(para, font, report) <= width + WRAP_SLACK_MM) { out.push(para); continue; }
+    let line = "";
+    for (const word of para.split(BREAK_RUN)) {
+      const next = line + word;
+      if (line && textWidth(next.trimEnd(), font, report) > width + WRAP_SLACK_MM) { out.push(line.trimEnd()); line = word.trimStart(); }
+      else line = next;
+    }
+    out.push(line.trimEnd());
+  }
+  return out;
+}
+
+/// What the data pane holds, parsed once per refresh. Null when it is empty or
+/// not yet valid JSON - which it will not be, half the time somebody is typing.
+let bound = null;
+
+/// The data the preview binds against, parsed. Given the empty string, or something
+/// that is not JSON yet because somebody is still typing it, there is simply no data -
+/// which is a state the preview already draws, so it is not an error.
+function setData(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) { bound = null; return; }
+
+  try {
+    bound = JSON.parse(trimmed);
+  } catch {
+    bound = null;                       // mid-keystroke; the panel already says so
+  }
+}
+
+/// Follows a dotted path through the data. Undefined when it leads nowhere, which
+/// is what tells the caller to leave the token visible.
+function fromData(path) {
+  if (!bound) return undefined;
+
+  let at = bound;
+  for (const step of path.split(".")) {
+    if (at == null || typeof at !== "object") return undefined;
+    at = at[step];
+  }
+  return at;
+}
+
+/// True when the data holds something worth showing at `path`. Same reading as the
+/// engine: absent, null, blank, zero, false and an empty list all mean nothing.
+function hasSomething(path) {
+  const value = fromData(String(path).trim().replace(/^\{|\}$/g, "").trim());
+  if (value === undefined || value === null) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "object") return true;
+  return String(value).trim().length > 0;
+}
+
+/// Whether an item earns its place, given the data. With no data loaded nothing is
+/// hidden: the preview draws it and the tree marks it.
+function showsWithData(item) {
+  if (!bound) return true;
+
+  // An image bound to a path in the data disappears when nothing is there, the same
+  // way an unsigned quote is left with no signature rather than an empty box. This
+  // is the binder's SourceField rule, not ShowWhen/HideWhen - independent of them,
+  // and checked first because it applies whether or not either is set.
+  if (item.$type === "ImageItem" && item.SourceField && !resolvedImageSource(item))
+    return false;
+
+  if (item.ShowWhen && !hasSomething(item.ShowWhen)) return false;
+  return !(item.HideWhen && hasSomething(item.HideWhen));
+}
+
+/// Heading numbering, the echo of engine/Model/HeadingNumbers.cs.
+///
+/// The counters live in a Map rather than on the items. Everything on an item here is
+/// enumerable, so stamping them on would put worked-out numbers into the template the
+/// designer saves - the C# side has internal fields the serializer cannot see, which is
+/// a protection this language does not offer.
+const headingCounters = new Map();
+
+const HEADING_LEVELS = 6;
+
+function headingLevelOf(item) {
+  const at = ["Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6"]
+    .indexOf(item && item.Role);
+  return at < 0 ? 0 : at + 1;
+}
+
+/// The level written inside the brackets of {HeadingNumber[2]}, or zero.
+function headingLevelIn(name) {
+  const found = /\[(\d+)\]/.exec(name || "");
+  if (!found) return 0;
+  const level = Number(found[1]);
+  return level >= 1 && level <= HEADING_LEVELS ? level : 0;
+}
+
+/// "1.1.1", "A.a.1", "A) a. 1" - the five symbol characters are the alphabets, and
+/// everything between them belongs to the level that follows. Truncating "1.1.1" to two
+/// levels therefore gives "1.1" and never "1.1."; the closing punctuation is the
+/// author's, typed in the text beside the token.
+function headingFormat(format) {
+  const shape = [];
+  let lead = "";
+  for (const c of String(format || "")) {
+    if ("1AaIi".includes(c)) { shape.push({ lead, kind: c }); lead = ""; }
+    else lead += c;
+  }
+  return shape;
+}
+
+function headingDepth(format) { return headingFormat(format).length; }
+
+function headingLetters(value, first) {
+  let out = "";
+  const base = first.charCodeAt(0);
+  while (value > 0) {
+    value--;
+    out = String.fromCharCode(base + (value % 26)) + out;
+    value = Math.floor(value / 26);
+  }
+  return out;
+}
+
+const ROMAN_SIGNS = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"],
+                     [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"],
+                     [5, "V"], [4, "IV"], [1, "I"]];
+
+function headingRoman(value, upper) {
+  if (value <= 0 || value > 3999) return String(value);
+  let out = "";
+  for (const pair of ROMAN_SIGNS)
+    while (value >= pair[0]) { out += pair[1]; value -= pair[0]; }
+  return upper ? out : out.toLowerCase();
+}
+
+function headingSpell(value, kind) {
+  if (kind === "A") return headingLetters(value, "A");
+  if (kind === "a") return headingLetters(value, "a");
+  if (kind === "I") return headingRoman(value, true);
+  if (kind === "i") return headingRoman(value, false);
+  return String(value);
+}
+
+function headingRender(counters, level, shape) {
+  let out = "";
+  for (let i = 0; i < level && i < counters.length; i++) {
+    const symbol = shape[Math.min(i, shape.length - 1)];
+    out += (i === 0 ? "" : symbol.lead) + headingSpell(counters[i], symbol.kind);
+  }
+  return out;
+}
+
+/// Walks every section in declaration order and remembers where each item sits. Run
+/// once before laying out and never while drawing: a counter advanced as items are
+/// placed would be advanced again by every redraw, and this page redraws constantly.
+function applyHeadingNumbers(report) {
+  headingCounters.clear();
+  const file = new Array(HEADING_LEVELS).fill(0);
+
+  const walk = (item, own) => {
+    if (item.Style && item.Style.Visibility === "Gone") return;
+
+    const level = headingLevelOf(item);
+    if (level > 0) {
+      file[level - 1]++; own[level - 1]++;
+      for (let d = level; d < HEADING_LEVELS; d++) { file[d] = 0; own[d] = 0; }
+    }
+
+    headingCounters.set(item, { file: file.slice(), own: own.slice() });
+    (item.Childs || []).forEach(child => walk(child, own));
+  };
+
+  (report.Sections || []).forEach(s => walk(s, new Array(HEADING_LEVELS).fill(0)));
+}
+
+/// The paper the report says it is meant for, as a CSS colour, or null for white.
+///
+/// Applied to --paper by whichever face is showing the page, and deliberately NOT drawn
+/// into the SVG: that SVG is the echo of the engine's own, the two are held to each
+/// other, and the engine never draws this. A colour in one and not the other is exactly
+/// the divergence that pairing exists to catch.
+///
+/// So the sheet is tinted by the chrome, under a proof that stays honest.
+function paperColour(report) {
+  const c = report && report.ProofBackground;
+  if (!c) return null;
+  const a = (c.A ?? 255) / 255;
+  return a < 1 ? `rgba(${c.R | 0}, ${c.G | 0}, ${c.B | 0}, ${a})`
+               : `rgb(${c.R | 0}, ${c.G | 0}, ${c.B | 0})`;
+}
+
+function tokens(text, report, pageNo, pageCount, owner) {
+  return String(text ?? "").replace(/\{\{|\}\}|\{([^}]*)\}/g, (whole, token) => {
+    if (whole === "{{") return "{";
+    if (whole === "}}") return "}";
+    const [name, format] = token.split(":");
+    const key = name.toLowerCase();
+
+    // A heading number, read from what the walk stored rather than from a counter
+    // running here - so redrawing the page cannot change it.
+    const heading = /^(section)?headingnumber(\[\d+\])?$/.exec(key);
+    if (heading) {
+      const shape = headingFormat(report.HeadingNumbering);
+      const at = headingCounters.get(owner);
+      if (!shape.length || !at) return whole;
+
+      const counters = heading[1] ? at.own : at.file;
+      const level = headingLevelIn(name) || headingLevelOf(owner);
+
+      // No level to be at, or nothing reached at that level yet - which is what a page
+      // header asking for a chapter number gets, being laid out before the body it
+      // heads. The token stays visible, the way an unfilled field does.
+      if (level <= 0 || !counters[level - 1]) return whole;
+      return headingRender(counters, level, shape);
+    }
+
+    if (key === "page") return String(pageNo);
+    if (key === "pages") return String(pageCount);
+    if (key === "title") return report.Title || "";
+    if (key === "date") return (report.GeneratedAt || new Date().toISOString()).slice(0, 10);
+    if (key === "time") return (report.GeneratedAt || new Date().toISOString()).slice(11, 16);
+    if (report.Fields && key in lower(report.Fields)) return lower(report.Fields)[key];
+
+    // The data comes last, so nothing it holds can shadow {Page} or {Title}. A path
+    // that leads nowhere leaves the token on the page, which is how the engine says
+    // "this was never filled in" rather than quietly printing a blank.
+    const value = fromData(name.trim());
+    if (value === undefined || value === null) return whole;
+
+    return format ? formatted(value, format) : String(value);
+  });
+}
+/// The few formats a preview needs. Not the engine's whole vocabulary - the exact
+/// preview is the answer when the difference matters - but enough that an amount
+/// reads as an amount rather than as 1234.5.
+function formatted(value, format) {
+  if (typeof value !== "number") return String(value);
+
+  // Invariant only, to match the engine's own default: comma for grouping, point
+  // for the decimal. A French preview here would be a choice this page makes for
+  // the reader rather than one the template or the data made - the designer is
+  // meant to stay a neutral picture of what the engine will do.
+  const decimals = (format.split(".")[1] || "").replace(/[^0#]/g, "").length;
+  const grouped = format.includes(",");
+
+  let text = value.toFixed(decimals);
+  if (grouped) {
+    const [whole, rest] = text.split(".");
+    text = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (rest ? "." + rest : "");
+  }
+  return text;
+}
+
+let _lowerCache = new WeakMap();
+function lower(fields) {
+  if (!_lowerCache.has(fields)) {
+    const m = {}; for (const k of Object.keys(fields)) m[k.toLowerCase()] = fields[k];
+    _lowerCache.set(fields, m);
+  }
+  return _lowerCache.get(fields);
+}
+
+function intrinsicHeight(item, boxWidth, report) {
+  const h = num(item.Style.Location.HeightValue);
+  if (Number.isFinite(h)) return mm(h, item.Style.Location.HeightUnit, 0);
+  const p = item.Style.Padding;
+  const content = Math.max(0, boxWidth - p.Left - p.Right);
+  let height = 0;
+  if (item.$type === "TextItem") height = breakLines(item.Text, item.Font, report, content).length * lineHeight(item.Font, report);
+  else if (item.$type === "LineItem") height = item.Pen.Width;
+  else if (item.$type === "FieldItem") {
+    const lines = item.Kind === "Signature" || item.Multiline ? 3 : 1;
+    height = lines * lineHeight(item.Font, report) + 1;
+  }
+  else if (item.$type === "ImageItem") {
+    const ratio = pictureRatio(item);
+    height = ratio > 0 ? content / ratio : 0;
+  }
+  else if (item.$type === "ImageGridItem") {
+    const columns = Math.max(1, item.GridColumns || 1);
+    const gap = Math.max(0, item.Gap ?? 0);
+    const visible = (item.Childs || []).filter(c => c.Style.Visibility !== "Gone").length;
+    const rows = Math.max(1, Math.ceil(visible / columns));
+    height = rows * (item.RowHeight || 0) + Math.max(0, rows - 1) * gap;
+  }
+  else if (item.$type === "AdvancedTextItem") {
+    height = breakAdvancedRuns(item, content, report).reduce((sum, line) => sum + line.height, 0);
+  }
+  else if (item.Childs) {
+    const of = c => intrinsicHeight(c, content - c.Style.Margin.Left - c.Style.Margin.Right, report)
+                  + c.Style.Margin.Top + c.Style.Margin.Bottom;
+
+    if (item.Layout === "Stack") {
+      // Children scoped to a page are alternatives, not a sequence: only the
+      // heaviest scope counts, exactly as the engine reserves the space.
+      let always = 0;
+      const scoped = {};
+      for (const c of item.Childs || []) {
+        if (c.Style.Visibility === "Gone") continue;
+        const scope = c.Style.PageScope || "All";
+        if (scope === "All") always += of(c);
+        else scoped[scope] = (scoped[scope] || 0) + of(c);
+      }
+      const variants = Object.values(scoped);
+      height = always + (variants.length ? Math.max(...variants) : 0);
+    } else {
+      for (const c of item.Childs || []) {
+        if (c.Style.Visibility === "Gone") continue;
+        const loc = c.Style.Location;
+        const offset = has(loc.TopValue) && loc.TopUnit !== "Percentage" ? num(loc.TopValue) : 0;
+        height = Math.max(height, offset + of(c));
+      }
+    }
+  }
+  return height + p.Top + p.Bottom;
+}
+
+/// Where an item that measured its own size sits in the room it was given - the echo
+/// of LayoutResolver.AlignInside.
+///
+/// Only on an axis nothing pinned: a coordinate, an edge it is stuck to, or a size the
+/// author stated has already decided, and an alignment must not argue with any of them.
+/// "None" leaves it where it fell.
+function alignPlace(origin, span, size, align) {
+  if (align === "Center") return origin + (span - size) / 2;
+  if (align === "End") return origin + span - size;
+  return origin;
+}
+
+/// True when the author decided how wide the item is - a width outright, or both edges
+/// pinned - rather than leaving it to be measured from its content.
+function statedWidth(loc, docked) {
+  if (has(loc.WidthValue)) return true;
+  return (has(loc.LeftValue) || (docked & DOCK.Left) !== 0)
+      && (has(loc.RightValue) || (docked & DOCK.Right) !== 0);
+}
+
+function computeFrame(item, area, report) {
+  const loc = item.Style.Location;
+  const a = dockOf(loc);
+  const av = deflate(area, item.Style.Margin);
+  const pad = item.Style.Padding;
+  let left = NaN, right = NaN, top = NaN, bottom = NaN;
+
+  if (a & DOCK.Left) left = av.left;
+  else if (has(loc.LeftValue)) left = av.left + mm(num(loc.LeftValue), loc.LeftUnit, av.width);
+  if (a & DOCK.Right) right = av.right;
+  else if (has(loc.RightValue)) right = av.right - mm(num(loc.RightValue), loc.RightUnit, av.width);
+
+  const w = has(loc.WidthValue) ? mm(num(loc.WidthValue), loc.WidthUnit, av.width) : NaN;
+  if (Number.isFinite(w)) {
+    if (Number.isFinite(left) && !Number.isFinite(right)) right = left + w;
+    else if (!Number.isFinite(left) && Number.isFinite(right)) left = right - w;
+    else if (!Number.isFinite(left)) { left = av.left; right = left + w; }
+  }
+
+  if (a & DOCK.Top) top = av.top;
+  else if (has(loc.TopValue)) top = av.top + mm(num(loc.TopValue), loc.TopUnit, av.height);
+  if (a & DOCK.Bottom) bottom = av.bottom;
+  else if (has(loc.BottomValue)) bottom = av.bottom - mm(num(loc.BottomValue), loc.BottomUnit, av.height);
+
+  const h = has(loc.HeightValue) ? mm(num(loc.HeightValue), loc.HeightUnit, av.height) : NaN;
+  if (Number.isFinite(h)) {
+    if (Number.isFinite(top) && !Number.isFinite(bottom)) bottom = top + h;
+    else if (!Number.isFinite(top) && Number.isFinite(bottom)) top = bottom - h;
+    else if (!Number.isFinite(top)) { top = av.top; bottom = top + h; }
+  }
+
+  if (item.$type === "TextItem") {
+    if (![left, right, top, bottom].every(Number.isFinite)) {
+      const available = (Number.isFinite(left) && Number.isFinite(right)) ? right - left - pad.Left - pad.Right : Infinity;
+      const lines = breakLines(tokens(item.Text, report, 1, 1, item), item.Font, report, available);
+      const bw = Math.max(...lines.map(l => textWidth(l, item.Font, report)), 0) + pad.Left + pad.Right;
+      const bh = lines.length * lineHeight(item.Font, report) + pad.Top + pad.Bottom;
+      if (!Number.isFinite(left) && Number.isFinite(right)) left = right - bw;
+      else if (!Number.isFinite(right)) { if (!Number.isFinite(left)) left = av.left; right = left + bw; }
+      if (!Number.isFinite(top) && Number.isFinite(bottom)) top = bottom - bh;
+      else if (!Number.isFinite(bottom)) { if (!Number.isFinite(top)) top = av.top; bottom = top + bh; }
+    }
+  } else if (item.$type === "FieldItem") {
+    if (!Number.isFinite(left)) left = av.left;
+    if (!Number.isFinite(right)) right = av.right;
+    const wanted = intrinsicHeight(item, right - left, report);
+    if (!Number.isFinite(top) && Number.isFinite(bottom)) top = bottom - wanted;
+    else if (!Number.isFinite(bottom)) { if (!Number.isFinite(top)) top = av.top; bottom = top + wanted; }
+  } else if (item.$type === "LineItem" || item.$type === "ImageItem") {
+    if (!Number.isFinite(left)) left = av.left;
+    if (!Number.isFinite(right)) right = av.right;
+    const thickness = intrinsicHeight(item, right - left, report);
+    if (!Number.isFinite(top) && Number.isFinite(bottom)) top = bottom - thickness;
+    else if (!Number.isFinite(bottom)) { if (!Number.isFinite(top)) top = av.top; bottom = top + thickness; }
+  } else if (item.Childs && (!Number.isFinite(top) || !Number.isFinite(bottom))) {
+    // A band that states no height takes the height of its content, like the engine.
+    if (!Number.isFinite(left)) left = av.left;
+    if (!Number.isFinite(right)) right = av.right;
+    const needed = intrinsicHeight(item, right - left, report);
+    if (!Number.isFinite(top)) top = bottom - needed;
+    else bottom = top + needed;
+  }
+
+  // Only rewrite left/right (or top/bottom) when a constraint actually fired -
+  // same guard as the engine's ApplyConstraints. Reconstructing an edge from
+  // "the other edge plus this same width" when nothing clamped is a no-op in
+  // theory and a few ULPs off in practice: an auto-sized box is sized to fit
+  // its own text exactly, so that sliver of rounding error is enough to tip a
+  // width comparison the wrong way and wrap a line that fit.
+  const c = item.Style.Constraints;
+  if (Number.isFinite(left) && Number.isFinite(right)) {
+    const width = right - left;
+    let clamped = width;
+    if (c.MinWidth > 0 && clamped < c.MinWidth) clamped = c.MinWidth;
+    if (c.MaxWidth > 0 && clamped > c.MaxWidth) clamped = c.MaxWidth;
+    if (clamped !== width) {
+      if (a & DOCK.Right) left = right - clamped; else right = left + clamped;
+    }
+  }
+  if (Number.isFinite(top) && Number.isFinite(bottom)) {
+    const height = bottom - top;
+    let clamped = height;
+    if (c.MinHeight > 0 && clamped < c.MinHeight) clamped = c.MinHeight;
+    if (c.MaxHeight > 0 && clamped > c.MaxHeight) clamped = c.MaxHeight;
+    if (clamped !== height) {
+      if (a & DOCK.Bottom) top = bottom - clamped; else bottom = top + clamped;
+    }
+  }
+  // The same move the engine makes in AlignInside, at the same moment: after the
+  // constraints and after every sizing pass, never inside one of them.
+  //
+  // loc is item.Style.Location and never a working copy with the defaults filled in -
+  // an item that stated nothing would come back from one stuck to all four edges, so
+  // "did the author pin this?" would always answer yes and the alignment would never
+  // fire. hydrate() fills the gaps with NaN and "None", which is why reading it here
+  // still asks the author.
+  //
+  // This whole block was missing until 24 August 2026. Style.AlignVertical reached the
+  // engine, the panel and the flow editor and never this file, so the preview put a
+  // centred item against the top of its band while the engine centred it - the preview
+  // lying about the page, which is the fifth column of the table in section 1.
+  const across = item.Style.AlignHorizontal || "None";
+  if (across !== "None" && !statedWidth(loc, a)
+      && (a & (DOCK.Left | DOCK.Right)) === 0
+      && !has(loc.LeftValue) && !has(loc.RightValue)
+      && Number.isFinite(left) && Number.isFinite(right)) {
+    const width = right - left;
+    left = alignPlace(av.left, av.width, width, across);
+    right = left + width;
+  }
+
+  const down = item.Style.AlignVertical || "None";
+  if (down !== "None" && !has(loc.HeightValue)
+      && (a & (DOCK.Top | DOCK.Bottom)) === 0
+      && !has(loc.TopValue) && !has(loc.BottomValue)
+      && Number.isFinite(top) && Number.isFinite(bottom)) {
+    const height = bottom - top;
+    top = alignPlace(av.top, av.height, height, down);
+    bottom = top + height;
+  }
+
+  return rect(left, top, right, bottom);
+}
+
+function columnEdges(table, left, right) {
+  const cols = table.Columns && table.Columns.length ? table.Columns : [{ Width: "NaN" }];
+  const total = right - left;
+  let fixed = 0, autos = 0;
+  const widths = cols.map(c => {
+    if (!has(c.Width)) { autos++; return NaN; }
+    const w = mm(num(c.Width), c.WidthUnit, total);
+    fixed += w; return w;
+  });
+  const share = autos ? Math.max(0, total - fixed) / autos : 0;
+  const out = [left];
+  widths.forEach(w => out.push(out[out.length - 1] + (Number.isFinite(w) ? w : share)));
+  return out;
+}
+
+// A template only writes what it decides: anything left at its default is absent
+// from the file. That keeps a template readable, and it means nothing downstream
+// may assume a key is there. Filling the gaps in once, on the way in, is cheaper
+// and far safer than guarding every read - a missed guard reads as undefined and
+// lays the item out at NaN rather than failing.
+/// Adds what is missing and touches nothing that is there.
+function fill(target, defaults) {
+  for (const key in defaults)
+    if (target[key] === undefined) target[key] = defaults[key];
+  return target;
+}
+
+/// True when the item says it only appears under a condition. The preview cannot
+/// evaluate it - the designer holds no bound data - so it draws the element and the
+/// panel says why it might not be there. Pretending it is absent would be worse:
+/// somebody would move a rule that was never going to overlap.
+function isConditional(item) {
+  return !!(item.ShowWhen || item.HideWhen);
+}
+
+function hydrate(item) {
+  if (!item || typeof item !== "object") return item;
+
+  // Filled in place, never replaced. The properties panel holds a reference to the
+  // very object it edits, so swapping in a merged copy on every layout leaves the
+  // editor writing into an orphan: the value changes and the section does not.
+  const s = item.Style ??= newStyle();
+  fill(s, newStyle());
+  fill(s.Location ??= {}, newStyle().Location);
+  fill(s.Margin ??= {}, edges());
+  fill(s.Padding ??= {}, edges());
+  fill(s.Constraints ??= {}, { MinWidth: 0, MinHeight: 0, MaxWidth: 0, MaxHeight: 0 });
+  // The engine writes a corner only when it is rounded, so a frame rounded at one corner
+  // arrives with the other three missing.
+  fill(s.CornerRadius ??= {}, corners());
+
+  // Rich text too. It was left out, and a template naming no font for one - legal, and what a
+  // hand or an AI writing from the schema produces - stopped the designer at `item.Font.Wrap`
+  // the moment it was loaded. Found on 20 October 2026 by the first browser test that handed
+  // the designer a template it had not written itself.
+  if (item.$type === "TextItem" || item.$type === "FieldItem" || item.$type === "BarcodeItem"
+      || item.$type === "AdvancedTextItem")
+    fill(item.Font ??= {}, newFont());
+  if (item.$type === "AdvancedTextItem") item.Runs ??= [];
+
+  // Item defaults that are the enum's zero are absent too, and those read as an
+  // identity: a field with no Kind is a text field, not a field of no kind.
+  //
+  // And a Layout that is absent is whatever the engine's constructor says, which is Stack for
+  // the four that flow - Body, TableItem, ImageGridItem, SubTemplateItem (CLAUDE.md 7). The
+  // engine writes that Stack, so a file it wrote never showed the difference; a template a
+  // host or an AI writes by hand leaves it out, and its body or its sub-document was laid out
+  // here as Absolute - every child on top of the first - while the engine stacked them.
+  // Found on 20 October 2026 by looking at a sub-document drawn both ways side by side.
+  const D = {
+    LineItem:      { Orientation: "Horizontal" },
+    ImageItem:     { Scaling: "Uniform" },
+    ContainerItem: { Layout: "Absolute", ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
+    TableRow:      { Layout: "Absolute" },
+    TableItem:     { Layout: "Stack", RepeatHeader: true },
+    ImageGridItem: { Layout: "Stack" },
+    Header:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true, RepeatedReading: "Once" },
+    Footer:        { ColumnCount: 1, ColumnGap: 6, BalanceColumns: true, RepeatedReading: "Once" },
+    Body:          { Layout: "Stack", ColumnCount: 1, ColumnGap: 6, BalanceColumns: true },
+    FieldItem:     { Kind: "Text", Signing: "ByHand", Multiline: false, ReadOnly: false,
+                     Required: false, MaxLength: 0 },
+    BarcodeItem:   { Value: "", Symbology: "Qr", Correction: "Medium",
+                     QuietZone: 0, ShowText: true },
+    SubTemplateItem: { Layout: "Stack", Mode: "Splice", TemplatePath: "", TemplateData: "" },
+    ImportedPageItem: { Data: "", SourcePath: "", Page: 1, Scaling: "Uniform" }
+  }[item.$type];
+
+  if (D) for (const k in D) if (item[k] === undefined) item[k] = D[k];
+
+  (item.Columns || []).forEach(c => { if (c.WidthUnit === undefined) c.WidthUnit = "Millimeter"; });
+  (item.Childs || []).forEach(hydrate);
+  return item;
+}
+
+/// Splices in every sub-template that carries its own JSON, and every st:// reference the
+/// caller can answer for.
+///
+/// A path needs a file this page does not have, so it stays empty - the engine draws the same
+/// line, and the panel says which is which rather than letting the preview pretend. A
+/// reference is a program's to answer, and since 20 October 2026 the program can be asked:
+/// `lookup(reference)` returns the referenced template - JSON text or an object - or
+/// undefined while it is not known yet, which draws the block empty until it is. That is
+/// ISubTemplates.Find on the engine's side, answered by the same host from the same store.
+///
+/// What a piece holds is expanded in turn, as the engine expands it, and a reference already
+/// being expanded higher up draws empty rather than looping - the engine's cycle guard,
+/// which throws; a preview has nothing to throw to.
+///
+/// Before applyHeadingNumbers below, and that is not tidiness: a heading inside a
+/// spliced template has to be counted with the rest of them, which is only possible
+/// because expansion comes first. The engine says so in as many words - "4.1. Method
+/// coming from the sub-template, possible only because expansion precedes everything
+/// else" (CLAUDE.md section 15b).
+function expandCarried(node, lookup = null, chain = new Set()) {
+  for (const child of (node.Childs || [])) {
+    const carried = child.$type === "SubTemplateItem" && (child.TemplateData || "").length > 0;
+    const reference = child.$type === "SubTemplateItem" ? referenceOf(child) : null;
+
+    if (carried || reference !== null) {
+      // Append brings a document, not a block: its sections land after this one, and
+      // this canvas shows one section. Splicing its body into the flow here would
+      // draw a page that will never exist - which is the fault this function's own
+      // comment warns about, met from the other end.
+      if (child.Mode === "Append") { child.Childs = []; continue; }
+
+      let inner = null;
+      try {
+        inner = carried
+          ? JSON.parse(decodeURIComponent(escape(atob(child.TemplateData))))
+          : chain.has(reference) ? null : asTemplate(lookup ? lookup(reference) : undefined);
+      } catch {
+        // Not a template, or not base64. Empty is the honest drawing: the panel's
+        // check says what is wrong, and a preview that guessed would be worse.
+        inner = null;
+      }
+
+      const body = inner && (inner.Sections || [])
+        .flatMap(s => s.Childs || []).find(c => c.$type === "Body");
+
+      // Replaced rather than appended: layout runs on every keystroke, and appending
+      // would splice the same template in again on each one.
+      child.Childs = (body && body.Childs) ? JSON.parse(JSON.stringify(body.Childs)) : [];
+
+      const deeper = new Set(chain);
+      if (reference !== null) deeper.add(reference);
+      expandCarried(child, lookup, deeper);
+      continue;
+    }
+    if (child.Childs) expandCarried(child, lookup, chain);
+  }
+}
+
+/// A sub-template whose children come from somewhere else - its own bytes, or the host's
+/// store - and are therefore drawn here and never edited: they are copied in afresh on
+/// every layout, and dropped again on saving.
+function holdsPiece(item) {
+  return item.$type === "SubTemplateItem"
+      && ((item.TemplateData || "").length > 0 || referenceOf(item) !== null);
+}
+
+/// What a sub-template's st:// reference names - the text after the scheme, trimmed - or null
+/// when it names a file, or nothing. The scheme is looked for at the very start, untrimmed, as
+/// the engine looks for it: " st://x" is a path there, and must not be a reference here.
+function referenceOf(item) {
+  const path = item.TemplatePath || "";
+  return /^st:\/\//i.test(path) ? path.slice(5).trim() : null;
+}
+
+/// A template as a host may hand it over: JSON text, an object, or nothing yet.
+function asTemplate(value) {
+  if (typeof value === "string") return JSON.parse(value);
+  return value && typeof value === "object" ? value : null;
+}
+
+/// The template the exact preview is sent, with every reference it can answer for carried as
+/// bytes instead of named. The engine behind the preview is not the host and cannot resolve a
+/// name; carried, the pieces reach it exactly as this page shows them. What is SAVED keeps the
+/// references - see forEngine - so changing a piece in the host's store changes every document
+/// that names it, which is the whole point of naming it.
+function carryReferences(template, lookup) {
+  const copy = JSON.parse(JSON.stringify(template));
+  const encode = text => btoa(unescape(encodeURIComponent(text)));
+
+  (function carry(node, chain) {
+    for (const child of (node.Childs || [])) {
+      // A piece embedded from a file may itself name pieces of the library.
+      if (child.$type === "SubTemplateItem" && (child.TemplateData || "").length) {
+        try {
+          const inner = JSON.parse(decodeURIComponent(escape(atob(child.TemplateData))));
+          carry({ Childs: inner.Sections || [] }, chain);
+          child.TemplateData = encode(JSON.stringify(inner));
+        } catch { /* not a template: the engine says so, as it would have */ }
+        continue;
+      }
+      const reference = child.$type === "SubTemplateItem" ? referenceOf(child) : null;
+      if (reference !== null && !chain.has(reference)) {
+        let inner = null;
+        try { inner = asTemplate(lookup(reference)); } catch { inner = null; }
+        if (inner) {
+          const deeper = new Set(chain).add(reference);
+          const nested = JSON.parse(JSON.stringify(inner));
+          carry({ Childs: nested.Sections || [] }, deeper);
+          child.TemplateData = encode(JSON.stringify(nested));
+          child.TemplatePath = "";
+          child.Childs = [];
+        }
+        continue;
+      }
+      carry(child, chain);
+    }
+  })({ Childs: copy.Sections || [] }, new Set());
+
+  return copy;
+}
+
+/// The report as the engine should receive it, and as a file should hold it.
+///
+/// Both the exact preview and Save had a copy of these lines, comment included, so a
+/// third thing to strip would have gone into one of them and not the other.
+function forEngine(report) {
+  const copy = JSON.parse(JSON.stringify(report));
+
+  // The engine writes no $type on a section - it is not polymorphic at that position -
+  // and every section is dropped the same way, not only the first.
+  (copy.Sections || []).forEach(d => delete d.$type);
+
+  // A carried sub-template's children are derived from its bytes, so the file keeps
+  // the bytes and not the expansion. Otherwise editing the other template would leave
+  // this one showing what it used to say, and saying it with confidence. A referenced one's
+  // are derived from the host's store, for the same reason and more so: keeping them would
+  // freeze the piece into the file, and a changed article would change nothing.
+  (function strip(node) {
+    for (const child of (node.Childs || [])) {
+      if (holdsPiece(child))
+        child.Childs = [];
+      else
+        strip(child);
+    }
+  })({ Childs: copy.Sections || [] });
+
+  return copy;
+}
+
+function layout(report, index = 0, lookup = null) {
+  normaliseReport(report);
+  expandCarried({ Childs: report.Sections || [] }, lookup);
+
+  // Every section, not just the one being composed: {HeadingNumber} counts across the
+  // whole file, so the second section cannot know where it starts without the first
+  // having been walked. Once per layout, never while drawing.
+  applyHeadingNumbers(report);
+
+  // Which section to compose, passed in rather than read off the editor: the harness
+  // hands this function a report of its own, and reaching for the global index would
+  // lay out a section belonging to a different document. Defaulting to the first is
+  // what every caller wanted back when there was only one.
+  const doc = report.Sections[Math.min(Math.max(index | 0, 0), report.Sections.length - 1)];
+  hydrate(doc);
+  const placed = [];
+  const page = rect(0, 0, doc.Dimension.Width, doc.Dimension.Height);
+  const emit = (item, frame, extra) => { placed.push(Object.assign({ item, frame }, extra)); return frame; };
+
+  emit(doc, page);
+  const content = deflate(page, doc.Style.Padding);
+  const kids = doc.Childs || [];
+  const header = kids.find(k => k.$type === "Header");
+  const footer = kids.find(k => k.$type === "Footer");
+  const body = kids.find(k => k.$type === "Body");
+
+  let band = content;
+  if (header && header.Style.Visibility !== "Gone") {
+    const f = arrange(header, content, placed, report);
+    band = rect(band.left, f.bottom, band.right, band.bottom);
+  }
+  if (footer && footer.Style.Visibility !== "Gone") {
+    const f = arrange(footer, content, placed, report);
+    band = rect(band.left, band.top, band.right, f.top);
+  }
+  for (const k of kids) {
+    if (k === header || k === footer || k === body) continue;
+    arrange(k, content, placed, report);
+  }
+  if (body && body.Style.Visibility !== "Gone") {
+    emit(body, band);
+    const area = deflate(band, body.Style.Padding);
+    if (body.Layout === "Stack") flow(body, area, placed, report);
+    else (body.Childs || []).forEach(c => arrange(c, area, placed, report));
+  }
+  return { placed, page, band, section: doc };
+}
+
+function arrange(item, area, placed, report) {
+  // Gone, or hidden by a condition the loaded data does not satisfy. Absolute
+  // children come through here, so this is where a pinned rule disappears.
+  if (item.Style.Visibility === "Gone" || !showsWithData(item)) return rect(NaN, NaN, NaN, NaN);
+  const frame = computeFrame(item, area, report);
+  placed.push({ item, frame });
+  if (item.$type === "TableItem") { table(item, frame, placed, report); return frame; }
+  if (item.$type === "ImageGridItem") { grid(item, frame, placed, report); return frame; }
+  if (item.$type === "AdvancedTextItem") { advancedText(item, frame, placed, report); return frame; }
+  if (item.Childs) {
+    const inner = deflate(frame, item.Style.Padding);
+    if (item.Layout === "Stack") flow(item, inner, placed, report);
+    else item.Childs.forEach(c => arrange(c, inner, placed, report));
+  }
+  return frame;
+}
+
+/// Lays a container's children out, in one column or several.
+///
+/// Columns fill in order: what one cannot take starts the next. The page here is a
+/// single sheet - the preview does not paginate - so anything past the last column
+/// is simply not drawn, and the panel says how many columns there are.
+///
+/// Unlike the engine, this does not split a paragraph across a column boundary: it
+/// moves whole children. A long text therefore starts a column here where the engine
+/// would have finished it on the one before. The exact preview is the answer when
+/// that matters.
+function flow(container, area, placed, report) {
+  const columns = Math.max(1, container.ColumnCount || 1);
+  if (columns === 1) { flowColumn(container, area, placed, report, 0, false); return; }
+
+  const gap = Math.max(0, container.ColumnGap ?? 6);
+  const width = (area.right - area.left - gap * (columns - 1)) / columns;
+  if (width <= 0) { flowColumn(container, area, placed, report, 0, false); return; }
+
+  const mark = placed.length;
+  const lay = bottom => {
+    let from = 0;
+    for (let i = 0; i < columns && from < (container.Childs || []).length; i++) {
+      const left = area.left + i * (width + gap);
+      from = flowColumn(container, rect(left, area.top, left + width, bottom),
+                        placed, report, from, true);
+    }
+    return from >= (container.Childs || []).length;
+  };
+
+  const fits = lay(area.bottom);
+  if (!fits || container.BalanceColumns === false) return;
+
+  // It all fitted, so the columns are lopsided - the first full, the last nearly
+  // empty. The engine halves its way to the shallowest height that still holds
+  // everything; so does this, or the preview shows a page the engine will not draw.
+  let tooShort = area.top, enough = area.bottom;
+  for (let step = 0; step < 8; step++) {
+    const tryAt = (tooShort + enough) / 2;
+    placed.length = mark;
+    if (lay(tryAt)) enough = tryAt; else tooShort = tryAt;
+  }
+
+  placed.length = mark;
+  lay(enough);
+}
+
+/// Where an item's left and right edges fall from what it states - a dock, an edge, a width -
+/// and NaN for an edge nothing decided: the engine's ComputeHorizontal, which is all its Flow
+/// asks before giving the column to whatever is left undecided.
+///
+/// Not computeFrame, which sizes a text to its content. That is right for a text at a
+/// coordinate and wrong in a flow, where the engine breaks the lines at the column and lines
+/// them up against its edges. Until 20 October 2026 the flow took computeFrame's answer, so a
+/// paragraph in a stacked body never wrapped here and ran off the page, and a text aligned
+/// right sat against the end of its own words - while the engine wrapped the one and put the
+/// other against the margin. Found by setting a sub-document's two previews side by side.
+function horizontalOf(item, area) {
+  const loc = item.Style.Location;
+  const a = dockOf(loc);
+  let left = NaN, right = NaN;
+  if (a & DOCK.Left) left = area.left;
+  else if (has(loc.LeftValue)) left = area.left + mm(num(loc.LeftValue), loc.LeftUnit, area.width);
+  if (a & DOCK.Right) right = area.right;
+  else if (has(loc.RightValue)) right = area.right - mm(num(loc.RightValue), loc.RightUnit, area.width);
+
+  const w = has(loc.WidthValue) ? mm(num(loc.WidthValue), loc.WidthUnit, area.width) : NaN;
+  if (!Number.isFinite(w)) return { left, right };
+  if (Number.isFinite(left) && !Number.isFinite(right)) right = left + w;
+  else if (!Number.isFinite(left) && Number.isFinite(right)) left = right - w;
+  else if (!Number.isFinite(left)) {
+    // Nothing pinned it, so the alignment decides - against the left without one.
+    left = alignPlace(area.left, area.width, w, item.Style.AlignHorizontal || "None");
+    right = left + w;
+  }
+  return { left, right };
+}
+
+/// Places children from `start` onwards. Returns the index of the first one it did
+/// not place, which is where the next column picks up.
+function flowColumn(container, area, placed, report, start, stopAtBottom) {
+  let cursor = area.top;
+  let variantTop = NaN, variantBottom = NaN, currentScope = "All";
+
+  const kids = container.Childs || [];
+  for (let index = start; index < kids.length; index++) {
+    const child = kids[index];
+    if (child.Style.Visibility === "Gone" || !showsWithData(child)) continue;
+
+    // Page-scoped children share the same room rather than stacking, so a footer
+    // sized for its totals is not overrun by the notice that replaces them.
+    const scope = child.Style.PageScope || "All";
+    if (scope === "All") {
+      if (Number.isFinite(variantBottom)) { cursor = variantBottom; variantTop = variantBottom = NaN; }
+    } else if (!Number.isFinite(variantTop)) {
+      variantTop = variantBottom = cursor;
+      currentScope = scope;
+    } else if (scope !== currentScope) {
+      cursor = variantTop;
+      currentScope = scope;
+    }
+    const m = child.Style.Margin;
+    const column = rect(area.left + m.Left, area.top, area.right - m.Right, area.bottom);
+    const top = cursor + m.Top;
+    // A text asks only what it states, as the engine's Flow asks it; everything else keeps
+    // computeFrame, which agrees with that for anything not sized from its content and also
+    // clamps a width to its constraints, as the engine does when it places the item.
+    const probe = child.$type === "TextItem"
+      ? horizontalOf(child, column)
+      : computeFrame(child, rect(column.left, top, column.right, area.bottom), report);
+    const left = Number.isFinite(probe.left) ? probe.left : column.left;
+    const right = Number.isFinite(probe.right) ? probe.right : column.right;
+    const height = intrinsicHeight(child, right - left, report);
+    const frame = rect(left, top, right, top + height);
+
+    // Past the foot of the column, and not the first thing in it: hand it on. The
+    // first is placed regardless, or a child taller than a column would never be
+    // drawn anywhere at all.
+    if (stopAtBottom && frame.bottom > area.bottom && index > start)
+      return index;
+
+    placed.push({ item: child, frame });
+    if (child.$type === "TableItem") table(child, frame, placed, report);
+    else if (child.$type === "ImageGridItem") grid(child, frame, placed, report);
+    else if (child.$type === "AdvancedTextItem") advancedText(child, frame, placed, report);
+    else if (child.Childs) {
+      const inner = deflate(frame, child.Style.Padding);
+      if (child.Layout === "Stack") flow(child, inner, placed, report);
+      else child.Childs.forEach(c => arrange(c, inner, placed, report));
+    }
+    cursor = frame.bottom + m.Bottom;
+    if (scope !== "All") variantBottom = Math.max(variantBottom, cursor);
+  }
+
+  return kids.length;
+}
+
+function table(item, frame, placed, report) {
+  const inner = deflate(frame, item.Style.Padding);
+  const edgesX = columnEdges(item, inner.left, inner.right);
+  let cursor = inner.top;
+
+  for (const row of item.Childs || []) {
+    if (row.Style.Visibility === "Gone") continue;
+    const pad = row.Style.Padding;
+    let tallest = 0;
+    (row.Childs || []).forEach((cell, i) => {
+      if (i + 1 >= edgesX.length) return;
+      const w = edgesX[i + 1] - edgesX[i] - pad.Left - pad.Right - cell.Style.Margin.Left - cell.Style.Margin.Right;
+      tallest = Math.max(tallest, intrinsicHeight(cell, Math.max(0, w), report));
+    });
+    const height = tallest + pad.Top + pad.Bottom;
+    const rowFrame = rect(edgesX[0], cursor, inner.right, cursor + height);
+    placed.push({ item: row, frame: rowFrame, gridEdges: item.Grid ? edgesX : null, grid: item.Grid });
+
+    (row.Childs || []).forEach((cell, i) => {
+      if (i + 1 >= edgesX.length || cell.Style.Visibility === "Gone") return;
+      const box = rect(edgesX[i] + pad.Left, cursor + pad.Top, edgesX[i + 1] - pad.Right, cursor + height - pad.Bottom);
+      arrange(cell, box, placed, report);
+    });
+    cursor += height;
+  }
+  frame.bottom = Math.max(frame.bottom, cursor + item.Style.Padding.Bottom);
+}
+
+/// Lays a grid of pictures out row by row, GridColumns to a row, each row the same
+/// height - simpler than a table, since every cell is the same size. The local
+/// preview never paginates, so a row that would overflow the page is simply drawn
+/// past the foot rather than moved to one: the exact preview is the answer once a
+/// photo sheet spans several pages.
+function grid(item, frame, placed, report) {
+  const inner = deflate(frame, item.Style.Padding);
+  const columns = Math.max(1, item.GridColumns || 1);
+  const gap = Math.max(0, item.Gap ?? 0);
+  const cellWidth = Math.max(0, (inner.right - inner.left - gap * (columns - 1)) / columns);
+  const rowHeight = Math.max(0, item.RowHeight || 0);
+
+  const visible = (item.Childs || []).filter(c => c.Style.Visibility !== "Gone" && showsWithData(c));
+  let cursor = inner.top;
+
+  for (let i = 0; i < visible.length; i += columns) {
+    const end = Math.min(i + columns, visible.length);
+    for (let k = i; k < end; k++) {
+      const cell = visible[k];
+      const col = k - i;
+      const left = inner.left + col * (cellWidth + gap);
+      const m = cell.Style.Margin;
+      const box = rect(left + m.Left, cursor + m.Top, left + cellWidth - m.Right, cursor + rowHeight - m.Bottom);
+      arrange(cell, box, placed, report);
+    }
+    cursor += rowHeight + gap;
+  }
+
+  const bottom = visible.length ? cursor - gap : inner.top;
+  frame.bottom = Math.max(frame.bottom, bottom + item.Style.Padding.Bottom);
+}
+
+/// Consecutive pieces from the same run collapse into one - the word split was only
+/// ever for deciding where a line breaks. Trims the trailing space a line otherwise
+/// ends on, the same tidying the real wrap already does.
+function mergeAdvancedPieces(pieces, report) {
+  for (let i = pieces.length - 1; i > 0; i--) {
+    if (pieces[i].font !== pieces[i - 1].font) continue;
+    pieces[i - 1].text += pieces[i].text;
+    pieces[i - 1].width += pieces[i].width;
+    pieces.splice(i, 1);
+  }
+  if (pieces.length) {
+    const last = pieces[pieces.length - 1];
+    const trimmed = last.text.replace(/\s+$/, "");
+    if (trimmed.length !== last.text.length) {
+      last.text = trimmed;
+      last.width = textWidth(trimmed, last.font, report);
+    }
+  }
+}
+
+/// Breaks a paragraph of runs into lines, word by word - "a word plus the spaces
+/// that follow it", the same rule breakLines uses for a plain text, generalised
+/// across runs: a word never carries two styles, but a line commonly does. Shared
+/// by the height guess and the actual placement, so there is exactly one wrapping
+/// algorithm rather than two that could disagree about how many lines it takes.
+function breakAdvancedRuns(item, width, report) {
+  const lines = [];
+  const wrap = item.Font.Wrap !== false && Number.isFinite(width) && width > 0;
+
+  let current = [];
+  let currentWidth = 0;
+
+  const closeLine = () => {
+    mergeAdvancedPieces(current, report);
+    let tallestLine = 0, tallestCap = 0, lineWidth = 0;
+    for (const piece of current) {
+      const lh = lineHeight(piece.font, report);
+      if (lh >= tallestLine) { tallestLine = lh; tallestCap = emMm(piece.font, report) * CAP_RATIO; }
+      lineWidth += piece.width;
+    }
+    lines.push({ pieces: current, height: tallestLine,
+                baselineOffset: (tallestLine + tallestCap) / 2, width: lineWidth });
+    current = [];
+    currentWidth = 0;
+  };
+
+  for (const run of item.Runs || []) {
+    if (!run.Text) continue;
+
+    // Three levels, the run over the item's own base over the section default -
+    // fontOf only cascades two, so the item's own base is resolved first and stood
+    // in as the "section default" for the run's own cascade onto it.
+    const itemBase = fontOf(item.Font, report);
+    const runFont = run.Font ? fontOf(run.Font, { DefaultFont: itemBase }) : itemBase;
+    runFont.HorizontalAlignment = "Left";   // this function places it, not text()
+
+    const resolved = tokens(run.Text, report, 1, 1, item);
+    const paragraphs = resolved.split("\n");
+
+    for (let p = 0; p < paragraphs.length; p++) {
+      if (p > 0) closeLine();   // a hard break always starts a fresh line
+
+      const paragraph = paragraphs[p];
+      let start = 0;
+      while (start < paragraph.length) {
+        let end = start;
+        while (end < paragraph.length && !BREAKS_AT.test(paragraph[end])) end++;
+        while (end < paragraph.length && BREAKS_AT.test(paragraph[end])) end++;
+
+        const word = paragraph.slice(start, end);
+        const wordWidth = textWidth(word, runFont, report);
+
+        // Trailing spaces on the word being tested must not be what tips it over
+        // the edge - only what a reader would see cross the margin counts.
+        const trimmedWord = word.replace(/\s+$/, "");
+        const checkWidth = trimmedWord.length === word.length
+          ? wordWidth : textWidth(trimmedWord, runFont, report);
+
+        if (wrap && current.length > 0 && currentWidth + checkWidth > width + WRAP_SLACK_MM)
+          closeLine();
+
+        current.push({ font: runFont, text: word, width: wordWidth });
+        currentWidth += wordWidth;
+        start = end;
+      }
+    }
+  }
+
+  closeLine();
+
+  if (!lines.length || (lines.length === 1 && lines[0].pieces.length === 0)) {
+    const font = fontOf(item.Font, report);
+    const lh = lineHeight(font, report);
+    return [{ pieces: [], height: lh, baselineOffset: (lh + emMm(font, report) * CAP_RATIO) / 2, width: 0 }];
+  }
+
+  return lines;
+}
+
+/// Lays a paragraph of runs out row by row, one row per broken line - the row
+/// height is not fixed the way an image grid's is, it comes from whichever piece
+/// on the row asked for the most room. The preview does not paginate, so unlike
+/// the real engine a line past the foot of the page is simply drawn there instead
+/// of moved to one; the exact preview is the answer once a paragraph spans pages.
+function advancedText(item, frame, placed, report) {
+  const inner = deflate(frame, item.Style.Padding);
+  const width = Math.max(0, inner.right - inner.left);
+  const lines = breakAdvancedRuns(item, width, report);
+
+  let cursor = inner.top;
+  for (const line of lines) {
+    const startX = (item.Font.HorizontalAlignment || "Left") === "Center"
+      ? inner.left + Math.max(0, (inner.right - inner.left - line.width) / 2)
+      : (item.Font.HorizontalAlignment || "Left") === "Right"
+      ? inner.right - line.width
+      : inner.left;
+
+    const baselineY = cursor + line.baselineOffset;
+    let x = startX;
+
+    for (const piece of line.pieces) {
+      const lh = lineHeight(piece.font, report);
+      const pieceFirst = (lh + emMm(piece.font, report) * CAP_RATIO) / 2;
+      const pieceTop = baselineY - pieceFirst;
+      const pieceFrame = rect(x, pieceTop, x + piece.width, pieceTop + lh);
+      placed.push({ item: { $type: "TextItem", Text: piece.text, Font: piece.font,
+                            Style: { Padding: edges(), Visibility: "Visible" } },
+                    frame: pieceFrame });
+      x += piece.width;
+    }
+
+    cursor += line.height;
+  }
+
+  frame.bottom = Math.max(frame.bottom, cursor + item.Style.Padding.Bottom);
+}
+
+// ---------------------------------------------------------------------------
+// Rendering to SVG — mirrors ReportRenderer: background and border on the
+// frame, content inside the padding.
+// ---------------------------------------------------------------------------
+// --- wording -----------------------------------------------------------------
+// English is the source language and the fallback: a key with no translation shows
+// the English, and a key with no entry at all shows itself, so a missing string is
+// visible rather than blank.
+//
+// Kept as plain data on purpose. Lifting it into an Angular or React application
+// means taking this object, not rewriting it.
+//
+// The enum groups below hold *labels* for values that are written into the template
+// as they are. Translate the label, never the value: a Role saved as "Titre1" loads
+// nowhere.
+/// The rooms the interface can be in, and the only list of them.
+///
+/// It was written by hand in two faces and confronted with nothing - not with the other
+/// face, not with the stylesheet, not with the wordings. Every way of getting it wrong
+/// was silent: an option whose CSS rule has gone stamps `data-theme` on the root, no
+/// rule matches, and the page falls through to the base palette. The picker then says
+/// one room and shows another, with no error anywhere.
+///
+/// `scheme` is what the room IS, not what it is called, and it is here because the
+/// detached preview needs it: that window is written as a string and has to declare
+/// `color-scheme` for its own native controls. It used to ask `theme === "dark"`, which
+/// stopped being true of anything the moment the dark room was named Graphite - dead
+/// code handing the second monitor's controls to the machine's preference rather than
+/// to the choice that was made.
+///
+/// `auto` carries none, because it is not a palette: it is the machine's own answer,
+/// and it is the default for the reason section 2b gives - a preference stored
+/// somewhere is still a preference, so the question worth answering is what this looks
+/// like when nobody has said anything.
+///
+/// There were seven. Four dark rooms were proposed against stated directions and
+/// measured rather than admired, which was the right way to build them and told nobody
+/// which to live in - only using them did that. Graphite won and is now the dark room
+/// itself, declared in the stylesheet's base block where `auto` reads it and again
+/// under its own name where this list does.
+const THEMES = [
+  { name: "auto",     scheme: null    },
+  { name: "graphite", scheme: "dark"  },
+  { name: "light",    scheme: "light" },
+  { name: "frost",    scheme: "light" },
+];
+
+/// A stored name that is no longer a room, answered rather than passed on.
+///
+/// The preference lives under one localStorage key shared by both faces and was handed
+/// straight to setAttribute. Somebody who had once picked Slate got, after the cull, an
+/// attribute no rule matches - so the base palette, silently - and a picker left blank,
+/// because assigning a `value` with no matching option leaves a real select at
+/// selectedIndex -1. The dead name then sat in the variable for the rest of the session
+/// and was written back on every save.
+const themeOrAuto = name => THEMES.some(t => t.name === name) ? name : "auto";
+
+/// What `color-scheme` a room is, for a window that has to say it in a string.
+/// `auto` and anything unknown answer "light dark", which is the honest answer: let
+/// the machine decide, which is what those two mean.
+const schemeOf = name => {
+  const found = THEMES.find(t => t.name === name);
+  return found && found.scheme ? found.scheme : "light dark";
+};
+
+/// The rooms as options, for whichever face is asking. Built rather than typed, so the
+/// two faces cannot come to offer different lists - and carrying data-i18n, so the
+/// wording machinery translates them like everything else in the markup.
+function themeOptions() {
+  // The English label as the text, not the bare name: applyStaticText replaces it a
+  // line later, and what stands there in the meantime - or if that line ever stops
+  // running - should be a word rather than an identifier. It is also what the markup
+  // said before this list existed, so nothing about the page changed but where the
+  // list is kept.
+  return THEMES.map(t => `<option value="${t.name}" data-i18n="theme.${t.name}">`
+                       + `${STRINGS.en["theme." + t.name] ?? t.name}</option>`).join("");
+}
+
+const STRINGS = {
+  en: {
+    "app.title": "Frisket — template designer",
+    "app.name": "Frisket",
+
+    "action.new": "New", "action.open": "Open JSON…", "action.save": "Save JSON",
+    "action.load": "Load…", "action.saveShort": "Save", "action.clear": "Clear",
+    "action.exact": "Exact preview", "action.pdf": "PDF", "action.delete": "Delete",
+
+    "tab.section": "Section", "tab.back": "Back", "tab.data": "Data",
+    "tab.watermark": "Watermark", "tab.background": "Background",
+
+    "panel.add": "Add", "panel.addBack": "Add to the back", "panel.structure": "Structure",
+    "panel.backStructure": "Structure of the back", "panel.properties": "Properties",
+    "panel.section": "Section",
+    "panel.back": "Back", "panel.data": "Data", "panel.watermark": "Watermark",
+    "panel.background": "Background",
+
+    "family.display": "Display", "family.input": "Input", "family.library": "Library",
+    "add.text": "Text", "add.rule": "Rule", "add.image": "Image", "add.table": "Table",
+    "add.code": "Code", "add.group": "Group", "add.checkbox": "Checkbox",
+    "add.signature": "Signature", "add.imageGrid": "Image grid", "add.subTemplate": "Sub-template",
+    "add.importedPage": "PDF page",
+    "field.importedPdf": "PDF file", "field.importedPage": "Page",
+    "hint.importedPage": "A page of another PDF, copied in whole. This page cannot show it - reading a PDF needs a reader, and there is none in a browser - so the space it will take is drawn and nothing else. Embedding puts the file inside the template, which travels anywhere; a path is resolved beside the template, which only the CLI and the native library can do.",
+    "hint.importedClaim": "Anything imported puts a conformance claim in question: nothing here can vouch for bytes it did not write. The engine says so and refuses nothing - a report meant to be read has no need of PDF/A at all.",
+    "type.ImportedPageItem": "PDF page",
+    "add.advancedText": "Advanced text",
+
+    "page.bands": "bands", "page.frames": "frames",
+
+    "field.font": "Font", "field.size": "Size", "field.style": "Style",
+    "field.alignH": "Horizontal", "field.alignV": "Vertical", "field.colour": "Colour",
+    "field.lineSpacing": "Line spacing", "field.wrap": "Wrap",
+    "field.direction": "Direction", "field.thickness": "Thickness",
+    "field.naturalWidth": "Natural width", "field.naturalHeight": "Natural height",
+    "field.embed": "Embed a file", "field.carried": "Carried",
+    "field.scaling": "Scaling", "field.file": "File",
+    "richText.applyColour": "Apply this colour again",
+    "richText.newColour": "New colour",
+    "field.sourceField": "Data field",
+    "hint.sourceField": "A path in the data holding the image, as base64 or a data: URI - for example Signatures.Client. Takes over from the file below once the data provides something; nothing at that path means no image at all, the same way an unsigned quote is left with no signature rather than an empty box.",
+    "hint.subTemplate": "Another template, three ways. A path is resolved next to the file that names it, which only the CLI and the native library can do - this page has no file of its own, so a path shows here as an empty box. st:// names something the calling program looks up, and is drawn here when the program offers its library to this page. Embedding it puts the other template inside this one, which travels anywhere.",
+    "field.libraryPiece": "From the library",
+    "hint.pieceReady": "Drawn from the library: {title}. It is edited there, not here - the file keeps the reference only, so changing the piece changes every document that names it.",
+    "hint.pieceLoading": "Asking the library for {reference}…",
+    "hint.pieceMissing": "The library does not know {reference}, so nothing is drawn here. Whatever composes the document will have to.",
+    "hint.pieceNoLibrary": "This page has no library to ask, so {reference} is drawn as an empty box. The program that composes the document looks it up.",
+    "hint.advancedJustify": "Justify does nothing on an advanced text - it stretches the gaps of a plain text's one line, and this places each run's own box instead. Drawn left-aligned.",
+    "field.value": "Value", "field.kind": "Kind", "field.correction": "Correction",
+    "field.showText": "Readable value", "field.quietZone": "Margin (modules)",
+    "field.name": "Name", "field.tooltip": "Tooltip", "field.multiline": "Multiline",
+    "field.maxLength": "Max length", "field.options": "Options", "field.outline": "Outline",
+    "field.repeatHeader": "Repeat header", "field.column": "col",
+    "field.layout": "Layout", "field.isHeader": "Header row",
+    "field.gridColumns": "Columns per row", "field.rowHeight": "Row height", "field.gap": "Gap",
+    "field.templatePath": "Template file",
+    "field.subMode": "Brings across",
+    "SubTemplateMode.Splice": "A block, into this flow",
+    "SubTemplateMode.Append": "A document, after this section",
+    "hint.appendMode": "The other template keeps its own page size, header and footer, and becomes sections after this one. Anything below this include stays in this section, so it comes out first.",
+    "field.language": "Language",
+    "field.languageSame": "the file\u2019s",
+    "field.runs": "Runs", "field.addRun": "+ run", "field.runColor": "Colour",
+    "field.runOwnColor": "own colour", "field.runOwnSize": "own size",
+    "richText.title": "Rich text", "richText.open": "✎ Edit as rich text",
+    "richText.noColor": "No colour", "richText.noSize": "Default size",
+    "richText.hint": "Select a range of the text, then click a style, pick a colour or set a size - each applies as soon as you choose it.",
+    "richText.apply": "Apply", "action.cancel": "Cancel",
+    "field.title": "Title", "field.author": "Author", "field.subject": "Subject",
+    "field.keywords": "Keywords", "field.language": "Language",
+    "field.headingNumbering": "Heading numbers",
+    "field.proofBackground": "Paper",
+    "hint.proofBackground": "The stock this is meant to be printed on - letterhead, coloured paper - shown behind the page while you write. It is never printed: not by the PDF, not by the SVG proof, not by the mail. The engine cannot supply paper, and a proof that drew it would be claiming the printer does.",
+    "hint.headingNumbering": "How a heading numbers itself, one symbol per level: 1 for figures, A or a for letters, I or i for roman. Anything between two symbols is written between the levels - \"1.1.1\", \"A.a.1\", \"A) a. 1\". Put {HeadingNumber} in the heading's own text, where you want the number to appear; the punctuation after it is yours to type. {SectionHeadingNumber} restarts at every section, and the two are the same until there is a second one.",
+    "field.pageSize": "Page size", "field.rootFontSize": "Root font size",
+    "field.role": "Role", "field.altText": "Alternative text",
+
+    "zoom.fit": "Fit", "zoom.label": "Zoom",
+    "action.detach": "Preview window", "action.attached": "Preview open",
+    "section.repeat": "Repeat",
+    "field.repeatOver": "Over the list", "field.emptyText": "When it is empty",
+    "hint.repeatOver": "A list in the data, such as Lines: what this holds is drawn once per entry - a table keeps its header rows and repeats the others, two of them alternating. A token inside reads the entry first, then the whole of the data. With nothing in the list the element goes, header and all, unless it says what to show instead. This page draws it once; the exact preview draws every entry.",
+    "editor.addField": "Insert a merge field",
+    "editor.fromData": "Picture from the data: {path}",
+    "fieldType.text": "Text", "fieldType.number": "Number", "fieldType.decimal": "Decimal",
+    "fieldType.currency": "Amount", "fieldType.date": "Date", "fieldType.datetime": "Date and time",
+    "fieldType.image": "Picture", "fieldType.list": "Lists",
+    "fields.eachLine": "In each line of {list}",
+    "editor.repeats": "\u21BB Repeated for each entry of {list}",
+    "live.off": "Exact preview: off", "live.canvas": "Exact preview: on the canvas",
+    "live.beside": "Exact preview: beside", "live.window": "Exact preview: in a window",
+    "live.asking": "The engine is drawing…",
+    "live.ready": "The engine's pages, up to date ({count})",
+    "live.failed": "The engine did not answer: {message}",
+    "live.windowClosed": "The window is closed - Preview window opens it",
+    "live.page": "page {page} / {pages} - engine",
+    "live.noServer": "This page was given no engine to ask.",
+    "preview.title": "Frisket — preview",
+    "hint.popup": "The browser blocked the window. Allow pop-ups for this page and try again.",
+
+    "section.columns": "Columns",
+    "field.columnCount": "How many", "field.columnGap": "Gap (mm)",
+    "field.balance": "Even them out",
+    "hint.balance": "On the page where the text runs out, the columns end together instead of the first being full and the last nearly empty.",
+
+    "section.condition": "Shown when",
+    "field.showWhen": "Only if", "field.hideWhen": "Except if",
+    "hint.condition": "A path in the data, such as Client.Vat. The element is dropped - it takes no room - when there is nothing at that path: absent, empty, zero or false.",
+
+    "panel.issues": "Checks", "issues.none": "Nothing to report",
+    "issues.count": "{errors} error(s), {warnings} warning(s)",
+    "issues.onlyFaults": "only what is wrong",
+    "theme.auto": "Auto", "theme.graphite": "Graphite",
+    "theme.light": "Light", "theme.frost": "Frost",
+
+    // The flow editor. It shares this dictionary rather than keeping one of its own:
+    // two dictionaries drift, and a face is not a different product.
+    "editor.title": "Frisket — editor",
+    "size.normal": "Normal", "size.small": "Small", "size.large": "Large", "size.huge": "Huge",
+    "editor.document": "Document",
+    "editor.addText": "Text",
+    "editor.addImage": "Image",
+    "editor.removeBlock": "Remove block",
+    "editor.resize": "Drag to resize",
+    "editor.moveBlock": "Drag to move this block",
+    "editor.moveHalf": "Drag to take this out of the pair",
+    "editor.addText": "Add a paragraph",
+    "editor.addRow": "Add a row", "editor.dropRow": "Remove this row",
+    "editor.addColumn": "Add a column", "editor.dropColumn": "Remove this column",
+    "editor.fonts": "Typefaces",
+    "editor.openHtml": "HTML\u2026",
+    "editor.openMail": "Mail\u2026",
+    "editor.htmlWhat": "The pages themselves, drawn as SVG with the fonts embedded - "
+                     + "what the printer will do.",
+    "editor.mailWhat": "The same report as a message: HTML that reflows, no pages, "
+                     + "nothing embedded. Run the checks with a mail target first to be "
+                     + "told what it loses on the way.",
+    "editor.asking": "Asking the engine\u2026",
+    "editor.noServer": "The preview server is not answering. Start it with "
+                     + "`dotnet run --project apps/server` and try again - this page "
+                     + "cannot write the HTML itself, and showing its own approximation "
+                     + "instead would be the one thing this button exists to avoid.",
+    "fonts.library": "From the server",
+    "fonts.websafe": "Web-safe (email)",
+    "fonts.default": "Document default",
+    "fonts.offline": "The server is not answering, so this lists what the document "
+                   + "already uses. A family the engine has no file for is refused when "
+                   + "the PDF is written - it is never quietly swapped for another, "
+                   + "since another face would relay out every line.",
+    "fonts.approximate": "Web-safe families are not embedded: whoever opens the file "
+                       + "supplies them, which is right for an email and wrong for a PDF "
+                       + "that has to look the same everywhere.",
+    "editor.foreign": "this is edited in the designer; it is kept exactly as it is here.",
+    "editor.hint": "Type and it becomes text; drop a picture in and it becomes a picture. "
+                 + "Enter breaks the line; shift+Enter starts a new block. Drag a block "
+                 + "to move it, or alt and an arrow; drag a picture's corner to resize "
+                 + "it, and a table's rails to add rows and columns. Drop a block on "
+                 + "the side of another to set the two beside each other; the shape "
+                 + "shown while dragging is the shape you will get. This face does not "
+                 + "paginate - the sheet grows.",
+    "target.tagged": "tagged output",
+    "target.interactive": "fields stay fillable",
+    "hint.target": "What you are about to produce. Untick either one to see what the template loses on the way out - the page looks the same either way, which is what makes the loss easy to miss.",
+    "name.row": "row", "name.headerRow": "header row",
+    "issue.ua.language": "The section does not say what language it is written in, so a reader announces it with whatever voice it happens to have.",
+    "issue.ua.title": "The section has no title, which is what a reader announces when the file opens.",
+    "issue.ua.altText": "Shown rather than read, and with no alternative text: a screen reader announces nothing at all.",
+    "issue.ua.formRole": "Only a field can be a form control. This will be drawn instead, and a drawing needs an alternative text.",
+    "issue.ua.fieldName": "This field has no tooltip, so a reader announces a control with no idea what it is for.",
+    "issue.ua.tableHeader": "This table has no header row, so values are announced with nothing to say what they are.",
+    "issue.sound.emptyBarcode": "This barcode has nothing to encode.",
+    "issue.sound.emptyImage": "This image has neither a picture of its own nor a path to one in the data, so nothing will ever be drawn here.",
+    "issue.sound.emptyImportedPage": "This imported page names no PDF, so nothing will be drawn here.",
+    "issue.sound.importedPageNumber": "Pages are counted from one.",
+    "issue.sound.emptyImageGrid": "This image grid asks for fewer than one column, which draws as a single column rather than what was set here.",
+    "issue.sound.repeatPageBreak": "This breaks once, before the whole repeated run. Repeating clones what is inside the container, so for one page per record the break belongs on the block being repeated.",
+    "issue.sound.noPageSize": "This section has no page size, so it is laid out on a sheet of nothing: every column too narrow to divide, one item to a page and the rest thrown away. Give it a page size - 210 by 297 is A4.",
+    "issue.sound.emptySubTemplate": "This sub-template names nothing and carries nothing, so nothing will ever be inserted here. Give it a path, a st:// reference, or the other template's own JSON.",
+    "issue.sound.emptyAdvancedText": "This advanced text has no runs with anything in them, so nothing will ever be drawn here.",
+    "issue.sound.justifiedBreak": "This text is justified and holds a line break of its own. A break is stretched to the margin like a wrapped line, which is not what it means - put each paragraph in its own text.",
+    "issue.sound.nestedSection": "A section cannot sit inside another. Sections are a list on the report, never nested - a page size means nothing inside a page.",
+    "issue.sound.headingNumberNoFormat": "This text asks for a heading number, and the report does not say how one is written. Set the numbering format - \"1.1.1\", \"A.a.1\" - or drop the token; until then it stays on the page as it was typed.",
+    "issue.sound.headingNumberOutsideHeading": "This is not a heading, so there is no level for the number to be. Give it a heading role, or name the level in the token itself - {HeadingNumber[1]} for the chapter this sits under.",
+    "issue.sound.headingNumberDepth": "This heading is deeper than the numbering format spells out, so the last symbol of the format is repeated for it. Add a level to the format, or the two deepest levels will look alike.",
+    "issue.sound.columnsIgnored": "This asks for columns, but they will never appear here: an absolutely placed container has no flow to divide, and a table or an image grid already divides its rows on its own terms. Set it to a plain stacking container, or drop the columns.",
+    "issue.sound.duplicateField": "Another field is also called '{name}'. Filling one fills the other, and only one value is kept.",
+    "issue.sound.raggedTable": "This row has {count} cell(s) where the table has {width} column(s). A conformance checker refuses rows of unequal width.",
+
+    "PdfRole.Table": "Table", "PdfRole.TableRow": "Table row",
+    "PdfRole.TableHeader": "Heading cell", "PdfRole.TableCell": "Cell",
+    "PdfRole.Form": "Control",
+    "field.bookmark": "Bookmark", "field.level": "Level",
+    "field.visible": "Visible", "field.pageBreak": "Break", "field.splitting": "Splitting",
+    "field.pageScope": "Pages", "field.background": "Background",
+    "field.border": "Border", "field.borderSides": "Sides drawn", "field.corners": "Corners",
+    "hint.corners": "The radius of each corner, in millimetres. The background and the border both follow it, and two radii too large for their side are reduced together until they fit.",
+    "field.signing": "Signing", "field.scope": "On", "field.padding": "Margins",
+    "field.mode": "Placing", "field.layer": "Layer", "field.angle": "Angle",
+
+    "style.bold": "B", "style.italic": "I", "style.underline": "U", "style.strikethrough": "S",
+    "option.readOnly": "read only", "option.required": "required",
+
+    "section.accessibility": "Accessibility", "section.outline": "Outline",
+    "section.position": "Position", "section.dock": "Dock — sides held",
+    "section.margin": "Margin", "section.padding": "Padding", "section.render": "Rendering",
+    "section.section": "Section",
+
+    "watermark.enable": "enable",
+    "back.enable": "print a back",
+
+    "hint.add": "Added inside the selection when it is a container, beside it otherwise. "
+              + "Input elements become a form in the PDF; printed or flattened, they keep their value.",
+    "hint.back": "Conditions of sale, typically. A back is neither numbered nor counted: "
+               + "an invoice reading page 1 / 2 has four printed faces. {Page} on it gives "
+               + "the sheet it belongs to.",
+    "hint.data": "Applied by the exact preview and by the PDF. The local preview shows the "
+               + "template as it stands, prototype row included.",
+    "background.enable": "enable", "field.area": "Covers", "field.opacity": "Opacity",
+    "BackdropArea.Sheet": "The whole sheet", "BackdropArea.Margins": "Inside the margins",
+    "hint.background": "Printed stationery, drawn behind every page and marked as "
+      + "decoration so a screen reader passes over it. Stretch fills the rectangle "
+      + "chosen; keep proportions and none need the picture's own size, which is "
+      + "measured when the file is chosen here and can be typed on an image. Fade it "
+      + "here - a PNG carrying an alpha channel is refused outright.",
+
+    "hint.watermark": "Drawn as content, never as a background: a browser drops backgrounds "
+                    + "when printing, and a mark missing from the paper is missing from the "
+                    + "very copy someone might use.",
+    "hint.metadata": "Written into the file's properties and its XMP packet. Tokens are "
+                   + "filled in as elsewhere, so {InvoiceNumber} belongs here.",
+    "hint.altText": "Without it a screen reader announces nothing at all: the person is not "
+                  + "even told something is there.",
+    "hint.approximate": "Approximate preview: the browser measures with its own fonts, this "
+                      + "page does not paginate and applies no repetition.",
+    "hint.approximateEngineFonts": "Approximate preview: measured with the engine's own "
+                      + "fonts, but this page does not paginate and applies no repetition.",
+
+    "alert.noPdf": "PDF unavailable: ",
+    "alert.unreadable": "Cannot read: ", "alert.badData": "Unreadable data: ",
+    "alert.noData": "Nothing to save.", "alert.badDataKept": "Unreadable data, nothing written: ",
+    "confirm.new": "Start again from an empty template?", "confirm.clearData": "Clear the data?",
+    "report.new": "New report",
+
+    // Enum labels. The values themselves are never translated.
+    "Units.Millimeter": "Millimetres", "Units.Percentage": "Percentage",
+    "FontSizeUnit.Rem": "Rem", "FontSizeUnit.Millimeter": "Millimetres of cap",
+    "FontSizeUnit.Point": "Points", "FontSizeUnit.PercentOfFrame": "% of frame",
+    "HorizontalAlignment.Left": "Left", "HorizontalAlignment.Center": "Centre",
+    "HorizontalAlignment.Right": "Right", "HorizontalAlignment.Justify": "Justified",
+    "VerticalAlignment.Top": "Top", "VerticalAlignment.Middle": "Middle",
+    "VerticalAlignment.Bottom": "Bottom",
+    "LineOrientation.Horizontal": "Horizontal", "LineOrientation.Vertical": "Vertical",
+    "LineOrientation.DiagonalDown": "Diagonal down", "LineOrientation.DiagonalUp": "Diagonal up",
+    "DashStyle.Solid": "Solid", "DashStyle.Dash": "Dashed", "DashStyle.Dot": "Dotted",
+    "DashStyle.DashDot": "Dash-dot",
+    "ImageScaling.Uniform": "Keep proportions", "ImageScaling.Stretch": "Stretch",
+    "ImageScaling.None": "None",
+    "RepeatedReading.Once": "Once", "RepeatedReading.EveryPage": "On every page",
+    "RepeatedReading.Never": "Never",
+    "section.reading": "Reading aloud",
+    "field.repeatedReading": "What repeats is read",
+    "hint.repeatedReading": "In a tagged PDF, for someone using a screen reader. Once means where it first appears. It is printed on every page whichever you choose, and what appears on one page only, such as totals on the last, is always read.",
+    "Symbology.Qr": "QR", "Symbology.Code128": "Code 128",
+    "QrErrorCorrection.Low": "Low (7%)", "QrErrorCorrection.Medium": "Medium (15%)",
+    "QrErrorCorrection.Quartile": "High (25%)", "QrErrorCorrection.High": "Highest (30%)",
+    "FieldKind.Text": "Text", "FieldKind.Checkbox": "Checkbox", "FieldKind.Signature": "Signature",
+    "Signing.ByHand": "By hand", "Signing.Digital": "Digital certificate",
+    "LayoutMode.Absolute": "Absolute", "LayoutMode.Stack": "Stacked",
+    "Visibility.Visible": "Visible", "Visibility.Invisible": "Invisible (space kept)",
+    "Visibility.Gone": "Gone (no space)",
+    "PageBreak.None": "None", "PageBreak.Before": "Before", "PageBreak.After": "After",
+    "PageBreak.BeforeAndAfter": "Before and after",
+    "Splitting.Auto": "May split", "Splitting.KeepTogether": "Keep together",
+    "PageScope.All": "All", "PageScope.First": "First", "PageScope.Last": "Last",
+    "PageScope.ExceptFirst": "Except the first", "PageScope.ExceptLast": "Except the last",
+    "PageScope.Odd": "Odd", "PageScope.Even": "Even",
+    "PdfRole.Auto": "From the kind", "PdfRole.Section": "Section",
+    "PdfRole.Heading1": "Heading 1", "PdfRole.Heading2": "Heading 2",
+    "PdfRole.Heading3": "Heading 3", "PdfRole.Heading4": "Heading 4",
+    "PdfRole.Heading5": "Heading 5", "PdfRole.Heading6": "Heading 6",
+    "PdfRole.Paragraph": "Paragraph", "PdfRole.Caption": "Caption",
+    "PdfRole.List": "List", "PdfRole.ListItem": "List item",
+    "PdfRole.Figure": "Figure", "PdfRole.Artifact": "Decoration",
+    "BackPageScope.EveryPage": "Every sheet", "BackPageScope.LastPage": "The last",
+    "BackPageScope.FirstPage": "The first",
+    "WatermarkMode.Tiled": "Repeated", "WatermarkMode.Single": "Once, large",
+    "WatermarkLayer.InFront": "Over the content (translucent)",
+    "WatermarkLayer.Behind": "Under the content",
+    "type.Section": "Section", "type.Header": "Header", "type.Footer": "Footer",
+    "type.Body": "Body", "type.TextItem": "Text", "type.LineItem": "Rule",
+    "type.ImageItem": "Image", "type.BarcodeItem": "Code", "type.TableItem": "Table",
+    "type.TableRow": "Row", "type.ContainerItem": "Group", "type.FieldItem": "Field",
+    "type.ImageGridItem": "Image grid", "type.SubTemplateItem": "Sub-template",
+    "field.alignAcross": "Across the band",
+    "ItemAlign.None": "Where it falls", "ItemAlign.Start": "Left",
+    "ItemAlign.Center": "Centred", "ItemAlign.End": "Right",
+    "ItemAlign.Top": "Top", "ItemAlign.Middle": "Middle", "ItemAlign.Bottom": "Bottom",
+    "field.alignDown": "Down the band",
+    "hint.align": "Moves the item inside the room it was given, and only on an axis nothing else decided: a coordinate, an edge it is stuck to or a stated size has already answered, and an alignment does not argue with any of them. On a pinned axis it is a legal value that does nothing.",
+    "type.AdvancedTextItem": "Advanced text",
+    "paper.a4p": "A4 portrait", "paper.a4l": "A4 landscape",
+    "paper.a3p": "A3 portrait", "paper.a3l": "A3 landscape",
+    "paper.a5p": "A5 portrait", "paper.a5l": "A5 landscape",
+    "paper.a6p": "A6 portrait",
+    "paper.letter": "Letter", "paper.letterl": "Letter landscape",
+    "paper.legal": "Legal", "paper.tabloid": "Tabloid",
+
+    "section.report": "Report — the whole file",
+    "tree.report": "Report",
+    "tree.section": "Section",
+    "tree.untitled": "(untitled)",
+    "field.pageLimit": "Page limit", "field.noLimit": "no limit",
+    "hint.reportLevel": "These belong to the file, not to the section being edited: one title, one language, one author for the whole document.",
+    "issue.can.untagged": "This template declares roles, alternative texts or a language, and none of it reaches an untagged file.",
+    "issue.can.flattenedFields": "{n} field(s) will be drawn rather than left fillable. The page looks the same either way.",
+    "issue.can.flattenedFieldAltText": "This field will be drawn rather than left fillable, so it is a figure in the structure tree - and a figure with nothing to say for it is refused by PDF/UA. Give it an alternative text, or leave the fields fillable.",
+    "issue.can.flattenedSignature": "A signature field flattened is a picture of a place to sign. Nobody can sign it.",
+    "issue.can.absoluteInFlow": "This group's children overlap one another across the band, and the output being aimed at has no pages to place them on. They will be written one under the next instead.",
+    "issue.can.drawingInFlow": "This picture is a drawing, and a mail reader does not draw SVG. Its alternative text will be written in its place; a bitmap of it, if the reader should see it, is the host's to provide.",
+    "issue.sound.unreadablePicture": "This picture cannot be drawn. {reason}",
+    "canvas.refusedPicture": "picture refused",
+    "panel.report": "Report",
+    "sections.open": "Sections…", "sections.title": "Sections",
+    "sections.hint": "A report is a list of sections, each with its own page size. This page edits one of them at a time; everything else stays exactly where it is.",
+    "sections.one": "Section", "sections.bands": "band(s)",
+    "sections.edit": "Edit", "sections.remove": "Remove",
+    "sections.add": "Add a section",
+    "sections.confirmRemove": "Remove section {n} and everything in it?",
+    "sections.editing": "editing section {n} of {total}",
+    "action.close": "Close"
+  },
+
+  fr: {
+    "app.title": "Frisket — concepteur de gabarit",
+
+    "action.new": "Nouveau", "action.open": "Ouvrir JSON…", "action.save": "Enregistrer JSON",
+    "action.load": "Charger…", "action.saveShort": "Enregistrer", "action.clear": "Vider",
+    "action.exact": "Aperçu exact", "action.delete": "Supprimer",
+
+    "tab.back": "Verso", "tab.data": "Données", "tab.watermark": "Filigrane",
+    "tab.background": "Fond",
+
+    "panel.add": "Ajouter", "panel.addBack": "Ajouter au verso", "panel.structure": "Structure",
+    "panel.backStructure": "Structure du verso", "panel.properties": "Propriétés",
+    "panel.section": "Section",
+    "panel.back": "Verso", "panel.data": "Données", "panel.watermark": "Filigrane",
+    "panel.background": "Fond de page",
+
+    "family.display": "Affichage", "family.input": "Saisie", "family.library": "Bibliothèque",
+    "add.text": "Texte", "add.rule": "Trait", "add.image": "Image", "add.table": "Tableau",
+    "add.code": "Code", "add.group": "Groupe", "add.checkbox": "Case",
+    "add.signature": "Signature", "add.imageGrid": "Planche images", "add.subTemplate": "Sous-gabarit",
+    "add.importedPage": "Page PDF",
+    "field.importedPdf": "Fichier PDF", "field.importedPage": "Page",
+    "hint.importedPage": "Une page d’un autre PDF, copiée telle quelle. Cette page ne sait pas l’afficher - lire un PDF demande un lecteur, et il n’y en a pas dans un navigateur - donc seule la place qu’elle prendra est dessinée. L’embarquer met le fichier dans le gabarit, ce qui voyage partout ; un chemin est résolu à côté du gabarit, ce que seuls le CLI et la bibliothèque native savent faire.",
+    "hint.importedClaim": "Tout import met en cause une déclaration de conformité : rien ici ne peut répondre d’octets qu’il n’a pas écrits. Le moteur le dit et ne refuse rien - un rapport fait pour être lu n’a que faire de PDF/A.",
+    "type.ImportedPageItem": "Page PDF",
+    "add.advancedText": "Texte avancé",
+
+    "page.bands": "bandes", "page.frames": "cadres",
+
+    "field.font": "Police", "field.size": "Taille", "field.style": "Style",
+    "field.alignH": "Horizontal", "field.alignV": "Vertical", "field.colour": "Couleur",
+    "field.lineSpacing": "Interligne", "field.wrap": "Retour à la ligne",
+    "field.direction": "Sens", "field.thickness": "Épaisseur",
+    "field.naturalWidth": "Largeur d'origine", "field.naturalHeight": "Hauteur d'origine",
+    "field.embed": "Embarquer un fichier", "field.carried": "Embarqué",
+    "field.scaling": "Ajustement", "field.file": "Fichier",
+    "richText.applyColour": "Réappliquer cette couleur",
+    "richText.newColour": "Nouvelle couleur",
+    "field.sourceField": "Champ de données",
+    "hint.sourceField": "Un chemin dans les données contenant l’image, en base64 ou en URI data: — par exemple Signatures.Client. Prend le pas sur le fichier ci-dessous dès que les données fournissent quelque chose ; rien à ce chemin veut dire pas d’image du tout, comme un devis non signé reste sans signature plutôt qu’avec un cadre vide.",
+    "hint.subTemplate": "Un autre gabarit, de trois façons. Un chemin est résolu à côté du fichier qui le nomme, ce que seuls le CLI et la bibliothèque native savent faire - cette page n'a pas de fichier propre, donc un chemin s'affiche ici en cadre vide. st:// nomme ce que le programme appelant va chercher, et s'affiche ici quand ce programme ouvre sa bibliothèque à la page. L'embarquer met l'autre gabarit dans celui-ci, ce qui voyage partout.",
+    "field.libraryPiece": "Depuis la bibliothèque",
+    "hint.pieceReady": "Dessiné depuis la bibliothèque : {title}. Il se modifie là-bas, pas ici - le fichier ne garde que la référence, donc changer la pièce change chaque document qui la nomme.",
+    "hint.pieceLoading": "Demande de {reference} à la bibliothèque…",
+    "hint.pieceMissing": "La bibliothèque ne connaît pas {reference}, donc rien n'est dessiné ici. Ce qui compose le document devra le connaître.",
+    "hint.pieceNoLibrary": "Cette page n'a pas de bibliothèque à interroger, donc {reference} s'affiche en cadre vide. Le programme qui compose le document va le chercher.",
+    "hint.advancedJustify": "Justifié ne fait rien sur un texte avancé - cela étire les espaces de l'unique ligne d'un texte simple, alors qu'ici chaque segment place sa propre boîte. Dessiné aligné à gauche.",
+    "field.value": "Valeur", "field.kind": "Type", "field.correction": "Correction",
+    "field.showText": "Valeur lisible", "field.quietZone": "Marge (modules)",
+    "field.name": "Nom", "field.tooltip": "Info-bulle", "field.multiline": "Multiligne",
+    "field.maxLength": "Longueur max.", "field.options": "Options", "field.outline": "Contour",
+    "field.repeatHeader": "Répéter l'en-tête", "field.column": "col",
+    "field.layout": "Disposition", "field.isHeader": "Ligne d'en-tête",
+    "field.gridColumns": "Colonnes par rangée", "field.rowHeight": "Hauteur de rangée",
+    "field.gap": "Espacement", "field.templatePath": "Fichier gabarit",
+    "field.subMode": "Apporte",
+    "SubTemplateMode.Splice": "Un bloc, dans ce flux",
+    "SubTemplateMode.Append": "Un document, apr\u00e8s cette section",
+    "hint.appendMode": "L\u2019autre gabarit garde son format, son en-t\u00eate et son pied, et devient des sections apr\u00e8s celle-ci. Ce qui suit cet appel reste dans cette section, donc sort avant.",
+    "field.language": "Langue",
+    "field.languageSame": "celle du fichier",
+    "field.runs": "Segments", "field.addRun": "+ segment", "field.runColor": "Couleur",
+    "field.runOwnColor": "couleur propre", "field.runOwnSize": "taille propre",
+    "richText.title": "Texte enrichi", "richText.open": "✎ Éditer en texte enrichi",
+    "richText.noColor": "Sans couleur", "richText.noSize": "Taille par défaut",
+    "richText.hint": "Sélectionnez une partie du texte, puis cliquez un style, choisissez une couleur ou une taille - chacun s'applique dès que vous le choisissez.",
+    "richText.apply": "Appliquer", "action.cancel": "Annuler",
+    "field.title": "Titre", "field.author": "Auteur", "field.subject": "Sujet",
+    "field.keywords": "Mots-clés", "field.language": "Langue",
+    "field.headingNumbering": "Numéros de titre",
+    "field.proofBackground": "Papier",
+    "hint.proofBackground": "Le support sur lequel ceci est censé être imprimé - papier à en-tête, papier de couleur - montré derrière la page pendant qu'on écrit. Il n'est jamais imprimé : ni par le PDF, ni par la preuve SVG, ni par le courriel. Le moteur ne fournit pas de papier, et une preuve qui le dessinerait prétendrait que l'imprimante le fait.",
+    "hint.headingNumbering": "Comment un titre se numérote, un symbole par niveau : 1 pour les chiffres, A ou a pour les lettres, I ou i pour les romains. Ce qui sépare deux symboles s'écrit entre les niveaux - \"1.1.1\", \"A.a.1\", \"A) a. 1\". Mettre {HeadingNumber} dans le texte du titre, là où le numéro doit apparaître ; la ponctuation qui suit est à taper soi-même. {SectionHeadingNumber} repart à 1 à chaque section, et les deux valent la même chose tant qu'il n'y en a qu'une.",
+    "field.pageSize": "Format de page", "field.rootFontSize": "Police racine",
+    "field.role": "Rôle", "field.altText": "Texte de remplacement",
+    "field.bookmark": "Signet", "field.level": "Niveau",
+    "field.visible": "Visible", "field.pageBreak": "Saut", "field.splitting": "Coupe",
+    "field.pageScope": "Pages", "field.background": "Fond",
+    "field.border": "Bordure", "field.borderSides": "Côtés tracés", "field.corners": "Coins",
+    "hint.corners": "Le rayon de chaque coin, en millimètres. Le fond et la bordure le suivent tous deux, et deux rayons trop grands pour leur côté sont réduits ensemble jusqu'à tenir.",
+    "field.signing": "Signature", "field.scope": "Sur", "field.padding": "Marges",
+    "field.mode": "Pose", "field.layer": "Plan", "field.angle": "Angle",
+
+    "style.bold": "G", "style.italic": "I", "style.underline": "S", "style.strikethrough": "B",
+    "option.readOnly": "lecture seule", "option.required": "obligatoire",
+
+    "section.accessibility": "Accessibilité", "section.outline": "Plan",
+    "section.position": "Position", "section.dock": "Côtés collés",
+    "section.margin": "Marge", "section.padding": "Remplissage",
+    "section.render": "Rendu", "section.section": "Section",
+
+    "watermark.enable": "activer",
+    "back.enable": "imprimer un verso",
+
+    "hint.add": "Ajouté dans la sélection si c'est un conteneur, sinon à côté. Les éléments "
+              + "de saisie deviennent un formulaire dans le PDF ; à l'impression ou une fois "
+              + "aplatis, ils gardent leur valeur.",
+    "hint.back": "Les conditions de vente, classiquement. Le verso n'est ni numéroté ni "
+               + "compté : une facture « page 1 / 2 » a quatre faces imprimées. {Page} y "
+               + "donne le numéro de la feuille à laquelle il appartient.",
+    "hint.data": "Appliquées par l'aperçu exact et par le PDF. L'aperçu local montre le "
+               + "gabarit tel quel, ligne modèle comprise.",
+    "background.enable": "activer", "field.area": "Couvre", "field.opacity": "Opacité",
+    "BackdropArea.Sheet": "Toute la feuille", "BackdropArea.Margins": "Dans les marges",
+    "hint.background": "Un papier à en-tête, dessiné derrière chaque page et marqué "
+      + "comme décoration pour qu'un lecteur d'écran passe dessus. Étirer remplit le "
+      + "rectangle choisi ; garder les proportions et aucun ont besoin de la taille "
+      + "d'origine, mesurée à l'ouverture du fichier ici et saisissable sur une image. "
+      + "L'atténuation se règle ici - un PNG à canal alpha est refusé net.",
+
+    "hint.watermark": "Dessiné comme du contenu, jamais comme un fond : un navigateur "
+                    + "supprime les fonds à l'impression, et un filigrane absent du papier "
+                    + "manque justement sur la copie dont on pourrait se servir.",
+    "hint.metadata": "Écrits dans les propriétés du fichier et son paquet XMP. Les jetons y "
+                   + "sont remplacés comme ailleurs, donc {InvoiceNumber} y a sa place.",
+    "hint.altText": "Sans lui, un lecteur d'écran n'annonce rien : la personne n'apprend même "
+                  + "pas qu'il y a quelque chose.",
+    "hint.approximate": "Aperçu approximatif : le navigateur mesure avec ses propres polices, "
+                      + "cette page ne pagine pas et n'applique pas les répétitions.",
+    "hint.approximateEngineFonts": "Aperçu approximatif : mesuré avec les polices du moteur, "
+                      + "mais cette page ne pagine pas et n'applique pas les répétitions.",
+
+    "alert.noPdf": "PDF indisponible : ",
+    "alert.unreadable": "Lecture impossible : ", "alert.badData": "Données illisibles : ",
+    "alert.noData": "Aucune donnée à enregistrer.",
+    "alert.badDataKept": "Données illisibles, rien n'a été écrit : ",
+    "confirm.new": "Repartir d'un gabarit vide ?", "confirm.clearData": "Vider les données ?",
+    "report.new": "Nouveau rapport",
+
+    "Units.Millimeter": "Millimètres", "Units.Percentage": "Pourcentage",
+    "FontSizeUnit.Rem": "Rem", "FontSizeUnit.Millimeter": "Millimètres de capitale",
+    "FontSizeUnit.Point": "Points", "FontSizeUnit.PercentOfFrame": "% du cadre",
+    "HorizontalAlignment.Left": "Gauche", "HorizontalAlignment.Center": "Centré",
+    "HorizontalAlignment.Right": "Droite", "HorizontalAlignment.Justify": "Justifié",
+    "VerticalAlignment.Top": "Haut", "VerticalAlignment.Middle": "Milieu",
+    "VerticalAlignment.Bottom": "Bas",
+    "LineOrientation.Horizontal": "Horizontal", "LineOrientation.Vertical": "Vertical",
+    "LineOrientation.DiagonalDown": "Diagonale descendante",
+    "LineOrientation.DiagonalUp": "Diagonale montante",
+    "DashStyle.Solid": "Plein", "DashStyle.Dash": "Tirets", "DashStyle.Dot": "Pointillés",
+    "DashStyle.DashDot": "Tiret-point",
+    "ImageScaling.Uniform": "Garder les proportions", "ImageScaling.Stretch": "Étirer",
+    "ImageScaling.None": "Aucun",
+    "RepeatedReading.Once": "Une fois", "RepeatedReading.EveryPage": "À chaque page",
+    "RepeatedReading.Never": "Jamais",
+    "section.reading": "Lecture à voix haute",
+    "field.repeatedReading": "Ce qui se répète est lu",
+    "hint.repeatedReading": "Dans un PDF balisé, pour qui utilise un lecteur d’écran. Une fois signifie à sa première apparition. Tout reste imprimé sur chaque page, et ce qui n’apparaît que sur une page, comme les totaux de la dernière, est toujours lu.",
+    "Symbology.Qr": "QR", "Symbology.Code128": "Code 128",
+    "QrErrorCorrection.Low": "Faible (7 %)", "QrErrorCorrection.Medium": "Moyenne (15 %)",
+    "QrErrorCorrection.Quartile": "Forte (25 %)", "QrErrorCorrection.High": "Maximale (30 %)",
+    "FieldKind.Text": "Texte", "FieldKind.Checkbox": "Case", "FieldKind.Signature": "Signature",
+    "Signing.ByHand": "À la main", "Signing.Digital": "Certificat numérique",
+    "LayoutMode.Absolute": "Absolue", "LayoutMode.Stack": "Empilée",
+    "Visibility.Visible": "Visible", "Visibility.Invisible": "Invisible (place gardée)",
+    "Visibility.Gone": "Retiré (sans place)",
+    "PageBreak.None": "Aucun", "PageBreak.Before": "Avant", "PageBreak.After": "Après",
+    "PageBreak.BeforeAndAfter": "Avant et après",
+    "Splitting.Auto": "Peut se couper", "Splitting.KeepTogether": "Garder d'un bloc",
+    "PageScope.All": "Toutes", "PageScope.First": "La première", "PageScope.Last": "La dernière",
+    "PageScope.ExceptFirst": "Sauf la première", "PageScope.ExceptLast": "Sauf la dernière",
+    "PageScope.Odd": "Impaires", "PageScope.Even": "Paires",
+    "zoom.fit": "Ajusté", "zoom.label": "Zoom",
+    "action.detach": "Aperçu fenêtré", "action.attached": "Aperçu ouvert",
+    "section.repeat": "Répétition",
+    "field.repeatOver": "Sur la liste", "field.emptyText": "Si elle est vide",
+    "hint.repeatOver": "Une liste des données, par exemple Lignes : ce que contient l'élément est dessiné une fois par entrée - un tableau garde ses lignes d'en-tête et répète les autres, deux d'entre elles en alternance. Un jeton lit d'abord l'entrée, puis l'ensemble des données. Si la liste est vide, l'élément disparaît, en-tête compris, sauf s'il dit quoi montrer à la place. Cette page le dessine une fois ; l'aperçu exact dessine chaque entrée.",
+    "editor.addField": "Insérer un champ de fusion",
+    "editor.fromData": "Image issue des données : {path}",
+    "fieldType.text": "Texte", "fieldType.number": "Nombre", "fieldType.decimal": "Décimal",
+    "fieldType.currency": "Montant", "fieldType.date": "Date", "fieldType.datetime": "Date et heure",
+    "fieldType.image": "Image", "fieldType.list": "Listes",
+    "fields.eachLine": "Dans chaque ligne de {list}",
+    "editor.repeats": "\u21BB Répété pour chaque élément de {list}",
+    "live.off": "Aperçu exact : non", "live.canvas": "Aperçu exact : sur le canevas",
+    "live.beside": "Aperçu exact : à côté", "live.window": "Aperçu exact : dans une fenêtre",
+    "live.asking": "Le moteur dessine…",
+    "live.ready": "Les pages du moteur, à jour ({count})",
+    "live.failed": "Le moteur n'a pas répondu : {message}",
+    "live.windowClosed": "La fenêtre est fermée - Aperçu fenêtré l'ouvre",
+    "live.page": "page {page} / {pages} - moteur",
+    "live.noServer": "Cette page n'a reçu aucun moteur à interroger.",
+    "preview.title": "Frisket \u2014 aperçu",
+    "hint.popup": "Le navigateur a bloqué la fenêtre. Autoriser les fenêtres surgissantes pour cette page, puis réessayer.",
+
+    "section.columns": "Colonnes",
+    "field.columnCount": "Combien", "field.columnGap": "Écart (mm)",
+    "field.balance": "Équilibrer",
+    "hint.balance": "Sur la page où le texte s’arrête, les colonnes se terminent ensemble au lieu d’avoir la première pleine et la dernière presque vide.",
+
+    "section.condition": "Affiché quand",
+    "field.showWhen": "Seulement si", "field.hideWhen": "Sauf si",
+    "hint.condition": "Un chemin dans les données, par exemple Client.Vat. L\u2019élément dispara\u00eet \u2014 sans laisser de place \u2014 quand il n\u2019y a rien \u00e0 ce chemin\u202f: absent, vide, z\u00e9ro ou faux.",
+
+    "panel.issues": "Contrôles", "issues.none": "Rien à signaler",
+    "issues.count": "{errors} erreur(s), {warnings} avertissement(s)",
+    "issues.onlyFaults": "seulement ce qui cloche",
+    "theme.auto": "Auto", "theme.graphite": "Graphite",
+    "theme.light": "Clair", "theme.frost": "Givr\u00e9",
+
+    "editor.title": "Frisket — éditeur",
+    "size.normal": "Normale", "size.small": "Petite", "size.large": "Grande", "size.huge": "Énorme",
+    "editor.document": "Document",
+    "editor.addText": "Texte",
+    "editor.addImage": "Image",
+    "editor.removeBlock": "Retirer le bloc",
+    "editor.resize": "Glisser pour redimensionner",
+    "editor.moveBlock": "Glisser pour déplacer ce bloc",
+    "editor.moveHalf": "Glisser pour sortir ce bloc de la paire",
+    "editor.addText": "Ajouter un paragraphe",
+    "editor.addRow": "Ajouter une ligne", "editor.dropRow": "Retirer cette ligne",
+    "editor.addColumn": "Ajouter une colonne", "editor.dropColumn": "Retirer cette colonne",
+    "editor.fonts": "Polices",
+    "editor.openHtml": "HTML\u2026",
+    "editor.asking": "On demande au moteur\u2026",
+    "editor.openMail": "Courriel\u2026",
+    "editor.htmlWhat": "Les pages elles-m\u00eames, dessin\u00e9es en SVG avec les polices "
+                     + "incorpor\u00e9es \u2014 ce que l'imprimante fera.",
+    "editor.mailWhat": "Le m\u00eame rapport en message\u202f: du HTML qui coule, sans pages, "
+                     + "sans rien d'incorpor\u00e9. Lancez les contr\u00f4les sur une cible "
+                     + "courriel d'abord pour savoir ce qu'il perd en chemin.",
+    "editor.noServer": "Le serveur d'aper\u00e7u ne r\u00e9pond pas. Lancez-le avec "
+                     + "\u00ab dotnet run --project apps/server \u00bb et r\u00e9essayez \u2014 cette "
+                     + "page ne sait pas \u00e9crire ce HTML elle-m\u00eame, et montrer son "
+                     + "approximation \u00e0 la place serait exactement ce que ce bouton "
+                     + "existe pour \u00e9viter.",
+    "fonts.library": "Depuis le serveur",
+    "fonts.websafe": "Standard web (courriel)",
+    "fonts.default": "Police du document",
+    "fonts.offline": "Le serveur ne r\u00e9pond pas\u202f: cette liste est ce que le document "
+                   + "emploie d\u00e9j\u00e0. Une famille dont le moteur n'a pas le fichier est "
+                   + "refus\u00e9e \u00e0 l'\u00e9criture du PDF \u2014 jamais remplac\u00e9e en silence, "
+                   + "car une autre police recomposerait chaque ligne.",
+    "fonts.approximate": "Les familles standard du web ne sont pas incorpor\u00e9es\u202f: "
+                       + "c'est le lecteur qui les fournit. Juste pour un courriel, faux "
+                       + "pour un PDF qui doit avoir la m\u00eame allure partout.",
+    "editor.foreign": "cela se modifie dans le concepteur ; c'est gardé tel quel ici.",
+    "editor.hint": "Tapez et cela devient du texte ; déposez une image et cela devient une "
+                 + "image. Entrée commence un nouveau bloc plutôt qu'une nouvelle ligne, "
+                 + "Entrée va à la ligne ; maj+Entrée crée un nouveau bloc. Glissez "
+                 + "un bloc pour le déplacer, ou alt et une flèche ; tirez le coin "
+                 + "d'une image pour la redimensionner, et les rails d'un tableau pour "
+                 + "ajouter lignes et colonnes. Déposez un bloc sur le côté d'un "
+                 + "autre pour les mettre l'un à côté de l'autre ; la forme "
+                 + "montrée pendant le glisser est celle que vous obtiendrez. Ce "
+                 + "visage ne pagine pas — la feuille s'allonge.",
+    "target.tagged": "sortie balisée",
+    "target.interactive": "champs remplissables",
+    "hint.target": "Ce que vous allez produire. Décochez l'un ou l'autre pour voir ce que le gabarit perd en chemin — la page a la même allure dans les deux cas, et c'est ce qui rend la perte facile à manquer.",
+    "name.row": "ligne", "name.headerRow": "ligne d\u2019en-tête",
+    "issue.ua.language": "Le section ne dit pas dans quelle langue il est écrit\u202f: un lecteur l\u2019annonce avec la voix qu\u2019il a sous la main.",
+    "issue.ua.title": "Le section n\u2019a pas de titre, or c\u2019est ce qu\u2019un lecteur annonce à l\u2019ouverture.",
+    "issue.ua.altText": "Montré et non lu, sans texte de remplacement\u202f: un lecteur d\u2019écran n\u2019annonce rien du tout.",
+    "issue.ua.formRole": "Seul un champ peut être un contrôle de formulaire. Celui-ci sera dessiné, et un dessin a besoin d\u2019un texte de remplacement.",
+    "issue.ua.fieldName": "Ce champ n\u2019a pas d\u2019infobulle\u202f: un lecteur annonce un contrôle sans savoir à quoi il sert.",
+    "issue.ua.tableHeader": "Ce tableau n\u2019a pas de ligne d\u2019en-tête\u202f: les valeurs sont annoncées sans rien qui dise ce qu\u2019elles sont.",
+    "issue.sound.emptyBarcode": "Ce code-barres n\u2019a rien à encoder.",
+    "issue.sound.emptyImage": "Cette image n’a ni image propre ni chemin vers une image dans les données : rien n’y sera jamais dessiné.",
+    "issue.sound.emptyImportedPage": "Cette page importée ne nomme aucun PDF : rien n’y sera dessiné.",
+    "issue.sound.importedPageNumber": "Les pages se comptent à partir de un.",
+    "issue.sound.emptyImageGrid": "Cette planche d'images demande moins d'une colonne, ce qui se dessine en une seule colonne plutôt que ce qui est réglé ici.",
+    "issue.sound.repeatPageBreak": "Ceci coupe une fois, avant toute la série répétée. La répétition clone ce qui est dans le conteneur, donc pour une page par enregistrement le saut se pose sur le bloc répété.",
+    "issue.sound.noPageSize": "Cette section n'a pas de format de page : elle est mise en page sur une feuille de rien, chaque colonne trop étroite pour être divisée, un élément par page et le reste perdu. Lui donner un format - 210 par 297 pour l'A4.",
+    "issue.sound.emptySubTemplate": "Ce sous-gabarit ne nomme rien et ne porte rien, donc rien n'y sera jamais inséré. Lui donner un chemin, une référence st:// ou le JSON de l'autre gabarit.",
+    "issue.sound.emptyAdvancedText": "Ce texte avancé n'a aucun segment avec quelque chose dedans, donc rien n'y sera jamais dessiné.",
+    "issue.sound.justifiedBreak": "Ce texte est justifié et contient un saut de ligne. Un saut est étiré jusqu'à la marge comme une ligne repliée, ce qui n'est pas son sens - mettre chaque paragraphe dans son propre texte.",
+    "issue.sound.nestedSection": "Une section ne peut pas se trouver dans une autre. Les sections sont une liste sur le rapport, jamais imbriquées - un format de page ne veut rien dire à l'intérieur d'une page.",
+    "issue.sound.headingNumberNoFormat": "Ce texte demande un numéro de titre, et le rapport ne dit pas comment on l'écrit. Régler le format de numérotation - \"1.1.1\", \"A.a.1\" - ou retirer le jeton ; en attendant il reste sur la page tel qu'il a été tapé.",
+    "issue.sound.headingNumberOutsideHeading": "Ce n'est pas un titre, donc le numéro n'a aucun niveau où se placer. Lui donner un rôle de titre, ou nommer le niveau dans le jeton lui-même - {HeadingNumber[1]} pour le chapitre auquel il appartient.",
+    "issue.sound.headingNumberDepth": "Ce titre est plus profond que ce que le format de numérotation énonce, donc son dernier symbole est répété pour lui. Ajouter un niveau au format, sans quoi les deux niveaux les plus profonds se ressembleront.",
+    "issue.sound.columnsIgnored": "Ceci demande des colonnes qui n'apparaîtront jamais ici : un conteneur qui place ses enfants par coordonnées n'a pas de flux à diviser, et un tableau ou une planche d'images divise déjà ses rangées à sa manière. Passer en conteneur empilé, ou retirer les colonnes.",
+    "issue.sound.duplicateField": "Un autre champ s\u2019appelle aussi «\u202f{name}\u202f». Remplir l\u2019un remplit l\u2019autre, et une seule valeur survit.",
+    "issue.sound.raggedTable": "Cette ligne a {count} cellule(s) là où le tableau en a {width}. Un validateur refuse les lignes de largeurs inégales.",
+
+    "PdfRole.Table": "Tableau", "PdfRole.TableRow": "Ligne de tableau",
+    "PdfRole.TableHeader": "Cellule d\u2019en-tête", "PdfRole.TableCell": "Cellule",
+    "PdfRole.Form": "Contrôle",
+    "PdfRole.Auto": "Selon le type", "PdfRole.Section": "Section",
+    "PdfRole.Heading1": "Titre 1", "PdfRole.Heading2": "Titre 2", "PdfRole.Heading3": "Titre 3",
+    "PdfRole.Heading4": "Titre 4", "PdfRole.Heading5": "Titre 5", "PdfRole.Heading6": "Titre 6",
+    "PdfRole.Paragraph": "Paragraphe", "PdfRole.Caption": "Légende",
+    "PdfRole.List": "Liste", "PdfRole.ListItem": "Élément de liste",
+    "PdfRole.Figure": "Figure", "PdfRole.Artifact": "Décoration",
+    "BackPageScope.EveryPage": "Chaque feuille", "BackPageScope.LastPage": "La dernière",
+    "BackPageScope.FirstPage": "La première",
+    "WatermarkMode.Tiled": "Répété", "WatermarkMode.Single": "Une fois, en grand",
+    "WatermarkLayer.InFront": "Par-dessus (translucide)",
+    "WatermarkLayer.Behind": "Sous le contenu",
+    "type.Section": "Section", "type.Header": "En-tête", "type.Footer": "Pied de page",
+    "type.Body": "Corps", "type.TextItem": "Texte", "type.LineItem": "Trait",
+    "type.ImageItem": "Image", "type.BarcodeItem": "Code", "type.TableItem": "Tableau",
+    "type.TableRow": "Ligne", "type.ContainerItem": "Groupe", "type.FieldItem": "Champ",
+    "type.ImageGridItem": "Planche images", "type.SubTemplateItem": "Sous-gabarit",
+    "field.alignAcross": "Dans la largeur",
+    "ItemAlign.Top": "En haut", "ItemAlign.Middle": "Au milieu", "ItemAlign.Bottom": "En bas",
+    "field.alignDown": "Dans la hauteur",
+    "hint.align": "Déplace l'élément dans la place qu'on lui a donnée, et seulement sur un axe que rien d'autre n'a décidé : une coordonnée, un bord auquel il est collé ou une taille énoncée ont déjà répondu, et un alignement ne discute avec aucun des trois. Sur un axe épinglé, c'est une valeur légale qui ne fait rien.",
+    "ItemAlign.None": "Là où il tombe", "ItemAlign.Start": "À gauche",
+    "ItemAlign.Center": "Centré", "ItemAlign.End": "À droite",
+    "type.AdvancedTextItem": "Texte avancé",
+    "section.report": "Rapport — le fichier entier",
+    "tree.report": "Rapport",
+    "tree.section": "Section",
+    "tree.untitled": "(sans titre)",
+    "field.pageLimit": "Limite de pages", "field.noLimit": "sans limite",
+    "hint.reportLevel": "Ceux-ci appartiennent au fichier, pas à la section modifiée : un seul titre, une seule langue, un seul auteur pour tout le document.",
+    "issue.can.untagged": "Ce gabarit déclare des rôles, des textes alternatifs ou une langue, et rien n'en atteint un fichier non balisé.",
+    "issue.can.flattenedFields": "{n} champ(s) seront dessinés au lieu de rester remplissables. La page a la même allure dans les deux cas.",
+    "issue.can.flattenedFieldAltText": "Ce champ sera dessiné au lieu de rester remplissable, donc c'est une figure dans l'arbre de structure - et une figure qui n'a rien à dire d'elle-même est refusée par PDF/UA. Lui donner un texte alternatif, ou laisser les champs remplissables.",
+    "issue.can.flattenedSignature": "Une signature aplatie est une image d'un endroit où signer. Personne ne peut la signer.",
+    "issue.can.absoluteInFlow": "Les enfants de ce groupe se chevauchent dans la largeur, et la sortie visée n'a pas de pages où les poser. Ils seront écrits l'un sous l'autre.",
+    "issue.can.drawingInFlow": "Cette image est un dessin, et un lecteur de courrier ne dessine pas le SVG. Son texte de remplacement sera écrit à sa place ; une version bitmap, si le lecteur doit la voir, revient à l'hôte.",
+    "issue.sound.unreadablePicture": "Cette image ne peut pas être dessinée. {reason}",
+    "canvas.refusedPicture": "image refusée",
+    "panel.report": "Rapport",
+    "sections.open": "Sections…", "sections.title": "Sections",
+    "sections.hint": "Un rapport est une liste de sections, chacun avec son propre format. Cette page en modifie un à la fois ; tout le reste ne bouge pas.",
+    "sections.one": "Section", "sections.bands": "bande(s)",
+    "sections.edit": "Modifier", "sections.remove": "Retirer",
+    "sections.add": "Ajouter une section",
+    "sections.confirmRemove": "Retirer la section {n} et tout ce qu'elle contient ?",
+    "sections.editing": "section {n} sur {total}",
+    "action.close": "Fermer",
+
+    "paper.a4p": "A4 portrait", "paper.a4l": "A4 paysage",
+    "paper.a3p": "A3 portrait", "paper.a3l": "A3 paysage",
+    "paper.a5p": "A5 portrait", "paper.a5l": "A5 paysage",
+    "paper.a6p": "A6 portrait",
+    "paper.letter": "Letter", "paper.letterl": "Letter paysage",
+    "paper.legal": "Legal", "paper.tabloid": "Tabloid"
+  }
+};
+
+/// The language the wording is read in. The page decides how it is remembered and
+/// what to repaint afterwards; this file only needs to know which one to look up.
+let lang = "en";
+
+function setLang(code) { lang = STRINGS[code] ? code : "en"; }
+
+/// The wording for a key: the chosen language, then English, then the key itself -
+/// so a string that was never written shows up rather than leaving a blank.
+function t(key, args) {
+  const chosen = STRINGS[lang] || {};
+  const text = chosen[key] ?? STRINGS.en[key] ?? key;
+
+  // Placeholders are named rather than positional: a sentence translated into
+  // another language rarely keeps the same word order, and {count} survives
+  // being moved where {0} does not.
+  return args ? text.replace(/\{(\w+)\}/g, (m, k) => (k in args ? args[k] : m)) : text;
+}
+
+/// The label for an enum value. The value is what gets stored; this is only what
+/// the person reading it sees.
+function tv(group, value) {
+  return t(group + "." + value);
+}
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hex = c => c ? "#" + [c.R, c.G, c.B].map(v => (v | 0).toString(16).padStart(2, "0")).join("") : ON_PAPER.defaultInk;
+const hexToRgb = s => ({ R: parseInt(s.slice(1, 3), 16), G: parseInt(s.slice(3, 5), 16),
+                         B: parseInt(s.slice(5, 7), 16), A: 255 });
+const n3 = v => Number.isFinite(v) ? Math.round(v * 1000) / 1000 : 0;
+
+// The same grid the engine lays down, so the preview shows where the marks fall
+// rather than merely that there are some. Approximate in width only, like every
+// other measurement here.
+function watermarkMarks(report, page) {
+  const w = report.Watermark;
+  if (!w || !w.Text) return [];
+
+  const font = Object.assign(newFont(), w.Font);
+  const cap = (font.Size ?? 8) * (font.SizeUnit === "Millimeter" ? 1 : (report.RootFontSize ?? 3));
+  const run = w.Text.length * cap * 0.62;          // no font file here; a ratio will do
+  const rad = (w.Angle ?? 45) * Math.PI / 180;
+  const cx = page.width / 2, cy = page.height / 2;
+
+  if (w.Mode === "Single") {
+    return [{ x: cx - Math.cos(rad) * run / 2 - Math.sin(rad) * cap / 2,
+              y: cy + Math.sin(rad) * run / 2 - Math.cos(rad) * cap / 2, cap }];
+  }
+
+  const along = run + (w.Spacing > 0 ? w.Spacing : run / 2);
+  const across = cap * 3 + (w.Spacing > 0 ? w.Spacing : 0);
+  const reach = Math.hypot(page.width, page.height) / 2 + Math.max(along, across);
+  const marks = [];
+
+  for (let row = -Math.ceil(reach / across); row <= Math.ceil(reach / across); row++) {
+    const shift = (row & 1) === 0 ? 0 : along / 2;
+    for (let step = -Math.ceil(reach / along); step <= Math.ceil(reach / along); step++) {
+      const u = step * along + shift, v = row * across;
+      const x = cx + u * Math.cos(rad) + v * Math.sin(rad);
+      const y = cy - u * Math.sin(rad) + v * Math.cos(rad);
+      if (x < -along || x > page.width + along || y < -along || y > page.height + along) continue;
+      marks.push({ x, y, cap });
+    }
+  }
+  return marks;
+}
+
+/// The ink the engine gives a watermark that says nothing about its own colour.
+///
+/// One constant because the number lives in three places and one of them had already
+/// moved without the others: the engine lowered it from 77 to 51 - measured too dark
+/// over a paragraph - and the designer went on stamping 77 into every mark it made.
+/// The harness held this file to the engine and never looked at what the panel wrote,
+/// so it was guarding the fallback branch while the branch always taken drifted.
+const WATERMARK_INK = { R: 128, G: 128, B: 128, A: 51 };
+
+/// The rectangle a backdrop fills, mirroring BackdropArea in the engine.
+///
+/// The margin box is read off the bands rather than off the padding, exactly as
+/// ReportRenderer.Margins does: a header takes its band out of the body, so a top
+/// taken from the body band would start the picture below the letterhead.
+function backdropArea(report, page, placed, band, section) {
+  if (!report.Backdrop || report.Backdrop.Area !== "Margins")
+    return { x: 0, y: 0, w: page.width, h: page.height };
+
+  const kids = section.Childs || [];
+  const head = placed.find(p => p.item === kids.find(k => k.$type === "Header"));
+  const foot = placed.find(p => p.item === kids.find(k => k.$type === "Footer"));
+  const top = head ? head.frame.top : band.top;
+  const bottom = foot ? foot.frame.top + foot.frame.height : band.top + band.height;
+  return { x: band.left, y: top, w: band.width, h: bottom - top };
+}
+
+/// The picture behind the page. Always behind, which is what the word means - a
+/// picture over the content is a watermark, and that is a different panel.
+function backdropSvg(report, area) {
+  const b = report.Backdrop;
+  if (!b || !b.Source || !b.Source.Data) return "";
+
+  const opacity = b.Opacity == null ? 1 : Number(b.Opacity);
+  if (!(opacity > 0)) return "";
+
+  // The same fitting rule an ordinary image gets, asked of the same function: the
+  // engine fits a backdrop through an ephemeral ImageItem for exactly this reason, and
+  // a second copy of the rule here is a second rule waiting to disagree. Centred,
+  // because that is what the engine does with a backdrop smaller than its rectangle.
+  const fit = imageFit({ Scaling: b.Scaling || "Stretch",
+                         Style: { AlignHorizontal: b.AlignHorizontal || "Center",
+                                  AlignVertical: b.AlignVertical || "Center" } });
+
+  const reading = readingOf(b.Source.Data);
+  if (reading) {
+    const r = rect(area.x, area.y, area.x + area.w, area.y + area.h);
+    return reading.drawing ? drawingSvg(reading.drawing, r, fit, opacity, (report.DefaultFont || {}).Family) : refusedPicture(r);
+  }
+
+  return `<image x="${n3(area.x)}" y="${n3(area.y)}" width="${n3(area.w)}"`
+       + ` height="${n3(area.h)}" preserveAspectRatio="${fit}"`
+       + `${opacity < 1 ? ` opacity="${n3(opacity)}"` : ""}`
+       + ` href="data:${b.Source.MediaType || "image/png"};base64,${b.Source.Data}"/>`;
+}
+
+function watermarkSvg(report, page) {
+  const w = report.Watermark;
+  if (!w || !w.Text) return "";
+  const font = Object.assign(newFont(), w.Font);
+
+  // A watermark's default ink is not a text's. newFont() hands out opaque black, so
+  // `font.Color || grey` never once took the second branch - the fallback was dead
+  // code, and this preview drew a solid black DRAFT across the page while the engine
+  // drew grey at a fifth. Nothing compared the two, which is why it lasted.
+  //
+  // The number has to match Watermark.Font's default in the engine, and the harness
+  // now reads that file and holds this to it.
+  const ink = (w.Font && w.Font.Color) ? w.Font.Color : WATERMARK_INK;
+  const fill = hex(ink);
+  const op = (ink.A ?? 255) / 255;
+  const em = ((font.Size ?? 8) * (font.SizeUnit === "Millimeter" ? 1 : (report.RootFontSize ?? 3))) / CAP_RATIO;
+
+  return watermarkMarks(report, page).map(m =>
+    `<text x="0" y="0" transform="translate(${n3(m.x)} ${n3(m.y)}) rotate(${n3(-(w.Angle ?? 45))})"` +
+    ` font-family="${esc(font.Family || unnamedFace)}" font-size="${n3(em)}" fill="${fill}"` +
+    `${op < 1 ? ` fill-opacity="${n3(op)}"` : ""}` +
+    `${font.Bold ? ' font-weight="bold"' : ""}>${esc(w.Text)}</text>`).join("");
+}
+
+/// Draws one section as SVG. `show` carries what the viewer asked to see over the
+/// page rather than what the page holds - band tints, element outlines - so this
+/// stays answerable without a checkbox to read.
+function render(report, selected, index = 0, show = {}, lookup = null) {
+  drawingClips = 0;
+  drawingFamily = (report.DefaultFont || {}).Family;
+  const { placed, page, band, section } = layout(report, index, lookup);
+  const out = [];
+  // white-space:pre on every <text>, as the engine's SvgBackend writes it: a browser
+  // collapses the space a piece of rich text starts with and draws the next character in
+  // its place, touching the word in another style before it. A rule naming the element,
+  // because the browser's own sheet sets nowrap on <text> and that beats anything inherited.
+  // Kerning is left on here, unlike the engine's proof, because this page MEASURES with a
+  // canvas that kerns - drawing without it would disagree with its own ruler.
+  out.push(`<svg class="page" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="${page.width}mm" height="${page.height}mm" viewBox="0 0 ${page.width} ${page.height}">`);
+  out.push(`<style>text{white-space:pre}</style>`);
+
+  // First of all, so everything else paints over it - it is the paper.
+  if (report.Backdrop)
+    out.push(backdropSvg(report, backdropArea(report, page, placed, band, section)));
+
+  if (report.Watermark && report.Watermark.Layer === "Behind")
+    out.push(watermarkSvg(report, page));
+
+  if (show.bands) {
+    const kids = section.Childs || [];   // the section laid out, not the one selected
+    const h = placed.find(p => p.item === kids.find(k => k.$type === "Header"));
+    const f = placed.find(p => p.item === kids.find(k => k.$type === "Footer"));
+    if (h) out.push(bandRect(h.frame, ON_PAPER.headerBand));
+    out.push(bandRect(band, ON_PAPER.bodyBand));
+    if (f) out.push(bandRect(f.frame, ON_PAPER.footerBand));
+  }
+
+  for (const p of placed) {
+    const { item, frame } = p;
+    if (!["left", "top", "right", "bottom"].every(k => Number.isFinite(frame[k]))) continue;
+    if (item.Style.Visibility !== "Visible") continue;
+
+    if (item.Style.Background || item.Style.Border) out.push(frameSvg(frame, item.Style));
+    if (p.gridEdges && p.grid) {
+      for (let i = 0; i + 1 < p.gridEdges.length; i++)
+        out.push(box(rect(p.gridEdges[i], frame.top, p.gridEdges[i + 1], frame.bottom), p.grid, null));
+    }
+
+    const content = deflate(frame, item.Style.Padding);
+    if (item.$type === "TextItem") out.push(text(item, content, report));
+    else if (item.$type === "LineItem") out.push(rule(item, content));
+    else if (item.$type === "ImageItem") out.push(image(item, content));
+    else if (item.$type === "FieldItem") out.push(field(item, content, report));
+    else if (item.$type === "BarcodeItem") out.push(barcode(item, content));
+
+    if (show.boxes && item.$type !== "Section")
+      out.push(`<rect x="${n3(frame.left)}" y="${n3(frame.top)}" width="${n3(frame.width)}" height="${n3(frame.height)}" fill="none" stroke="${ON_PAPER.outline}" stroke-width=".1"/>`);
+  }
+
+  const sel = placed.find(p => p.item === selected);
+  if (sel && Number.isFinite(sel.frame.left))
+    // Drawn with its own attributes rather than a stylesheet rule. The rule lived
+    // with the page and the markup did not, so anything that copied the SVG - the
+    // window on the second screen, a saved file - lost it and fell back to the SVG
+    // default fill, which is black: a selected band came out as a redaction.
+    //
+    // A wash of the accent colour rather than an outline alone: over a busy table
+    // an outline is easy to lose, and at 12 % the text underneath still reads.
+    out.push(`<rect class="sel-rect" x="${n3(sel.frame.left)}" y="${n3(sel.frame.top)}"`
+           + ` width="${n3(sel.frame.width)}" height="${n3(sel.frame.height)}"`
+           + ` fill="${ON_PAPER.selection}" fill-opacity=".12"`
+           + ` stroke="${ON_PAPER.selection}" stroke-width=".4" stroke-dasharray="1.5 1"/>`);
+
+  // What repeats over a list is drawn once here, as its prototype: the engine stamps it out
+  // per entry, and the exact preview shows the run. Said on the page, at the corner of what
+  // repeats - above it when there is room - so the one row on screen does not read as the
+  // only one there will be.
+  for (const { item, frame } of placed) {
+    const list = (item.RepeatOver || "").trim();
+    if (!list || !Number.isFinite(frame.left) || !Number.isFinite(frame.top)) continue;
+    const words = "\u21BB " + list;
+    const size = 2.4;
+    const width = words.length * size * 0.55 + 1.6;
+    const top = frame.top >= size + 1.4 ? frame.top - size - 1.4 : frame.top + 0.4;
+    out.push(`<g class="repeat-mark"><rect x="${n3(frame.right - width)}" y="${n3(top)}"`
+           + ` width="${n3(width)}" height="${n3(size + 1)}" rx=".6"`
+           + ` fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".15"/>`
+           + `<text x="${n3(frame.right - width + 0.8)}" y="${n3(top + size)}" font-size="${size}"`
+           + ` font-family="sans-serif" fill="${ON_PAPER.placeholderInk}">${esc(words)}</text></g>`);
+  }
+
+  if (report.Watermark && report.Watermark.Layer !== "Behind")
+    out.push(watermarkSvg(report, page));
+
+  out.push("</svg>");
+  return out.join("\n");
+}
+
+// A placeholder, on purpose. Encoding a QR here would mean a second implementation
+// of Reed-Solomon and the mask scoring, in another language, drifting from the
+// engine's - and a wrong one drawn confidently is worse than an honest box, since
+// the whole point of the preview is to be believed. The exact preview draws the
+// real code; this reserves its room and names what will land there.
+function barcode(item, f) {
+  const square = (item.Symbology || "Qr") === "Qr";
+  const side = square ? Math.min(f.width, f.height) : 0;
+  const box = square
+    ? rect(f.left + (f.width - side) / 2, f.top + (f.height - side) / 2,
+           f.left + (f.width + side) / 2, f.top + (f.height + side) / 2)
+    : f;
+
+  const label = square ? "QR" : "128";
+  return `<rect x="${n3(box.left)}" y="${n3(box.top)}" width="${n3(box.width)}" height="${n3(box.height)}"` +
+         ` fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".2" stroke-dasharray="1 1"/>` +
+         `<text x="${n3(box.left + box.width / 2)}" y="${n3(box.top + box.height / 2)}"` +
+         ` text-anchor="middle" font-family="sans-serif" font-size="${n3(Math.min(6, box.height / 3))}"` +
+         ` fill="${ON_PAPER.placeholderInk}">${esc(label)}</text>`;
+}
+
+const bandRect = (r, colour) => Number.isFinite(r.left)
+  ? `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${colour}" fill-opacity=".4"/>` : "";
+
+function box(r, pen, fill) {
+  const stroke = pen ? ` stroke="${hex(pen.Color)}" stroke-width="${n3(pen.Width)}"` : "";
+  return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${fill ? hex(fill.Color) : "none"}"${stroke}/>`;
+}
+
+// ---- an item's frame ---------------------------------------------------------
+// The engine's FrameOutline, number for number: the harness holds the two together on every
+// case test 116 writes, so a corner worked out differently here is a failure there and not a
+// preview that rounds a little more than the PDF.
+
+const KAPPA = 0.5522847498307936;
+const alphaOf = c => ((c && c.A !== undefined ? c.A : 255)) / 255;
+const FRAME_DASHES = { Dash: [2, 1], Dot: [0.4, 0.8], DashDot: [2, 1, 0.4, 1] };
+
+/// The four radii as drawn - a negative one square, two that do not fit along a side scaled
+/// down with the other two by the same factor, as CSS does.
+function frameRadii(r, c) {
+  const clean = v => Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : 0;
+  const tl = clean(c && c.TopLeft), tr = clean(c && c.TopRight);
+  const br = clean(c && c.BottomRight), bl = clean(c && c.BottomLeft);
+  const wide = Number.isFinite(r.width) ? Math.max(0, r.width) : 0;
+  const tall = Number.isFinite(r.height) ? Math.max(0, r.height) : 0;
+  let factor = 1;
+  const fit = (side, a, b) => { if (a + b > side) factor = Math.min(factor, side / (a + b)); };
+  fit(wide, tl, tr); fit(wide, bl, br); fit(tall, tl, bl); fit(tall, tr, br);
+  return [tl * factor, tr * factor, br * factor, bl * factor];
+}
+
+/// Clockwise from the top, each side followed by the corner that ends it: a closed path for
+/// all four, and one open path per run of sides that touch otherwise.
+function frameTrace(f, drawn, [tl, tr, br, bl]) {
+  const starts = [[f.left + tl, f.top], [f.right, f.top + tr], [f.right - br, f.bottom], [f.left, f.bottom - bl]];
+  const ends = [[f.right - tr, f.top], [f.right, f.bottom - br], [f.left + bl, f.bottom], [f.left, f.top + tl]];
+  const after = [tr, br, bl, tl];
+  const around = [SIDES.Top, SIDES.Right, SIDES.Bottom, SIDES.Left];
+  const path = svgPath();
+  let at = [NaN, NaN];
+
+  const line = to => { if (to[0] !== at[0] || to[1] !== at[1]) svgLine(path, to[0], to[1]); at = to; };
+  const corner = i => {
+    if (after[i] === 0) return;
+    const k = after[i] * KAPPA, from = ends[i], to = starts[(i + 1) % 4];
+    const c = [[from[0] + k, from[1], to[0], to[1] - k], [from[0], from[1] + k, to[0] + k, to[1]],
+               [from[0] - k, from[1], to[0], to[1] + k], [from[0], from[1] - k, to[0] - k, to[1]]][i];
+    svgCubic(path, c[0], c[1], c[2], c[3], to[0], to[1]);
+    at = to;
+  };
+
+  if (drawn === 15) {
+    svgMove(path, starts[0][0], starts[0][1]);
+    at = starts[0];
+    for (let i = 0; i < 3; i++) { line(ends[i]); corner(i); }
+    if (tl > 0) { line(ends[3]); corner(3); }
+    svgClose(path);
+    return path;
+  }
+
+  const first = [3, 2, 1, 0].find(i => (drawn & around[i]) === 0);
+  let open = false;
+  for (let step = 1; step <= 4; step++) {
+    const i = (first + step) % 4;
+    if ((drawn & around[i]) === 0) { open = false; continue; }
+    if (!open) { svgMove(path, starts[i][0], starts[i][1]); at = starts[i]; open = true; }
+    line(ends[i]);
+    if (drawn & around[(i + 1) % 4]) corner(i);
+  }
+  return path;
+}
+
+/// What a frame comes to: `plain` when it is the rectangle it always was, and the fill and
+/// the border as shapes either way.
+function frameOutline(r, pen, fill, sides, radii) {
+  const drawn = pen ? sides & 15 : 0;
+  const round = frameRadii(r, radii);
+  const shapes = [];
+  if (fill)
+    shapes.push({ path: frameTrace(r, 15, round), fill: fill.Color, fillAlpha: alphaOf(fill.Color) });
+  if (pen && drawn)
+    shapes.push({ path: frameTrace(r, drawn, round), stroke: pen.Color, strokeAlpha: alphaOf(pen.Color),
+                  strokeWidth: pen.Width, dash: FRAME_DASHES[pen.DashStyle] || [] });
+  return { plain: (drawn === 0 || drawn === 15) && round.every(v => v === 0), shapes };
+}
+
+/// The frame as SvgBackend writes it: one rectangle when it is plain, the shapes otherwise.
+function frameSvg(r, style) {
+  const sides = sidesOf(style);
+  const pen = style.Border && (sides & 15) ? style.Border : null;
+  const { plain, shapes } = frameOutline(r, pen, style.Background, sides, style.CornerRadius);
+  const ink = (attribute, c) => alphaOf(c) < 1 ? ` ${attribute}="${n3(alphaOf(c))}"` : "";
+  const dashes = (list, sep) => list.length ? ` stroke-dasharray="${list.map(n5).join(sep)}"` : "";
+
+  if (plain) {
+    const b = style.Background;
+    return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}"`
+         + ` fill="${b ? hex(b.Color) : "none"}"${b ? ink("fill-opacity", b.Color) : ""}`
+         + (pen ? ` stroke="${hex(pen.Color)}"${ink("stroke-opacity", pen.Color)} stroke-width="${n3(pen.Width)}"`
+                  + dashes(FRAME_DASHES[pen.DashStyle] || [], ",") : "")
+         + "/>";
+  }
+
+  return shapes.map(s => `<path d="${drawnPathData(s.path)}"`
+    + (s.fill ? ` fill="${hex(s.fill)}"${ink("fill-opacity", s.fill)}`
+              : ` fill="none" stroke="${hex(s.stroke)}" stroke-width="${n5(s.strokeWidth)}"${ink("stroke-opacity", s.stroke)}${dashes(s.dash, " ")}`)
+    + "/>").join("");
+}
+
+/// Both decorations share one SVG attribute - two of them would have the second
+/// silently win, rather than drawing both lines.
+function decoration(font) {
+  const d = (font.Underline ? "underline " : "") + (font.Strikethrough ? "line-through" : "");
+  return d.length ? ` text-decoration="${d.trimEnd()}"` : "";
+}
+
+function text(item, r, report) {
+  const font = fontOf(item.Font, report);
+  const resolved = tokens(item.Text, report, 1, 1, item);
+  const lines = breakLines(resolved, font, report, r.width);
+  const lh = lineHeight(font, report);
+  // Same rule as the engine: the cap is centred in its line.
+  const cap = emMm(font, report) * CAP_RATIO;
+  const first = (lh + cap) / 2;
+  const block = lines.length * lh;
+  const offset = font.VerticalAlignment === "Middle" ? Math.max(0, (r.height - block) / 2)
+               : font.VerticalAlignment === "Bottom" ? Math.max(0, r.height - block) : 0;
+  const [x, anchor] = font.HorizontalAlignment === "Center" ? [(r.left + r.right) / 2, "middle"]
+                    : font.HorizontalAlignment === "Right" ? [r.right, "end"] : [r.left, "start"];
+
+  return lines.map((line, i) =>
+    `<text x="${n3(x)}" y="${n3(r.top + offset + first + i * lh)}" font-family="${esc(font.Family || unnamedFace)}"` +
+    ` font-size="${n3(emMm(font, report))}" fill="${hex(font.Color)}"` +
+    (anchor !== "start" ? ` text-anchor="${anchor}"` : "") +
+    justify(line, font, report, r.width, i === lines.length - 1) +
+    (font.Bold ? ` font-weight="bold"` : "") + (font.Italic ? ` font-style="italic"` : "") +
+    decoration(font) +
+    `>${esc(line)}</text>`).join("\n");
+}
+
+/// What to add to each space so the line reaches the far margin, as an attribute.
+///
+/// The engine works out the same number and both widen every space by it - the PDF
+/// by moving the gaps between words, this by naming a word spacing. The last line of
+/// a block is never stretched: a closing line pulled out to the margin is what tells
+/// a reader nothing follows.
+function justify(line, font, report, width, isLast) {
+  if (font.HorizontalAlignment !== "Justify" || isLast) return "";
+
+  const spaces = (line.match(/ /g) || []).length;
+  if (!spaces) return "";
+
+  const slack = width - textWidth(line, font, report);
+  return slack > 0 ? ` word-spacing="${n3(slack / spaces)}"` : "";
+}
+
+function rule(item, r) {
+  const pen = item.Pen, midY = (r.top + r.bottom) / 2, midX = (r.left + r.right) / 2;
+  const p = item.Orientation === "Vertical" ? [midX, r.top, midX, r.bottom]
+          : item.Orientation === "DiagonalDown" ? [r.left, r.top, r.right, r.bottom]
+          : item.Orientation === "DiagonalUp" ? [r.left, r.bottom, r.right, r.top]
+          : [r.left, midY, r.right, midY];
+  const dash = pen.DashStyle === "Dash" ? ` stroke-dasharray="2,1"`
+             : pen.DashStyle === "Dot" ? ` stroke-dasharray="0.4,0.8"`
+             : pen.DashStyle === "DashDot" ? ` stroke-dasharray="2,1,0.4,1"` : "";
+  return `<line x1="${n3(p[0])}" y1="${n3(p[1])}" x2="${n3(p[2])}" y2="${n3(p[3])}" stroke="${hex(pen.Color)}" stroke-width="${n3(pen.Width)}"${dash}/>`;
+}
+
+// A field is drawn as what it will look like on paper, which is also what it looks
+// like once the document is flattened.
+function field(item, r, report) {
+  const out = [];
+  const lh = lineHeight(item.Font, report);
+  const ticked = item.Value && !/^\{.*\}$/.test(item.Value)
+                 && !["false", "Off", "0"].includes(item.Value);
+
+  const box = item.Kind === "Checkbox"
+    ? rect(r.left, r.top, r.left + Math.min(r.height, lh), r.top + Math.min(r.height, lh))
+    : r;
+
+  if (item.Fill) out.push(boxShape(box, null, item.Fill));
+  if (item.Outline) out.push(boxShape(box, item.Outline, null));
+
+  if (item.Kind === "Checkbox") {
+    if (ticked) {
+      const w = box.width, h = box.height, pen = { Color: item.Font.Color, Width: Math.max(.15, w * .12) };
+      out.push(stroke(box.left + w * .22, box.top + h * .52, box.left + w * .42, box.top + h * .74, pen));
+      out.push(stroke(box.left + w * .42, box.top + h * .74, box.left + w * .80, box.top + h * .26, pen));
+    }
+    return out.join("\n");
+  }
+
+  if (item.Kind === "Signature") {
+    const rule = r.bottom - lh;
+    out.push(stroke(r.left + 1, rule, r.right - 1, rule, { Color: { R: 150, G: 150, B: 150 }, Width: .15 }));
+    if (item.Tooltip)
+      out.push(text({ Text: item.Tooltip, Font: faint(item.Font) }, rect(r.left + 1, rule, r.right - 1, r.bottom), report));
+    return out.join("\n");
+  }
+
+  const shown = ticked ? item.Value : item.Tooltip;
+  if (shown)
+    out.push(text({ Text: shown, Font: ticked ? item.Font : faint(item.Font) },
+                  rect(r.left + 1, r.top + .4, r.right - 1, r.bottom), report));
+
+  return out.join("\n");
+}
+
+function faint(font) { return Object.assign({}, font, { Color: { R: 150, G: 150, B: 150, A: 255 } }); }
+
+const boxShape = (r, pen, fill) => box(r, pen, fill);
+
+function stroke(x1, y1, x2, y2, pen) {
+  return `<line x1="${n3(x1)}" y1="${n3(y1)}" x2="${n3(x2)}" y2="${n3(y2)}" ` +
+         `stroke="${hex(pen.Color)}" stroke-width="${n3(pen.Width)}"/>`;
+}
+
+/// What ReportBinder.BindImage does, read back off the data: a bare base64 string
+/// and a data: URI are both accepted, since a browser hands over the latter. Null
+/// when there is nothing at that path, or no data loaded at all - the same
+/// "nothing to show" that leaves an unsigned quote with no signature on it.
+function resolvedImageSource(item) {
+  if (!item.SourceField || !bound) return null;
+
+  const raw = fromData(item.SourceField.trim());
+  if (raw === undefined || raw === null) return null;
+
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  let mediaType = "image/png";
+  let data = text;
+  const comma = text.indexOf(",");
+
+  if (/^data:/i.test(text) && comma > 0) {
+    const header = text.slice(5, comma);
+    const semicolon = header.indexOf(";");
+    mediaType = semicolon > 0 ? header.slice(0, semicolon) : header;
+    data = text.slice(comma + 1);
+  }
+
+  return { mediaType, data };
+}
+
+/// How the picture sits in the frame the layout granted, said the way SVG says it.
+///
+/// This echo cannot measure a picture - NaturalWidth and NaturalHeight are computed
+/// from the decoded bytes and never travel in the template - so it cannot work out a
+/// fitted rectangle the way ReportRenderer.Fit does. It does not have to:
+/// preserveAspectRatio says both things at once, "meet" being the uniform fit and
+/// xMin/xMid/xMax being the same three positions across the frame.
+///
+/// It used to say "none", which stretched every picture and so disagreed with the
+/// engine's own default. Mirroring the alignment fixed the older divergence too.
+function imageFit(item) {
+  if (item.Scaling === "Stretch") return "none";
+  const style = item.Style || {};
+  const across = { Center: "xMid", End: "xMax" }[style.AlignHorizontal] || "xMin";
+  // YMin unless something says otherwise, which is what an ImageItem wants: the flow
+  // has already decided where its frame is and the engine puts it at the top of it.
+  // A backdrop's rectangle is the whole sheet, so it says.
+  const down = { Center: "YMid", End: "YMax" }[style.AlignVertical] || "YMin";
+  return `${across}${down} meet`;
+}
+
+function image(item, r) {
+  const fit = imageFit(item);
+
+  // A drawing is read here and drawn from the reading, in the page's own typefaces: handed to
+  // the browser in an <image> it would use neither, and would draw what the PDF refuses.
+  const reading = readingOf(pictureData(item));
+  if (reading)
+    return reading.drawing
+      ? drawingSvg(reading.drawing, r, item.Scaling === "Stretch" ? "none" : fit, 1, drawingFamily)
+      : refusedPicture(r);
+
+  const bytes = resolvedImageSource(item);
+  if (bytes)
+    return `<image x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" preserveAspectRatio="${fit}" href="data:${bytes.mediaType};base64,${bytes.data}"/>`;
+
+  if (item.Source && item.Source.Data)
+    return `<image x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" preserveAspectRatio="${fit}" href="data:${item.Source.MediaType};base64,${item.Source.Data}"/>`;
+
+  return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".2"/>` +
+         `<text x="${n3((r.left + r.right) / 2)}" y="${n3((r.top + r.bottom) / 2)}" text-anchor="middle" font-size="3" fill="${ON_PAPER.placeholderInk}">image</text>`;
+}
+
+// ---------------------------------------------------------------------------
+// Pictures and drawings - the echo of engine/Vector and of Pictures.
+//
+// A browser would draw any SVG it is handed, and that is exactly why this page cannot simply
+// hand it one: it would show a chart the PDF refuses, in a typeface the PDF does not use. So
+// the bytes are read here by the same rules, to the same list of shapes, and drawn from that.
+// check-against-engine.js holds this reader to the engine's on every sample test 100 writes,
+// to the rule and to the point.
+//
+// The words of a refusal are this page's own; what has to agree is that it is refused.
+// ---------------------------------------------------------------------------
+
+const SVG_LARGEST = 1e9;
+const SVG_MAX_DEPTH = 64;
+const SVG_MOST_ISSUES = 20;
+
+const SVG_NOT_DRAWN = ["title", "desc", "metadata"];
+const SVG_SHAPES = ["path", "rect", "circle", "ellipse", "line", "polyline", "polygon"];
+const SVG_PROPERTIES = [
+  "color", "fill", "fill-opacity", "fill-rule", "stroke", "stroke-opacity", "stroke-width",
+  "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit",
+  "opacity", "clip-path", "clip-rule", "font-family", "font-size", "font-weight", "font-style",
+  "text-anchor", "display", "visibility"
+];
+const SVG_IGNORED = [
+  "id", "class", "lang", "tabindex", "role", "focusable", "xmlns", "shape-rendering",
+  "text-rendering", "color-rendering", "image-rendering", "color-interpolation",
+  "pointer-events", "cursor", "font-kerning", "font-variant-ligatures"
+];
+const SVG_OWN = {
+  svg: ["viewBox", "width", "height", "x", "y", "preserveAspectRatio", "version", "baseProfile"],
+  g: [], defs: [],
+  path: ["d"],
+  rect: ["x", "y", "width", "height", "rx", "ry"],
+  circle: ["cx", "cy", "r"],
+  ellipse: ["cx", "cy", "rx", "ry"],
+  line: ["x1", "y1", "x2", "y2"],
+  polyline: ["points"], polygon: ["points"],
+  text: ["x", "y", "dx", "dy"], tspan: ["x", "y", "dx", "dy"],
+  clipPath: ["clipPathUnits"]
+};
+const SVG_GENERIC_FAMILIES = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui",
+                              "ui-sans-serif", "ui-serif", "ui-monospace", "ui-rounded"];
+
+// The names as numbers: this file carries no colour of a chart's choosing, only the means of
+// reading one. The palette audit is about what the chrome wears.
+const SVG_COLOUR_NAMES = {
+  aliceblue: 0xF0F8FF, antiquewhite: 0xFAEBD7, aqua: 0x00FFFF, aquamarine: 0x7FFFD4, azure: 0xF0FFFF,
+  beige: 0xF5F5DC, bisque: 0xFFE4C4, black: 0x000000, blanchedalmond: 0xFFEBCD, blue: 0x0000FF,
+  blueviolet: 0x8A2BE2, brown: 0xA52A2A, burlywood: 0xDEB887, cadetblue: 0x5F9EA0, chartreuse: 0x7FFF00,
+  chocolate: 0xD2691E, coral: 0xFF7F50, cornflowerblue: 0x6495ED, cornsilk: 0xFFF8DC, crimson: 0xDC143C,
+  cyan: 0x00FFFF, darkblue: 0x00008B, darkcyan: 0x008B8B, darkgoldenrod: 0xB8860B, darkgray: 0xA9A9A9,
+  darkgreen: 0x006400, darkgrey: 0xA9A9A9, darkkhaki: 0xBDB76B, darkmagenta: 0x8B008B, darkolivegreen: 0x556B2F,
+  darkorange: 0xFF8C00, darkorchid: 0x9932CC, darkred: 0x8B0000, darksalmon: 0xE9967A, darkseagreen: 0x8FBC8F,
+  darkslateblue: 0x483D8B, darkslategray: 0x2F4F4F, darkslategrey: 0x2F4F4F, darkturquoise: 0x00CED1, darkviolet: 0x9400D3,
+  deeppink: 0xFF1493, deepskyblue: 0x00BFFF, dimgray: 0x696969, dimgrey: 0x696969, dodgerblue: 0x1E90FF,
+  firebrick: 0xB22222, floralwhite: 0xFFFAF0, forestgreen: 0x228B22, fuchsia: 0xFF00FF, gainsboro: 0xDCDCDC,
+  ghostwhite: 0xF8F8FF, gold: 0xFFD700, goldenrod: 0xDAA520, gray: 0x808080, green: 0x008000,
+  greenyellow: 0xADFF2F, grey: 0x808080, honeydew: 0xF0FFF0, hotpink: 0xFF69B4, indianred: 0xCD5C5C,
+  indigo: 0x4B0082, ivory: 0xFFFFF0, khaki: 0xF0E68C, lavender: 0xE6E6FA, lavenderblush: 0xFFF0F5,
+  lawngreen: 0x7CFC00, lemonchiffon: 0xFFFACD, lightblue: 0xADD8E6, lightcoral: 0xF08080, lightcyan: 0xE0FFFF,
+  lightgoldenrodyellow: 0xFAFAD2, lightgray: 0xD3D3D3, lightgreen: 0x90EE90, lightgrey: 0xD3D3D3, lightpink: 0xFFB6C1,
+  lightsalmon: 0xFFA07A, lightseagreen: 0x20B2AA, lightskyblue: 0x87CEFA, lightslategray: 0x778899, lightslategrey: 0x778899,
+  lightsteelblue: 0xB0C4DE, lightyellow: 0xFFFFE0, lime: 0x00FF00, limegreen: 0x32CD32, linen: 0xFAF0E6,
+  magenta: 0xFF00FF, maroon: 0x800000, mediumaquamarine: 0x66CDAA, mediumblue: 0x0000CD, mediumorchid: 0xBA55D3,
+  mediumpurple: 0x9370DB, mediumseagreen: 0x3CB371, mediumslateblue: 0x7B68EE, mediumspringgreen: 0x00FA9A, mediumturquoise: 0x48D1CC,
+  mediumvioletred: 0xC71585, midnightblue: 0x191970, mintcream: 0xF5FFFA, mistyrose: 0xFFE4E1, moccasin: 0xFFE4B5,
+  navajowhite: 0xFFDEAD, navy: 0x000080, oldlace: 0xFDF5E6, olive: 0x808000, olivedrab: 0x6B8E23,
+  orange: 0xFFA500, orangered: 0xFF4500, orchid: 0xDA70D6, palegoldenrod: 0xEEE8AA, palegreen: 0x98FB98,
+  paleturquoise: 0xAFEEEE, palevioletred: 0xDB7093, papayawhip: 0xFFEFD5, peachpuff: 0xFFDAB9, peru: 0xCD853F,
+  pink: 0xFFC0CB, plum: 0xDDA0DD, powderblue: 0xB0E0E6, purple: 0x800080, rebeccapurple: 0x663399,
+  red: 0xFF0000, rosybrown: 0xBC8F8F, royalblue: 0x4169E1, saddlebrown: 0x8B4513, salmon: 0xFA8072,
+  sandybrown: 0xF4A460, seagreen: 0x2E8B57, seashell: 0xFFF5EE, sienna: 0xA0522D, silver: 0xC0C0C0,
+  skyblue: 0x87CEEB, slateblue: 0x6A5ACD, slategray: 0x708090, slategrey: 0x708090, snow: 0xFFFAFA,
+  springgreen: 0x00FF7F, steelblue: 0x4682B4, tan: 0xD2B48C, teal: 0x008080, thistle: 0xD8BFD8,
+  tomato: 0xFF6347, turquoise: 0x40E0D0, violet: 0xEE82EE, wheat: 0xF5DEB3, white: 0xFFFFFF,
+  whitesmoke: 0xF5F5F5, yellow: 0xFFFF00, yellowgreen: 0x9ACD32
+};
+
+// ---- bytes -----------------------------------------------------------------
+
+/// A template carries a picture as base64, and this file has no atob: the core runs where
+/// there is no browser (section 5c). Null when it is not base64, which reads as "not a picture".
+function bytesOfBase64(text) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const clean = String(text).replace(/[\s=]+/g, "");
+  const out = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  let bits = 0, held = 0, at = 0;
+
+  for (let i = 0; i < clean.length; i++) {
+    const value = alphabet.indexOf(clean[i]);
+    if (value < 0) return null;
+    bits = (bits << 6) | value;
+    held += 6;
+    if (held >= 8) {
+      held -= 8;
+      out[at++] = (bits >> held) & 255;
+    }
+  }
+
+  return out.subarray(0, at);
+}
+
+/// Strict UTF-8, as the engine reads it. Null on anything malformed: no replacement characters
+/// quietly standing in for bytes that were never text.
+function textOfUtf8(bytes) {
+  const units = [];
+  let out = "";
+
+  for (let i = 0; i < bytes.length;) {
+    const lead = bytes[i++];
+    let code, more;
+    if (lead < 0x80) { code = lead; more = 0; }
+    else if (lead >= 0xC2 && lead <= 0xDF) { code = lead & 0x1F; more = 1; }
+    else if (lead >= 0xE0 && lead <= 0xEF) { code = lead & 0x0F; more = 2; }
+    else if (lead >= 0xF0 && lead <= 0xF4) { code = lead & 0x07; more = 3; }
+    else return null;
+
+    for (let k = 0; k < more; k++) {
+      const next = bytes[i++];
+      if (next === undefined || (next & 0xC0) !== 0x80) return null;
+      code = (code << 6) | (next & 0x3F);
+    }
+
+    if ((more === 2 && code < 0x800) || (more === 3 && code < 0x10000)
+        || (code >= 0xD800 && code <= 0xDFFF) || code > 0x10FFFF) return null;
+
+    units.push(code);
+    if (units.length >= 4096) { out += String.fromCodePoint(...units); units.length = 0; }
+  }
+
+  return out + String.fromCodePoint(...units);
+}
+
+/// What the bytes open with, as the engine asks it: a tag, after a mark and white space.
+function looksLikeDrawing(bytes) {
+  let at = bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF ? 3 : 0;
+  while (at < bytes.length && (bytes[at] === 32 || bytes[at] === 9 || bytes[at] === 10 || bytes[at] === 13)) at++;
+  return at < bytes.length && bytes[at] === 60;
+}
+
+// ---- markup ----------------------------------------------------------------
+
+function svgFail(text, at, what) {
+  let line = 1;
+  for (let i = 0; i < at && i < text.length; i++) if (text[i] === "\n") line++;
+  throw { svgMalformed: `Line ${line}: ${what}.` };
+}
+
+function svgDecode(run, text, at) {
+  let amp = run.indexOf("&");
+  if (amp < 0) return run;
+
+  let decoded = "", from = 0;
+  while (amp >= 0) {
+    decoded += run.slice(from, amp);
+    const semi = run.indexOf(";", amp);
+    if (semi < 0) svgFail(text, at, "an & that starts no entity");
+
+    const name = run.slice(amp + 1, semi);
+    const known = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[name];
+    if (known !== undefined) {
+      decoded += known;
+    } else {
+      const hexa = name.startsWith("#x");
+      const digits = hexa ? name.slice(2) : name.startsWith("#") ? name.slice(1) : "";
+      const code = (hexa ? /^[0-9a-fA-F]+$/ : /^[0-9]+$/).test(digits) ? parseInt(digits, hexa ? 16 : 10) : 0;
+      if (!(code > 0) || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF) || code === 0xFFFE || code === 0xFFFF
+          || (code < 0x20 && code !== 9 && code !== 10 && code !== 13))
+        svgFail(text, at, `the entity &${name}; which SVG does not know`);
+      decoded += String.fromCodePoint(code);
+    }
+
+    from = semi + 1;
+    amp = run.indexOf("&", from);
+  }
+
+  return decoded + run.slice(from);
+}
+
+/// The markup into elements, by the rules of engine/Vector/SvgMarkup.cs: nothing is ever
+/// fetched, an internal subset is refused, and so no entity exists but the five XML knows.
+function svgParse(text) {
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if ((c < 32 && c !== 9 && c !== 10 && c !== 13) || c === 0xFFFE || c === 0xFFFF)
+      svgFail(text, i, "a character XML does not allow");
+  }
+
+  const isSpace = c => c === " " || c === "\t" || c === "\n" || c === "\r";
+  const nameChar = /[\p{L}\p{Nd}_\-.:]/u;
+  let at = text.charCodeAt(0) === 0xFEFF ? 1 : 0;
+  const open = [];
+  let root = null;
+
+  const after = (from, closer, fault) => {
+    const found = text.indexOf(closer, from);
+    if (found < 0) svgFail(text, from, fault);
+    return found + closer.length;
+  };
+  const skipSpace = () => { while (at < text.length && isSpace(text[at])) at++; };
+  const readName = () => {
+    const start = at;
+    while (at < text.length && nameChar.test(text[at])) at++;
+    if (at === start) svgFail(text, at, "a name was expected");
+    return text.slice(start, at);
+  };
+
+  while (at < text.length) {
+    if (text[at] !== "<") {
+      let stop = text.indexOf("<", at);
+      if (stop < 0) stop = text.length;
+      const run = text.slice(at, stop);
+      if (open.length) open[open.length - 1].children.push(svgDecode(run, text, at));
+      else if (run.trim()) svgFail(text, at, "text outside the root element");
+      at = stop;
+      continue;
+    }
+
+    if (text.startsWith("<!--", at)) { at = after(at + 4, "-->", "a comment never closed"); continue; }
+    if (text.startsWith("<?", at)) { at = after(at + 2, "?>", "a processing instruction never closed"); continue; }
+
+    if (text.startsWith("<![CDATA[", at)) {
+      if (!open.length) svgFail(text, at, "CDATA outside the root element");
+      const end = after(at + 9, "]]>", "a CDATA section never closed");
+      open[open.length - 1].children.push(text.slice(at + 9, end - 3));
+      at = end;
+      continue;
+    }
+
+    if (text.startsWith("<!DOCTYPE", at)) {
+      if (root) svgFail(text, at, "a DOCTYPE after the root element");
+      let quote = "", i = at + 9, done = false;
+      for (; i < text.length; i++) {
+        const c = text[i];
+        if (quote) { if (c === quote) quote = ""; }
+        else if (c === '"' || c === "'") quote = c;
+        else if (c === "[") svgFail(text, i, "a DOCTYPE with an internal subset, which is where entities are declared");
+        else if (c === ">") { done = true; break; }
+      }
+      if (!done) svgFail(text, at, "a DOCTYPE never closed");
+      at = i + 1;
+      continue;
+    }
+
+    if (text.startsWith("<!", at)) svgFail(text, at, "a declaration SVG does not need");
+
+    if (text.startsWith("</", at)) {
+      at += 2;
+      const closing = readName();
+      skipSpace();
+      if (at >= text.length || text[at] !== ">") svgFail(text, at, "an end tag not closed");
+      if (!open.length || open[open.length - 1].name !== closing) svgFail(text, at, `</${closing}> with no matching start tag`);
+      open.pop();
+      at++;
+      continue;
+    }
+
+    at++;
+    const element = { name: readName(), attributes: [], children: [] };
+    let shut = false;
+
+    for (;;) {
+      const before = at;
+      skipSpace();
+      if (at >= text.length) svgFail(text, at, `<${element.name}> is never finished`);
+      if (text[at] === ">") { at++; break; }
+      if (text[at] === "/") {
+        if (text[at + 1] !== ">") svgFail(text, at, `<${element.name}> is badly closed`);
+        at += 2;
+        shut = true;
+        break;
+      }
+      if (at === before) svgFail(text, at, `<${element.name}> needs a space before its next attribute`);
+
+      const name = readName();
+      skipSpace();
+      if (text[at] !== "=") svgFail(text, at, `the attribute ${name} has no value`);
+      at++;
+      skipSpace();
+      if (text[at] !== '"' && text[at] !== "'") svgFail(text, at, `the value of ${name} is not in quotes`);
+      const quote = text[at++];
+      const stop = text.indexOf(quote, at);
+      if (stop < 0) svgFail(text, at, `the value of ${name} is never closed`);
+      const raw = text.slice(at, stop);
+      if (raw.includes("<")) svgFail(text, at, `a < inside the value of ${name}`);
+      if (element.attributes.some(pair => pair[0] === name)) svgFail(text, at, `the attribute ${name} given twice`);
+      element.attributes.push([name, svgDecode(raw, text, at)]);
+      at = stop + 1;
+    }
+
+    if (open.length >= SVG_MAX_DEPTH) svgFail(text, at, `elements nested deeper than ${SVG_MAX_DEPTH}`);
+
+    if (open.length) open[open.length - 1].children.push(element);
+    else if (!root) root = element;
+    else svgFail(text, at, "a second root element");
+
+    if (!shut) open.push(element);
+  }
+
+  if (open.length) throw { svgMalformed: `<${open[open.length - 1].name}> is never closed.` };
+  if (!root) throw { svgMalformed: "There is no element in this file." };
+  return root;
+}
+
+const svgAttr = (element, name) => {
+  const pair = element.attributes.find(p => p[0] === name);
+  return pair ? pair[1] : null;
+};
+
+// ---- values ----------------------------------------------------------------
+
+const SVG_SEPARATORS = " \t\n\r,";
+
+function svgSkip(text, cursor) {
+  while (cursor.at < text.length && SVG_SEPARATORS.includes(text[cursor.at])) cursor.at++;
+}
+
+/// One number off the front, stopping where it stops: "1.5.5-2" is three.
+function svgReadNumber(text, cursor) {
+  const digit = c => c >= "0" && c <= "9";
+  let i = cursor.at;
+  if (text[i] === "+" || text[i] === "-") i++;
+
+  let digits = 0;
+  while (i < text.length && digit(text[i])) { i++; digits++; }
+  if (text[i] === ".") {
+    i++;
+    while (i < text.length && digit(text[i])) { i++; digits++; }
+  }
+  if (!digits) return null;
+
+  if (text[i] === "e" || text[i] === "E") {
+    let j = i + 1;
+    if (text[j] === "+" || text[j] === "-") j++;
+    if (j < text.length && digit(text[j])) {
+      while (j < text.length && digit(text[j])) j++;
+      i = j;
+    }
+  }
+
+  const value = Number(text.slice(cursor.at, i));
+  if (!Number.isFinite(value) || Math.abs(value) > SVG_LARGEST) return null;
+  cursor.at = i;
+  return value;
+}
+
+function svgNumber(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim(), cursor = { at: 0 };
+  const read = svgReadNumber(trimmed, cursor);
+  return read !== null && cursor.at === trimmed.length ? read : null;
+}
+
+function svgLength(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim(), cursor = { at: 0 };
+  const read = svgReadNumber(trimmed, cursor);
+  if (read === null) return null;
+  const scale = { "": 1, px: 1, pt: 96 / 72, pc: 16, mm: 96 / 25.4, cm: 96 / 2.54, in: 96 }[trimmed.slice(cursor.at)];
+  return scale === undefined ? null : read * scale;
+}
+
+function svgLengthOrEm(value, fontSize) {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim();
+  if (trimmed.endsWith("em")) {
+    const ems = svgNumber(trimmed.slice(0, -2));
+    return ems === null ? null : ems * fontSize;
+  }
+  return svgLength(trimmed);
+}
+
+function svgOpacity(value) {
+  const trimmed = value.trim(), percent = trimmed.endsWith("%");
+  const read = svgNumber(percent ? trimmed.slice(0, -1) : trimmed);
+  return read === null ? null : Math.min(1, Math.max(0, percent ? read / 100 : read));
+}
+
+function svgNumbers(value) {
+  const numbers = [], cursor = { at: 0 };
+  svgSkip(value, cursor);
+  while (cursor.at < value.length) {
+    const read = svgReadNumber(value, cursor);
+    if (read === null) return null;
+    numbers.push(read);
+    svgSkip(value, cursor);
+  }
+  return numbers;
+}
+
+/// Rounds a half to the even neighbour, as Math.Round does in the engine: 76.5 is a channel of
+/// 76 there, and Math.round here would make it 77.
+function svgRound(value) {
+  const down = Math.floor(value), rest = value - down;
+  if (rest < 0.5) return down;
+  if (rest > 0.5) return down + 1;
+  return down % 2 === 0 ? down : down + 1;
+}
+
+function svgColour(value) {
+  const text = value.trim().toLowerCase();
+
+  if (text.startsWith("#")) {
+    const h = text.slice(1);
+    if (!/^[0-9a-f]*$/.test(h)) return null;
+    const short = i => parseInt(h[i], 16) * 17;
+    const long = i => parseInt(h.slice(i, i + 2), 16);
+    if (h.length === 3) return { r: short(0), g: short(1), b: short(2), a: 255 };
+    if (h.length === 4) return { r: short(0), g: short(1), b: short(2), a: short(3) };
+    if (h.length === 6) return { r: long(0), g: long(2), b: long(4), a: 255 };
+    if (h.length === 8) return { r: long(0), g: long(2), b: long(4), a: long(6) };
+    return null;
+  }
+
+  if (text.startsWith("rgb(") || text.startsWith("rgba(")) {
+    if (!text.endsWith(")")) return null;
+    const parts = text.slice(text.indexOf("(") + 1, -1).split(/[ ,\/\t\n\r]+/).filter(Boolean);
+    if (parts.length !== 3 && parts.length !== 4) return null;
+
+    const channels = [];
+    for (let i = 0; i < 3; i++) {
+      const percent = parts[i].endsWith("%");
+      const read = svgNumber(percent ? parts[i].slice(0, -1) : parts[i]);
+      if (read === null) return null;
+      channels.push(svgRound(Math.min(255, Math.max(0, percent ? read * 2.55 : read))));
+    }
+
+    const alpha = parts.length === 4 ? svgOpacity(parts[3]) : 1;
+    if (alpha === null) return null;
+    return { r: channels[0], g: channels[1], b: channels[2], a: svgRound(alpha * 255) };
+  }
+
+  const packed = Object.prototype.hasOwnProperty.call(SVG_COLOUR_NAMES, text) ? SVG_COLOUR_NAMES[text] : null;
+  return packed === null ? null : { r: (packed >> 16) & 255, g: (packed >> 8) & 255, b: packed & 255, a: 255 };
+}
+
+const svgTimes = (m, n) => [
+  m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+  m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+  m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]
+];
+const SVG_IDENTITY = [1, 0, 0, 1, 0, 0];
+
+function svgTransform(value) {
+  let matrix = SVG_IDENTITY;
+  const cursor = { at: 0 };
+  svgSkip(value, cursor);
+
+  while (cursor.at < value.length) {
+    const open = value.indexOf("(", cursor.at);
+    const shut = open < 0 ? -1 : value.indexOf(")", open);
+    if (shut < 0) return null;
+    const a = svgNumbers(value.slice(open + 1, shut));
+    if (!a) return null;
+
+    const name = value.slice(cursor.at, open).trim();
+    const radians = (a[0] || 0) * Math.PI / 180;
+    let step = null;
+
+    if (name === "matrix" && a.length === 6) step = a;
+    else if (name === "translate" && (a.length === 1 || a.length === 2)) step = [1, 0, 0, 1, a[0], a.length === 2 ? a[1] : 0];
+    else if (name === "scale" && (a.length === 1 || a.length === 2)) step = [a[0], 0, 0, a.length === 2 ? a[1] : a[0], 0, 0];
+    else if (name === "rotate" && (a.length === 1 || a.length === 3)) {
+      const turn = [Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0];
+      step = a.length === 1 ? turn : svgTimes(svgTimes([1, 0, 0, 1, a[1], a[2]], turn), [1, 0, 0, 1, -a[1], -a[2]]);
+    }
+    else if (name === "skewX" && a.length === 1) step = [1, 0, Math.tan(radians), 1, 0, 0];
+    else if (name === "skewY" && a.length === 1) step = [1, Math.tan(radians), 0, 1, 0, 0];
+
+    if (!step) return null;
+    matrix = svgTimes(matrix, step);
+    cursor.at = shut + 1;
+    svgSkip(value, cursor);
+  }
+
+  return matrix;
+}
+
+// A path is [verb, numbers...] pieces, verbs M L C Z in absolute coordinates.
+const svgPath = () => ({ verbs: [], points: [] });
+const svgMove = (p, x, y) => { p.verbs.push("M"); p.points.push(x, y); };
+const svgLine = (p, x, y) => { p.verbs.push("L"); p.points.push(x, y); };
+const svgCubic = (p, a, b, c, d, e, f) => { p.verbs.push("C"); p.points.push(a, b, c, d, e, f); };
+const svgClose = p => p.verbs.push("Z");
+
+function svgTransformed(path, m) {
+  const moved = { verbs: path.verbs.slice(), points: [] };
+  for (let i = 0; i + 1 < path.points.length; i += 2) {
+    moved.points.push(m[0] * path.points[i] + m[2] * path.points[i + 1] + m[4],
+                      m[1] * path.points[i] + m[3] * path.points[i + 1] + m[5]);
+  }
+  return moved;
+}
+
+function svgArc(path, x1, y1, rx, ry, turn, large, sweep, x2, y2) {
+  if (x1 === x2 && y1 === y2) return;
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
+  if (rx === 0 || ry === 0) { svgLine(path, x2, y2); return; }
+
+  const phi = turn * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
+  const dx = (x1 - x2) / 2, dy = (y1 - y2) / 2;
+  const xp = cos * dx + sin * dy, yp = -sin * dx + cos * dy;
+
+  const lambda = xp * xp / (rx * rx) + yp * yp / (ry * ry);
+  if (lambda > 1) { rx *= Math.sqrt(lambda); ry *= Math.sqrt(lambda); }
+
+  const top = rx * rx * ry * ry - rx * rx * yp * yp - ry * ry * xp * xp;
+  const bottom = rx * rx * yp * yp + ry * ry * xp * xp;
+  const factor = (large === sweep ? -1 : 1) * Math.sqrt(Math.max(0, top / bottom));
+  const cxp = factor * rx * yp / ry, cyp = -factor * ry * xp / rx;
+  const cx = cos * cxp - sin * cyp + (x1 + x2) / 2, cy = sin * cxp + cos * cyp + (y1 + y2) / 2;
+
+  const from = Math.atan2((yp - cyp) / ry, (xp - cxp) / rx);
+  const to = Math.atan2((-yp - cyp) / ry, (-xp - cxp) / rx);
+  let span = to - from;
+  if (!sweep && span > 0) span -= 2 * Math.PI;
+  else if (sweep && span < 0) span += 2 * Math.PI;
+
+  const pieces = Math.max(1, Math.ceil(Math.abs(span) / (Math.PI / 2) - 1e-9));
+  const step = span / pieces, k = 4 / 3 * Math.tan(step / 4);
+  const out = (px, py) => [cx + rx * cos * px - ry * sin * py, cy + rx * sin * px + ry * cos * py];
+
+  for (let i = 0; i < pieces; i++) {
+    const a = from + i * step, b = a + step;
+    const [c1x, c1y] = out(Math.cos(a) - k * Math.sin(a), Math.sin(a) + k * Math.cos(a));
+    const [c2x, c2y] = out(Math.cos(b) + k * Math.sin(b), Math.sin(b) - k * Math.cos(b));
+    const [ex, ey] = i === pieces - 1 ? [x2, y2] : out(Math.cos(b), Math.sin(b));
+    svgCubic(path, c1x, c1y, c2x, c2y, ex, ey);
+  }
+}
+
+/// Path data down to moves, lines, cubics and closes; null at the first thing wrong.
+function svgPathData(d) {
+  const path = svgPath(), cursor = { at: 0 };
+  let x = 0, y = 0, startX = 0, startY = 0, lastX = 0, lastY = 0;
+  let command = "", previous = "";
+
+  const read = () => { svgSkip(d, cursor); return svgReadNumber(d, cursor); };
+  const readMany = n => {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const value = read();
+      if (value === null) return null;
+      out.push(value);
+    }
+    return out;
+  };
+  const flag = () => {
+    svgSkip(d, cursor);
+    const c = d[cursor.at];
+    if (c !== "0" && c !== "1") return null;
+    cursor.at++;
+    return c === "1";
+  };
+  const quadratic = (x0, y0, qx, qy, ex, ey) =>
+    svgCubic(path, x0 + 2 / 3 * (qx - x0), y0 + 2 / 3 * (qy - y0), ex + 2 / 3 * (qx - ex), ey + 2 / 3 * (qy - ey), ex, ey);
+
+  svgSkip(d, cursor);
+  while (cursor.at < d.length) {
+    if (/[A-Za-z]/.test(d[cursor.at])) command = d[cursor.at++];
+    else if (!command || command === "Z" || command === "z") return null;
+
+    if (!path.verbs.length && command !== "M" && command !== "m") return null;
+
+    const relative = command === command.toLowerCase();
+    const ox = relative ? x : 0, oy = relative ? y : 0;
+    const upper = command.toUpperCase();
+    let v;
+
+    switch (upper) {
+      case "M":
+        if (!(v = readMany(2))) return null;
+        x = startX = ox + v[0];
+        y = startY = oy + v[1];
+        svgMove(path, x, y);
+        command = relative ? "l" : "L";
+        previous = "M";
+        svgSkip(d, cursor);
+        continue;
+      case "L":
+        if (!(v = readMany(2))) return null;
+        x = ox + v[0]; y = oy + v[1];
+        svgLine(path, x, y);
+        break;
+      case "H":
+        if (!(v = readMany(1))) return null;
+        x = ox + v[0];
+        svgLine(path, x, y);
+        break;
+      case "V":
+        if (!(v = readMany(1))) return null;
+        y = oy + v[0];
+        svgLine(path, x, y);
+        break;
+      case "C":
+        if (!(v = readMany(6))) return null;
+        lastX = ox + v[2]; lastY = oy + v[3];
+        svgCubic(path, ox + v[0], oy + v[1], lastX, lastY, ox + v[4], oy + v[5]);
+        x = ox + v[4]; y = oy + v[5];
+        break;
+      case "S": {
+        if (!(v = readMany(4))) return null;
+        const after = previous === "C" || previous === "S";
+        const x1 = after ? 2 * x - lastX : x, y1 = after ? 2 * y - lastY : y;
+        lastX = ox + v[0]; lastY = oy + v[1];
+        svgCubic(path, x1, y1, lastX, lastY, ox + v[2], oy + v[3]);
+        x = ox + v[2]; y = oy + v[3];
+        break;
+      }
+      case "Q":
+        if (!(v = readMany(4))) return null;
+        lastX = ox + v[0]; lastY = oy + v[1];
+        quadratic(x, y, lastX, lastY, ox + v[2], oy + v[3]);
+        x = ox + v[2]; y = oy + v[3];
+        break;
+      case "T": {
+        if (!(v = readMany(2))) return null;
+        const after = previous === "Q" || previous === "T";
+        lastX = after ? 2 * x - lastX : x;
+        lastY = after ? 2 * y - lastY : y;
+        quadratic(x, y, lastX, lastY, ox + v[0], oy + v[1]);
+        x = ox + v[0]; y = oy + v[1];
+        break;
+      }
+      case "A": {
+        if (!(v = readMany(3))) return null;
+        const large = flag(), sweep = flag();
+        if (large === null || sweep === null) return null;
+        const end = readMany(2);
+        if (!end) return null;
+        svgArc(path, x, y, v[0], v[1], v[2], large, sweep, ox + end[0], oy + end[1]);
+        x = ox + end[0]; y = oy + end[1];
+        break;
+      }
+      case "Z":
+        svgClose(path);
+        x = startX; y = startY;
+        break;
+      default:
+        return null;
+    }
+
+    previous = upper;
+    svgSkip(d, cursor);
+  }
+
+  return path;
+}
+
+// ---- the reader ------------------------------------------------------------
+
+const SVG_KAPPA = 0.5522847498307936;
+
+function svgRectangle(path, x, y, w, h, rx, ry) {
+  if (rx <= 0 || ry <= 0) {
+    svgMove(path, x, y);
+    svgLine(path, x + w, y);
+    svgLine(path, x + w, y + h);
+    svgLine(path, x, y + h);
+    svgClose(path);
+    return;
+  }
+
+  const kx = rx * SVG_KAPPA, ky = ry * SVG_KAPPA, right = x + w, bottom = y + h;
+  svgMove(path, x + rx, y);
+  svgLine(path, right - rx, y);
+  svgCubic(path, right - rx + kx, y, right, y + ry - ky, right, y + ry);
+  svgLine(path, right, bottom - ry);
+  svgCubic(path, right, bottom - ry + ky, right - rx + kx, bottom, right - rx, bottom);
+  svgLine(path, x + rx, bottom);
+  svgCubic(path, x + rx - kx, bottom, x, bottom - ry + ky, x, bottom - ry);
+  svgLine(path, x, y + ry);
+  svgCubic(path, x, y + ry - ky, x + rx - kx, y, x + rx, y);
+  svgClose(path);
+}
+
+function svgEllipse(path, cx, cy, rx, ry) {
+  const kx = rx * SVG_KAPPA, ky = ry * SVG_KAPPA;
+  svgMove(path, cx + rx, cy);
+  svgCubic(path, cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
+  svgCubic(path, cx - kx, cy + ry, cx - rx, cy + ky, cx - rx, cy);
+  svgCubic(path, cx - rx, cy - ky, cx - kx, cy - ry, cx, cy - ry);
+  svgCubic(path, cx + kx, cy - ry, cx + rx, cy - ky, cx + rx, cy);
+  svgClose(path);
+}
+
+const svgInitialPaint = () => ({
+  fill: { r: 0, g: 0, b: 0, a: 255 }, fillIsCurrent: false, fillOpacity: 1, fillEvenOdd: false,
+  stroke: null, strokeIsCurrent: false, strokeOpacity: 1, strokeWidth: 1, dash: [], dashOffset: 0,
+  cap: 0, join: 0, miter: 4, current: { r: 0, g: 0, b: 0, a: 255 }, clipEvenOdd: false,
+  family: null, fontSize: 16, bold: false, italic: false, anchor: 0, visible: true, preserve: false, opacity: 1
+});
+
+/// What the engine's SvgReader makes of text, as { drawing, rules, reasons }.
+function readSvgText(text) {
+  const rules = [], reasons = [], clips = new Map();
+
+  const refuse = (where, what) => {
+    if (rules.length < SVG_MOST_ISSUES) {
+      rules.push("svg.unsupported");
+      reasons.push(`${where}: ${what}`);
+    }
+  };
+  const ignored = name => {
+    if (SVG_IGNORED.includes(name) || name.startsWith("aria-") || name.startsWith("data-")) return true;
+    const colon = name.indexOf(":");
+    if (colon <= 0) return false;
+    const prefix = name.slice(0, colon);
+    return prefix === "xmlns" || name === "xml:lang" || (prefix !== "xml" && prefix !== "xlink");
+  };
+
+  const declare = (element, paint, where) => {
+    const said = new Map();
+    const own = SVG_OWN[element.name];
+
+    for (const [name, value] of element.attributes) {
+      if (SVG_PROPERTIES.includes(name)) said.set(name, value);
+      else if (name === "xml:space") paint.preserve = value === "preserve";
+      else if (name === "transform" || name === "style") continue;
+      else if (own && own.includes(name)) continue;
+      else if (!ignored(name)) refuse(where, `the attribute ${name} is not taken`);
+    }
+
+    const style = svgAttr(element, "style");
+    if (style !== null) {
+      for (const declaration of style.split(";").filter(s => s.length)) {
+        const colon = declaration.indexOf(":");
+        if (colon <= 0) {
+          if (declaration.trim()) refuse(where, `"${declaration.trim()}" in a style attribute is not a property and a value`);
+          continue;
+        }
+        const name = declaration.slice(0, colon).trim();
+        const value = declaration.slice(colon + 1).split("!important").join("").trim();
+        if (SVG_PROPERTIES.includes(name)) said.set(name, value);
+        else if (!ignored(name)) refuse(where, `the style property ${name} is not taken`);
+      }
+    }
+
+    const get = name => said.has(name) ? said.get(name).trim() : null;
+    apply(get, paint, where);
+
+    return {
+      get,
+      has: name => { const v = get(name); return v !== null && v !== "none"; },
+      isNone: name => get(name) === "none"
+    };
+  };
+
+  const apply = (get, paint, where) => {
+    const bad = (name, value, takes) => refuse(where, `${name}="${value}" is not taken: ${takes}`);
+    const stated = name => { const v = get(name); return v !== null && v !== "inherit" ? v : null; };
+    const isCurrent = v => v.toLowerCase() === "currentcolor";
+    let v, read;
+
+    if ((v = stated("color")) !== null) {
+      if ((read = svgColour(v))) paint.current = read;
+      else if (!isCurrent(v)) bad("color", v, "a colour");
+    }
+
+    for (const [name, is, slot] of [["fill", "fillIsCurrent", "fill"], ["stroke", "strokeIsCurrent", "stroke"]]) {
+      if ((v = stated(name)) === null) continue;
+      paint[is] = isCurrent(v);
+      if (paint[is]) continue;
+      if (v === "none" || v === "transparent") paint[slot] = null;
+      else if ((read = svgColour(v))) paint[slot] = read;
+      else bad(name, v, "none, or a colour");
+    }
+
+    for (const [name, set] of [["fill-opacity", x => { paint.fillOpacity = x; }],
+                               ["stroke-opacity", x => { paint.strokeOpacity = x; }],
+                               ["opacity", x => { paint.opacity *= x; }]]) {
+      if ((v = stated(name)) === null) continue;
+      if ((read = svgOpacity(v)) !== null) set(read);
+      else bad(name, v, "a number or a percentage");
+    }
+
+    if ((v = stated("fill-rule")) !== null) {
+      if (v === "nonzero" || v === "evenodd") paint.fillEvenOdd = v === "evenodd";
+      else bad("fill-rule", v, "nonzero or evenodd");
+    }
+
+    if ((v = stated("clip-rule")) !== null) {
+      if (v === "nonzero" || v === "evenodd") paint.clipEvenOdd = v === "evenodd";
+      else bad("clip-rule", v, "nonzero or evenodd");
+    }
+
+    if ((v = stated("stroke-width")) !== null) {
+      read = svgLength(v);
+      if (read !== null && read >= 0) paint.strokeWidth = read;
+      else bad("stroke-width", v, "a length of zero or more");
+    }
+
+    if ((v = stated("stroke-dasharray")) !== null) {
+      if (v === "none") paint.dash = [];
+      else {
+        read = svgNumbers(v);
+        if (!read || !read.length || read.some(n => n < 0)) bad("stroke-dasharray", v, "none, or plain lengths");
+        else paint.dash = read.reduce((sum, n) => sum + n, 0) > 0 ? read : [];
+      }
+    }
+
+    if ((v = stated("stroke-dashoffset")) !== null) {
+      if ((read = svgLength(v)) !== null) paint.dashOffset = read;
+      else bad("stroke-dashoffset", v, "a plain length");
+    }
+
+    for (const [name, slot, words] of [["stroke-linecap", "cap", ["butt", "round", "square"]],
+                                       ["stroke-linejoin", "join", ["miter", "round", "bevel"]],
+                                       ["text-anchor", "anchor", ["start", "middle", "end"]]]) {
+      if ((v = stated(name)) === null) continue;
+      const found = words.indexOf(v);
+      if (found >= 0) paint[slot] = found;
+      else bad(name, v, words.join(", "));
+    }
+
+    if ((v = stated("stroke-miterlimit")) !== null) {
+      read = svgNumber(v);
+      if (read !== null && read >= 1) paint.miter = read;
+      else bad("stroke-miterlimit", v, "a number of one or more");
+    }
+
+    if ((v = stated("font-family")) !== null) {
+      const first = v.split(",")[0].trim().replace(/^["']+|["']+$/g, "").trim();
+      paint.family = !first || SVG_GENERIC_FAMILIES.includes(first.toLowerCase()) ? null : first;
+    }
+
+    if ((v = stated("font-size")) !== null) {
+      read = svgLength(v);
+      if (read !== null && read >= 0) paint.fontSize = read;
+      else bad("font-size", v, "a plain length");
+    }
+
+    if ((v = stated("font-weight")) !== null) {
+      read = svgNumber(v);
+      if (v === "bold" || (read !== null && read >= 600 && read <= 1000)) paint.bold = true;
+      else if (v === "normal" || (read !== null && read >= 1 && read < 600)) paint.bold = false;
+      else bad("font-weight", v, "normal, bold or a number");
+    }
+
+    if ((v = stated("font-style")) !== null) {
+      if (v === "italic" || v === "oblique") paint.italic = true;
+      else if (v === "normal") paint.italic = false;
+      else bad("font-style", v, "normal, italic or oblique");
+    }
+
+    if ((v = stated("visibility")) !== null) {
+      if (v === "visible" || v === "hidden" || v === "collapse") paint.visible = v === "visible";
+      else bad("visibility", v, "visible or hidden");
+    }
+
+    v = get("display");
+    if (v !== null && !["inline", "block", "none", "inherit"].includes(v)) bad("display", v, "inline or none");
+  };
+
+  const matrixOf = (element, where) => {
+    const value = svgAttr(element, "transform");
+    if (value === null) return SVG_IDENTITY;
+    const read = svgTransform(value);
+    if (!read) refuse(where, `the transform "${value}" is not one this reader takes`);
+    return read || SVG_IDENTITY;
+  };
+
+  const frame = (node, element, said, where) => {
+    node.m = matrixOf(element, where);
+    node.clip = null;
+
+    const clip = said.get("clip-path");
+    if (clip === null || clip === "none" || clip === "inherit") return;
+
+    const inner = clip.trim();
+    if (inner.startsWith("url(") && inner.endsWith(")")) {
+      const reference = inner.slice(4, -1).trim().replace(/^["']+|["']+$/g, "");
+      if (reference.startsWith("#")) {
+        if (clips.has(reference.slice(1))) node.clip = clips.get(reference.slice(1));
+        else refuse(where, `clip-path names "${reference}", and no usable clipPath has that id`);
+        return;
+      }
+    }
+
+    refuse(where, `clip-path="${clip}" is not taken: only url(#id)`);
+  };
+
+  const geometry = (element, where) => {
+    const length = name => {
+      const value = svgAttr(element, name);
+      if (value === null) return 0;
+      const read = svgLength(value);
+      if (read === null) refuse(where, `${name}="${value}" is not a length this reader takes`);
+      return read;
+    };
+    const radius = name => {
+      const read = length(name);
+      if (read !== null && read < 0) { refuse(where, `${name} is negative`); return null; }
+      return read;
+    };
+
+    const path = svgPath();
+
+    switch (element.name) {
+      case "path": {
+        const d = svgAttr(element, "d") ?? "";
+        const read = svgPathData(d);
+        if (!read) refuse(where, `the path data "${d.slice(0, 40)}" is not well formed`);
+        return read;
+      }
+      case "rect": {
+        const x = length("x"), y = length("y"), w = radius("width"), h = radius("height"), rx = radius("rx"), ry = radius("ry");
+        if (x === null || y === null || w === null || h === null || rx === null || ry === null) return null;
+        if (w > 0 && h > 0) {
+          const across = svgAttr(element, "rx") === null ? ry : rx;
+          const down = svgAttr(element, "ry") === null ? rx : ry;
+          svgRectangle(path, x, y, w, h, Math.min(across, w / 2), Math.min(down, h / 2));
+        }
+        return path;
+      }
+      case "circle": {
+        const cx = length("cx"), cy = length("cy"), r = radius("r");
+        if (cx === null || cy === null || r === null) return null;
+        if (r > 0) svgEllipse(path, cx, cy, r, r);
+        return path;
+      }
+      case "ellipse": {
+        const cx = length("cx"), cy = length("cy"), rx = radius("rx"), ry = radius("ry");
+        if (cx === null || cy === null || rx === null || ry === null) return null;
+        if (rx > 0 && ry > 0) svgEllipse(path, cx, cy, rx, ry);
+        return path;
+      }
+      case "line": {
+        const x1 = length("x1"), y1 = length("y1"), x2 = length("x2"), y2 = length("y2");
+        if (x1 === null || y1 === null || x2 === null || y2 === null) return null;
+        svgMove(path, x1, y1);
+        svgLine(path, x2, y2);
+        return path;
+      }
+      default: {
+        const points = svgAttr(element, "points") ?? "";
+        const read = svgNumbers(points);
+        if (!read || read.length % 2 !== 0) {
+          refuse(where, `the points "${points.slice(0, 40)}" are not pairs of numbers`);
+          return null;
+        }
+        for (let i = 0; i + 1 < read.length; i += 2) {
+          if (i === 0) svgMove(path, read[i], read[i + 1]);
+          else svgLine(path, read[i], read[i + 1]);
+        }
+        if (element.name === "polygon" && path.verbs.length) svgClose(path);
+        return path;
+      }
+    }
+  };
+
+  const collectClip = (clip, where) => {
+    const id = svgAttr(clip, "id") ?? "";
+    const units = svgAttr(clip, "clipPathUnits");
+    if (units !== null && units !== "userSpaceOnUse") refuse(where, `clipPathUnits="${units}" is not taken`);
+
+    const paint = svgInitialPaint();
+    const said = declare(clip, paint, where);
+    if (said.has("clip-path")) refuse(where, "a clip on a clipPath is not taken");
+
+    const own = matrixOf(clip, where);
+    const shapes = [];
+    for (const child of clip.children) {
+      if (typeof child === "string") { if (child.trim()) refuse(where, "a clipPath holds shapes, and this one holds text"); }
+      else if (!SVG_NOT_DRAWN.includes(child.name)) shapes.push(child);
+    }
+
+    if (shapes.length !== 1) {
+      refuse(where, `a clipPath must hold exactly one shape, and this one holds ${shapes.length}`);
+      return;
+    }
+
+    const shape = shapes[0], inside = where + " › " + shape.name;
+    if (!SVG_SHAPES.includes(shape.name)) {
+      refuse(inside, `<${shape.name}> in a clipPath is not taken`);
+      return;
+    }
+
+    const shapePaint = Object.assign({}, paint);
+    const shapeSaid = declare(shape, shapePaint, inside);
+    if (shapeSaid.has("clip-path")) refuse(inside, "a clip on a clipPath's shape is not taken");
+
+    const path = geometry(shape, inside);
+    if (!path) return;
+
+    const whole = svgTimes(own, matrixOf(shape, inside));
+    if (id.length && !clips.has(id)) clips.set(id, { path: svgTransformed(path, whole), evenOdd: shapePaint.clipEvenOdd });
+  };
+
+  const collectClips = (element, where) => {
+    for (const child of element.children) {
+      if (typeof child === "string") continue;
+      const here = where + " › " + child.name;
+      if (child.name === "clipPath") collectClip(child, here);
+      else if (child.name !== "metadata") collectClips(child, here);
+    }
+  };
+
+  const hex2 = c => "#" + [c.r, c.g, c.b].map(v => v.toString(16).toUpperCase().padStart(2, "0")).join("");
+
+  const shapeNode = (element, inherited, into, where) => {
+    const paint = Object.assign({}, inherited);
+    const said = declare(element, paint, where);
+    const holder = {};
+    frame(holder, element, said, where);
+
+    const path = geometry(element, where);
+    if (!path || !path.verbs.length || said.isNone("display") || !paint.visible) return;
+
+    let fill = element.name === "line" ? null : paint.fillIsCurrent ? paint.current : paint.fill;
+    let stroke = paint.strokeWidth > 0 ? (paint.strokeIsCurrent ? paint.current : paint.stroke) : null;
+    const fillAlpha = (fill ? fill.a : 255) / 255 * paint.fillOpacity * paint.opacity;
+    const strokeAlpha = (stroke ? stroke.a : 255) / 255 * paint.strokeOpacity * paint.opacity;
+    if (fillAlpha <= 0) fill = null;
+    if (strokeAlpha <= 0) stroke = null;
+    if (!fill && !stroke) return;
+
+    into.push({
+      kind: "shape", m: holder.m, clip: holder.clip, path,
+      fill: fill ? hex2(fill) : null, fillAlpha: fill ? fillAlpha : 0, evenOdd: paint.fillEvenOdd,
+      stroke: stroke ? hex2(stroke) : null, strokeAlpha: stroke ? strokeAlpha : 0,
+      strokeWidth: paint.strokeWidth, dash: paint.dash, dashOffset: paint.dashOffset,
+      cap: paint.cap, join: paint.join, miter: paint.miter
+    });
+  };
+
+  const textNode = (element, inherited, into, where) => {
+    const paint = Object.assign({}, inherited);
+    const said = declare(element, paint, where);
+    const node = { kind: "text", runs: [] };
+    frame(node, element, said, where);
+
+    // White space across the pieces, and where the next piece starts: engine's Collapser.
+    let pending = null, preserve = false, words = null, wordsPaint = null, offsets = null;
+    let seen = false, lastSpace = false, wordsWhere = "";
+    const isDefault = o => o.x === null && o.y === null && o.dx === 0 && o.dy === 0;
+
+    const flush = () => {
+      if (words === null) return;
+      const written = words;
+      words = null;
+      if (!written.length) return;
+
+      const p = wordsPaint;
+      if ((p.strokeIsCurrent ? p.current : p.stroke) && p.strokeWidth > 0)
+        refuse(wordsWhere, "a stroked text is not taken: a text is filled");
+
+      const fill = p.fillIsCurrent ? p.current : p.fill;
+      const alpha = (fill ? fill.a : 255) / 255 * p.fillOpacity * p.opacity;
+      if (!fill || alpha <= 0 || p.fontSize <= 0 || !p.visible) return;
+
+      node.runs.push({
+        text: written, x: offsets.x, y: offsets.y, dx: offsets.dx, dy: offsets.dy, anchor: p.anchor,
+        family: p.family, size: p.fontSize, bold: p.bold, italic: p.italic, fill: hex2(fill), alpha
+      });
+    };
+
+    const addWords = (text, p, here) => {
+      if (words !== null && ((pending && !isDefault(pending)) || p !== wordsPaint)) flush();
+      preserve = p.preserve;
+
+      for (let i = 0; i < text.length; i++) {
+        const raw = text[i];
+        const c = raw === "\n" || raw === "\r" || raw === "\t" ? " " : raw;
+
+        if (c === " " && !preserve) {
+          if (lastSpace || !seen) continue;
+          lastSpace = true;
+        } else {
+          lastSpace = false;
+        }
+
+        if (words === null) {
+          words = "";
+          wordsPaint = p;
+          offsets = pending || { x: null, y: null, dx: 0, dy: 0 };
+          pending = null;
+          wordsWhere = here;
+        }
+
+        words += c;
+        seen = true;
+      }
+    };
+
+    const position = (span, p, here) => {
+      const absolute = name => {
+        const value = svgAttr(span, name);
+        if (value === null) return null;
+        const read = svgLength(value);
+        if (read === null) refuse(here, `${name}="${value}" is not taken: one position, as a plain length`);
+        return read;
+      };
+      const relative = name => {
+        const value = svgAttr(span, name);
+        if (value === null) return 0;
+        const read = svgLengthOrEm(value, p.fontSize);
+        if (read === null) refuse(here, `${name}="${value}" is not taken: one shift`);
+        return read ?? 0;
+      };
+      return { x: absolute("x"), y: absolute("y"), dx: relative("dx"), dy: relative("dy") };
+    };
+
+    const spans = (span, p, here) => {
+      const at = position(span, p, here);
+      const held = pending || { x: null, y: null, dx: 0, dy: 0 };
+      pending = { x: at.x ?? held.x, y: at.y ?? held.y, dx: held.dx + at.dx, dy: held.dy + at.dy };
+
+      for (const child of span.children) {
+        if (typeof child === "string") {
+          addWords(child, p, here);
+        } else {
+          const inner = here + " › " + child.name;
+          if (child.name === "tspan") {
+            const own = Object.assign({}, p);
+            const ownSaid = declare(child, own, inner);
+            if (ownSaid.has("clip-path") || svgAttr(child, "transform") !== null)
+              refuse(inner, "a clip or a transform on a tspan is not taken");
+            spans(child, own, inner);
+          } else if (!SVG_NOT_DRAWN.includes(child.name)) {
+            refuse(inner, `<${child.name}> is not taken`);
+          }
+        }
+      }
+    };
+
+    spans(element, paint, where);
+
+    if (words !== null && lastSpace && !preserve && words.endsWith(" ")) words = words.slice(0, -1);
+    flush();
+
+    if (node.runs.length && !said.isNone("display")) into.push(node);
+  };
+
+  const children = (parent, paint, into, where) => {
+    for (const child of parent.children) {
+      if (typeof child === "string") {
+        if (child.trim()) refuse(where, `<${parent.name}> holds text, which only a <text> draws`);
+      } else {
+        element(child, paint, into, where + " › " + child.name);
+      }
+    }
+  };
+
+  const element = (node, inherited, into, where) => {
+    const name = node.name;
+    if (SVG_NOT_DRAWN.includes(name) || name === "clipPath") return;
+
+    if (name === "defs") {
+      declare(node, Object.assign({}, inherited), where);
+      for (const child of node.children) {
+        if (typeof child !== "string" && child.name !== "clipPath" && !SVG_NOT_DRAWN.includes(child.name))
+          refuse(where + " › " + child.name, `<${child.name}> is not taken: only a clipPath in defs`);
+      }
+      return;
+    }
+
+    if (name === "g") {
+      const paint = Object.assign({}, inherited);
+      const said = declare(node, paint, where);
+      const group = { kind: "group", children: [] };
+      frame(group, node, said, where);
+      children(node, paint, group.children, where);
+      if (!said.isNone("display")) into.push(group);
+      return;
+    }
+
+    if (SVG_SHAPES.includes(name)) { shapeNode(node, inherited, into, where); return; }
+    if (name === "text") { textNode(node, inherited, into, where); return; }
+
+    refuse(where, `<${name}> is not taken`);
+  };
+
+  try {
+    const root = svgParse(text);
+    if (root.name !== "svg") throw { svgMalformed: `The root element is <${root.name}>, not <svg>.` };
+
+    collectClips(root, "svg");
+
+    let box = null;
+    const stated = svgAttr(root, "viewBox");
+    if (stated !== null) {
+      const read = svgNumbers(stated);
+      if (read && read.length === 4 && read[2] > 0 && read[3] > 0) box = read;
+      else refuse("svg", `the viewBox "${stated}" is not four numbers with a width and a height above zero`);
+    } else {
+      const w = svgLength(svgAttr(root, "width")), h = svgLength(svgAttr(root, "height"));
+      if (w > 0 && h > 0) box = [0, 0, w, h];
+      else refuse("svg", "this drawing has no viewBox and no width and height in plain lengths");
+    }
+
+    const paint = svgInitialPaint();
+    const said = declare(root, paint, "svg");
+    const group = { kind: "group", children: [] };
+    frame(group, root, said, "svg");
+    children(root, paint, group.children, "svg");
+
+    const drawing = box && !rules.length ? { box, nodes: [group], ratio: box[2] / box[3] } : null;
+    return { drawing, rules, reasons };
+  } catch (e) {
+    if (e && e.svgMalformed) return { drawing: null, rules: ["svg.invalid"], reasons: [e.svgMalformed] };
+    throw e;
+  }
+}
+
+// A redraw comes at every keystroke and a chart does not change with it. Keyed on the text
+// itself; a handful, because a report holds a handful and the base64 is a long key.
+const drawingsRead = new Map();
+
+/// A picture's base64 as a drawing's reading; null when the bytes are not a drawing at all.
+function readingOf(base64) {
+  if (!base64) return null;
+  if (drawingsRead.has(base64)) return drawingsRead.get(base64);
+
+  const bytes = bytesOfBase64(base64);
+  let reading = null;
+  if (bytes && looksLikeDrawing(bytes)) {
+    const text = textOfUtf8(bytes);
+    reading = text === null
+      ? { drawing: null, rules: ["svg.invalid"], reasons: ["This file is not UTF-8."] }
+      : readSvgText(text);
+  }
+
+  if (drawingsRead.size >= 16) drawingsRead.clear();
+  drawingsRead.set(base64, reading);
+  return reading;
+}
+
+/// The echo of Pictures.Refusal and of PngImage's header: why a picture cannot be drawn, or
+/// null if it can. Nothing at all is not a refusal.
+function pictureRefusal(base64) {
+  if (!base64) return null;
+
+  const reading = readingOf(base64);
+  if (reading) return reading.rules.length ? reading.reasons.join(" ") : null;
+
+  const b = bytesOfBase64(base64);
+  if (!b || !b.length) return "These bytes are not a JPEG, a PNG or an SVG drawing.";
+
+  if (b.length > 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return null;
+
+  if (!(b.length >= 8 && b[0] === 137 && b[1] === 80 && b[2] === 78 && b[3] === 71))
+    return "These bytes are not a JPEG, a PNG or an SVG drawing.";
+
+  const unreadable = "This PNG could not be read.";
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (b.length < 33 || signature.some((v, i) => b[i] !== v)) return unreadable;
+
+  const word = at => ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >> 0;
+  let width = 0, height = 0, depth = 0, colour = -1, data = 0;
+
+  for (let at = 8; at + 8 <= b.length;) {
+    const length = word(at);
+    if (length < 0 || length > b.length - at - 12) return unreadable;
+    const type = String.fromCharCode(b[at + 4], b[at + 5], b[at + 6], b[at + 7]);
+    const body = at + 8;
+
+    if (type === "IHDR") {
+      if (length < 13) return unreadable;
+      width = word(body);
+      height = word(body + 4);
+      depth = b[body + 8];
+      colour = b[body + 9];
+      if (b[body + 10] !== 0) return unreadable;
+      if (b[body + 12] !== 0) return "This PNG is interlaced: save it without interlacing.";
+    } else if (type === "IDAT") {
+      data += length;
+    } else if (type === "IEND") {
+      break;
+    }
+
+    at += 12 + length;
+  }
+
+  if (width <= 0 || height <= 0 || data === 0) return unreadable;
+  if (![0, 2, 4, 6].includes(colour)) return "This PNG has a palette: save it as RGB, with or without alpha.";
+  if (depth !== 8) return `This PNG has ${depth} bits to a channel, and 8 are taken.`;
+
+  if (colour === 4 || colour === 6) {
+    const decoded = height * (1 + width * (colour === 4 ? 2 : 4));
+    if (decoded > 512 * 1024 * 1024) return "This PNG is too large to take apart.";
+    if (decoded > data * 1032) return "This PNG claims to be far larger than its data could hold.";
+  }
+
+  return null;
+}
+
+const pictureIsDrawing = base64 => !!readingOf(base64);
+
+/// A picture's bytes, whichever way they come: the data's if it brings them, the template's.
+function pictureData(item) {
+  const bytes = resolvedImageSource(item);
+  return bytes ? bytes.data : (item.Source && item.Source.Data) || null;
+}
+
+/// Width over height, as ImageItem.AspectRatio answers: what is declared, then what a drawing
+/// says of itself. Zero when there is neither.
+function pictureRatio(item) {
+  if (item.NaturalWidth > 0 && item.NaturalHeight > 0) return item.NaturalWidth / item.NaturalHeight;
+  const reading = readingOf(pictureData(item));
+  return reading && reading.drawing ? reading.drawing.ratio : 0;
+}
+
+// ---- drawing it ------------------------------------------------------------
+
+const n5 = v => Number.isFinite(v) ? Math.round(v * 100000) / 100000 : 0;
+
+function drawnPathData(path) {
+  let d = "", at = 0;
+  for (const verb of path.verbs) {
+    const count = verb === "C" ? 6 : verb === "Z" ? 0 : 2;
+    d += verb;
+    for (let i = 0; i < count; i++) d += (i ? " " : "") + n5(path.points[at++]);
+  }
+  return d;
+}
+
+/// Where each piece of a text goes, as VectorText.Place works it out, with this page's ruler.
+function placedRuns(text, documentFamily) {
+  const placed = [];
+  let penX = 0, penY = 0;
+
+  const widthOf = (run, family) => {
+    const font = `${run.italic ? "italic " : ""}${run.bold ? "700 " : ""}100px ${family || unnamedFace}`;
+    return measureRun(run.text, font) * run.size / 100;
+  };
+
+  for (let start = 0; start < text.runs.length;) {
+    let end = start + 1;
+    while (end < text.runs.length && text.runs[end].x === null && text.runs[end].y === null) end++;
+
+    const widths = [];
+    let total = 0;
+    for (let i = start; i < end; i++) {
+      const width = widthOf(text.runs[i], text.runs[i].family || documentFamily);
+      widths.push(width);
+      total += text.runs[i].dx + width;
+    }
+
+    const first = text.runs[start];
+    let x = (first.x ?? penX) + (first.anchor === 1 ? -total / 2 : first.anchor === 2 ? -total : 0);
+    let y = first.y ?? penY;
+
+    for (let i = start; i < end; i++) {
+      const run = text.runs[i];
+      x += run.dx;
+      y += run.dy;
+      placed.push({ x, y, run, family: run.family || documentFamily || "" });
+      x += widths[i - start];
+    }
+
+    penX = x;
+    penY = y;
+    start = end;
+  }
+
+  return placed;
+}
+
+/// A drawing as markup, from the list and never from the file, as SvgBackend writes it. The
+/// clip ids are made here: every page of a designer sits in one document, and a file's own
+/// "plot" would be the first such id's, for every chart after it.
+let drawingClips = 0;
+let drawingFamily = null;
+
+function drawingSvg(drawing, r, preserve, opacity, documentFamily) {
+  const nodes = list => list.map(node => {
+    let around = "", before = "";
+
+    if (node.m.some((v, i) => v !== SVG_IDENTITY[i])) around += ` transform="matrix(${node.m.map(n5).join(" ")})"`;
+    if (node.clip) {
+      const id = "fk-clip-" + ++drawingClips;
+      before = `<clipPath id="${id}"><path d="${drawnPathData(node.clip.path)}"${node.clip.evenOdd ? ' clip-rule="evenodd"' : ""}/></clipPath>`;
+      around += ` clip-path="url(#${id})"`;
+    }
+
+    let inner = "";
+    if (node.kind === "group") {
+      inner = nodes(node.children);
+    } else if (node.kind === "shape") {
+      inner = `<path d="${drawnPathData(node.path)}" fill="${node.fill || "none"}"`;
+      if (node.fill && node.fillAlpha * opacity < 1) inner += ` fill-opacity="${n3(node.fillAlpha * opacity)}"`;
+      if (node.fill && node.evenOdd) inner += ' fill-rule="evenodd"';
+      if (node.stroke) {
+        inner += ` stroke="${node.stroke}" stroke-width="${n5(node.strokeWidth)}"`;
+        if (node.strokeAlpha * opacity < 1) inner += ` stroke-opacity="${n3(node.strokeAlpha * opacity)}"`;
+        if (node.cap) inner += ` stroke-linecap="${node.cap === 1 ? "round" : "square"}"`;
+        if (node.join) inner += ` stroke-linejoin="${node.join === 1 ? "round" : "bevel"}"`;
+        if (node.miter !== 4) inner += ` stroke-miterlimit="${n5(node.miter)}"`;
+        if (node.dash.length) {
+          inner += ` stroke-dasharray="${node.dash.map(n5).join(" ")}"`;
+          if (node.dashOffset) inner += ` stroke-dashoffset="${n5(node.dashOffset)}"`;
+        }
+      }
+      inner += "/>";
+    } else {
+      inner = placedRuns(node, documentFamily).map(({ x, y, run, family }) =>
+        `<text x="${n5(x)}" y="${n5(y)}" font-family="${esc(family || unnamedFace)}" font-size="${n5(run.size)}" fill="${run.fill}"`
+        + (run.alpha * opacity < 1 ? ` fill-opacity="${n3(run.alpha * opacity)}"` : "")
+        + (run.bold ? ' font-weight="bold"' : "") + (run.italic ? ' font-style="italic"' : "")
+        + `>${esc(run.text)}</text>`).join("");
+    }
+
+    return before + (around ? `<g${around}>${inner}</g>` : inner);
+  }).join("");
+
+  return `<svg x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}"`
+       + ` viewBox="${drawing.box.map(n5).join(" ")}" preserveAspectRatio="${preserve}">${nodes(drawing.nodes)}</svg>`;
+}
+
+/// A rectangle saying a picture was refused, where the PDF would stop. What the rule says is
+/// in the panel; this is so the place is not mistaken for an empty frame.
+function refusedPicture(r) {
+  return `<rect x="${n3(r.left)}" y="${n3(r.top)}" width="${n3(r.width)}" height="${n3(r.height)}" fill="${ON_PAPER.placeholderFill}" stroke="${ON_PAPER.placeholderLine}" stroke-width=".2"/>` +
+         `<text x="${n3((r.left + r.right) / 2)}" y="${n3((r.top + r.bottom) / 2)}" text-anchor="middle" font-size="3" fill="${ON_PAPER.placeholderInk}">${esc(t("canvas.refusedPicture"))}</text>`;
+}
+
+// ---------------------------------------------------------------------------
+// The template validator - the echo of engine/Model/TemplateValidator.cs.
+//
+// It reads a report and says what is wrong with it, in the same rules at the same
+// severities as the engine, because a designer that clears a document veraPDF then
+// refuses is worse than no check at all. What the page keeps is only the memory of
+// the last pass and which elements to light up; deciding is here.
+// ---------------------------------------------------------------------------
+
+/// What each kind of item is called in the tree. Looked up rather than fixed, so it
+/// follows the chosen language like everything else.
+const labelOf = type => t("type." + type);
+const nameOf = item =>
+  item.$type === "FieldItem" ? (item.Name || "champ") + " · " + item.Kind :
+  item.$type === "TextItem" ? (item.Text || "").slice(0, 26) || "(vide)" :
+  item.$type === "TableRow" ? (item.IsHeader ? "en-tête" : "ligne") :
+  item.$type === "SubTemplateItem" && referenceOf(item) !== null ? "st://" + referenceOf(item) :
+  (item.RepeatOver || "").trim() ? "\u21BB " + item.RepeatOver.trim() :
+  labelOf(item.$type);
+
+/// Whether an absolutely laid out group's children sit beside one another across the
+/// band, rather than over one another. The echo of FlowingHtml.SideBySide, and it has
+/// to be: the rule below reports what a message loses, and a message keeps a row of
+/// cells perfectly well. Warning about a group the emitter handles is a rule people
+/// learn to ignore.
+function sideBySide(container, band) {
+  const spans = [];
+
+  for (const child of container.Childs || []) {
+    if ((child.Style || {}).Visibility && child.Style.Visibility !== "Visible") continue;
+
+    const loc = (child.Style || {}).Location || {};
+    const num = v => (v === "NaN" || v == null ? NaN : Number(v));
+    const dock = String(loc.Dock || "None");
+
+    let left = dock.includes("Left") ? 0 : num(loc.LeftValue);
+    let right = dock.includes("Right") ? band
+              : Number.isNaN(num(loc.RightValue)) ? NaN : band - num(loc.RightValue);
+    const width = num(loc.WidthValue);
+
+    if (Number.isNaN(left) && !Number.isNaN(right) && !Number.isNaN(width)) left = right - width;
+    else if (!Number.isNaN(left) && Number.isNaN(right) && !Number.isNaN(width)) right = left + width;
+
+    // Nothing said where it is, so it takes the whole band - and something taking the
+    // whole band is not one of a row.
+    if (Number.isNaN(left) || Number.isNaN(right) || right <= left) return null;
+    spans.push([left, right]);
+  }
+
+  if (spans.length < 2) return null;
+  spans.sort((a, b) => a[0] - b[0]);
+
+  for (let i = 1; i < spans.length; i++)
+    if (spans[i][0] < spans[i - 1][1] - 0.01) return null;
+
+  return spans;
+}
+
+/// What an element counts as when nothing was declared. Mirrors PdfRoles.Resolve.
+function roleOf(item, parent) {
+  if (item.Role && item.Role !== "Auto") return item.Role;
+  if (parent && parent.$type === "TableRow") return parent.IsHeader ? "TableHeader" : "TableCell";
+  if (item.$type === "TableItem") return "Table";
+  if (item.$type === "TableRow") return "TableRow";
+  if (item.$type === "LineItem") return "Artifact";
+  if (item.$type === "ImageItem" || item.$type === "BarcodeItem") return "Figure";
+  if (item.$type === "FieldItem")
+    return item.Kind === "Signature" && item.Signing === "ByHand" ? "Figure" : "Form";
+  if (item.$type === "TextItem" || item.$type === "AdvancedTextItem") return "Paragraph";
+  return "Section";
+}
+
+/// Reads the template and returns what will go wrong. `profile` is a set holding
+/// "sound", "accessible", or both.
+function validate(rep, profile) {
+  profile = profile || { sound: true, accessible: true, capable: true };
+
+  const found = [];
+  const add = (rule, level, item, where, args) =>
+    found.push({ rule, level, item, where, message: t("issue." + rule, args) });
+
+  if (profile.accessible) {
+    if (!(rep.Language || "").trim()) add("ua.language", "error", null, t("panel.section"));
+    if (!(rep.Title || "").trim()) add("ua.title", "error", null, t("panel.section"));
+  }
+
+  // Every section, as the engine does, and named so a fault in the third does not
+  // read as a fault in the first.
+  const sections = Array.isArray(rep.Sections) && rep.Sections.length
+    ? rep.Sections
+    : (rep.Section ? [rep.Section] : []);
+
+  // And every section hydrated, on the way in, exactly as layout() hydrates the one it
+  // composes. Section 1 puts it plainly: nothing can assume a key is there, because a
+  // forgotten read does not crash - it is undefined. Reading a MISSING key is worse
+  // here than in layout, where it lands at NaN and is seen: this function's answer is
+  // a list of faults, and an absent property reads as a value the author never wrote.
+  //
+  // Signing is the case that showed it. ByHand is the zero of the enum, so the engine
+  // never writes it, so `f.Signing === "ByHand"` was false for every pen-signed
+  // signature read from a file - and the page invented two errors against a template
+  // the engine passes in silence, while losing the one real PDF/UA fault it did have.
+  // The designer hydrated only the section being edited; validate walks them all.
+  sections.forEach(hydrate);
+  if (rep.BackPage && rep.BackPage.Content) hydrate(rep.BackPage.Content);
+
+  sections.forEach((section, i) => {
+    const named = sections.length === 1 ? t("panel.section") : `${t("panel.section")} ${i + 1}`;
+
+    // A section with no page size is laid out on a sheet of nothing. This page writes A4
+    // into one that has no Dimension at all, but an empty one - which is what the engine
+    // writes for a section built without a size - stays empty, and so does a file read
+    // straight from somewhere else.
+    const size = section.Dimension;
+    if (profile.sound && !(size && Number(size.Width) > 0 && Number(size.Height) > 0))
+      add("sound.noPageSize", "error", section, named);
+
+    walkFor(section, named, profile, add, rep.HeadingNumbering);
+  });
+  if (rep.BackPage) walkFor(rep.BackPage.Content, t("panel.back"), profile, add, rep.HeadingNumbering);
+
+  // The third profile, and the only one that has to be told what is about to be
+  // produced: the same template is faultless for one output and half-lost in another.
+  // Silent with no target, since with none there is nothing to compare against - which
+  // is what the engine does too, and what keeps the preview from warning about a loss
+  // that is not happening here.
+  if (profile.capable && profile.target) {
+    const items = [];
+    const gather = node => {
+      (node.Childs || []).forEach(child => { items.push(child); gather(child); });
+    };
+    sections.forEach(gather);          // the same reach as Report.AllItems
+
+    if (!profile.target.Tagged) {
+      const described = (rep.Language || "").trim()
+        || items.some(i => (i.Role && i.Role !== "Auto") || (i.AltText || "").trim());
+      if (described) add("can.untagged", "warning", null, t("panel.report"));
+    }
+
+    // Placed at coordinates, going somewhere with no coordinates. Its children can
+    // only be written one under the next, which is not the arrangement that was drawn.
+    if (profile.target.Paged === false) {
+      const band = Math.max(1, ((rep.Sections || [])[0] || {}).Dimension?.Width || 210);
+      const pinned = items.filter(i => i.$type === "ContainerItem"
+                                    && i.Layout === "Absolute"
+                                    && (i.Childs || []).length > 1
+                                    && !sideBySide(i, band));
+      // One per group: each is a different place to go and put right, and a single
+      // finding carrying a count cannot be told from one carrying a different count.
+      for (const group of pinned)
+        add("can.absoluteInFlow", "warning", group, t("panel.report"));
+
+      // One per drawing, for the same reason. Only what the template carries can be seen
+      // from here: a chart the data brings is known when it is bound.
+      for (const drawing of items.filter(i => i.$type === "ImageItem" && i.Source && pictureIsDrawing(i.Source.Data)))
+        add("can.drawingInFlow", "warning", drawing, t("panel.report"));
+    }
+
+    if (!profile.target.Interactive) {
+      // A signature given by hand is drawn in either output, so flattening takes
+      // nothing from it: none of the rules here is about it, the count included. That
+      // it is a figure owing an alternative text is ua.altText's business, asked
+      // whatever the output.
+      const losing = items.filter(i => i.$type === "FieldItem")
+                          .filter(f => !(f.Kind === "Signature" && f.Signing === "ByHand"));
+
+      if (losing.length)
+        add("can.flattenedFields", "warning", losing[0], t("panel.report"), { n: losing.length });
+
+      // Drawn rather than fillable means a figure in the structure tree, and a figure
+      // with nothing to say for it is refused by PDF/UA. Only when tagged: untagged
+      // there is no tree to be wrong about, and a rule that accuses a template that is
+      // right is how people learn to stop reading the panel.
+      if (profile.target.Tagged)
+        for (const mute of losing.filter(f => !(f.AltText || "").trim()))
+          add("can.flattenedFieldAltText", "error", mute, t("panel.report"));
+
+      // One per signature: each is its own place to go and put right - globally by
+      // leaving the fields fillable, or here by signing this one with a pen, which
+      // survives being drawn. One finding standing for the rest hides the others.
+      for (const signature of losing.filter(f => f.Kind === "Signature"))
+        add("can.flattenedSignature", "error", signature, t("panel.report"));
+    }
+  }
+
+  return found;
+}
+
+function walkFor(container, where, profile, add, numbering) {
+  if (container.$type === "TableItem") tableFaults(container, where, profile, add);
+
+  const names = new Set();
+
+  for (const child of container.Childs || []) {
+    const here = where + " › " + shortName(child);
+    const role = roleOf(child, container);
+
+    if (profile.accessible) {
+      // A figure with nothing to say in its place is announced as nothing at all:
+      // the person is not told anything is there.
+      if (role === "Figure" && !(child.AltText || "").trim())
+        add("ua.altText", "error", child, here);
+
+      // A role naming a control, on something that will never be one. An authored
+      // role is taken before anything else is asked, so this walks straight past the
+      // guard roleOf has for exactly that - and the renderer then does the only sane
+      // thing left and writes a figure, which owes an alternative text that nothing
+      // asked the author for.
+      if (role === "Form" && child.$type !== "FieldItem")
+        add("ua.formRole", "error", child, here);
+
+      // The tooltip is a field's accessible name.
+      if (role === "Form" && child.$type === "FieldItem" && !(child.Tooltip || "").trim())
+        add("ua.fieldName", "error", child, here);
+    }
+
+    if (profile.sound) {
+      // Columns divide a flow; absolute children carry their own coordinates, and a
+      // table or an image grid has its own dispatch that never consults ColumnCount
+      // either, whatever Layout says - either way the setting does nothing, silently.
+      if ((child.ColumnCount || 1) > 1 && child.Childs
+          && (child.Layout !== "Stack" || child.$type === "TableItem" || child.$type === "ImageGridItem"))
+        add("sound.columnsIgnored", "warning", child, here);
+
+      // A hard break inside justified text is stretched like a wrapped line, which
+      // is not what a break means. One paragraph per text item.
+      if (child.$type === "TextItem" && (child.Font || {}).HorizontalAlignment === "Justify"
+          && (child.Text || "").includes("\n"))
+        add("sound.justifiedBreak", "warning", child, here);
+
+      // A heading number asked for and not answerable. All three leave the token
+      // visible on the page rather than resolving to something wrong, which is loud -
+      // but loud once the document is out, which is too late.
+      //
+      // Of a rich text too, run by run as it is filled: a token cut across two runs is not
+      // a token, and the separator keeps it from reading as one here.
+      const counted = child.$type === "TextItem" ? (child.Text || "")
+        : child.$type === "AdvancedTextItem" ? (child.Runs || []).map(run => run.Text || "").join("\n")
+        : "";
+      if (/\{(section)?headingnumber(\[\d+\])?[:}]/i.test(counted)) {
+        const declared = headingDepth(numbering);
+        const level = headingLevelOf(child);
+        const named = /\{(section)?headingnumber\[\d+\]/i.test(counted);
+
+        if (!declared) add("sound.headingNumberNoFormat", "warning", child, here);
+        if (!level && !named) add("sound.headingNumberOutsideHeading", "warning", child, here);
+        if (declared && level > declared) add("sound.headingNumberDepth", "warning", child, here);
+      }
+
+      // A section inside a section. Nothing in the model stops it - a Section is an
+      // item like any other, which is what lets a report hold a list of them - and it
+      // means nothing: a page size inside a flow already laid out on a page.
+      //
+      // This rule lived in the engine alone from the day it was written. frisket check
+      // refused a template this page called sound, and had the echo ever raised it, it
+      // would have printed the key: there was no label in either language either.
+      if (child.$type === "Section") add("sound.nestedSection", "error", child, here);
+
+      if (child.$type === "BarcodeItem" && !(child.Value || "").trim())
+        add("sound.emptyBarcode", "error", child, here);
+
+      // Neither a picture baked into the template nor a path to one in the data:
+      // both backends draw nothing at all for an empty Source, silently.
+      if (child.$type === "ImageItem" && !(child.Source && child.Source.Data)
+          && !(child.SourceField || "").trim())
+        add("sound.emptyImage", "error", child, here);
+
+      // A picture no output could draw: without this the panel said nothing, the proof
+      // drew it and the PDF stopped at the end.
+      if (child.$type === "ImageItem" && child.Source && child.Source.Data) {
+        const reason = pictureRefusal(child.Source.Data);
+        if (reason) add("sound.unreadablePicture", "error", child, here, { reason });
+      }
+
+      // The same fault in a new element: neither a PDF of its own nor a path to one.
+      if (child.$type === "ImportedPageItem") {
+        if (!(child.Data || "").length && !(child.SourcePath || "").trim())
+          add("sound.emptyImportedPage", "error", child, here);
+
+        // Counted from one, because a template is written by a person. Zero is not a
+        // smaller number here, it is a different question.
+        if ((child.Page ?? 1) < 1)
+          add("sound.importedPageNumber", "error", child, here);
+      }
+
+      // Fewer than one column draws as a single one - legal, but not what the
+      // number on screen promised.
+      if (child.$type === "ImageGridItem" && (child.GridColumns || 0) < 1)
+        add("sound.emptyImageGrid", "error", child, here);
+
+      // No path, no file: the engine has nothing to resolve and the item stays
+      // empty forever, silently.
+      if (child.$type === "SubTemplateItem" && !(child.TemplatePath || "").trim()
+          && !(child.TemplateData || "").length)
+        add("sound.emptySubTemplate", "error", child, here);
+
+      // A break on a repeating container breaks once, before the whole run - which
+      // somebody may well want, so this fires only where the break had somewhere
+      // better to be: a run wrapping a single block that carries none of its own.
+      // Repeating clones what is *inside* a container, never the container.
+      {
+        const breaks = ((child.Style || {}).PageBreak) || "None";
+        const only = (child.Childs || []).length === 1 ? child.Childs[0] : null;
+        if ((child.RepeatOver || "").trim()
+            && (breaks === "Before" || breaks === "BeforeAndAfter")
+            && only && only.$type === "ContainerItem"
+            && (((only.Style || {}).PageBreak) || "None") === "None")
+          add("sound.repeatPageBreak", "warning", child, here);
+      }
+
+      if (child.$type === "AdvancedTextItem") {
+        // A blank cell is a blank cell, not a fault - see the engine's own note. The
+        // parent is the container being walked, so the test is free here.
+        if (container.$type !== "TableRow" && (child.Runs || []).every(r => !r.Text))
+          add("sound.emptyAdvancedText", "error", child, here);
+
+        // Justify was reported here until the resolver learnt to stretch a line
+        // assembled from several runs. It does now, so the rule is gone rather than
+        // kept as a reassuring no-op - and so is the one about {Pages} in a run, since
+        // the resolver fills the real total into rich text as well (20 October 2026).
+      }
+
+      if (child.$type === "FieldItem" && (child.Name || "").trim()) {
+        if (names.has(child.Name))
+          add("sound.duplicateField", "warning", child, here, { name: child.Name });
+        names.add(child.Name);
+      }
+    }
+
+    if (child.Childs) walkFor(child, here, profile, add, numbering);
+  }
+}
+
+function tableFaults(table, where, profile, add) {
+  const rows = (table.Childs || []).filter(r => r.$type === "TableRow"
+                                           && (r.Style || {}).Visibility !== "Gone");
+  if (!rows.length) return;
+
+  if (profile.accessible && !rows.some(r => r.IsHeader))
+    add("ua.tableHeader", "warning", table, where);
+
+  if (!profile.sound) return;
+
+  // The declared columns are the authority; without them the widest row is the
+  // best guess at what the table was meant to be.
+  const width = (table.Columns || []).length
+              || Math.max(...rows.map(r => (r.Childs || []).length));
+
+  for (const row of rows.filter(r => (r.Childs || []).length !== width))
+    add("sound.raggedTable", "error", row, where + " › " + shortName(row),
+        { count: (row.Childs || []).length, width });
+}
+
+/// A name short enough for a path, and recognisable enough to find on screen.
+function shortName(item) {
+  if (item.$type === "TextItem" && (item.Text || "").trim()) {
+    const clean = item.Text.replace(/\n/g, " ").trim();
+    return clean.length <= 24 ? clean : clean.slice(0, 24) + "…";
+  }
+  if (item.$type === "FieldItem" && (item.Name || "").trim()) return item.Name;
+  if (item.$type === "TableRow") return t(item.IsHeader ? "name.headerRow" : "name.row");
+  return labelOf(item.$type);
+}
+
+// ---------------------------------------------------------------------------
+// Run algebra - pure list surgery on a TextRun list, no surface in sight.
+// Both faces need it and neither owns it.
+// ---------------------------------------------------------------------------
+
+/// Neighbouring runs whose style is identical become one, so selecting a range and
+/// applying the same style twice does not fragment the list forever.
+function mergeSameStyleRuns(runs) {
+  const out = [];
+  for (const run of runs) {
+    const prev = out[out.length - 1];
+    if (prev && JSON.stringify(prev.Font) === JSON.stringify(run.Font)) prev.Text += run.Text;
+    else out.push({ Text: run.Text, Font: run.Font ? Object.assign({}, run.Font) : null });
+  }
+  return out;
+}
+
+/// Cuts runs at the given flat offsets without touching any text or style - pure
+/// insertion of boundaries, so a style can then be toggled on exactly the pieces
+/// that fall inside the selection.
+function splitRunsAt(runs, offsets) {
+  const result = [];
+  let pos = 0;
+  for (const run of runs) {
+    const cuts = offsets.filter(o => o > pos && o < pos + run.Text.length).sort((a, b) => a - b);
+    let last = 0;
+    for (const cut of cuts) {
+      const at = cut - pos;
+      result.push({ Text: run.Text.slice(last, at), Font: run.Font ? Object.assign({}, run.Font) : null });
+      last = at;
+    }
+    result.push({ Text: run.Text.slice(last), Font: run.Font ? Object.assign({}, run.Font) : null });
+    pos += run.Text.length;
+  }
+  return result.filter(r => r.Text.length > 0);
+}
+
+
+/* frisket-runs.js */
+// Frisket - a list of TextRun, bound to an editable surface, and back.
+//
+// Shared between the faces rather than written twice. The full designer edits runs in
+// a dialog; the flow editor edits them in the block itself. Same conversion, same
+// pitfalls - and two copies would answer differently the first time one of them
+// learned a new style property, which has already happened once: Strikethrough went
+// missing from three places at the same time (CLAUDE.md §15).
+//
+// Not part of frisket-core.js because it is made of DOM, and the core carries a hard
+// promise not to be. It takes its surface as an argument for the same reason: an
+// element found by id belongs to one face, and this belongs to neither.
+
+// Strict, as the core is: the one-file editor in release/ runs every part strict, and
+// so do the harnesses, which read the parts after the core's own directive. A part that
+// was sloppy only on a page would be the one place its faults could hide.
+"use strict";
+
+/// Renders a Runs list as spans (one per run, styled inline) plus bare text nodes
+/// for a run with no override - so a plain read of textContent, run by run, is
+/// already what saving needs.
+/// One run as the element the surface holds it in.
+///
+/// Its own function because two things build it now: laying out a whole paragraph, and
+/// arming the next keystroke with a style the caret is only pending. A second copy of
+/// these nine lines is the shape of mistake section 15 records - Strikethrough went
+/// missing from three places at once for want of one of them.
+function runElement(run) {
+  const span = document.createElement("span");
+  span.textContent = run.Text;
+  span.dataset.font = JSON.stringify(run.Font);
+
+  // Drawn as well as stored: what is written into data-font is what comes back out,
+  // and what is written into style is what a person sees while typing.
+  if (run.Font.Family) span.style.fontFamily = faceOf(run.Font.Family);
+  if (run.Font.Bold) span.style.fontWeight = "bold";
+  if (run.Font.Italic) span.style.fontStyle = "italic";
+  const deco = [];
+  if (run.Font.Underline) deco.push("underline");
+  if (run.Font.Strikethrough) deco.push("line-through");
+  if (deco.length) span.style.textDecoration = deco.join(" ");
+  if (run.Font.Color) span.style.color = hex(run.Font.Color);
+  if (run.Font.Size != null) span.style.fontSize = (0.8 + Number(run.Font.Size) * 0.5) + "em";
+  return span;
+}
+
+function runsToSurface(runs, surface) {
+  surface.innerHTML = "";
+  for (const run of runs.length ? runs : [{ Text: "", Font: null }]) {
+    if (!run.Font || !Object.keys(run.Font).some(k => run.Font[k] != null)) {
+      surface.appendChild(document.createTextNode(run.Text));
+      continue;
+    }
+    surface.appendChild(runElement(run));
+  }
+}
+
+/// The inverse: walks the surface's direct children, a run per span or bare text
+/// node, then merges neighbours whose style is identical so selecting and
+/// re-applying the same style twice does not fragment the list forever.
+function surfaceToRuns(surface) {
+  const runs = [];
+  for (const node of surface.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent.length) runs.push({ Text: node.textContent, Font: null });
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // A break carries no text, so the test below dropped it and every hard line
+      // break in a paragraph vanished on the next redraw - the whole thing came
+      // back as one run. The engine has always understood a newline inside a run
+      // (BreakAdvancedText splits on it and closes the line); it was this reader
+      // that lost them on the way in.
+      if (node.tagName === "BR") { runs.push({ Text: "\n", Font: null }); continue; }
+
+      const text = node.textContent;
+      if (!text.length) continue;
+      let font = null;
+      try { font = JSON.parse(node.dataset.font || "null"); } catch { font = null; }
+      runs.push({ Text: text, Font: font });
+    }
+  }
+  return mergeSameStyleRuns(runs);
+}
+
+
+/* frisket-editor.js */
+/// The content editor.
+///
+/// Lifted out of frisket-editor.html on 24 August 2026, unchanged, so that something
+/// other than that one page can load it - a custom element cannot reach a function
+/// declared inside a page's inline script.
+///
+/// Since 18 October 2026 an editor is a call - `frisketEditor(seams)` - rather than the
+/// file itself, so a page can hold as many as it likes. check-editor.js still reaches
+/// every declaration by name: it plants its handles at the `@harness` line near the end
+/// of that function, inside, where they can see.
+///
+/// What decides where an editor draws is the root and the theme target it is handed: the
+/// document for the plain page, a shadow root for each <frisket-editor>.
+// ---------------------------------------------------------------------------
+// Frisket - the flow editor.
+//
+// The second face over the same core. Where the designer places things at
+// coordinates - LayoutMode.Absolute, the rare path - this one edits a flow:
+// LayoutMode.Stack, which is what the engine is actually built for. That is why the
+// two exist rather than one with fewer buttons: they are the two layout modes, and
+// the model named the seam before anybody drew it.
+//
+// The one rule this file is built around: ONE CONTENTEDITABLE PER TEXT BLOCK, never
+// one for the sheet. An editor whose whole page is editable has to treat a picture
+// or a table as a foreign body inside flowing text, which is exactly why pictures
+// and tables are half-broken in every editor of that shape. Body.Childs is already
+// a list of peers, so the DOM is built the same way and the problem never arises.
+//
+// It produces the same JSON the designer does. Typing makes an AdvancedTextItem,
+// inserting a picture makes an ImageItem with its bytes; there is no second format
+// and no conversion step.
+// ---------------------------------------------------------------------------
+
+// Strict, as the core is - see frisket-runs.js.
+"use strict";
+
+// The core needs one thing from whoever loads it, and a browser has it.
+setTextRuler((text, font) => {
+  const ruler = setTextRuler.canvas ??= document.createElement("canvas").getContext("2d");
+  ruler.font = font;
+  return ruler.measureText(text).width;
+});
+
+// The interface's language is the page's: one dictionary in the core, chosen once.
+let lang0 = "en";
+try { lang0 = localStorage.getItem("frisket.lang") || "en"; } catch {}
+setLang(lang0);
+
+// The engine's fonts, asked of each server once per page however many editors name it,
+// and loaded once: a font belongs to the document, so a second editor loading the same
+// files would only add them again. A failed answer is not kept, so an editor switched to
+// the server's list later asks afresh.
+//
+// Kept by server since 20 October 2026. The address was one constant here, written for the
+// preview server on this machine, so a host could not say where its own engine was - and
+// two editors could not be told two engines. Each editor is told its own now (`server`),
+// and these two remember, per address, what has been asked and what has been loaded.
+let serverFontsAsked = new Map();   // base URL -> the promise of its /fonts list
+let facesLoaded = new Set();        // base URLs whose files are in the document already
+
+function serverFonts(base, send) {
+  if (!serverFontsAsked.has(base))
+    serverFontsAsked.set(base, send(base + "/fonts")
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .catch(e => { serverFontsAsked.delete(base); throw e; }));
+  return serverFontsAsked.get(base);
+}
+
+/// The engine's own files, so the sheet draws with what the PDF will embed rather than
+/// with whatever this machine has installed under that name - or, when it has nothing,
+/// with the browser's default face, which is a serif. Added to the document's set: a
+/// font belongs to the document, and a shadow root draws from the same set. Nothing to
+/// redraw once they arrive - the sheet is laid out by the browser, which repaints.
+function loadFaces(base, faces) {
+  if (facesLoaded.has(base) || typeof FontFace !== "function" || !document.fonts) return;
+  facesLoaded.add(base);
+  for (const d of faces)
+    new FontFace(d.family, `url("${d.url}")`, { weight: d.weight, style: d.style })
+      .load().then(face => document.fonts.add(face)).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// One editor.
+//
+// Everything that changes as somebody types - the document, the block being edited, the
+// cached selection, the toolbar's state, the markup it draws into - lives inside this
+// function, one copy per call. Until 18 October 2026 it lived at the top of this file,
+// one copy per PAGE: a second <frisket-editor> took over the first one's root, its
+// document and its selection, and the first went on showing a sheet whose edits landed
+// in the second. Nothing failed. A host with two editors on one form would simply have
+// lost a document.
+//
+// `seams` is what the caller declares - the end of this function says what each is.
+// ---------------------------------------------------------------------------
+function frisketEditor(seams = {}) {
+  let report = blankReport();
+  let current = null;                    // the block element being edited
+
+  /// A style chosen with nothing selected, waiting for the next character.
+  ///
+  /// `{ font, at }` - what was asked for, and the offset it was asked at. It lives for
+  /// exactly one keystroke: that keystroke is inserted inside a span carrying the font,
+  /// and every character after it lands in that span on its own, which is how the model
+  /// and the page agree without either being told twice.
+  ///
+  /// Dropped when the caret moves without typing, and when the block changes. Pressing
+  /// the button again toggles the key back off rather than arming a second time.
+  let pending = null;
+  // The sheets come from PAPER_SIZES in the core, which both faces share. This file
+  // kept a list of its own, and the two had drifted: five sizes here, four there, and
+  // only two in common.
+
+
+
+  /// The editor's own markup, so that whatever it is mounted into gets the same one.
+  ///
+  /// A string rather than the page's body, because a shadow root cannot be handed markup
+  /// that lives in a document it is not part of - and a second copy in the element would
+  /// be the thing section 1 is about.
+  /// What a face shows. One object, set before mount() and read by nothing else.
+  ///
+  /// The editor somebody EMBEDS is not the editor somebody develops. A person typing a
+  /// letter into a host application has no business being shown a render target, a page
+  /// size or a font source: the host chose those when it decided what it was producing,
+  /// and showing them again invites two answers to one question. It has no business
+  /// being shown a Save button either - the host owns the document and reads it back
+  /// through the element.
+  ///
+  /// What that person must not get is a document `frisket check` would refuse, produced
+  /// in silence. So `panel: false` hides the findings, it does NOT stop them: runChecks
+  /// still runs on every redraw and hands them to `onChecks`, which paints the panel when
+  /// there is one and otherwise gives them to the host. Section 5c's rule was written
+  /// against an editor that quietly ships a broken document, and a host holding the
+  /// findings and choosing what to do with them is not that - it is the same answer this
+  /// project gives for a font's fsType and for an imported page: only the caller can
+  /// know, and the engine says so.
+  ///
+  /// `files` is where Open and Save live, and "toolbar" exists because it was asked for:
+  /// a page with no chrome still needs a way in and out, and the toolbar is where a
+  /// person is already looking.
+  let SHOWN = { chrome: true, files: "header", panel: true };
+
+  /// What a page or a host asked for as a margin, in millimetres, or null for "you
+  /// decide" - which chooseMargins answers from what this face can show.
+  let margins = null;
+
+  /// Where the engine is whose fonts the sheet draws with - a base URL answering GET /fonts
+  /// and /fonts/file as apps/server does, "" for the page's own origin - or null when this
+  /// editor was told of none. And how to reach it: the host's fetch, for a host that adds
+  /// its own credentials, read at every request.
+  let server = null;
+  const send = (url, init) => seams.fetch ? seams.fetch(url, init) : fetch(url, init);
+
+  /// What is about to be produced, so the Capable profile can say what the template loses
+  /// on the way there. The engine's own `RenderTarget` record, name for name.
+  ///
+  /// A VARIABLE, not two checkboxes read at every check. It used to live nowhere else -
+  /// `{ Tagged: el("targetTagged").checked, Interactive: el("targetInteractive").checked }`
+  /// built fresh on each run - so a face without those controls had no target at all, and
+  /// an absent one is not the safe answer: the Capable profile gates on the object being
+  /// present rather than on its fields, so an empty-but-present target fires every rule in
+  /// it on every document. A host sets this and there are no controls to disagree with.
+  ///
+  /// The defaults are the richest output, for the reason the engine gives: a caller that
+  /// says nothing is told nothing, rather than warned about a loss that is not happening.
+  ///
+  /// `Paged` was never passed by this face at all, so `can.absoluteInFlow` - the one rule
+  /// that speaks for a message rather than a page - has never once fired here.
+  let renderTarget = { Tagged: true, Interactive: true, Paged: true };
+
+  /// Puts a document in, from wherever it came - a file, a host, a draft on a server.
+  ///
+  /// The same path the file picker takes, which is the point: a host handing over JSON
+  /// and a person choosing a file must arrive at the same place, or one of the two gets a
+  /// tree the rest of the editor was not written for. `normaliseReport` and `hydrate` are
+  /// what make that true - the second because nothing here may assume a key is present,
+  /// and a forgotten read does not crash, it positions at NaN.
+  function loadReport(json) {
+    report = normaliseReport(typeof json === "string" ? JSON.parse(json) : json);
+    hydrate(report.Sections[0]);
+    current = null;
+    syncPanel();
+    draw();
+  }
+
+  /// Where the findings go. Painting the panel is one answer and not the only one.
+  ///
+  /// A face that hides the panel does not stop checking - section 5c's rule is against an
+  /// editor that quietly produces a document `frisket check` would refuse, and silence is
+  /// exactly what it forbids. So the findings are always computed and always handed over;
+  /// what a host does with them is the host's to decide, which is the same answer this
+  /// project gives for a font's fsType and for an imported page.
+  let onChecks = null;
+
+  /// The header: what the page is called, and the two choices that belong to a page
+  /// rather than to a document - which language the interface speaks, and which room it
+  /// is in. A host has its own answers to both, which is why this whole block goes.
+  const EDITOR_HEADER = `
+  <header>
+    <h1>Frisket</h1>
+    <button id="new" data-i18n="action.new">New</button>
+    <button id="open" data-i18n="action.open">Open JSON…</button>
+    <button id="save" class="primary" data-i18n="action.save">Save JSON</button>
+    <button id="html" data-i18n="editor.openHtml" data-i18n-title="editor.htmlWhat">HTML…</button>
+    <button id="mail" data-i18n="editor.openMail" data-i18n-title="editor.mailWhat">Mail…</button>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+    <span class="grow"></span>
+    <select id="lang" title="Language">
+      <option value="en">EN</option>
+      <option value="fr">FR</option>
+    </select>
+    <!-- Filled from THEMES. A list written twice is two lists, and the one nobody
+         updates is the one that ships. -->
+    <select id="theme"></select>
+  </header>
+  `;
+
+  /// Open and Save as toolbar buttons, for a face with no header. The hidden file input
+  /// travels with them: the button only clicks it, so leaving it behind gives a control
+  /// that throws when pressed rather than one that is missing.
+  const EDITOR_FILES = `
+          <button id="open" data-i18n-title="action.open">
+            <svg viewBox="0 0 16 16"><path d="M1.5 4.5h5l1.5 2h6.5v7h-13z"/></svg>
+          </button>
+          <button id="save" data-i18n-title="action.save">
+            <svg viewBox="0 0 16 16"><path d="M2.5 2.5h8l3 3v8h-11z"/><path d="M5 2.5v4h5v-4"/>
+              <path d="M5 13.5v-4h6v4"/></svg>
+          </button>
+          <input type="file" id="file" accept=".json,application/json" hidden>
+          <span class="sep"></span>
+  `;
+
+  const EDITOR_MARKUP = () => `
+  ${SHOWN.chrome ? EDITOR_HEADER : ""}
+
+  <main${SHOWN.panel ? "" : ' class="alone"'}>
+    <div id="desk">
+      <div id="frame">
+        <div id="toolbar">
+  ${SHOWN.files === "toolbar" ? EDITOR_FILES : ""}
+          <button data-style="Bold" data-i18n-title="style.bold"><b class="glyph">B</b></button>
+          <button data-style="Italic" data-i18n-title="style.italic"><i class="glyph">I</i></button>
+          <button data-style="Underline" data-i18n-title="style.underline"><u class="glyph">U</u></button>
+          <button data-style="Strikethrough" data-i18n-title="style.strikethrough"><s class="glyph">S</s></button>
+
+          <select id="family" data-i18n-title="field.font" style="max-width:176px"></select>
+
+          <span class="sep"></span>
+
+          <select id="size" data-i18n-title="field.size">
+            <option value="" data-i18n="size.normal">Normal</option>
+            <option value="0.75" data-i18n="size.small">Small</option>
+            <option value="1.5" data-i18n="size.large">Large</option>
+            <option value="2.5" data-i18n="size.huge">Huge</option>
+          </select>
+
+          <div class="ink">
+            <!-- The native picker anchors its popup to this input's box, so it lives here
+                 over the control rather than inside the menu: put in the menu, it opened
+                 in the corner of the window. Invisible and not clickable - the swatch and
+                 the chevron take the clicks, and "New colour" opens this one by hand. -->
+            <input type="color" id="colour" value="#111111">
+            <button id="colourApply" data-i18n-title="richText.applyColour"><span id="well"></span></button>
+            <button id="colourOpen" class="chevron" data-i18n-title="field.colour">
+              <svg viewBox="0 0 16 16"><path d="M4 6.5l4 4 4-4"/></svg>
+            </button>
+            <!-- Two kinds of thing, and they are separated now rather than stacked.
+                 The grid holds COLOURS, "no colour" among them, because that is what it
+                 is - the choice of not having one, which is a choice about colour and
+                 not an errand. It went at the foot under "New colour", which put a
+                 value below an action and read as an afterthought.
+
+                 "New colour" opens a picker: it is the errand, so it sits under a rule
+                 where every colour menu in the world puts its custom entry. -->
+            <div id="inkMenu" hidden>
+              <div id="inkSwatches"></div>
+              <button id="colourPick" data-i18n="richText.newColour">New colour</button>
+            </div>
+          </div>
+
+          <span class="sep"></span>
+
+          <button data-align="Left" data-i18n-title="HorizontalAlignment.Left">
+            <svg viewBox="0 0 16 16"><path d="M2 4h12M2 7h8M2 10h12M2 13h7"/></svg>
+          </button>
+          <button data-align="Center" data-i18n-title="HorizontalAlignment.Center">
+            <svg viewBox="0 0 16 16"><path d="M2 4h12M4 7h8M2 10h12M4.5 13h7"/></svg>
+          </button>
+          <button data-align="Right" data-i18n-title="HorizontalAlignment.Right">
+            <svg viewBox="0 0 16 16"><path d="M2 4h12M6 7h8M2 10h12M7 13h7"/></svg>
+          </button>
+          <button data-align="Justify" data-i18n-title="HorizontalAlignment.Justify">
+            <svg viewBox="0 0 16 16"><path d="M2 4h12M2 7h12M2 10h12M2 13h12"/></svg>
+          </button>
+
+          <span class="sep"></span>
+
+          <button data-valign="Start" data-i18n-title="ItemAlign.Top">
+            <svg viewBox="0 0 16 16"><path d="M2 2.5h12M5 5.5h6v8H5z"/></svg>
+          </button>
+          <button data-valign="Center" data-i18n-title="ItemAlign.Middle">
+            <svg viewBox="0 0 16 16"><path d="M2 8h12M5 4h6v8H5z"/></svg>
+          </button>
+          <button data-valign="End" data-i18n-title="ItemAlign.Bottom">
+            <svg viewBox="0 0 16 16"><path d="M2 13.5h12M5 2.5h6v8H5z"/></svg>
+          </button>
+
+          <span class="sep"></span>
+
+          <button id="addImage" data-i18n-title="editor.addImage">
+            <svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/>
+              <circle cx="5.5" cy="6" r="1.2"/><path d="M2 11.5l3.5-3 3 2.5 2.5-2 3 3"/></svg>
+          </button>
+          <button id="addTable" data-i18n-title="add.table">
+            <svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="1"/>
+              <path d="M1.5 6.5h13M6 6.5V13M10.5 6.5V13"/></svg>
+          </button>
+          <button id="addRule" data-i18n-title="add.rule">
+            <svg viewBox="0 0 16 16"><path d="M2 8h12"/></svg>
+          </button>
+          <button id="addText" data-i18n-title="editor.addText">
+            <svg viewBox="0 0 16 16"><path d="M2 3.5h12M2 7h12M2 10.5h8"/></svg>
+          </button>
+          <!-- The host's merge fields. Hidden until a host offers some: a menu of nothing
+               would be a button that does nothing. -->
+          <div class="fields" id="fieldsTool" hidden>
+            <button id="addField" data-i18n-title="editor.addField">
+              <svg viewBox="0 0 16 16"><path d="M6 2.5c-1.6 0-2 .8-2 2.2v1.6c0 1-.6 1.7-1.6 1.7 1 0 1.6.7 1.6 1.7v1.6c0 1.4.4 2.2 2 2.2M10 2.5c1.6 0 2 .8 2 2.2v1.6c0 1 .6 1.7 1.6 1.7-1 0-1.6.7-1.6 1.7v1.6c0 1.4-.4 2.2-2 2.2"/></svg>
+            </button>
+            <div id="fieldMenu" hidden></div>
+          </div>
+
+          <span class="sep"></span>
+
+          <button id="removeBlock" data-i18n-title="editor.removeBlock">
+            <svg viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5"/></svg>
+          </button>
+        </div>
+
+        <div id="sheet"></div>
+      </div>
+    </div>
+  ${SHOWN.panel ? EDITOR_ASIDE : ""}
+  </main>
+  `;
+
+
+  /// The side panel: what the FILE is (title, language, page size), what typefaces it is
+  /// allowed, and what the checks found. The first two are the host's decision when this
+  /// is embedded; the third is not hidden because it stopped mattering, but because the
+  /// person typing is not the person who answers for it.
+  const EDITOR_ASIDE = `
+    <aside>
+      <h2 data-i18n="editor.document">Document</h2>
+      <div class="field">
+        <label data-i18n="field.title">Title</label>
+        <input type="text" id="title">
+      </div>
+      <div class="field">
+        <label data-i18n="field.language">Language</label>
+        <input type="text" id="language" placeholder="en-GB">
+      </div>
+      <div class="field">
+        <label data-i18n="field.pageSize">Page size</label>
+        <select id="paper"></select>
+      </div>
+
+      <h2 data-i18n="editor.fonts">Typefaces</h2>
+      <div class="field">
+        <label data-i18n="editor.fonts">Typefaces</label>
+        <select id="fontSource">
+          <option value="library" data-i18n="fonts.library">From the server</option>
+          <option value="websafe" data-i18n="fonts.websafe">Web-safe (email)</option>
+        </select>
+      </div>
+      <div class="hint" id="fontHint"></div>
+
+      <h2 data-i18n="panel.issues">Checks</h2>
+      <div class="hint" data-i18n="hint.target"></div>
+      <label class="check"><input type="checkbox" id="targetTagged" checked>
+        <span data-i18n="target.tagged">tagged output</span></label>
+      <label class="check"><input type="checkbox" id="targetInteractive" checked>
+        <span data-i18n="target.interactive">fields stay fillable</span></label>
+      <div id="count" class="count good"></div>
+      <ul id="issues" class="issues"></ul>
+
+      <div class="hint" data-i18n="editor.hint"></div>
+    </aside>
+  `;
+
+
+  /// Where this editor's own markup lives, and which element carries its theme.
+  ///
+  /// `document` today, a shadow root the day the editor is packaged as an element. Only
+  /// two things differ between the two: where one of our own nodes is looked up, and
+  /// which element holds `data-theme` and `--paper`. Everything else `document` does in
+  /// this file is genuinely the browser's and stays - `createElement`, `createRange`,
+  /// `execCommand`, the drag listeners that must outlive the pointer leaving us, the
+  /// `selectionchange` that fires nowhere else, and the detached preview's own document.
+  ///
+  /// One named seam, asked rather than assumed. A blanket rename of `document` is what
+  /// killed the designer for a week (section 16); this is the opposite move, and the
+  /// host's identifiers are left alone.
+  let uiRoot = document;
+  let themeTarget = document.documentElement;
+
+  /// What the markup is planted in. The page hands over a div of its own; an element
+  /// hands over its shadow root.
+  let uiHost = null;
+
+  /// The selection, asked of whatever we are drawing in rather than of the window.
+  ///
+  /// `window.getSelection()` cannot address a range inside a shadow root: `addRange` with
+  /// nodes that live in one is ignored, silently. focusBlock then leaves a caret exactly
+  /// where `focus()` drew it and a selection that is somewhere else, which reads as a page
+  /// where the cursor blinks and nothing types. That is what the element did on its first
+  /// morning, and the standalone page never could have shown it.
+  ///
+  /// A ShadowRoot has `getSelection()` of its own, and so does a Document, so asking
+  /// `uiRoot` is right in both - and the fallback is there for a root that has neither
+  /// rather than as a guess.
+  const selection = () => uiRoot.getSelection ? uiRoot.getSelection() : window.getSelection();
+
+  const el = id => uiRoot.getElementById(id);
+  const uiAll = selector => uiRoot.querySelectorAll(selector);
+  const body = () => report.Sections[0].Childs.find(c => c.$type === "Body");
+
+  // ---------------------------------------------------------------------------
+  // Wording and theme - the page's business, as in the designer.
+  // ---------------------------------------------------------------------------
+
+  let theme = "auto";
+  try { theme = themeOrAuto(localStorage.getItem("frisket.theme")); } catch {}
+
+  function applyTheme() {
+    if (theme === "auto") themeTarget.removeAttribute("data-theme");
+    else themeTarget.setAttribute("data-theme", theme);
+  }
+
+  /// The stock the template says it is meant for, over the stylesheet's white.
+  ///
+  /// Set at run time and never in the sheet, so --paper still holds exactly one colour
+  /// there - which is what the palette audit checks. Clearing it puts the white back
+  /// rather than leaving the last template's stock behind.
+  ///
+  /// Called where the report is drawn and deliberately NOT from applyTheme: the paper
+  /// follows the template and nothing else, which is the whole of section 5b. Hanging it
+  /// off the theme also ran it before the report existed, and a typeof guard does not
+  /// save a let in its dead zone - the error said the coupling was wrong before it said
+  /// anything about JavaScript.
+  function applyPaper() {
+    const paper = paperColour(report);
+    if (paper) themeTarget.style.setProperty("--paper", paper);
+    else themeTarget.style.removeProperty("--paper");
+  }
+
+  /// Fills the markup's wording. A toolbar of icons says what it is through its
+  /// tooltips, so those are translated like everything else rather than left in one
+  /// language because they are short.
+  function applyStaticText() {
+    // Only when this editor IS the page. An editor embedded in somebody else's page
+    // renamed their tab, on every redraw of its wording.
+    if (uiRoot === document) document.title = t("editor.title");
+    uiAll("[data-i18n]").forEach(e => { e.textContent = t(e.dataset.i18n); });
+    uiAll("[data-i18n-title]").forEach(e => { e.title = t(e.dataset.i18nTitle); });
+  }
+
+  // ---------------------------------------------------------------------------
+  // A blank document for this face: one section, one body that stacks, one empty
+  // paragraph to type into. No header and no footer - they are bands at coordinates,
+  // which is the other face's subject.
+  // ---------------------------------------------------------------------------
+  function blankFlow() {
+    const rep = blankReport();
+    const section = rep.Sections[0];
+    section.Childs = [];
+    section.Dimension = { Width: 210, Height: 297 };
+
+    const bodyItem = newItem("Body");
+    bodyItem.Layout = "Stack";
+    const pad = chooseMargins(margins);
+    bodyItem.Style.Padding = { Left: pad, Top: pad, Right: pad, Bottom: pad };
+    bodyItem.Childs = [emptyParagraph()];
+    section.Childs.push(bodyItem);
+
+    rep.Title = "";
+    return rep;
+  }
+
+  function emptyParagraph() {
+    const item = newItem("AdvancedTextItem");
+    item.Runs = [{ Text: "", Font: null }];
+    return item;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Drawing the sheet. One element per child of the body, in order.
+  // ---------------------------------------------------------------------------
+  function draw() {
+    applyPaper();   // the stock is the template's, so it follows the template
+    normaliseReport(report);
+    hydrate(report.Sections[0]);
+
+    const section = report.Sections[0];
+    const bodyItem = body();
+    const pad = (bodyItem && bodyItem.Style && bodyItem.Style.Padding) || {};
+
+    // Side by side rather than one shorthand: the stylesheet works out from each margin
+    // how much room the handles and a table's rails still need beside it.
+    const frame = el("frame");
+    frame.style.setProperty("--sheet-width", (section.Dimension.Width || 210) + "mm");
+    for (const side of ["Top", "Right", "Bottom", "Left"])
+      frame.style.setProperty("--sheet-pad-" + side.toLowerCase(), (pad[side] ?? 20) + "mm");
+
+    const sheet = el("sheet");
+
+    // The document's own type size, so what is typed is the size it will print at.
+    const rem = report.RootFontSize || 3;
+    sheet.style.fontSize = (rem / 0.7) + "mm";
+    sheet.style.fontFamily = sheetFace();
+
+    const keep = current && current.dataset.index;
+    sheet.innerHTML = "";
+    (bodyItem ? bodyItem.Childs : []).forEach((item, i) => sheet.appendChild(blockFor(item, i)));
+
+    if (keep != null) {
+      const back = sheet.querySelector(`.block[data-index="${keep}"]`);
+      if (back) markCurrent(back);
+    }
+    runChecks();
+  }
+
+  /// One element of the sheet. The node carries the model object it draws, so anything
+  /// asking "what is being edited" reads it off the node rather than indexing back into
+  /// the body - which stopped being possible the moment a block could hold another one.
+  function blockFor(item, index) {
+    const node = document.createElement("div");
+    node.className = "block";
+    node.dataset.index = index;
+    node._item = item;
+    if (item.$type === "AdvancedTextItem") node.dataset.plain = "";
+
+    fillBlock(node, item);
+
+    // A div holds focus only if it is told it may. Without this a picture could be
+    // clicked but never keyed, so alt+arrow reached nothing.
+    if (!editableIn(node)) node.tabIndex = -1;
+
+    dragBehaviour(node, item);
+    node.addEventListener("focusin", () => markCurrent(node));
+    node.addEventListener("mousedown", () => markCurrent(node));
+    return node;
+  }
+
+  /// Draws one item into a node. Split out from blockFor because a paired container
+  /// draws its two children the same way, and two copies of this is how a face starts
+  /// disagreeing with itself about what a picture looks like.
+  function fillBlock(node, item) {
+    if (item.$type === "AdvancedTextItem") {
+      // A surface inside the block rather than the block itself. Everything the block
+      // carries - the handle, the kind label, a grip - is then furniture beside the
+      // text instead of inside it, which is the fault that showed up twice: the label
+      // was read back into the paragraph, and so was the handle.
+      const surface = document.createElement("div");
+      surface.className = "surface";
+      surface.contentEditable = "true";
+      surface.spellcheck = true;
+      surface._item = item;
+
+      // The model held the alignment and the page never showed it: the button lit up,
+      // the JSON was right, and the paragraph sat where it always had. A face that
+      // records a choice without drawing it is worse than one that cannot make it.
+      const how = (item.Font && item.Font.HorizontalAlignment) || "Left";
+      surface.style.textAlign = how === "Center" ? "center"
+                              : how === "Right" ? "right"
+                              : how === "Justify" ? "justify" : "left";
+
+      runsToSurface(item.Runs || [], surface);
+
+      // An editable element accepts anything the browser cares to put in it. A pasted
+      // paragraph of styled HTML means nothing to the model, so it comes in as text.
+      surface.addEventListener("paste", e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+        if (text) document.execCommand("insertText", false, text);
+      });
+
+      // Before the character arrives, not after: a style applied to the model afterwards
+      // would not be on the page until a redraw, and redrawing mid-word takes the caret
+      // with it. Inserted as a span instead, so the DOM and the model agree by the same
+      // route they always do - surfaceToRuns reads data-font back out.
+      //
+      // One keystroke is all it has to last. The caret ends up inside the span, and every
+      // character after it lands there on its own.
+      surface.addEventListener("beforeinput", e => {
+        if (!pending || e.inputType !== "insertText" || !e.data) return;
+
+        const range = selection().rangeCount ? selection().getRangeAt(0) : null;
+        if (!range || !range.collapsed) return;
+
+        e.preventDefault();
+        const span = runElement({ Text: e.data, Font: pending.font });
+        range.insertNode(span);
+
+        const after = document.createRange();
+        after.setStart(span.firstChild, span.firstChild.length);
+        after.collapse(true);
+        selection().removeAllRanges();
+        selection().addRange(after);
+
+        pending = null;
+        const runs = surfaceToRuns(surface);
+        item.Runs = runs.length ? runs : [{ Text: "", Font: null }];
+        runChecks();
+      });
+
+      surface.addEventListener("input", () => {
+        const runs = surfaceToRuns(surface);
+        item.Runs = runs.length ? runs : [{ Text: "", Font: null }];
+        runChecks();
+      });
+
+      node.appendChild(surface);
+      return;
+    }
+
+    if (item.$type === "ImageItem") {
+      const img = document.createElement("img");
+
+      // A browser makes every picture draggable of its own accord, and that drag is not
+      // ours: it carries the HTML rather than the block, so it lands wherever the
+      // browser feels like putting it and the model learns nothing. Once a block has a
+      // handle there is no reason left to allow it - two ways to start a drag, one of
+      // which does something else, is worse than one.
+      img.draggable = false;
+
+      const source = item.Source;
+      const fromData = (item.SourceField || "").trim();
+      if (source && source.Data) img.src = `data:${source.MediaType || "image/png"};base64,${source.Data}`;
+      else if (fromData) {
+        // Filled from the data when the document is printed, so there is nothing to draw
+        // yet: the host's sample when it gave one, otherwise a frame naming where the
+        // picture will come from. Still an <img>, so the grip resizes it like any other.
+        const field = fieldAt(fromData);
+        img.src = field && field.sample ? field.sample : pictureFromData(fromData, item);
+        img.classList.add("from-data");
+      }
+
+      const width = item.Style.Location.WidthValue;
+      if (Number.isFinite(Number(width))) img.style.width = Number(width) + "mm";
+
+      // The same three positions the engine will use, so the block shows where the
+      // picture will actually sit rather than always against the left.
+      const across = (item.Style && item.Style.AlignHorizontal) || "None";
+      img.style.marginLeft = across === "Center" || across === "End" ? "auto" : "";
+      img.style.marginRight = across === "Center" ? "auto" : "";
+
+      node.appendChild(img);
+      node.appendChild(gripFor(item, node));
+
+      const alt = document.createElement("input");
+      alt.className = "alt";
+      alt.placeholder = t("field.altText");
+      alt.value = item.AltText || "";
+      alt.oninput = () => { item.AltText = alt.value; runChecks(); };
+      node.appendChild(alt);
+      return;
+    }
+
+    if (item.$type === "LineItem") {
+      node.appendChild(document.createElement("hr"));
+      return;
+    }
+
+    if (item.$type === "TableItem") {
+      fillTable(node, item);
+      return;
+    }
+
+    // A picture beside a paragraph. In the model this is an absolutely laid out
+    // container: the picture at a coordinate with a width, the paragraph starting
+    // after it and stuck to the far edge. Dock alone will not do it - ArrangeChildren
+    // hands every child the same rectangle, so a docked picture and a stretched
+    // paragraph would sit on top of one another - which is why the coordinates are
+    // computed here rather than left to the engine to infer.
+    if (isPair(item)) {
+      node.classList.add("pair");
+      for (const child of item.Childs) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell._item = child;
+        if (child.$type === "AdvancedTextItem") cell.dataset.plain = "";
+        // Whichever side has a width of its own keeps it; the other takes what is left.
+        // The same question naturalWidth answers for the geometry, asked of the drawing.
+        cell.style.flex = naturalWidth(child) != null ? "0 0 auto" : "1 1 auto";
+
+        // Where the cell sits down the height of the pair. The engine reads
+        // Style.AlignVertical through ComputeVertical, which is only consulted in an
+        // absolutely laid out container - which is exactly what a pair is, and why
+        // these buttons mean nothing anywhere else.
+        const down = (child.Style && child.Style.AlignVertical) || "None";
+        cell.style.alignSelf = down === "Center" ? "center"
+                             : down === "End" ? "flex-end" : "flex-start";
+        fillBlock(cell, child);
+
+        // A handle of its own, so a half can be taken back out. Only lifted, never
+        // dropped onto: the pair around it is the drop target, and a zone inside a
+        // cell would mean nothing the model can express.
+        liftBy(cell, child, "editor.moveHalf");
+
+        // BOTH stopped, not just the one. focusin bubbles like any other event, so a
+        // cell that stopped mousedown and let focusin through had the block outside it
+        // claim `current` a moment later - and that block's item is the container, not
+        // the paragraph that was clicked. Everything reading currentItem() then answered
+        // about the wrong thing: the lists went blank and the swatch fell back to the
+        // last colour chosen, which is a colour from somewhere else entirely.
+        cell.addEventListener("focusin", e => { e.stopPropagation(); markCurrent(cell); });
+        cell.addEventListener("mousedown", e => { e.stopPropagation(); markCurrent(cell); });
+        node.appendChild(cell);
+      }
+      return;
+    }
+
+    // A stack: several blocks one under another, which is what a cell holding a caption
+    // under a picture is. Drawn by the same fillBlock as everything else, so a stack of a
+    // table and a paragraph needs no case of its own here - and each part keeps a handle,
+    // so nothing put in one is stuck in it.
+    if (item.$type === "ContainerItem" && item.Layout !== "Absolute") {
+      node.classList.add("stack");
+      for (const child of item.Childs || []) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot._item = child;
+        if (child.$type === "AdvancedTextItem") slot.dataset.plain = "";
+
+        fillBlock(slot, child);
+        liftBy(slot, child, "editor.moveHalf");
+
+        slot.addEventListener("focusin", e => { e.stopPropagation(); markCurrent(slot); });
+        slot.addEventListener("mousedown", e => { e.stopPropagation(); markCurrent(slot); });
+        node.appendChild(slot);
+      }
+      return;
+    }
+
+    // Everything this face does not edit. It is not lost and it is not hidden: it is
+    // named, and the page says where it can be edited. Showing half of it would be the
+    // worse answer.
+    const note = document.createElement("div");
+    note.className = "foreign";
+    note.innerHTML = `<b>${esc(labelOf(item.$type))}</b> — ${esc(t("editor.foreign"))}`;
+    node.appendChild(note);
+  }
+
+  /// A table, and the rails that add and remove its rows and columns.
+  ///
+  /// Each cell is its own editable surface rather than one for the table, which is the
+  /// same decision the whole face rests on - and the reason a picture can go in a cell
+  /// without becoming a foreign body inside somebody's paragraph.
+  ///
+  /// The model was ready for this: a TableItem holds TableRow children, a row holds a
+  /// cell per column, and Columns is the list of widths. Nothing here is new to the
+  /// engine; what was missing was a way to touch it without the designer.
+  function fillTable(node, item) {
+    // A table repeated over a list says so above itself, in the block's furniture rather
+    // than in a cell: the one row on the sheet is the one the engine stamps out per entry.
+    const over = (item.RepeatOver || "").trim();
+    if (over) {
+      const list = fields.find(field => field.type === "list" && field.path === over);
+      const mark = document.createElement("div");
+      mark.className = "repeat-mark";
+      mark.textContent = t("editor.repeats", { list: list ? list.label : over });
+      node.appendChild(mark);
+    }
+
+    const table = document.createElement("table");
+    table.className = "grid";
+    const columns = (item.Columns || []).length || 1;
+
+    for (const row of item.Childs || []) {
+      if (row.$type !== "TableRow") continue;
+      const tr = document.createElement("tr");
+
+      for (let c = 0; c < columns; c++) {
+        // A row that hands back fewer cells than the table has columns is refused by a
+        // conformance checker and unreadable aloud (CLAUDE.md §11), so a missing cell is
+        // filled in rather than skipped.
+        let cell = (row.Childs || [])[c];
+        if (!cell) {
+          cell = newItem("AdvancedTextItem");
+          cell.Runs = [{ Text: "", Font: null }];
+          (row.Childs ??= []).push(cell);
+        }
+
+        const td = document.createElement(row.IsHeader ? "th" : "td");
+        td._item = cell;
+        td._row = row;
+        td._at = c;
+        td._table = item;
+        const width = (item.Columns || [])[c];
+        if (width && Number.isFinite(Number(width.Width)))
+          td.style.width = Number(width.Width) + "mm";
+
+        fillBlock(td, cell);
+
+        // A picture in a cell is dragged out of it the way half of a pair is - by a
+        // handle of its own. Without one it would be a one-way door again: in through
+        // the drop, and out only through the panel.
+        if (cell.$type === "ImageItem") liftBy(td, cell, "editor.moveHalf");
+
+        cellDrop(td, row, c);
+        td.addEventListener("focusin", e => { e.stopPropagation(); markCurrent(td); });
+        td.addEventListener("mousedown", e => { e.stopPropagation(); markCurrent(td); });
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    node.classList.add("tabular");
+    node.appendChild(table);
+
+    const across = rail("columns", columns, item);
+    const down = rail("rows", (item.Childs || []).length, item);
+    node.appendChild(across);
+    node.appendChild(down);
+
+    // Measured, never spaced. A row is as tall as what somebody typed in it and a
+    // column as wide as its width in millimetres, so a rail of evenly spaced buttons
+    // points at nothing after the first one - which is what it did: two crosses and a
+    // plus bunched in the corner, and no telling which column any of them meant.
+    const follow = () => placeRails(table, across, down);
+    requestAnimationFrame(follow);
+
+    // Placed once, they stay where the table was when it was drawn - and a row grows
+    // the moment somebody types a second line in it, so the crosses end up pointing at
+    // where the rows used to be. That is worse than pointing nowhere: it is a button
+    // that means one row and looks like it means another.
+    //
+    // input covers typing, which is the way a row changes height most often; the
+    // observer covers everything else - a picture arriving, the window narrowing, a
+    // font finishing loading - none of which passes through a keystroke.
+    table.addEventListener("input", follow);
+    if (typeof ResizeObserver === "function") new ResizeObserver(follow).observe(table);
+  }
+
+  /// Puts each button over the row or column it takes away, from the table's own
+  /// geometry. The same reasoning as the picture's grip: a browser knows where things
+  /// ended up and we do not, so it is asked rather than guessed at.
+  function placeRails(table, across, down) {
+    const box = table.getBoundingClientRect();
+    const rows = [...table.childNodes].filter(r => r.tagName === "TR");
+    const head = rows[0];
+    if (!head) return;
+
+    const centre = (button, along) => {
+      if (along === null) return;
+      button.style[across.contains(button) ? "left" : "top"] = (along - 8) + "px";
+    };
+
+    // Past the last one, never past the table: a table box is not its cells - it can be
+    // wider than them or narrower - so measuring the plus against it puts it inside the
+    // grid on one table and off the sheet on the next.
+    const past = (list, edge) => {
+      const last = list[list.length - 1];
+      const r = last ? last.getBoundingClientRect() : null;
+      return r ? r[edge] - (edge === "right" ? box.left : box.top) + 18 : null;
+    };
+
+    const cells = [...head.childNodes];
+    [...across.childNodes].forEach((button, i) => {
+      // The last button is the "+", which belongs past the final column rather than
+      // over one: adding a column is not a question about any column that exists.
+      const r = i < cells.length ? cells[i].getBoundingClientRect() : null;
+      centre(button, r ? r.left - box.left + r.width / 2 : past(cells, "right"));
+    });
+
+    [...down.childNodes].forEach((button, i) => {
+      const r = i < rows.length ? rows[i].getBoundingClientRect() : null;
+      centre(button, r ? r.top - box.top + r.height / 2 : past(rows, "bottom"));
+    });
+  }
+
+  /// A cell as a place to drop a picture.
+  ///
+  /// The model was ready: a cell is one item of a row, fillBlock already draws a
+  /// picture, and the engine has never cared which kind of item a cell holds. What was
+  /// missing was the gesture - so a picture could be beside a table and never in it.
+  ///
+  /// A cell holds one item, so it only accepts one where there is nothing to lose, and
+  /// it says so by not lighting up. Refusing after the fact is the fault the side zones
+  /// had: a drop that is offered and then quietly declined teaches people to distrust
+  /// what they are shown.
+  function cellDrop(td, row, at) {
+    const takes = () => canDropInCell(lifted, row.Childs[at]);
+
+    td.addEventListener("dragover", e => {
+      if (!takes()) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = "move";
+      td.classList.add("landing");
+    });
+
+    td.addEventListener("dragleave", () => td.classList.remove("landing"));
+
+    td.addEventListener("drop", e => {
+      if (!takes()) return;
+      e.preventDefault();
+      e.stopPropagation();               // the block around it would call this a reorder
+
+      const moving = lifted;
+      lifted = null;
+      detach(moving);
+      loosen(moving);
+      putInCell(row, at, moving);
+      fitToCell(moving, td._table, at);
+      current = null;
+      draw();
+    });
+  }
+
+  /// Narrows a picture to the column it has landed in.
+  ///
+  /// A picture arrives capped at the width of the body's band, which is right when it
+  /// goes into the flow and much too wide for a cell - a 160 mm photograph in a 60 mm
+  /// column is one that overflows its own table. The height follows from the picture's
+  /// proportions, the same rule the corner grip obeys, so nothing is squashed.
+  function fitToCell(item, table, at) {
+    if (!item || item.$type !== "ImageItem" || !table) return;
+
+    const columns = (table.Columns || []).length || 1;
+    const stated = Number((table.Columns || [])[at]?.Width);
+    // A column with no width of its own takes an even share, which is what the engine
+    // does with it as well.
+    const room = Number.isFinite(stated) && stated > 0 ? stated : bandWidth() / columns;
+
+    const wide = Number(item.Style.Location.WidthValue);
+    if (!Number.isFinite(wide) || wide > room) item.Style.Location.WidthValue = room;
+  }
+
+  /// Whether a cell can take what is being dragged.
+  ///
+  /// It used to be a picture, and only into an empty cell - a cell holds one item, so
+  /// anywhere else the drop would have been a deletion wearing the clothes of a move.
+  /// That refusal was the right one for the shape at the time and the wrong shape: a cell
+  /// holds one *item*, and an item can be a stack. So an occupied cell now keeps what it
+  /// has and gains what arrives, one under the other.
+  function canDropInCell(moving, cell) {
+    if (!moving || !cell || moving === cell) return false;
+    if (!canDraw(moving) && !isStack(moving)) return false;
+    if (cell === moving) return false;
+
+    // Never into itself: a stack dropped on a cell it already lives in.
+    if (isStack(cell) && (cell.Childs || []).includes(moving)) return false;
+
+    return isEmptyText(cell) || canDraw(cell) || isStack(cell);
+  }
+
+  /// A container drawn as one block above another. What a cell becomes when it is asked
+  /// to hold two things, and what a pair is not - a pair is the absolute one.
+  function isStack(item) {
+    return !!item
+        && item.$type === "ContainerItem"
+        && item.Layout !== "Absolute";
+  }
+
+  /// A paragraph with nothing typed in it. What a fresh cell is, and the one thing worth
+  /// replacing outright rather than stacking under.
+  function isEmptyText(item) {
+    return !!item
+        && item.$type === "AdvancedTextItem"
+        && (item.Runs || []).every(r => !r.Text || !r.Text.trim());
+  }
+
+  /// Puts an item into a cell, keeping whatever was there.
+  ///
+  /// An empty paragraph is replaced, since stacking under nothing would leave a blank
+  /// line above everything. Anything else is stacked, and a cell that is already a stack
+  /// simply gains one more.
+  function putInCell(row, at, item) {
+    const held = row.Childs[at];
+
+    if (isEmptyText(held) || held === undefined) { row.Childs[at] = item; return; }
+
+    if (isStack(held)) { held.Childs.push(item); return; }
+
+    const stack = newItem("ContainerItem");
+    stack.Layout = "Stack";
+    stack.Childs = [held, item];
+    row.Childs[at] = stack;
+  }
+
+  /// One rail of handles: a "+" per column or row, and a "×" to take it away. In the
+  /// margin rather than in the toolbar, because which column is a question about a
+  /// place, and a toolbar has no way to point at one.
+  function rail(which, count, item) {
+    const bar = document.createElement("div");
+    bar.className = "rail " + which;
+
+    for (let i = 0; i < count; i++) {
+      const remove = document.createElement("button");
+      remove.textContent = "\u00d7";
+      remove.title = t(which === "columns" ? "editor.dropColumn" : "editor.dropRow");
+      remove.onclick = e => {
+        e.stopPropagation();
+        if (which === "columns") dropColumn(item, i);
+        else dropRow(item, i);
+      };
+      bar.appendChild(remove);
+    }
+
+    const add = document.createElement("button");
+    add.textContent = "+";
+    add.title = t(which === "columns" ? "editor.addColumn" : "editor.addRow");
+    add.onclick = e => {
+      e.stopPropagation();
+      if (which === "columns") addColumn(item);
+      else addRow(item);
+    };
+    bar.appendChild(add);
+    return bar;
+  }
+
+  function emptyCell() {
+    const cell = newItem("AdvancedTextItem");
+    cell.Runs = [{ Text: "", Font: null }];
+    return cell;
+  }
+
+  function addColumn(item) {
+    (item.Columns ??= []).push({ Width: "NaN", WidthUnit: "Millimeter" });
+    for (const row of item.Childs || [])
+      if (row.$type === "TableRow") (row.Childs ??= []).push(emptyCell());
+    current = null;
+    draw();
+  }
+
+  function dropColumn(item, at) {
+    if ((item.Columns || []).length <= 1) return;
+    item.Columns.splice(at, 1);
+    for (const row of item.Childs || [])
+      if (row.$type === "TableRow" && (row.Childs || []).length > at) row.Childs.splice(at, 1);
+    current = null;
+    draw();
+  }
+
+  function addRow(item) {
+    const row = newItem("TableRow");
+    row.IsHeader = false;
+    row.Childs = Array.from({ length: (item.Columns || []).length || 1 }, emptyCell);
+    (item.Childs ??= []).push(row);
+    current = null;
+    draw();
+  }
+
+  function dropRow(item, at) {
+    if ((item.Childs || []).length <= 1) return;
+    item.Childs.splice(at, 1);
+    current = null;
+    draw();
+  }
+
+  /// A table to start from: a heading row and one row under it, two columns. Small
+  /// enough to be a beginning rather than something to cut down.
+  function newTable() {
+    const item = newItem("TableItem");
+    item.Columns = [{ Width: "NaN", WidthUnit: "Millimeter" },
+                    { Width: "NaN", WidthUnit: "Millimeter" }];
+
+    const head = newItem("TableRow");
+    head.IsHeader = true;
+    head.Childs = [emptyCell(), emptyCell()];
+
+    const body = newItem("TableRow");
+    body.IsHeader = false;
+    body.Childs = [emptyCell(), emptyCell()];
+
+    item.Childs = [head, body];
+    return item;
+  }
+
+  /// The kinds this face draws itself, rather than naming as foreign.
+  ///
+  /// The list is here once. Widening a pair, or letting a cell hold a stack, is then a
+  /// question of geometry and not of which types are allowed where - and adding a kind
+  /// to fillBlock is one edit rather than four.
+  const DRAWABLE = ["AdvancedTextItem", "ImageItem", "TableItem", "LineItem"];
+
+  function canDraw(item) {
+    return !!item && DRAWABLE.includes(item.$type);
+  }
+
+  /// A container this face knows how to draw side by side: two things it can draw, laid
+  /// out absolutely. It used to be exactly one picture and exactly one paragraph, which
+  /// was the narrowest thing that worked and turned out to be narrower than the engine -
+  /// a table at a coordinate with a width lays out perfectly well beside a paragraph.
+  function isPair(item) {
+    return item.$type === "ContainerItem"
+        && item.Layout === "Absolute"
+        && (item.Childs || []).length === 2
+        && item.Childs.every(canDraw);
+  }
+
+  /// How wide a block is on its own account, in millimetres, or null when it has no
+  /// opinion and simply takes what it is given.
+  ///
+  /// The distinction decides what a pairing may do to it. A picture has no size of its
+  /// own in the document - the width is a choice - so it is scaled to fit. A table's
+  /// columns are stated in millimetres and do not stretch: the engine draws the frame at
+  /// whatever width it is told and leaves the cells where the columns put them, so a
+  /// table squeezed into half a band comes out as a wide frame around a narrow grid.
+  /// Measured, not assumed: a table of 30 + 30 given a width of 85 renders 0..85 with
+  /// its cells still ending at 60.
+  function naturalWidth(item) {
+    if (!item) return null;
+
+    if (item.$type === "ImageItem") {
+      const stated = Number(((item.Style || {}).Location || {}).WidthValue);
+      return Number.isFinite(stated) && stated > 0 ? stated : null;
+    }
+
+    if (item.$type === "TableItem") {
+      const columns = item.Columns || [];
+      if (!columns.length) return null;
+      let total = 0;
+      for (const column of columns) {
+        const width = Number(column.Width);
+        if (!Number.isFinite(width) || width <= 0) return null;   // an even share: no opinion
+        total += width;
+      }
+      return total;
+    }
+
+    return null;                       // a paragraph and a rule take what is left
+  }
+
+  /// The narrowest column worth putting words in. Below this a side-by-side is not an
+  /// arrangement, it is a block with a stripe beside it.
+  const MIN_COLUMN = 20;
+
+  /// How wide the band is, in millimetres: the sheet less the body's padding. What a
+  /// picture may not exceed, and what a width is measured against.
+  // ---------------------------------------------------------------------------
+  // Typefaces.
+  //
+  // Two lists, because there are two kinds of document and they want opposite things.
+  //
+  // A PDF embeds its fonts, so the only families that mean anything are the ones the
+  // engine has a file for - and a family it has no file for is *refused*, never quietly
+  // swapped, since another face would relay out every line. That list can only come
+  // from the engine, and the preview server already publishes it at /fonts.
+  //
+  // An email embeds nothing: whoever opens it supplies the face, so naming Georgia is
+  // reasonable and naming a family only this machine has is not. Perfection is not on
+  // offer there and is not wanted.
+  //
+  // So it is an option rather than a merged list with warnings beside half of it: say
+  // which kind of document is being written, and the choices follow.
+  // ---------------------------------------------------------------------------
+  const WEB_SAFE = ["Arial", "Helvetica", "Georgia", "Times New Roman",
+                    "Verdana", "Tahoma", "Trebuchet MS", "Courier New"];
+
+  /// The two answers, and the only list of them - so a stored name that is no longer
+  /// one of them cannot be handed on. The same guard `themeOrAuto` gives the palette,
+  /// and for the same reason: a preference outlives the option that set it.
+  const FONT_SOURCES = ["library", "websafe"];
+  const fontsOr = (name, fallback) => FONT_SOURCES.includes(name) ? name : fallback;
+
+  /// Where the family list comes from. "library" asks the preview server what it can
+  /// really embed; "websafe" is the handful every reader already has, which is what an
+  /// email wants and what a page with no server of its own can honestly offer.
+  ///
+  /// The plain page keeps its stored preference, because it HAS the control that sets it.
+  /// A face without that control does not - see chooseFontSource below.
+  let fontSource = "library";
+  try { fontSource = fontsOr(localStorage.getItem("frisket.fonts"), "library"); } catch {}
+
+  /// What this face should be asking, given what it shows and what it was told.
+  ///
+  /// A declared source wins - a host that does have a font server says so. Otherwise a
+  /// face with no font control falls to the web-safe families, and NOT to whatever is in
+  /// localStorage: that preference was set on the full page, by somebody who could see
+  /// the control, and letting it decide here means an embedded editor silently asking a
+  /// server that is not there, failing, and offering a poorer list for it. It is the
+  /// theme trap again - a stored name deciding in a face that cannot show it.
+  /// Which room this face should be in, given what it shows and what it was told.
+  ///
+  /// The same shape as chooseFontSource below, and for the same reason - which is the
+  /// third time this session that a preference stored by the face WITH a control decided
+  /// inside a face without one.
+  ///
+  /// Found in Chrome's inspector, and it is not a Chrome fault: a host page painting the
+  /// editor in its own dark colours got `data-theme="light"` stamped on the tag, because
+  /// somebody had once picked Light on the standalone page and both faces share one
+  /// localStorage key. The host sets seven of the twenty-four palette names; the other
+  /// seventeen then came from the LIGHT theme inside the shadow root, so `--panel` was the
+  /// host's near-black and `--control` was white. Two half-palettes composited, and the
+  /// select came out white on a dark toolbar.
+  ///
+  /// `auto` is the answer for a face that cannot show the choice: it stamps nothing, so
+  /// the base palette applies and every one of the twenty-four is consistent. A host with
+  /// an opinion writes theme="light" or theme="graphite" - or, better, sets the custom
+  /// properties, which is what the palette is for.
+  /// How much white the document starts with round its body, in millimetres.
+  ///
+  /// The full page keeps twenty, which is a letter's margin and what somebody laying out
+  /// a printed page expects. A face with no control for it does not: twenty millimetres
+  /// of paper inside a host application is twenty millimetres of that application's
+  /// screen given to a margin nobody can change and few will print.
+  ///
+  /// Same rule as the font source and the room, and the third of its kind - a default
+  /// that belongs to the face that can show the control does not follow into the face
+  /// that cannot. What an embedded editor produces is content, and where it sits on a
+  /// page is the host's decision, not this editor's.
+  ///
+  /// Two rather than zero, because zero is not a margin but the absence of one: a
+  /// paragraph whose first letter touches the edge of the sheet reads as a fault. The
+  /// handles are not a reason any more: they have room of their own beside the paper
+  /// when the margin is too narrow to hold them (frisket-editor.css, #frame).
+  function chooseMargins(declared) {
+    // Nothing asked is not zero asked, and Number() disagrees: Number(null) and Number("")
+    // are both 0, which is finite and in range - so "you decide" came back as "touch the
+    // edge of the sheet". Caught by the check written for the other half of this function.
+    const nothing = declared === null || declared === undefined || declared === "";
+    const asked = nothing ? NaN : Number(declared);
+    if (Number.isFinite(asked) && asked >= 0 && asked <= 100) return asked;
+    return SHOWN.panel ? 20 : 2;
+  }
+
+  function chooseTheme(declared) {
+    if (declared) return themeOrAuto(declared);
+    return SHOWN.chrome ? theme : "auto";
+  }
+
+  function chooseFontSource(declared) {
+    if (declared) return fontsOr(declared, "websafe");
+    return SHOWN.panel ? fontSource : "websafe";
+  }
+
+  let libraryFamilies = null;          // null until the server has been asked
+  let libraryDefault = null;           // the family the server's engine gives unnamed text
+
+  /// What text that names no family is shown in: the face the output will give it. With
+  /// the server's list that is the engine's default, which its font directory names;
+  /// with the web's own families it is the stack a mail reader is handed. A document
+  /// naming its own default is shown in that, as the engine would print it.
+  ///
+  /// This editor's own, not the core's page-wide one: two editors on a page may be showing
+  /// two outputs, one the server's fonts and one the web's, and a single face would let
+  /// whichever asked last decide for both.
+  let unnamedHere = "sans-serif";
+
+  function applyDefaultFace() {
+    unnamedHere = fontSource === "websafe" ? MAIL_FACE
+                : libraryDefault ? faceOf(libraryDefault) : "sans-serif";
+    wire("sheet", n => { n.style.fontFamily = sheetFace(); });
+  }
+
+  function sheetFace() {
+    const named = report && report.DefaultFont && report.DefaultFont.Family;
+    return named ? faceOf(named) : unnamedHere;
+  }
+
+  /// Every family the document already names. What the list falls back to with no
+  /// server: it cannot be wrong, since these are in use whatever the engine holds.
+  function familiesInUse() {
+    const seen = new Set();
+    const walk = node => {
+      if (!node || typeof node !== "object") return;
+      if (node.Family) seen.add(node.Family);
+      for (const value of Object.values(node)) {
+        if (value && typeof value === "object") walk(value);
+      }
+    };
+    walk(report);
+    return [...seen].filter(Boolean).sort();
+  }
+
+  function fillFamilies() {
+    const select = el("family");
+    const chosen = select.value;
+    const empty = select.selectedIndex < 0;
+    select.innerHTML = "";
+
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = t("fonts.default");
+    select.appendChild(first);
+
+    const list = fontSource === "websafe" ? WEB_SAFE
+               : libraryFamilies !== null ? libraryFamilies
+               : familiesInUse();
+
+    for (const family of list) {
+      const option = document.createElement("option");
+      option.value = family;
+      option.textContent = family;
+      option.style.fontFamily = family;
+      select.appendChild(option);
+    }
+    // Nothing selected stays nothing selected. Rebuilding the options throws the
+    // selection away, and restoring `chosen` - which reads "" when the list was showing
+    // nothing - would put "Document default" on a list that is deliberately blank
+    // because the selection spans two families. The rebuild happens when the server's
+    // font list arrives, a second or so after the page opens, so it lands squarely on
+    // whatever the toolbar had decided by then.
+    if (empty) select.selectedIndex = -1;
+    else select.value = chosen || "";
+
+    wire("fontHint", n => { n.textContent =
+      fontSource === "websafe" ? t("fonts.approximate")
+      : libraryFamilies === null ? t("fonts.offline") : ""; });
+  }
+
+  /// Asks the preview server what it can actually embed. Best effort: the page opens
+  /// from a file:// URL as often as not, and saying so is better than an empty list.
+  function askServerForFonts() {
+    const offline = () => { libraryFamilies = null; libraryDefault = null; fillFamilies(); applyDefaultFace(); };
+    if (server === null) { offline(); return; }
+    serverFonts(server, send)
+      .then(receiveFonts)
+      .catch(offline);
+  }
+
+  /// What the server answered: the families to offer, the one it gives unnamed text, and
+  /// the files themselves to draw with.
+  function receiveFonts(list) {
+    const got = fontsFromServer(list, server ?? "");
+    libraryFamilies = got.families;
+    libraryDefault = got.defaultFamily;
+    loadFaces(server ?? "", got.faces);
+    fillFamilies();
+    applyDefaultFace();
+  }
+
+
+  function bandWidth() {
+    const section = report.Sections[0];
+    const pad = (body() && body().Style && body().Style.Padding) || {};
+    return Math.max(10, (section.Dimension.Width || 210) - (pad.Left ?? 20) - (pad.Right ?? 20));
+  }
+
+  /// The corner grip. Dragging it sets the picture's width and nothing else: the height
+  /// follows from the picture's own proportions, which keeps a photograph from being
+  /// squashed by a careless drag.
+  function gripFor(item, node) {
+    const grip = document.createElement("div");
+    grip.className = "grip";
+    grip.title = t("editor.resize");
+
+    const place = () => {
+      const img = node.querySelector("img");
+      if (!img) return;
+      const box = img.getBoundingClientRect(), host = node.getBoundingClientRect();
+      grip.style.left = (box.right - host.left - 7) + "px";
+      grip.style.top = (box.bottom - host.top - 7) + "px";
+    };
+
+    grip.addEventListener("mousedown", down => {
+      down.preventDefault();
+      node.classList.add("resizing");
+
+      const img = node.querySelector("img");
+      const startX = down.clientX;
+      const startPx = img.getBoundingClientRect().width;
+      const perMm = startPx / Math.max(1, Number(item.Style.Location.WidthValue) || bandWidth());
+
+      const move = at => {
+        const mm = (startPx + (at.clientX - startX)) / perMm;
+        item.Style.Location.WidthValue = Math.round(Math.max(5, Math.min(bandWidth(), mm)) * 10) / 10;
+        img.style.width = item.Style.Location.WidthValue + "mm";
+        place();
+      };
+      const up = () => {
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        node.classList.remove("resizing");
+        runChecks();
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    });
+
+    requestAnimationFrame(place);
+    return grip;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dragging a block, to move it or to set it beside another.
+  //
+  // The browser's own drag is what duplicated a picture: dropped into an editable
+  // element it inserts a copy of the HTML, and the model gains nothing. So the two are
+  // separated rather than the whole thing forbidden - a foreign drop is refused, and a
+  // drag that started on one of our own blocks is ours to place.
+  //
+  // Four sides, not two. Above and below reorder the body, which is what a flow is.
+  // Left and right mean something else: the two blocks become one container, laid out
+  // absolutely, the picture at a coordinate and the paragraph after it. Dock alone
+  // would not do it - ArrangeChildren hands every child the same rectangle, so a
+  // docked picture and a stretched paragraph would sit on top of one another - which
+  // is why the coordinates are worked out here.
+  //
+  // The index travels in a variable rather than only in dataTransfer, which is empty
+  // during dragover in several browsers - exactly when the decision has to be made.
+  // ---------------------------------------------------------------------------
+  let lifted = null;
+
+  /// Which side of a block the pointer is nearest. The outer fifth either way is a
+  /// side; anything else is above or below. A side band reaching to the middle would
+  /// make "drop it after this paragraph" nearly unhittable.
+  function dropZone(node, event, sides = true) {
+    const box = node.getBoundingClientRect();
+    const x = (event.clientX - box.left) / Math.max(1, box.width);
+    if (sides && x < 0.2) return "left";
+    if (sides && x > 0.8) return "right";
+    return event.clientY > box.top + box.height / 2 ? "below" : "above";
+  }
+
+  /// Whether putting one block beside another means anything.
+  ///
+  /// This face draws exactly one picture beside exactly one paragraph, and pairUp
+  /// refuses everything else - silently, which is the worst way to refuse. So the zone
+  /// is not lit in the first place, and the pointer falls back to above and below.
+  ///
+  /// A pair is named by the block a drop lands on, so half of one dropped on the other
+  /// side of its own pair names the pair rather than its sibling: that is asked about
+  /// here and answered in pairUp, or swapping sides would be the one arrangement the
+  /// gesture could not reach.
+  function canPair(moving, target) {
+    if (!moving || !target || moving === target) return false;
+
+    const other = pairPartner(moving, target);
+    if (!other || other === moving) return false;
+    if (!canDraw(moving) || !canDraw(other)) return false;
+
+    // Refused here rather than drawn badly. A table keeps the width its columns state,
+    // so two wide tables cannot both be a column - and saying so by not lighting the
+    // zone is the rule this face already follows: never offer a drop it will decline.
+    return sideBySideWidth(moving, other) !== null;
+  }
+
+  /// How wide the left-hand side would be, or null when the two do not fit beside one
+  /// another at all.
+  ///
+  /// One side is fixed and the other takes the rest. A picture is scaled to fit, since
+  /// its width is a choice; a table is not, since its columns are stated and do not
+  /// stretch. Two things that both take what they are given - two paragraphs - split the
+  /// band evenly, which is what a person dropping one beside the other plainly meant.
+  function sideBySideWidth(left, right) {
+    const band = bandWidth();
+    const gap = 4;
+    const room = band - gap;
+
+    const fixedLeft = naturalWidth(left);
+    const fixedRight = naturalWidth(right);
+
+    let width;
+    if (fixedLeft != null) width = left.$type === "ImageItem"
+                                    ? Math.min(fixedLeft, room - MIN_COLUMN)
+                                    : fixedLeft;
+    else if (fixedRight != null) width = right.$type === "ImageItem"
+                                    ? room - Math.min(fixedRight, room - MIN_COLUMN)
+                                    : room - fixedRight;
+    else width = room / 2;
+
+    if (!Number.isFinite(width)) return null;
+    if (width < MIN_COLUMN || room - width < MIN_COLUMN) return null;
+
+    return Math.round(width * 10) / 10;
+  }
+
+  /// What a block is really being put beside. Usually the target itself - but a drop
+  /// lands on a whole pair, so half of one dropped on its own pair means the other half.
+  function pairPartner(moving, target) {
+    return isPair(target) && (target.Childs || []).includes(moving)
+         ? target.Childs.find(c => c !== moving)
+         : target;
+  }
+
+  /// Draws the arrangement a drop would make: two halves for a side, a band across the
+  /// top or bottom for a move. Positioned rather than classed, so one pair of elements
+  /// serves all four answers and there is no state to keep in sync.
+  function showZone(node, zone) {
+    let zones = node.querySelector(".zones");
+    if (!zones) {
+      zones = document.createElement("div");
+      zones.className = "zones";
+      zones.appendChild(Object.assign(document.createElement("div"), { className: "zone taken" }));
+      zones.appendChild(Object.assign(document.createElement("div"), { className: "zone" }));
+      node.appendChild(zones);
+    }
+
+    const [taken, rest] = zones.querySelectorAll(".zone");
+    node.classList.add("landing");
+
+    // Left and right pair the two into one container, so both halves are drawn: this is
+    // the arrangement, not a position. Above and below reorder the body, so the band is
+    // where the block would sit and the rest is the target staying where it is.
+    const place = (el, top, right, bottom, left) => {
+      el.style.top = top; el.style.right = right;
+      el.style.bottom = bottom; el.style.left = left;
+      el.style.display = "block";
+    };
+
+    if (zone === "left")       { place(taken, "0", "52%", "0", "0");   place(rest, "0", "0", "0", "52%"); }
+    else if (zone === "right") { place(taken, "0", "0", "0", "52%");   place(rest, "0", "52%", "0", "0"); }
+    else if (zone === "above") { place(taken, "0", "0", "62%", "0");   place(rest, "42%", "0", "0", "0"); }
+    else                       { place(taken, "62%", "0", "0", "0");   place(rest, "0", "0", "42%", "0"); }
+  }
+
+  function hideZone(node) {
+    node.classList.remove("landing");
+  }
+
+  function dragBehaviour(node, item) {
+    liftBy(node, item);
+
+    node.addEventListener("dragover", e => {
+      if (!lifted || lifted === item) return;            // not ours, or onto itself
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      showZone(node, dropZone(node, e, canPair(lifted, item)));
+    });
+
+    node.addEventListener("dragleave", () => hideZone(node));
+
+    node.addEventListener("drop", e => {
+      if (!lifted || lifted === item) return;            // a foreign drop is not taken
+      e.preventDefault();
+
+      const zone = dropZone(node, e, canPair(lifted, item));
+      const moving = lifted;
+      lifted = null;
+
+      if (zone === "left" || zone === "right") { pairUp(moving, item, zone); return; }
+
+      // Out of wherever it was first - which may dissolve the pair it was half of, and
+      // may therefore be the pair we are dropping onto. That is why the target is looked
+      // up again afterwards rather than measured beforehand.
+      const was = detach(moving);
+      const kids = body().Childs;
+      let to = kids.indexOf(item);
+      if (to < 0) to = Math.max(0, Math.min(was, kids.length));
+      if (zone === "below") to++;
+
+      loosen(moving);
+      kids.splice(Math.max(0, Math.min(to, kids.length)), 0, moving);
+      current = null;
+      draw();
+      focusBlock(body().Childs.indexOf(moving));
+    });
+  }
+
+  /// The one thing a block - or half of one - is dragged by.
+  ///
+  /// Its own element, never the block and never something inside it. A block is often a
+  /// contenteditable, where the browser would rather select text than start a drag; and
+  /// half of a pair is a picture, where the gesture is ambiguous even to a person.
+  function liftBy(node, item, what = "editor.moveBlock") {
+    const grab = document.createElement("div");
+    grab.className = "handle";
+    grab.textContent = "\u2237";
+    // What it is AND what this does. The kind used to float beside the text on hover,
+    // which is a great deal of chrome for something you want to know once - and it sat in
+    // the page's own margin, over the paper, where nothing else in this face draws.
+    // Pointing at the handle is the moment the question is actually being asked.
+    grab.title = labelOf(item.$type) + " \u2014 " + t(what);
+    grab.draggable = true;
+    node.appendChild(grab);
+
+    grab.addEventListener("dragstart", e => {
+      lifted = item;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", "");     // Firefox starts no drag without it
+      node.classList.add("lifted");
+    });
+
+    grab.addEventListener("dragend", () => {
+      lifted = null;
+      el("sheet").querySelectorAll(".block, .cell").forEach(b => {
+        b.classList.remove("landing", "lifted");
+      });
+    });
+  }
+
+  /// Takes an item out of wherever it lives and says where in the body that was.
+  ///
+  /// A pair that loses a child stops being a pair: the one left over takes its place in
+  /// the body. That is what makes the gesture reversible - without it, dropping a
+  /// picture beside a paragraph turned two blocks into one and there was no way back.
+  /// Worse, with nothing else on the sheet there was then nothing left to drop onto,
+  /// which reads as "drag and drop stopped working" rather than as a one-way door.
+  function detach(item) {
+    const kids = body().Childs;
+    const at = kids.indexOf(item);
+    if (at >= 0) { kids.splice(at, 1); return at; }
+
+    for (let i = 0; i < kids.length; i++) {
+      const pair = kids[i];
+      if (!isPair(pair)) continue;
+      const j = (pair.Childs || []).indexOf(item);
+      if (j < 0) continue;
+
+      pair.Childs.splice(j, 1);
+      const alone = pair.Childs[0];
+      loosen(alone);
+      kids.splice(i, 1, alone);
+      return i;
+    }
+
+    // And out of a table cell. What is left behind is an empty cell rather than a hole:
+    // a row handing back fewer cells than the table has columns is refused outright by a
+    // conformance checker and unreadable aloud (CLAUDE.md §11).
+    for (let i = 0; i < kids.length; i++) {
+      if (kids[i].$type !== "TableItem") continue;
+      for (const row of kids[i].Childs || []) {
+        const j = (row.Childs || []).indexOf(item);
+        if (j >= 0) { row.Childs[j] = emptyCell(); return i; }
+
+        // Or out of a stack inside one. A stack down to a single block stops being a
+        // stack, the same way a pair down to one stops being a pair: the block left over
+        // takes its place, or the tree keeps a wrapper nobody asked for.
+        for (let c = 0; c < (row.Childs || []).length; c++) {
+          const held = row.Childs[c];
+          if (!isStack(held)) continue;
+
+          const k = (held.Childs || []).indexOf(item);
+          if (k < 0) continue;
+
+          held.Childs.splice(k, 1);
+          if (held.Childs.length === 1) row.Childs[c] = held.Childs[0];
+          else if (held.Childs.length === 0) row.Childs[c] = emptyCell();
+          return i;
+        }
+      }
+    }
+
+    // A stack loose in the body, for the same reason.
+    for (let i = 0; i < kids.length; i++) {
+      if (!isStack(kids[i])) continue;
+
+      const j = (kids[i].Childs || []).indexOf(item);
+      if (j < 0) continue;
+
+      kids[i].Childs.splice(j, 1);
+      if (kids[i].Childs.length === 1) { loosen(kids[i].Childs[0]); kids.splice(i, 1, kids[i].Childs[0]); }
+      else if (kids[i].Childs.length === 0) kids.splice(i, 1);
+      return i;
+    }
+
+    return kids.length;
+  }
+
+  /// Undoes what pairUp pinned down. A block back in the flow is placed by the flow, so
+  /// it carries no coordinates - but it keeps its width, which is the author's and not
+  /// something the pair gave it.
+  function loosen(item) {
+    const loc = ((item.Style ??= {}).Location ??= {});
+    loc.LeftValue = "NaN";
+    loc.RightValue = "NaN";
+    loc.Dock = "None";
+  }
+
+  /// Puts one block beside another, as a container laid out absolutely.
+  ///
+  /// Anything this face can draw may go beside anything else it can draw - a picture, a
+  /// paragraph, a table, a rule - because the engine has always been able to lay them out
+  /// that way and only this face was narrower. What decides it is geometry rather than
+  /// type: one side is fixed and the other takes the rest, and a pairing with no room
+  /// left to read in is refused before the zone is ever lit.
+  ///
+  /// Wrapped on demand rather than always. Giving every paragraph a container of its own
+  /// would double the depth of the tree and the size of the file so that a rare
+  /// arrangement could be expressed - and every reader of the template, the designer's
+  /// tree and the validator's path alike, would say Body > Group > AdvancedText for a
+  /// plain paragraph.
+  function pairUp(moving, target, side) {
+    if (!moving || !target || moving === target) { draw(); return; }
+
+    // Dropping half of a pair on the other side of its own pair is a swap, and what it
+    // landed on is the pair, which is neither a picture nor a paragraph - so this used
+    // to fall straight through the test below and do nothing at all. The only way to
+    // move a picture from the right to the left was to take it out first, which is
+    // exactly how it was reported.
+    target = pairPartner(moving, target);
+    if (moving === target) { draw(); return; }
+
+    if (!canDraw(moving) || !canDraw(target)) { draw(); return; }
+
+    // Which one ends up on the left. `side` says where the moving block was dropped.
+    const leftItem = side === "left" ? moving : target;
+    const rightItem = side === "left" ? target : moving;
+
+    const width = sideBySideWidth(leftItem, rightItem);
+    if (width === null) { draw(); return; }
+
+    const gap = 4;
+    const band = bandWidth();
+
+    // A picture is resized to the column it was given; anything else keeps what it has,
+    // because its width is stated rather than chosen. Writing a width onto a table would
+    // widen its frame and leave its cells where the columns put them.
+    if (leftItem.$type === "ImageItem") leftItem.Style.Location.WidthValue = width;
+    if (rightItem.$type === "ImageItem")
+      rightItem.Style.Location.WidthValue = Math.round((band - width - gap) * 10) / 10;
+
+    leftItem.Style.Location.LeftValue = 0;
+    leftItem.Style.Location.RightValue = "NaN";
+    leftItem.Style.Location.Dock = "None";
+
+    rightItem.Style.Location.LeftValue = Math.round((width + gap) * 10) / 10;
+    rightItem.Style.Location.RightValue = "NaN";
+    rightItem.Style.Location.Dock = "Right";
+
+    const pair = newItem("ContainerItem");
+    pair.Layout = "Absolute";
+    pair.Childs = [leftItem, rightItem];
+
+    // Both originals leave wherever they are - either may be half of another pair, and
+    // taking one out dissolves that pair, which moves everything after it. So the
+    // target's place is asked for after the moving one has gone, never before.
+    detach(moving);
+    const at = detach(target);
+    const kids = body().Childs;
+    kids.splice(Math.max(0, Math.min(at, kids.length)), 0, pair);
+
+    current = null;
+    draw();
+    focusBlock(body().Childs.indexOf(pair));
+  }
+
+  /// Takes what is in the editable and puts it in the model. The input handler does
+  /// this too; this is for the paths that change the text without typing it.
+  function readSurface() {
+    const item = currentItem();
+    if (!item || item.$type !== "AdvancedTextItem") return;
+
+    // Never `current` itself. Both the surface and the block around it call
+    // markCurrent, the event bubbles, and the block is the one that runs last - so
+    // `current` is the block and reading it would take the drag handle in along with
+    // the paragraph. Where the text lives is asked for, not assumed.
+    const surface = editableIn(current);
+    if (!surface) return;
+
+    const runs = surfaceToRuns(surface);
+    item.Runs = runs.length ? runs : [{ Text: "", Font: null }];
+    runChecks();
+  }
+
+  /// The editable inside a block, or the block's own if it is one. What the caret and
+  /// the arrow keys are really about - the block around it is furniture.
+  function editableIn(node) {
+    if (!node) return null;
+    if (node.isContentEditable) return node;
+    return node.querySelector ? node.querySelector(".surface") : null;
+  }
+
+  function markCurrent(node) {
+    if (current === node) return;
+    pending = null;              // a style armed in one block is not owed to the next
+
+    // AND NEITHER IS THE SELECTION. `cached` is a pair of offsets into the block it was
+    // made in; carried into another block it addresses whatever happens to sit at those
+    // numbers, and showActiveStyles - called on the line below - paints the toolbar from
+    // it. Reported as the swatch flashing the colour of a run in the block you just left
+    // before settling on the right answer a moment later, when selectionchange arrives
+    // with the truth. Firefox never showed it; Chrome did.
+    //
+    // Null is not "no answer" here, it is "not yet": the lists fall to the document's
+    // default and the swatch to nothing, which is what an unasked question looks like.
+    cached = null;
+    if (current) current.classList.remove("here");
+    current = node;
+    if (current) current.classList.add("here");
+    showActiveStyles();
+  }
+
+  function currentItem() {
+    return current ? current._item || null : null;
+  }
+
+  /// The top-level block the caret is in, whether it is that block or a cell inside a
+  /// pair. What move and remove operate on: moving half a pair would mean taking a
+  /// picture out of the paragraph it belongs beside.
+  function currentBlock() {
+    let node = current;
+    while (node && node.dataset.index === undefined) node = node.parentNode;
+    return node;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Typing gestures. Enter makes a new block rather than a line inside this one -
+  // that is the whole difference between a block editor and a text box, and it is
+  // what keeps a paragraph a paragraph in the model.
+  // ---------------------------------------------------------------------------
+  const onKeyDown = e => {
+    if (!current) return;
+
+    // Moving comes first, and on purpose: it is the one gesture that has to work on
+    // every block. Guarding the whole handler on isContentEditable is what made a
+    // picture unmovable - it is the only block that is not editable, and moving it is
+    // exactly what somebody had just been refused a drag for.
+    if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      moveBlock(e.key === "ArrowUp" ? -1 : 1);
+      return;
+    }
+
+    // Two different things, asked for by name.
+    //
+    // `current` is the block, or a cell of a pair - never the editable inside it: the
+    // surface and the block both marked themselves and the block, running last, always
+    // won. So `current.isContentEditable` was false for every paragraph in the
+    // document, and the guard below - meant to let a picture past - was instead
+    // swallowing Enter, Backspace and the arrow keys for everything else.
+    // The same fault as the one this guard was written to fix, one split later.
+    const caret = editableIn(current);
+    const block = currentBlock();
+
+    // A picture has no caret, so Delete is the only way to be rid of it from the
+    // keyboard. Backspace below needs one and would do nothing here.
+    if (!caret && (e.key === "Delete" || e.key === "Backspace")) {
+      e.preventDefault();
+      removeCurrent();
+      return;
+    }
+
+    if (!caret) return;                       // everything below is about a caret
+
+    // Enter breaks the line inside the paragraph; shift+Enter starts a new block.
+    //
+    // The other way round is the usual convention and it is wrong here: a block is a
+    // paragraph of the document, and wanting a second line of the same paragraph is
+    // far commoner than wanting a second paragraph. The rarer thing takes the modifier.
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.shiftKey) { insertAfterCurrent(emptyParagraph()); return; }
+
+      document.execCommand("insertLineBreak");
+
+      // Read back at once rather than waiting for an input event. execCommand does not
+      // reliably raise one, and a break the model never heard about is a break that is
+      // on the page and not in the document: it looks right until the next redraw - the
+      // next redraw being whenever a picture is inserted, which is exactly when somebody
+      // reported the whole paragraph collapsing onto one line.
+      readSurface();
+      return;
+    }
+
+    // Up and down have to be carried across the boundary by hand. A browser moves a
+    // caret inside one editable element and stops at its edge; with a contenteditable
+    // per block - the decision this whole face rests on - the blocks are separate
+    // elements, so nothing crosses between them unless this does it.
+    //
+    // It is not a cost of the architecture so much as its bill: the same separation
+    // that keeps a picture from being a foreign body inside flowing text is what
+    // makes two paragraphs two elements.
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      const step = e.key === "ArrowUp" ? -1 : 1;
+      if (!atEdge(caret, step)) return;               // still room to move inside this block
+      if (!block) return;
+
+      const kids = body().Childs;
+      const next = Number(block.dataset.index) + step;
+      if (next < 0 || next >= kids.length) return;    // the ends of the document stay put
+
+      e.preventDefault();
+      focusBlock(next, step < 0 ? "end" : "start");
+      return;
+    }
+
+    // Backspace in an empty block removes it and puts the caret in the one before -
+    // the gesture everyone already has in their fingers.
+    // The surface, not the block: a block also carries a drag handle, whose text is
+    // never empty, so asked of the block this was false in every paragraph there is.
+    if (e.key === "Backspace" && caret.textContent.trim() === "" && block) {
+      const kids = body().Childs;
+      const at = Number(block.dataset.index);
+      if (kids.length > 1) {
+        e.preventDefault();
+        kids.splice(at, 1);
+        current = null;
+        draw();
+        focusBlock(Math.max(0, at - 1));
+      }
+    }
+  };
+
+  /// Moves the block being edited one place up or down, and keeps the caret in it.
+  function moveBlock(step) {
+    const block = currentBlock();
+    if (!block) return;
+    const kids = body().Childs;
+    const at = Number(block.dataset.index);
+    const to = at + step;
+    if (to < 0 || to >= kids.length) return;
+
+    const [item] = kids.splice(at, 1);
+    kids.splice(to, 0, item);
+    current = null;
+    draw();
+    focusBlock(to);
+  }
+
+  function insertAfterCurrent(item) {
+    // Standing in an empty cell, a picture goes in the cell - not after the whole
+    // table, which is what "after the current block" means for anything inside one.
+    const cell = currentItem();
+    if (current && current._row && canDropInCell(item, cell)) {
+      putInCell(current._row, current._at, item);
+      fitToCell(item, current._table, current._at);
+      current = null;
+      draw();
+      return;
+    }
+
+    const kids = body().Childs;
+    const block = currentBlock();
+    const at = block ? Number(block.dataset.index) + 1 : kids.length;
+    kids.splice(at, 0, item);
+    current = null;
+    draw();
+    focusBlock(at);
+  }
+
+  // --- merge fields -----------------------------------------------------------------
+  //
+  // What the host will fill in when it prints: a recipient's name, a case number, an
+  // amount, a date, a signature. The host offers them (`fields`), and a field goes in as
+  // its token - `{Recipient.Name}` - which the engine has always bound from the data.
+  //
+  // The type is for the menu and nothing else: values arrive formatted by the host, the
+  // engine stays neutral, and a document mixing euros, dollars and Pacific francs is the
+  // host's to write - "le métier n'est pas là". The one type that changes what is
+  // inserted is a picture, which is a block of its own filled from the data
+  // (ImageItem.SourceField), not a token in a sentence.
+  //
+  // And a list - the lines of an invoice, the parties to a case - which is inserted as a
+  // table repeated over it (RepeatOver): a header of its fields' labels, one row of their
+  // tokens, stamped out by the engine once per entry. Its fields are the host's too, named
+  // relative to an entry, and offered first in the menu while the caret is in that row.
+  const FIELD_KINDS = ["text", "number", "decimal", "currency", "date", "datetime", "list", "image"];
+  let fieldSource = seams.fields || null;
+  let fields = [];
+
+  /// A catalogue as a host may hand it over: entries with a path, a label, a kind and a
+  /// sample - a path alone will do, braces or not - and anything else left out.
+  function fieldsFrom(list) {
+    return (Array.isArray(list) ? list : []).map(entry => {
+      const raw = typeof entry === "string" ? entry : (entry && entry.path) || "";
+      const path = String(raw).trim().replace(/^\{\s*|\s*\}$/g, "").trim();
+      const said = entry && typeof entry === "object" ? entry : {};
+      const kind = String(said.type || "text").toLowerCase();
+      const type = FIELD_KINDS.includes(kind) ? kind : "text";
+      return {
+        path,
+        label: String(said.label || path),
+        type,
+        sample: said.sample == null ? "" : String(said.sample),
+        // A list's own fields, one level down: a list inside a list would be a table in a
+        // cell, which this face does not draw.
+        fields: type === "list" ? fieldsFrom(said.fields).filter(child => child.type !== "list") : [],
+      };
+    }).filter(field => field.path);
+  }
+
+  /// The list the caret's row repeats over, when it is in a repeated row of a table whose
+  /// list the host described - null anywhere else, the header row included, since a header
+  /// is printed once and a token there would read the whole data, not an entry.
+  function listHere() {
+    const table = current && current._table;
+    const row = current && current._row;
+    const over = table && row && !row.IsHeader ? (table.RepeatOver || "").trim() : "";
+    return over ? fields.find(field => field.type === "list" && field.path === over) || null : null;
+  }
+
+  /// Asks for the catalogue - a list, a function returning one, or a promise of either -
+  /// and shows the button once there is something in it.
+  function loadFields() {
+    // Said rather than left to the markup's `hidden`: the button shows the catalogue in
+    // hand - none at first - until the one asked for arrives.
+    wire("fieldsTool", n => { n.hidden = fields.length === 0; });
+    const asked = fieldSource;
+    const take = list => {
+      if (fieldSource !== asked) return;
+      fields = fieldsFrom(list);
+      wire("fieldsTool", n => { n.hidden = fields.length === 0; });
+      draw();                // a picture from the data may have a sample to show now
+    };
+    let answer;
+    try { answer = typeof asked === "function" ? asked() : asked; } catch { answer = []; }
+    if (answer && typeof answer.then === "function") answer.then(take, () => take([]));
+    else take(answer);
+  }
+
+  function fieldAt(path) {
+    return fields.find(field => field.path === path) || null;
+  }
+
+  /// The menu: grouped by kind, each entry its label over its path and, when the host gave
+  /// one, the sample it stands for - which is what tells two similar labels apart.
+  function fillFieldMenu() {
+    const menu = el("fieldMenu");
+    if (!menu) return;
+    menu.innerHTML = "";
+
+    // In a repeated row, what that row can say first: its list's fields, by their names
+    // within an entry. They are what belongs there; the rest still follows.
+    const here = listHere();
+    const groups = [];
+    if (here && here.fields.length)
+      groups.push({ heading: t("fields.eachLine", { list: here.label }), entries: here.fields });
+    for (const kind of FIELD_KINDS)
+      groups.push({ heading: t("fieldType." + kind), kind, entries: fields.filter(field => field.type === kind) });
+
+    for (const group of groups) {
+      if (!group.entries.length) continue;
+      const kind = group.kind;
+      const heading = document.createElement("div");
+      heading.className = "kind";
+      heading.textContent = group.heading;
+      menu.appendChild(heading);
+      for (const field of group.entries) {
+        const button = document.createElement("button");
+        const label = document.createElement("span");
+        label.textContent = field.label;
+        const detail = document.createElement("small");
+        detail.textContent = "{" + field.path + "}"
+          + (field.type === "list" ? " - " + field.fields.map(child => child.label).join(", ")
+             : field.sample && field.type !== "image" ? " - " + field.sample : "");
+        button.appendChild(label);
+        button.appendChild(detail);
+        // Pressed without taking the focus, so the caret is still where it goes.
+        button.addEventListener("mousedown", e => e.preventDefault());
+        button.onclick = e => { e.stopPropagation(); closeFields(); insertField(field); };
+        menu.appendChild(button);
+      }
+    }
+  }
+
+  function closeFields() { const menu = el("fieldMenu"); if (menu) menu.hidden = true; }
+
+  /// Puts a field where the caret is. Typed in the way a paste is - execCommand, so the
+  /// token lands in the run the caret is in, takes that run's style, and is undone by the
+  /// same Ctrl+Z as a word typed by hand - and read back at once, since execCommand does
+  /// not reliably raise the input event (the lesson the line break paid for).
+  ///
+  /// With no paragraph under the caret it starts one; a picture is a block of its own.
+  function insertField(field) {
+    if (field.type === "image") { insertAfterCurrent(pictureField(field)); return; }
+    if (field.type === "list") { insertAfterCurrent(listTable(field)); return; }
+
+    const token = "{" + field.path + "}";
+    const item = currentItem();
+    const surface = editableIn(current);
+    if (!item || item.$type !== "AdvancedTextItem" || !surface) {
+      const paragraph = emptyParagraph();
+      paragraph.Runs = [{ Text: token, Font: null }];
+      insertAfterCurrent(paragraph);
+      return;
+    }
+
+    // Where the caret was when the menu opened: `cached` kept it, the menu kept the focus
+    // off, and putting it back costs nothing when it never moved.
+    const end = surface.textContent.length;
+    const at = cached || { start: end, end };
+    surface.focus();
+    const sel = selection();
+    sel.removeAllRanges();
+    sel.addRange(rangeAt(surface, at.start, at.end));
+    document.execCommand("insertText", false, token);
+    readSurface();
+  }
+
+  /// A table repeated over a list: a column per field of the list, its label in the header
+  /// row and its token in the one row the engine stamps out per entry. A list the host gave
+  /// no fields for still makes a table - one column, headed by the list, waiting for tokens.
+  function listTable(field) {
+    const table = newTable();
+    const columns = field.fields.length ? field.fields : [{ path: "", label: field.label, type: "text" }];
+    const text = words => { const cell = emptyCell(); cell.Runs = [{ Text: words, Font: null }]; return cell; };
+
+    table.Columns = columns.map(() => ({ Width: "NaN", WidthUnit: "Millimeter" }));
+    const [head, line] = table.Childs;
+    head.Childs = columns.map(column => text(column.label));
+    line.Childs = columns.map(column => {
+      if (column.type !== "image") return text(column.path ? "{" + column.path + "}" : "");
+      const picture = pictureField(column);
+      picture.Style.Location.WidthValue = Math.min(40, bandWidth() / columns.length);
+      return picture;
+    });
+    table.RepeatOver = field.path;
+    return table;
+  }
+
+  /// A picture the data fills in: no bytes of its own, the field's path to find them by,
+  /// and its label as what a screen reader says - a description the person can change, and
+  /// better than the nothing PDF/UA refuses.
+  function pictureField(field) {
+    const item = newItem("ImageItem");
+    item.SourceField = field.path;
+    item.AltText = field.label;
+    item.Style.Location.WidthValue = Math.min(40, bandWidth());
+    return item;
+  }
+
+  /// The frame shown for a picture from the data with no sample: dashed, in the paper's
+  /// placeholder colours - the ones the designer draws an empty picture in - and saying
+  /// where the picture will come from.
+  function pictureFromData(path, item) {
+    const w = 400;
+    const h = Math.max(60, Math.round(w * (Number(item.NaturalHeight) || 20) / (Number(item.NaturalWidth) || 40)));
+    const words = t("editor.fromData", { path });
+    const size = Math.max(10, Math.min(24, Math.floor(700 / Math.max(1, words.length))));
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">`
+      + `<rect x="2" y="2" width="${w - 4}" height="${h - 4}" fill="${ON_PAPER.placeholderFill}"`
+      + ` stroke="${ON_PAPER.placeholderLine}" stroke-width="3" stroke-dasharray="12 8"/>`
+      + `<text x="${w / 2}" y="${h / 2}" text-anchor="middle" dominant-baseline="middle"`
+      + ` font-family="sans-serif" font-size="${size}" fill="${ON_PAPER.placeholderInk}">${esc(words)}</text></svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
+  /// Puts the caret in a block. Coming from above it lands at the start and from
+  /// below at the end, so arrowing through the document reads as one continuous move
+  /// rather than jumping to the same corner of every block.
+  function focusBlock(index, where = "end") {
+    const block = el("sheet").querySelector(`.block[data-index="${index}"]`);
+    if (!block) return;
+
+    markCurrent(block);
+
+    const node = editableIn(block);
+    if (!node) { block.focus(); return; }
+
+    node.focus();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(where === "start");
+    const sel = selection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  /// Whether the caret has nowhere left to go inside this block in that direction.
+  /// Measured by where the caret is drawn rather than by counting characters, because
+  /// a wrapped paragraph has several visual lines and only the first and last of them
+  /// are edges - which is what makes the arrow feel right in a long paragraph.
+  function atEdge(node, step) {
+    const sel = selection();
+    if (!sel || sel.rangeCount === 0) return true;
+
+    const caret = sel.getRangeAt(0).cloneRange();
+    caret.collapse(true);
+    const at = caret.getClientRects()[0] || node.getBoundingClientRect();
+    const box = node.getBoundingClientRect();
+
+    // Half a line of tolerance: the caret's own rectangle is the height of the line
+    // it sits on, so comparing edges exactly would never match.
+    const slack = at.height ? at.height / 2 : 4;
+    return step < 0 ? at.top - box.top <= slack : box.bottom - at.bottom <= slack;
+  }
+
+  // ---------------------------------------------------------------------------
+  // The style toolbar. The selection is cached the moment it changes, because
+  // focusing any control clears it - the lesson the designer's dialog paid for:
+  // never re-read the live selection at the moment a control fires.
+  // ---------------------------------------------------------------------------
+  let cached = null;
+
+  const onSelectionChange = () => {
+    const sel = selection();
+    // The surface, asked for. `current` is the block, which is not editable - so this
+    // gave up on every selection there has ever been since the text moved into a
+    // surface of its own, and the whole toolbar went quiet with it: bold, italic,
+    // colour and size all read `cached`, and nothing ever set it.
+    const caret = editableIn(current);
+    if (!sel || sel.rangeCount === 0 || !caret) return;
+    const range = sel.getRangeAt(0);
+    if (!caret.contains(range.commonAncestorContainer)) return;
+    cached = offsetsIn(caret, range);
+    showActiveStyles();
+  };
+
+  /// The selection as offsets into the block's flat text. A Range speaks in nodes and
+  /// offsets within them; runs are a flat string. This converts one to the other.
+  function offsetsIn(host, range) {
+    const before = document.createRange();
+    before.selectNodeContents(host);
+    before.setEnd(range.startContainer, range.startOffset);
+    const start = before.toString().length;
+    return { start, end: start + range.toString().length };
+  }
+
+  /// The inverse of `offsetsIn`: a range over the flat character offsets of a host's
+  /// text, so a selection can be put back where it was once the sheet has been rebuilt.
+  ///
+  /// `document.createRange` and not `uiRoot.createRange`: a ShadowRoot has no such
+  /// method, which is the seam §5c-quater is about, and `focusBlock` already asks the
+  /// document for the same reason.
+  function rangeAt(host, start, end) {
+    const range = document.createRange();
+    range.selectNodeContents(host);
+
+    const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+    let at = 0, node, opened = false;
+
+    while ((node = walker.nextNode())) {
+      const to = at + node.textContent.length;
+      if (!opened && start <= to) { range.setStart(node, start - at); opened = true; }
+      if (opened && end <= to) { range.setEnd(node, end - at); return range; }
+      at = to;
+    }
+    return range;              // past the end: the whole of it, which is the honest answer
+  }
+
+  /// Puts a block back under the caret with the same characters selected as before the
+  /// sheet was redrawn.
+  ///
+  /// Applying a style rebuilds the sheet from the model, so every node the selection
+  /// pointed at is gone; `focusBlock` then collapsed the caret to the **end** of the
+  /// paragraph. Bold worked, and the words stopped being selected - which is exactly the
+  /// gesture a person repeats: select, bold, italic. The buttons already went to the
+  /// trouble of a `preventDefault` on mousedown to hold the selection while pressed, and
+  /// the redraw undid it a line later.
+  ///
+  /// `cached` is recomputed from the range actually laid rather than from the numbers
+  /// asked for, so what the toolbar reads and what the page shows cannot disagree.
+  function reselect(index, at) {
+    const block = el("sheet").querySelector(`.block[data-index="${index}"]`);
+    const node = block && editableIn(block);
+    if (!node) { focusBlock(index); return; }
+
+    markCurrent(block);
+    node.focus();
+
+    const range = rangeAt(node, at.start, at.end);
+    const sel = selection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    cached = offsetsIn(node, range);
+    showActiveStyles();
+  }
+
+  /// Which runs the selection covers. Shared by applying a style and by lighting the
+  /// buttons that are already on, so the two can never disagree about what is
+  /// selected.
+  function selectedRuns(runs) {
+    const touched = [];
+    let at = 0;
+    for (const run of runs) {
+      const from = at, to = at + run.Text.length;
+      at = to;
+      if (from >= cached.start && to <= cached.end) touched.push(run);
+    }
+    return touched;
+  }
+
+  /// The run the caret is standing in - the one the character to its left belongs to,
+  /// which is the one a new character would join. At the very start of a paragraph there
+  /// is nothing to the left, so the first run answers.
+  function runAtCaret(item) {
+    const runs = item && item.Runs ? item.Runs : [];
+    if (!runs.length || !cached) return null;
+
+    const want = Math.max(0, cached.start - 1);
+    let at = 0;
+    for (const run of runs) {
+      const to = at + run.Text.length;
+      if (want < to) return run;
+      at = to;
+    }
+    return runs[runs.length - 1];
+  }
+
+  /// The ink the swatch button applies, and shows.
+  ///
+  /// It used to be the last colour chosen and nothing else - "not read off the selection,
+  /// which is what the same colour again means". That was a decision and it was the wrong
+  /// one, for the reason written fifteen lines below about the size list: B, I, U, S and
+  /// both alignments all report what is there, so a control in that row that reports
+  /// nothing is the odd one out. Reported from the browser exactly that way.
+  ///
+  /// So it follows the caret WHERE THE CARET HAS AN OPINION, and otherwise keeps what was
+  /// last chosen. That is what saves "the same colour again": move onto plain text and
+  /// the swatch still holds your red, ready to press. Move onto red text and it says red,
+  /// which is the truth and applies harmlessly.
+  let currentInk = null;
+
+  /// What the swatch shows: the caret's colour if the text has one, else the last chosen.
+  /// One value, so the button cannot show one colour and apply another.
+  let shownInk = null;
+
+  function showInk(colour) {
+    shownInk = colour;
+    const well = el("well");
+    if (well) well.style.background = colour ? hex(colour) : "transparent";
+  }
+
+  /// How many colours a document remembers. Enough to cover a house style twice over,
+  /// few enough that the grid stays one glance.
+  const SWATCH_LIMIT = 16;
+
+  function closeInk() { const menu = el("inkMenu"); if (menu) menu.hidden = true; }
+
+  /// Applies a colour and remembers it. `null` is "no colour of its own", which is a
+  /// choice and not an absence, so it applies and is not remembered.
+  function setInk(colour) {
+    currentInk = colour;
+    showInk(colour);
+    if (colour) rememberInk(colour);
+    applyStyle("Color", colour);
+    fillSwatches();
+  }
+
+  /// Most recent first, and never the same colour twice. Kept on the report, so it is in
+  /// the file: a history in the editor's own settings would be somebody else's history
+  /// the moment the document was opened anywhere but here.
+  function rememberInk(colour) {
+    const key = hex(colour);
+    const kept = (report.Swatches || []).filter(c => hex(c) !== key);
+    report.Swatches = [colour, ...kept].slice(0, SWATCH_LIMIT);
+  }
+
+  /// The colours actually on the page. What a document that carries no list is offered
+  /// instead - an imported template would otherwise open with an empty grid while its own
+  /// text is in three colours.
+  function inkInUse() {
+    const seen = new Map();
+    const note = font => {
+      if (font && font.Color) seen.set(hex(font.Color), font.Color);
+    };
+    (function walk(item) {
+      if (!item) return;
+      note(item.Font);
+      (item.Runs || []).forEach(run => note(run.Font));
+      (item.Childs || []).forEach(walk);
+    })(body());
+    return [...seen.values()].slice(0, SWATCH_LIMIT);
+  }
+
+  /// The grid inside the menu. Built each time it opens rather than kept in step, because
+  /// the list changes on every colour applied and a grid that is one behind is worse than
+  /// none - it offers the colour before last under the name of the last.
+  function fillSwatches() {
+    const host = el("inkSwatches");
+    if (!host) return;
+
+    const list = (report.Swatches && report.Swatches.length) ? report.Swatches : inkInUse();
+    host.innerHTML = "";
+
+    // First, and it is a swatch like the others: "no colour" is the choice of not
+    // having one, which is a choice about colour. First because that is where every
+    // colour menu puts "none" or "automatic", and because it is the only cell that is
+    // always there - a grid whose first cell moves as the document gains colours is a
+    // grid you have to look at twice.
+    // Which one is ON. A menu of choices that does not say which is current is a menu
+    // you have to try - the same sentence written above showActiveStyles, and it applies
+    // to a grid of colours as much as to a row of buttons. "No colour" needed it most:
+    // it is the state most documents are in, and it looked exactly like the two
+    // alternatives beside it.
+    //
+    // Absent rather than null when a selection disagrees, so a mixed one marks nothing.
+    // Undefined here means "not asked" - the menu can be filled before there is any
+    // selection at all - and that marks nothing either.
+    const item = currentItem();
+    const seen = item && item.$type === "AdvancedTextItem" && cached
+               ? styled(item, cached.start !== cached.end) : {};
+    const now = "Color" in seen ? (seen.Color ? hex(seen.Color) : "") : null;
+
+    const none = document.createElement("button");
+    none.id = "colourClear";
+    none.className = "none";
+    none.title = t("richText.noColor");
+    if (now === "") none.classList.add("chosen");
+    none.onclick = e => { e.stopPropagation(); setInk(null); closeInk(); };
+    host.appendChild(none);
+
+    for (const colour of list) {
+      const swatch = document.createElement("button");
+      swatch.style.background = hex(colour);
+      swatch.title = hex(colour);
+      if (now === hex(colour)) swatch.classList.add("chosen");
+      swatch.onclick = e => { e.stopPropagation(); setInk(colour); closeInk(); };
+      host.appendChild(swatch);
+    }
+  }
+
+  /// A toolbar that does not show what is already on is a toolbar you have to try.
+  function showActiveStyles() {
+    const item = currentItem();
+    const on = new Set();
+
+    // Everything on the left of the toolbar goes through applyStyle, and applyStyle does
+    // nothing at all with a caret: "nothing selected: nothing to style". So with a caret
+    // sitting inside bold text, B was dark and inert - which reads as "this is not bold"
+    // when it means "there is nothing to make bold". Reported exactly that way, and in
+    // both faces.
+    //
+    // Dimmed rather than lit, because lighting it would be worse: pressing it would then
+    // do nothing, and a button that looks pressable and is not is section 10 wearing a
+    // toolbar. Telling the truth about the caret's own style needs a pending style the
+    // next keystroke picks up, which is a feature and not a fix.
+    //
+    // The same move the alignment buttons below already make, for the same reason.
+    const advanced = !!(item && item.$type === "AdvancedTextItem" && cached);
+    const styling = advanced && cached.start !== cached.end;
+
+    // With a caret rather than a selection, the buttons say what the NEXT character
+    // would be: the style of the run the caret stands in, with anything already armed
+    // laid over it. That is the question a person is asking when they look - and
+    // pressing one now arms it rather than doing nothing, so the button stays honest.
+    if (advanced && !styling) {
+      const run = runAtCaret(item);
+      const font = Object.assign({}, run && run.Font, pending && pending.font);
+      for (const key of ["Bold", "Italic", "Underline", "Strikethrough"])
+        if (font[key]) on.add(key);
+    }
+
+    if (styling) {
+      const runs = splitRunsAt(item.Runs || [], [cached.start, cached.end]);
+      const touched = selectedRuns(runs);
+      for (const key of ["Bold", "Italic", "Underline", "Strikethrough"])
+        if (touched.length && touched.every(r => r.Font && r.Font[key])) on.add(key);
+    }
+    uiAll("#toolbar [data-style]").forEach(b => {
+      b.classList.toggle("on", on.has(b.dataset.style));
+      b.disabled = !advanced;
+    });
+
+    for (const id of ["family", "colour", "colourClear", "colourApply", "colourOpen", "size"]) {
+      const control = el(id);
+      if (control) control.disabled = !advanced;
+    }
+
+    // And the two lists SAY what is under the caret, which they did not.
+    //
+    // Reported from the browser: move onto text set in Huge and the buttons all switch
+    // over while the size list stays where it was. The loop above only ever enabled
+    // them - it never gave either one a value - and the size list went further and put
+    // itself back to Normal after acting, on the reasoning that "it acts, it does not
+    // hold a state".
+    //
+    // That was a decision, and it was the wrong one for a control sitting in a row of
+    // stateful ones. B, I, U, S and both alignments all report what is there; a list
+    // that looks the same and reports nothing is the odd one out, and looking at it is
+    // how the fault was found.
+    //
+    // The colour swatch is deliberately NOT this, and stays as it is: it is a split
+    // button whose left half means "that colour again", so what it shows is the last
+    // colour chosen rather than the one under the caret. A different gesture, and it
+    // looks like one.
+    const shown = advanced ? styled(item, styling) : null;
+
+    // The swatch, in the same breath as the lists and for the same reason: it says what
+    // is there, INCLUDING that there is nothing there.
+    //
+    // It kept the last colour chosen over uncoloured text at first, on the argument that
+    // this is what saves "the same colour again". Reported as wrong, and rightly: every
+    // other control in this row reports absence as absence - B is unlit over plain text,
+    // it does not stay lit because you were bold a moment ago. A swatch showing red over
+    // black text is the same lie.
+    //
+    // What it costs: pressing the swatch over plain text now applies no colour, which is
+    // a no-op. Re-applying a remembered one is the chevron and a swatch - the menu keeps
+    // sixteen of them, which is where "the same colour again" really lives.
+    showInk(shown && "Color" in shown ? (shown.Color || null) : null);
+
+    // Blank is for a MIXED selection - setList says so itself, and it is the right answer
+    // there. "Nothing selected at all" is a third state and was being given the same
+    // answer: at mount, before any caret exists, `cached` is null, so both lists came up
+    // empty on a page that had just finished loading. Reported as a family list that has
+    // not loaded, on a page that had.
+    //
+    // With nothing selected the honest reading is the document's own default, which is
+    // what the next character would take - the same argument styled() already makes for a
+    // caret standing in a run that states nothing. The lists are disabled either way, so
+    // this changes what they SAY and not what they do.
+    const nothing = advanced ? null : "";
+
+    setList("family", shown && "Family" in shown ? (shown.Family || "") : nothing);
+    setList("size", shown && "Size" in shown
+                      ? (shown.Size == null ? "" : String(shown.Size))
+                      : nothing);
+
+    // Alignment is about the block, so it lights up from the block rather than from
+    // the selection - and it is dimmed where it would do nothing at all, which is
+    // every block that is neither a paragraph nor a picture.
+    const here = alignmentOf(item);
+    const down = verticalOf(item);
+    uiAll("#toolbar [data-valign]").forEach(b => {
+      b.classList.toggle("on", down === b.dataset.valign);
+      b.disabled = down === null;
+    });
+
+    uiAll("#toolbar [data-align]").forEach(b => {
+      b.classList.toggle("on", here === b.dataset.align);
+      b.disabled = here === null;
+      // Justify says nothing to a picture: the engine reads it as Left rather than
+      // distorting the picture, so offering it here would be a button that lies.
+      if (b.dataset.align === "Justify" && item && item.$type === "ImageItem") b.disabled = true;
+    });
+  }
+
+  /// Alignment belongs to the block, not to the selection: it is where the whole
+  /// paragraph sits between the margins, or where a picture sits across the frame the
+  /// layout granted it. Two properties, because a picture has no font - ImageItem
+  /// carries its own Alignment, and the engine reads Justify there as Left, since a
+  /// stretched picture is a distorted one.
+  function applyAlignment(how) {
+    const item = currentItem();
+    if (!item) return;
+
+    // A picture has no font, and the property that answers this for it already
+    // exists: Style.AlignHorizontal, which is what places any item of stated width
+    // across its band. Its words differ from a text's - Start/Center/End - because it
+    // also has to mean "wherever the coordinates put it", which alignment does not.
+    if (item.$type === "ImageItem")
+      item.Style.AlignHorizontal = how === "Center" ? "Center" : how === "Right" ? "End" : "Start";
+    else if (item.$type === "AdvancedTextItem") {
+      item.Font = item.Font || newFont();
+      item.Font.HorizontalAlignment = how;
+    } else return;
+
+    const index = Number((currentBlock() || {}).dataset?.index ?? 0);
+    const was = cached && { start: cached.start, end: cached.end };
+    draw();
+    if (was) reselect(index, was); else focusBlock(index);
+  }
+
+  /// Down the height of the pair. Only an absolutely laid out container consults it -
+  /// a block alone in the flow is as tall as it is, and there is nothing to sit inside.
+  function applyVertical(how) {
+    const item = currentItem();
+    if (!item || !insidePair()) return;
+    item.Style.AlignVertical = how;
+
+    const index = Number((currentBlock() || {}).dataset?.index ?? 0);
+    const was = cached && { start: cached.start, end: cached.end };
+    draw();
+    if (was) reselect(index, was); else focusBlock(index);
+  }
+
+  function verticalOf(item) {
+    if (!item || !insidePair()) return null;
+    return (item.Style && item.Style.AlignVertical) || "Start";
+  }
+
+  /// Whether what is being edited is half of a pair. The top-level block is the
+  /// container; the cell is the child, and only a child has room to move.
+  function insidePair() {
+    const block = currentBlock();
+    return !!block && block !== current && isPair(block._item);
+  }
+
+  /// Which alignment the block being edited already has, so the row shows it.
+  function alignmentOf(item) {
+    if (!item) return null;
+    if (item.$type === "ImageItem") {
+      const a = (item.Style && item.Style.AlignHorizontal) || "None";
+      return a === "Center" ? "Center" : a === "End" ? "Right" : "Left";
+    }
+    if (item.$type === "AdvancedTextItem") return (item.Font && item.Font.HorizontalAlignment) || "Left";
+    return null;
+  }
+
+  /// What the two lists should be showing: the font of the run under the caret, or the
+  /// font the whole selection agrees on.
+  ///
+  /// Agreement is the same rule the buttons already use - "every touched run" - and
+  /// disagreement returns the key ABSENT rather than null, because null is a value here
+  /// (it is what "Document default" and "Normal" mean). The two have to be told apart or
+  /// a mixed selection would claim to be normal.
+  function styled(item, styling) {
+    if (!styling) {
+      const run = runAtCaret(item);
+      const font = Object.assign({}, run && run.Font, pending && pending.font);
+
+      // Both keys named, whatever the caret found. A caret ALWAYS has an answer - the
+      // style the next character would take - and where the run says nothing, or there
+      // is no run at all because the paragraph is empty, that answer is the document's
+      // default. It is not "no answer".
+      //
+      // Written as a plain Object.assign this returned {} for an empty paragraph, both
+      // keys absent, and both lists drew themselves empty on a document that had only
+      // just opened. Then, a second later, the font list filled itself in on its own -
+      // which was the server's font list arriving and rebuilding the options, and looked
+      // for all the world like a page repairing itself.
+      return { Family: font.Family ?? null, Size: font.Size ?? null,
+               Color: font.Color ?? null };
+    }
+
+    const touched = selectedRuns(splitRunsAt(item.Runs || [], [cached.start, cached.end]));
+    if (!touched.length) return {};
+
+    const font = {};
+    for (const key of ["Family", "Size", "Color"]) {
+      const first = (touched[0].Font || {})[key] ?? null;
+      if (touched.every(r => ((r.Font || {})[key] ?? null) === first))
+        font[key] = first;
+    }
+    return font;
+  }
+
+  /// Puts a list on a value, or on nothing at all.
+  ///
+  /// Nothing at all - selectedIndex -1, which draws the list empty - is what a mixed
+  /// selection deserves and what a value with no option deserves. Leaving the previous
+  /// choice showing would be the list stating a size the text has not got, which is
+  /// worse than saying nothing: section 5c's "a face that records a choice without
+  /// drawing it", turned the other way round.
+  function setList(id, value) {
+    const list = el(id);
+    if (!list) return;
+
+    if (value === null) { list.selectedIndex = -1; return; }
+
+    list.value = value;
+    if (list.value !== value) list.selectedIndex = -1;
+  }
+
+  function applyStyle(key, value) {
+    const item = currentItem();
+    if (!item || item.$type !== "AdvancedTextItem" || !cached) return;
+
+    // Nothing selected: arm it for the next character instead of doing nothing. The
+    // button that lights above has to be pressable, or it is a lit button that lies.
+    if (cached.start === cached.end) {
+      const font = Object.assign({}, runAtCaret(item) && runAtCaret(item).Font,
+                                 pending && pending.font);
+      if (value === undefined) font[key] = !font[key];   // a boolean toggles
+      else font[key] = value;
+
+      pending = { font, at: cached.start };
+      showActiveStyles();
+      return;
+    }
+
+    const runs = splitRunsAt(item.Runs || [], [cached.start, cached.end]);
+    const touched = selectedRuns(runs);
+
+    // A boolean turns off only when every selected run already has it on - the same
+    // "apply it twice to remove it" any toolbar gives.
+    const boolean = value === undefined;
+    const allOn = boolean && touched.every(r => r.Font && r.Font[key]);
+
+    for (const run of touched) {
+      run.Font = run.Font || {};
+      if (boolean) run.Font[key] = allOn ? null : true;
+      else run.Font[key] = value;
+      if (Object.keys(run.Font).every(k => run.Font[k] == null)) run.Font = null;
+    }
+
+    item.Runs = mergeSameStyleRuns(runs);
+    const index = Number((currentBlock() || {}).dataset?.index ?? 0);
+    const was = { start: cached.start, end: cached.end };
+    draw();
+    reselect(index, was);
+  }
+
+  // ---------------------------------------------------------------------------
+  // The checks. A face may drop tools; it may never drop this panel - a simplified
+  // editor that quietly produces a document veraPDF refuses is the worst thing this
+  // project could ship.
+  // ---------------------------------------------------------------------------
+  function runChecks() {
+    const issues = validate(report, {
+      sound: true, accessible: true, capable: true, target: renderTarget
+    });
+
+    // Always, whoever is listening. Before the panel, so a host is told even about a
+    // document the panel is in the middle of failing to paint.
+    if (onChecks) onChecks(issues);
+
+    const count = el("count");
+    if (!count) return issues;
+
+    const errors = issues.filter(i => i.level === "error").length;
+    count.textContent = issues.length
+      ? t("issues.count", { errors, warnings: issues.length - errors })
+      : t("issues.none");
+    count.className = "count " + (errors ? "bad" : issues.length ? "warn" : "good");
+
+    const host = el("issues");
+    host.innerHTML = "";
+    for (const issue of issues) {
+      const li = document.createElement("li");
+      li.className = "issue " + issue.level;
+      li.innerHTML = `<span class="dot"></span><span>${esc(issue.message)}</span>`;
+      if (issue.item) li.onclick = () => {
+        const at = (body().Childs || []).indexOf(issue.item);
+        if (at >= 0) focusBlock(at);
+      };
+      host.appendChild(li);
+    }
+
+    return issues;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wiring
+  // ---------------------------------------------------------------------------
+  function removeCurrent() {
+    const kids = body().Childs;
+    const block = currentBlock();
+    if (!block || kids.length <= 1) return;
+    const at = Number(block.dataset.index);
+    kids.splice(at, 1);
+    current = null;
+    draw();
+    focusBlock(Math.max(0, at - 1));
+  }
+
+  function askEngineFor(route, title) {
+    const tab = window.open("", "_blank");
+    if (!tab) { alert(t("hint.popup")); return; }
+    tab.document.write(`<!doctype html><meta charset="utf-8"><title>${esc(title)}</title>`
+                       + `<p style="font:14px system-ui;padding:24px">${esc(t("editor.asking"))}</p>`);
+
+    fetch("http://localhost:5080/" + route, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ template: JSON.stringify(report), data: null, showBands: false })
+    })
+      .then(r => r.ok ? r.text() : r.text().then(body => Promise.reject(new Error(body))))
+      .then(html => { tab.document.open(); tab.document.write(html); tab.document.close(); })
+      .catch(err => {
+        tab.document.open();
+        tab.document.write(`<!doctype html><meta charset="utf-8">`
+          + `<p style="font:14px system-ui;padding:24px;white-space:pre-wrap">`
+          + `${esc(t("editor.noServer"))}\n\n${esc(String(err.message || err))}</p>`);
+        tab.document.close();
+      });
+  }
+
+  function fillPapers() {
+    const select = el("paper");
+    // The guard before the read that needs it. Written the other way round it threw on
+    // exactly the face it was added for - which is the guard being decorative.
+    if (!select) return;
+    const chosen = select.value;
+    select.innerHTML = "";
+    for (const [key, [w, h]] of Object.entries(PAPER_SIZES)) {
+      const option = document.createElement("option");
+      option.value = `${w}x${h}`;
+      // The name and the millimetres both: "A4 portrait" is what somebody asks for and
+      // "210 × 297 mm" is what they check.
+      option.textContent = `${t("paper." + key)} — ${w} × ${h} mm`;
+      select.appendChild(option);
+    }
+    select.value = chosen || "210x297";
+  }
+
+  /// Puts the file's own properties back on screen, where there is a screen for them.
+  ///
+  /// A face without the panel has nothing to sync, and that is not the same as having
+  /// nothing to say: the properties are still on the report, and the host reads them off
+  /// the element. This function is about the view alone.
+  function syncPanel() {
+    const title = el("title");
+    if (!title) return;
+    title.value = report.Title || "";
+    el("language").value = report.Language || "";
+    const d = report.Sections[0].Dimension || {};
+    el("paper").value = `${d.Width || 210}x${d.Height || 297}`;
+  }
+
+  /// Everything the editor does when it starts: wiring the toolbar and the panel to
+  /// their handlers, then building the first document and drawing it.
+  ///
+  /// Gathered into one function rather than left as two hundred lines of top-level
+  /// statements, so that something other than this page can decide WHEN it happens -
+  /// an element has to point uiRoot at its shadow root before any of this runs.
+  /// Every declaration stays top level, which is what check-editor.js reaches by name;
+  /// only the statements moved, and the four functions that were among them were
+  /// hoisted out rather than shut in.
+  /// Wire a control if this face has it.
+  ///
+  /// Only for the controls SHOWN can take away - the header's buttons, the panel's
+  /// fields, the two target checkboxes. Everything else keeps its bare el(id) on purpose:
+  /// a missing toolbar button or a missing sheet is a fault, and a fault should throw
+  /// where it happens rather than be quietly skipped. A guard that covers everything is a
+  /// guard that hides the next mistake, which is what this file already learned twice
+  /// about `if (!current.isContentEditable) return`.
+  const wire = (id, fn) => { const node = el(id); if (node) fn(node); return node; };
+
+  function mount() {
+    // The two listeners that were registered at load, when uiRoot was still `document`
+    // and an element had not yet said otherwise. A registration made before a seam is set
+    // can never follow it: inside an element they went on listening to the host page's
+    // document, which is not where our events are.
+    //
+    // selectionchange is the one that matters. It is fired at the ROOT of the selection -
+    // the shadow root, for a caret in our surface - not bubbled up from it, so a document
+    // listener is not the one being fired at. It is the only writer of `cached`, and the
+    // whole style toolbar reads `cached`: bold, italic, underline, strike, the colour,
+    // the size, the family. All of them are silent when it never runs, and the alignment
+    // buttons still work, so the toolbar looks half-broken rather than unfed.
+    //
+    // Bound to both when they differ, because the handler recomputes from scratch and
+    // running twice costs nothing, while guessing which one Chromium fires costs a
+    // silent toolbar.
+    uiRoot.addEventListener("keydown", onKeyDown);
+    uiRoot.addEventListener("selectionchange", onSelectionChange);
+    if (uiRoot !== document) document.addEventListener("selectionchange", onSelectionChange);
+    // The markup first: everything below looks its own nodes up, and none of them exist
+    // until this line has run.
+    uiHost = uiHost || document.getElementById("frisket-editor-root") || document.body;
+    uiHost.innerHTML = EDITOR_MARKUP();
+
+    uiAll("#toolbar [data-style]").forEach(b => {
+      // mousedown before click would move focus out of the surface; preventing the
+      // default keeps the selection highlighted while the button is pressed.
+      b.addEventListener("mousedown", e => e.preventDefault());
+      b.onclick = () => applyStyle(b.dataset.style);
+    });
+
+    uiAll("#toolbar [data-align]").forEach(b => {
+      b.addEventListener("mousedown", e => e.preventDefault());
+      b.onclick = () => applyAlignment(b.dataset.align);
+    });
+
+    uiAll("#toolbar [data-valign]").forEach(b => {
+      b.addEventListener("mousedown", e => e.preventDefault());
+      b.onclick = () => applyVertical(b.dataset.valign);
+    });
+
+    el("family").onchange = () => {
+      const family = el("family").value;
+      applyStyle("Family", family || null);
+    };
+
+    wire("fontSource", n => { n.onchange = e => {
+      fontSource = e.target.value;
+      try { localStorage.setItem("frisket.fonts", fontSource); } catch {}
+      applyDefaultFace();
+      if (fontSource === "library" && libraryFamilies === null) askServerForFonts();
+      else fillFamilies();
+    }; });
+
+    // The swatch applies; the chevron opens. Two gestures, because they are two
+    // questions - "this colour again" and "which colour" - and the control used to
+    // answer only the second: a native picker fires `change` when it closes, so pressing
+    // it again with the same colour chosen fired nothing at all and the button did
+    // nothing. Reported exactly that way.
+    // What it SHOWS, not what was last chosen - the two are the same until the caret
+    // moves onto coloured text, and a button showing one colour and applying another is
+    // the fault this whole change is about, wearing the other face.
+    el("colourApply").onclick = () => setInk(shownInk);
+
+    el("colourOpen").onclick = e => {
+      e.stopPropagation();
+      const menu = el("inkMenu");
+      if (menu.hidden) fillSwatches();
+      menu.hidden = !menu.hidden;
+    };
+
+    // Live on the well while the picker is being dragged, applied when it is settled.
+    // Applying on every `input` would redraw the whole sheet per pixel of the gradient.
+    el("colourPick").onclick = e => { e.stopPropagation(); el("colour").click(); };
+
+    el("colour").oninput = () => { el("well").style.background = el("colour").value; };
+    el("colour").onchange = () => { setInk(hexToRgb(el("colour").value)); closeInk(); };
+    // No handler for the clearing cell here: it is a swatch now, made by fillSwatches
+    // and wired there. Left behind, this line ran at mount against an element the markup
+    // no longer holds - getElementById returns null in a browser, so the page would have
+    // died at its first statement, and the harness's own stub never returns null and
+    // would not have said a word about it (section 16).
+
+    // Anywhere else closes it. On the document rather than on uiRoot: a click that lands
+    // outside a shadow root still has to close a menu inside it.
+    document.addEventListener("click", closeInk);
+
+    el("size").onchange = () => {
+      const v = el("size").value;
+      applyStyle("Size", v === "" ? null : Number(v));
+      // It holds a state now, and showActiveStyles is what puts it there - so it is not
+      // put back by hand here. Written the other way the list flicked to Normal and then
+      // back to the chosen size on the next redraw, which is a flicker rather than a
+      // fault and would have been blamed on the browser.
+    };
+
+    el("addImage").onclick = () => {
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/*";
+      picker.onchange = () => {
+        const file = picker.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const item = newItem("ImageItem");
+          // The bytes travel in the template, the way the designer embeds them: one
+          // file to carry about, and the engine reads exactly this.
+          item.Source = { MediaType: file.type || "image/png",
+                          Data: String(reader.result).split(",")[1] || "" };
+          item.AltText = "";
+
+          // A drawing says its own proportions, and a browser asked for the size of an SVG
+          // with only a viewBox answers with something of its own. It takes the band.
+          const reading = readingOf(item.Source.Data);
+          if (reading) {
+            const wide = bandWidth();
+            item.NaturalWidth = wide;
+            item.NaturalHeight = wide / (reading.drawing ? reading.drawing.ratio : 2);
+            item.Style.Location.WidthValue = wide;
+            insertAfterCurrent(item);
+            return;
+          }
+
+          // Measured rather than assumed. newItem hands out 40 x 20 mm, which is a
+          // reasonable placeholder and the wrong shape for almost every real picture;
+          // left alone, every image would come in at the same proportions.
+          const probe = new Image();
+          probe.onload = () => {
+            item.NaturalWidth = probe.width / 3.7795;      // 96 dpi
+            item.NaturalHeight = probe.height / 3.7795;
+            // Wider than the band it is going into is never what anybody meant.
+            item.Style.Location.WidthValue = Math.min(item.NaturalWidth, bandWidth());
+            insertAfterCurrent(item);
+          };
+          probe.onerror = () => insertAfterCurrent(item);
+          probe.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      };
+      picker.click();
+    };
+
+    el("addTable").onclick = () => insertAfterCurrent(newTable());
+
+    // The fields' menu opens and closes as the colours' does, and its button keeps the
+    // caret where it is while pressed, as every button in this row does.
+    el("addField").addEventListener("mousedown", e => e.preventDefault());
+    el("addField").onclick = e => {
+      e.stopPropagation();
+      const menu = el("fieldMenu");
+      const open = menu.hidden === false;
+      if (!open) fillFieldMenu();
+      menu.hidden = open;
+    };
+    document.addEventListener("click", closeFields);
+
+    // A paragraph is the one block that had no button, because it is the one a person
+    // usually makes by typing. But a table or a picture at the very top of the sheet
+    // leaves nowhere to type: there is no caret above it, and shift+Enter needs one to
+    // start from. So a block that is only reachable by keystroke is not reachable at all
+    // on a document that starts with a table.
+    el("addText").onclick = () => insertAfterCurrent(emptyParagraph());
+    el("addRule").onclick = () => insertAfterCurrent(newItem("LineItem"));
+
+    el("removeBlock").onclick = removeCurrent;
+
+    wire("title", n => { n.oninput = () => { report.Title = n.value; runChecks(); }; });
+    wire("language", n => { n.oninput = () => { report.Language = n.value; runChecks(); }; });
+
+    wire("paper", n => {
+      n.onchange = () => {
+        const [w, h] = n.value.split("x").map(Number);
+        report.Sections[0].Dimension = { Width: w, Height: h };
+        draw();
+      };
+    });
+
+    // The two checkboxes are a VIEW of the target now, not the target itself. They were
+    // the only place it lived - `{ Tagged: el("targetTagged").checked, ... }`, read off
+    // the DOM at every check - so a face without them had no target at all, and an empty
+    // one is the worst of the three possibilities: the Capable profile gates on the
+    // object being present, not on its fields, so every rule in it would have fired on
+    // every document.
+    for (const id of ["targetTagged", "targetInteractive"])
+      wire(id, n => {
+        n.onchange = () => {
+          renderTarget = { ...renderTarget,
+                           Tagged: el("targetTagged").checked,
+                           Interactive: el("targetInteractive").checked };
+          runChecks();
+        };
+      });
+
+    wire("lang", n => { n.onchange = e => {
+      setLang(e.target.value);
+      try { localStorage.setItem("frisket.lang", e.target.value); } catch {}
+      applyStaticText();
+      fillPapers();
+      fillFamilies();
+      draw();
+    }; });
+
+    wire("theme", n => { n.onchange = e => {
+      theme = e.target.value;
+      try { localStorage.setItem("frisket.theme", theme); } catch {}
+      applyTheme();
+    }; });
+
+    wire("new", n => { n.onclick = () => {
+      report = blankFlow();
+      current = null;
+      syncPanel();
+      draw();
+      focusBlock(0);
+    }; });
+
+    wire("open", n => { n.onclick = () => el("file").click(); });
+    wire("file", n => { n.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          report = normaliseReport(JSON.parse(String(reader.result)));
+          hydrate(report.Sections[0]);
+          current = null;
+          syncPanel();
+          draw();
+        } catch (err) {
+          alert(t("alert.unreadable") + "\n" + err.message);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    }; });
+
+    /// Opens what the engine would write, in a tab of its own.
+    ///
+    /// Two documents rather than one with a switch. `/html` is the pages themselves, drawn
+    /// as SVG with the fonts embedded: real metrics, real pagination, real repetition - the
+    /// truth the sheet on the left only approximates. `/mail` has no pages at all: HTML that
+    /// reflows, tables for layout, nothing embedded, for a message. Neither is a variant of
+    /// the other, so neither hides behind a flag on the other.
+    ///
+    /// The tab is opened *before* the request and told what happened afterwards. Opening it
+    /// in the promise's callback is opening it outside a click, which every browser blocks
+    /// as a pop-up.
+    wire("html", n => { n.onclick = () => askEngineFor("html", t("editor.openHtml")); });
+    wire("mail", n => { n.onclick = () => askEngineFor("mail", t("editor.openMail")); });
+
+    wire("save", n => { n.onclick = () => {
+      const text = JSON.stringify(report, null, 2);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      a.download = (report.Title || "document").replace(/[^\w.-]+/g, "-").toLowerCase() + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }; });
+
+    wire("lang", n => { n.value = lang0; });
+    wire("theme", n => { n.innerHTML = themeOptions(); n.value = theme; });
+    wire("fontSource", n => { n.value = fontSource; });
+    fillPapers();
+    applyStaticText();
+    fillFamilies();
+    applyDefaultFace();
+    if (fontSource === "library") askServerForFonts();
+    report = blankFlow();
+    syncPanel();
+    loadFields();
+    draw();
+    if (autofocus) focusBlock(0);
+  }
+
+  // --- what the caller declared -------------------------------------------------------
+  // Set once, after everything above exists and before anything is drawn - the seams of
+  // CLAUDE.md 5c-quater. A plain page and an element pass the same names, read from the
+  // same attributes: one vocabulary, two ways in.
+  //
+  //   root         where the markup lives and the ids are looked up: the document, or
+  //                this editor's own shadow root
+  //   host         what the markup is planted in
+  //   themeTarget  what carries data-theme and --paper
+  //   shown        what this face shows (chrome, panel, files)
+  //   margins      a margin in millimetres, or nothing for "you decide"
+  //   theme, fonts what was declared, if anything - chooseTheme and chooseFontSource
+  //                answer the rest, and a face without the control ignores the stored
+  //                preference of the face that has it
+  //   target       what is about to be produced, for the Capable profile
+  //   server       where the engine is whose fonts it draws with, "/" for this page's
+  //                origin; none declared, there is no engine to ask
+  //   fetch        how to reach it, for a host that adds its own credentials
+  //   fields       the host's merge fields - [{ path, label, type, sample }], a function
+  //                returning them, or a promise of either (see "merge fields" above)
+  //   onChecks     where the findings go when there is no panel to paint them on
+  //   autofocus    whether mounting takes the focus. A page holding three editors that
+  //                each took it would end up scrolled to the last one
+  uiRoot = seams.root || document;
+  uiHost = seams.host || null;
+  themeTarget = seams.themeTarget || document.documentElement;
+  if (seams.shown) SHOWN = seams.shown;
+  margins = seams.margins ?? null;
+  theme = chooseTheme(seams.theme);
+  fontSource = chooseFontSource(seams.fonts);
+  if (seams.target) renderTarget = seams.target;
+  server = seams.server == null ? null : String(seams.server).trim().replace(/\/+$/, "");
+  onChecks = seams.onChecks || null;
+  const autofocus = seams.autofocus !== false;
+  applyTheme();
+
+  // @harness - check-editor.js plants its handles here, inside, where they can see.
+  return {
+    mount,
+    loadReport,
+    /// The document as the engine reads it.
+    report: () => forEngine(report),
+    /// Another catalogue of merge fields, or the same one changed.
+    setFields: next => { fieldSource = next || null; if (el("fieldsTool")) loadFields(); },
+  };
+}
+
+// A plain page hands over a div of its own and is mounted at once: one editor, owning
+// the document. Inside a <frisket-editor> there is no such div in the document - the
+// element makes an editor of its own, in its own shadow root, and mounts that.
+//
+// The div is also where a page SAYS what it wants shown, with the same attribute names
+// the element reads - one vocabulary, two ways in. The fallback here is the full face
+// and in the element it is the lean one, and that difference is the whole distinction:
+// a page IS the application, so it keeps its header and its panel unless it says
+// otherwise; an element is inside somebody else's, which already has both.
+{
+  const host = document.getElementById("frisket-editor-root");
+  if (host) {
+    const said = name => host.getAttribute ? host.getAttribute(name) : null;
+    const on = (name, fallback) => host.hasAttribute && host.hasAttribute(name)
+      ? host.getAttribute(name) !== "false"
+      : fallback;
+
+    frisketEditor({
+      root: document,
+      host,
+      themeTarget: document.documentElement,
+      shown: { chrome: on("chrome", true), panel: on("panel", true), files: said("files") || "header" },
+      margins: said("margins"),
+      theme: said("theme"),
+      fonts: said("fonts"),
+      // The preview server this page has always asked, unless the page names another.
+      server: said("server") ?? "http://localhost:5080",
+      autofocus: on("autofocus", true),
+    }).mount();
+  }
+}
+
+
+/* frisket-editor-element.js */
+/// `<frisket-editor>` - the content editor as a custom element.
+///
+/// Load frisket-core.js, frisket-runs.js, frisket-editor.js and then this, and a page
+/// gets an editor by writing one tag. Everything it draws lives in a shadow root, so
+/// the host's stylesheet cannot reach in and this one cannot leak out.
+///
+/// Or load release/frisket-editor-element.standalone.js alone: the same four parts and
+/// both sheets in one file, built by test 93, enclosed so that the tag is all it adds to
+/// the host's page - the parts declare some two hundred names at the top level (`t`,
+/// `esc`, `STRINGS`...), and a host with one of its own would lose either its script or
+/// ours.
+///
+/// What a host CAN reach in with, and is meant to, is the palette: every colour the
+/// chrome uses is a custom property (`--accent`, `--panel`, `--ink`…), and custom
+/// properties inherit through a shadow boundary. Setting them on the element - or on
+/// anything above it - themes the editor without touching a line of it.
+///
+/// What a host cannot change is the paper. `ON_PAPER` and `--paper` hold one value in
+/// every theme, because the canvas is showing a printed page and a mark that moved with
+/// the interface would make the tool disagree with the printer.
+///
+/// Every element makes an editor of its own - `frisketEditor(seams)` - so a page may hold
+/// as many as it likes, each with its document, its selection and its findings. What it
+/// HANDS that call: the shadow root the markup lives in, the div it is planted in, itself
+/// as what carries the theme, what this face shows, what is about to be produced, where
+/// the findings go, and whether to take the focus. What it CALLS on what comes back:
+/// `mount()`, `loadReport()` and `report()`. The list of seams lives once, at the end of
+/// `frisketEditor`, and is not repeated here.
+///
+/// It used to SET those seams instead, as variables of the one editor the page had - so
+/// a second element set them over the first one's. That is the whole reason this is a
+/// call now.
+"use strict";   // as every part is - see frisket-runs.js
+
+(function () {
+  // The sheets its shadow root wears, named once. Linked from beside this script; or,
+  // in the one-file build test 93 writes to release/, carried in FRISKET_EDITOR_SHEETS,
+  // so a host loading that file fetches nothing else. The build reads this list.
+  const SHEETS = ["frisket-chrome.css", "frisket-editor.css"];
+  const inline = typeof FRISKET_EDITOR_SHEETS === "object" ? FRISKET_EDITOR_SHEETS : null;
+
+  // Where our own files are, taken from this script's own URL rather than assumed to be
+  // beside the host page - an element is meant to be loaded from somewhere else. None
+  // for a script written into the page itself, which has no URL of its own.
+  const script = document.currentScript;
+  const here = script && script.src ? new URL(".", script.src).href : "";
+
+  class FrisketEditor extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;   // moved in the DOM, not a second editor
+
+      if (typeof frisketEditor !== "function") {
+        this.textContent = "frisket-editor.js has not been loaded.";
+        return;
+      }
+      const element = this;
+
+      // What this host wants shown, before a line of the editor runs. Absent means the
+      // lean shape, because an element is by definition inside somebody else's
+      // application: it already has a header, it already knows what it is producing,
+      // and a second set of controls answering the same questions is worse than none.
+      //
+      // The plain page is the other way round and says so itself - it is the whole
+      // application, so it keeps the lot.
+      const on = (name, fallback) => this.hasAttribute(name)
+        ? this.getAttribute(name) !== "false"
+        : fallback;
+
+      const root = this.attachShadow({ mode: "open" });
+      root.innerHTML = SHEETS.map(name => inline ? "<style></style>"
+          : '<link rel="stylesheet" href="' + here + name + '">').join("")
+        + '<div id="frisket-editor-root"></div>';
+      // Set as text, never written into the markup: a style's text cannot close it early,
+      // whatever the sheet happens to say.
+      if (inline) root.querySelectorAll("style").forEach((style, i) => {
+        style.textContent = inline[SHEETS[i]];
+      });
+
+      this._editor = frisketEditor({
+        root,
+        host: root.getElementById("frisket-editor-root"),
+        themeTarget: this,
+
+        // What this host wants shown. Absent means the lean shape, because an element is
+        // by definition inside somebody else's application: it already has a header, it
+        // already knows what it is producing, and a second set of controls answering the
+        // same questions is worse than none. The plain page is the other way round and
+        // says so itself - it is the whole application, so it keeps the lot.
+        shown: {
+          chrome: on("chrome", false),
+          panel: on("panel", false),
+          files: this.getAttribute("files") || "toolbar",
+        },
+
+        margins: this.getAttribute("margins"),
+
+        // The room, and the families: what the host declared, if anything. A face with
+        // no picker does not read the preference stored by the face that has one, so an
+        // editor with no font control gets the web-safe families unless the host says
+        // fonts="library" - with `server` saying where the engine is, since an element is
+        // told of none it was not given, and it has no control to change its mind with.
+        theme: this.getAttribute("theme"),
+        fonts: this.getAttribute("fonts"),
+
+        // Where the engine is whose fonts fonts="library" draws with - a base URL answering
+        // what apps/server answers, "/" for this page's own origin - and how to reach it.
+        // Absent, there is none: never a guess at localhost, which is what the editor did
+        // for every host until 20 October 2026.
+        server: this.getAttribute("server"),
+        get fetch() { return element._fetch || null; },
+
+        // The host's merge fields, to insert at the caret. A property rather than an
+        // attribute, since a catalogue is a list - or a promise of one.
+        fields: this._fields || null,
+
+        // What is about to be produced. The engine's own defaults - the richest output -
+        // for the engine's own reason: a caller that says nothing is told nothing, rather
+        // than warned about a loss that is not happening. `paged="false"` is what a host
+        // building an email says, and it is the only way can.absoluteInFlow ever speaks.
+        target: {
+          Tagged: on("tagged", true),
+          Interactive: on("interactive", true),
+          Paged: on("paged", true),
+        },
+
+        // The findings, to whoever embedded this. They are computed on every redraw
+        // whether or not there is a panel to paint them on - hiding the panel hides the
+        // machinery from somebody typing a letter, it does not stop the checking. What a
+        // host does with them is the host's to decide, which is the same answer this
+        // project gives for a font's fsType and for an imported page.
+        onChecks: found => {
+          this._issues = found;
+          this.dispatchEvent(new CustomEvent("checks", { detail: found }));
+        },
+
+        // HTML's own rule for a control: it takes the focus when it says autofocus, and
+        // not otherwise. A page holding three editors that each took it on mounting
+        // would open scrolled to the last one.
+        autofocus: on("autofocus", false),
+      });
+
+      this._editor.mount();
+      if (this._pending) { this._editor.loadReport(this._pending); this._pending = null; }
+    }
+
+    /// The document, out and in.
+    ///
+    /// Not a convenience. A host that hides Save - which is what an embedded editor
+    /// does - has no other way to the JSON: the Save button built a Blob and clicked an
+    /// anchor, and that was the only egress this editor had. Hiding it without putting
+    /// this here would be shipping an editor whose work cannot be collected.
+    get report() { return this._editor ? this._editor.report() : (this._pending ?? null); }
+
+    set report(value) {
+      // Before connectedCallback, there is no editor to put it in yet. Kept rather than
+      // dropped: a host setting a property on an element it has just created, before
+      // the browser has upgraded it, is ordinary and must not lose the document.
+      if (this._editor) this._editor.loadReport(value); else this._pending = value;
+    }
+
+    /// What the checks found, last time anything was drawn. Also delivered as a
+    /// `checks` event, for a host that would rather be told than ask.
+    get issues() { return this._issues || []; }
+
+    /// How the editor reaches the engine `server` names: a function shaped like the
+    /// browser's fetch, for a host that adds its own credentials. The browser's own
+    /// otherwise. Read at every request, so it may be set whenever the token is ready.
+    get fetch() { return this._fetch ?? null; }
+
+    set fetch(value) { this._fetch = value || null; }
+
+    /// The host's merge fields: `[{ path, label, type, sample }]` - type one of text,
+    /// number, decimal, currency, date, datetime or image - or a function or promise
+    /// giving them. Values arrive formatted by the host, so the type only sorts the menu,
+    /// except for a picture, which is inserted as a block the data fills. Set before the
+    /// element is connected or after.
+    get fields() { return this._fields ?? null; }
+
+    set fields(value) {
+      this._fields = value || null;
+      if (this._editor) this._editor.setFields(this._fields);
+    }
+  }
+
+  if (!customElements.get("frisket-editor"))
+    customElements.define("frisket-editor", FrisketEditor);
+})();
+
+})();
