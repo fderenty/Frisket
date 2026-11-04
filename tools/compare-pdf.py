@@ -13,6 +13,12 @@ So the streams are inflated before being compared, and the four things that are
 allowed to differ - the timestamp, the file /ID, the stream lengths and the xref
 offsets that follow from them - are neutralised rather than eyeballed.
 
+A compressed file keeps its cross-reference as a stream, and its offsets are inside
+it: once inflated, each entry is read through the stream's /W and its offset set
+aside like a table's, while what it says about an object packed in an object stream -
+which one, at which place - is structure and is compared. The object streams
+themselves are compared inflated like any other.
+
 Exit code 0 when the documents are the same, 1 when they are not.
 """
 import re
@@ -32,8 +38,31 @@ def streams(raw):
                 body = zlib.decompress(body)
             except zlib.error as why:
                 body = b"<<undecodable: %s>>" % str(why).encode()
+        if b"/Type /XRef" in m.group(2):
+            body = entries(m.group(2), body)
         out.append((int(m.group(1)), body))
     return out
+
+
+def entries(dictionary, table):
+    """A cross-reference stream's entries as text, each offset set aside."""
+    widths = re.search(rb"/W \[(\d+) (\d+) (\d+)\]", dictionary)
+    if not widths:
+        return b"<<no /W>>"
+    w = [int(x) for x in widths.groups()]
+    size = sum(w)
+    lines = []
+    for at in range(0, len(table) - size + 1, size):
+        fields = []
+        p = at
+        for width in w:
+            fields.append(int.from_bytes(table[p:p + width], "big"))
+            p += width
+        kind = fields[0] if w[0] else 1
+        if kind == 1:
+            fields[1] = "-"
+        lines.append(" ".join(str(f) for f in fields))
+    return "\n".join(lines).encode()
 
 
 def skeleton(raw):
@@ -45,6 +74,7 @@ def skeleton(raw):
     """
     raw = re.sub(rb"stream\r?\n.*?\nendstream", b"stream~endstream", raw, flags=re.S)
     raw = re.sub(rb"/Length \d+", b"/Length -", raw)
+    raw = re.sub(rb"/W \[\d+ \d+ \d+\]", b"/W -", raw)
     raw = re.sub(rb"(/CreationDate|/ModDate) \(D:[^)]*\)", rb"\1 (D:-)", raw)
     raw = re.sub(rb"<[0-9A-Fa-f]{32}>", b"<ID>", raw)
     raw = re.sub(rb"\d{10} 00000 n", b"---------- 00000 n", raw)

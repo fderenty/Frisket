@@ -763,7 +763,7 @@ namespace test
                 };
                 report.GeneratedAt = SampleDate;
                 ReportRenderer.Render(report, pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
 
             string mixed = Written(joined);
@@ -1886,7 +1886,7 @@ namespace test
                     Conformance = PdfConformance.PdfA3b, Language = "en-GB", Tagged = true, Compress = false
                 };
                 ReportRenderer.Render(ReportBinder.Bind(Sheet(Listing("Nothing for {Client}")), data), pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
             static int Spans(string pdf) => System.Text.RegularExpressions.Regex.Matches(pdf, "/ColSpan").Count;
             AssertEqual(testName, "the cell says how many columns it takes", 1,

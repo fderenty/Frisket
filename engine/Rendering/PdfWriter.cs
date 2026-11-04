@@ -16,6 +16,15 @@ namespace Frisket
     {
         private readonly List<byte[]?> _objects = new();
 
+        /// <summary>The objects that are streams, which an object stream may not hold.</summary>
+        private readonly HashSet<int> _streams = new();
+
+        /// <summary>
+        /// How many objects one object stream holds. Enough for the dictionaries of a page to
+        /// deflate together, few enough that a reader after one object inflates little else.
+        /// </summary>
+        private const int PerObjectStream = 100;
+
         /// <summary>Reserves an object number to be filled in later, for forward references.</summary>
         public int Reserve()
         {
@@ -23,7 +32,11 @@ namespace Frisket
             return _objects.Count;
         }
 
-        public void Set(int number, string body) => _objects[number - 1] = Latin1(body);
+        public void Set(int number, string body)
+        {
+            _objects[number - 1] = Latin1(body);
+            _streams.Remove(number);
+        }
 
         public int Add(string body)
         {
@@ -50,6 +63,13 @@ namespace Frisket
         /// </summary>
         public void SetStream(int number, string dictionary, byte[] data, bool compress = true)
         {
+            _objects[number - 1] = StreamBody(dictionary, data, compress);
+            _streams.Add(number);
+        }
+
+        /// <summary>A stream object's body: its dictionary, then its bytes, deflated if asked and worth it.</summary>
+        private static byte[] StreamBody(string dictionary, byte[] data, bool compress)
+        {
             byte[] payload = data;
             string filter = string.Empty;
 
@@ -66,16 +86,21 @@ namespace Frisket
             Buffer.BlockCopy(head, 0, body, 0, head.Length);
             Buffer.BlockCopy(payload, 0, body, head.Length, payload.Length);
             Buffer.BlockCopy(tail, 0, body, head.Length + payload.Length, tail.Length);
-
-            _objects[number - 1] = body;
+            return body;
         }
 
         /// <summary>Adds a stream whose bytes are already compressed, or must not be touched.</summary>
         public int AddRawStream(string dictionary, byte[] data) => AddStream(dictionary, data, compress: false);
 
+        /// <summary>
+        /// The file. <paramref name="packed"/> puts every object that is not a stream into
+        /// deflated object streams and writes the cross-reference table as a stream as well
+        /// (ISO 32000-1 7.5.7, 7.5.8); otherwise each object is written as text where it
+        /// stands, and the table as a table.
+        /// </summary>
         public byte[] Build(int catalog, string producer, DateTimeOffset now,
                             string? title = null, string? author = null, byte[]? documentId = null,
-                            string? subject = null, string? keywords = null)
+                            string? subject = null, string? keywords = null, bool packed = false)
         {
             // PDF/A wants the info dictionary and the XMP packet to agree, so whatever
             // goes in one goes in the other.
@@ -92,6 +117,9 @@ namespace Frisket
             info.Append(" >>");
 
             int infoObject = Add(info.ToString());
+
+            if (packed)
+                return Packed(catalog, infoObject, documentId);
 
             using var stream = new MemoryStream();
             Write(stream, "%PDF-1.7\n");
@@ -130,6 +158,124 @@ namespace Frisket
             trailer.Append(" >>\n");
             Write(stream, trailer.ToString());
             Write(stream, $"startxref\n{xref}\n%%EOF\n");
+
+            return stream.ToArray();
+        }
+
+        /// <summary>
+        /// The file with its dictionaries deflated together.
+        ///
+        /// Everything that is not a stream - the catalog, the pages, the fonts' dictionaries,
+        /// every element of a tagged file's structure tree - goes into object streams of
+        /// <see cref="PerObjectStream"/>, and the cross-reference table becomes a stream of
+        /// binary entries. A tagged document is mostly small dictionaries and a table of
+        /// twenty bytes an object, which is where the saving is: the conformance document went
+        /// from 160 KB to 107. PDF/A-1 forbade both, being PDF 1.4; PDF/A-2 and -3
+        /// allow them and PDF/UA-1 says nothing against them. The file is never hybrid - a
+        /// table beside the stream for older readers - which PDF/A-2 does forbid.
+        ///
+        /// Streams stay where they are, as text with their dictionary in front: an object
+        /// stream may not hold one (7.5.7).
+        /// </summary>
+        private byte[] Packed(int catalog, int info, byte[]? documentId)
+        {
+            // Which object stream holds each packed object, and at which index. The object
+            // streams and the table are numbered after the writer's own objects and never
+            // join them, so the writer is left as it was found.
+            var held = new Dictionary<int, (int Container, int Index)>();
+            var containers = new List<byte[]>();
+            int objects = _objects.Count;
+            var loose = Enumerable.Range(1, objects).Where(n => !_streams.Contains(n)).ToList();
+
+            for (int start = 0; start < loose.Count; start += PerObjectStream)
+            {
+                List<int> group = loose.GetRange(start, Math.Min(PerObjectStream, loose.Count - start));
+                var index = new StringBuilder();
+                var bodies = new MemoryStream();
+
+                foreach (int number in group)
+                {
+                    byte[] body = _objects[number - 1]
+                                  ?? throw new InvalidOperationException($"PDF object {number} was reserved but never set.");
+                    index.Append(number).Append(' ').Append(bodies.Length).Append(' ');
+                    bodies.Write(body);
+                    bodies.WriteByte((byte)'\n');
+                }
+
+                byte[] head = Latin1(index.ToString());
+                byte[] content = new byte[head.Length + bodies.Length];
+                head.CopyTo(content, 0);
+                bodies.ToArray().CopyTo(content, head.Length);
+
+                containers.Add(StreamBody($"/Type /ObjStm /N {group.Count} /First {head.Length}", content, compress: true));
+                for (int i = 0; i < group.Count; i++)
+                    held[group[i]] = (objects + containers.Count, i);
+            }
+
+            int xrefNumber = objects + containers.Count + 1;
+            int size = xrefNumber + 1;
+
+            using var stream = new MemoryStream();
+            Write(stream, "%PDF-1.7\n");
+            stream.Write(new byte[] { 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A });   // binary marker
+
+            var offsets = new long[size];
+            for (int number = 1; number < xrefNumber; number++)
+            {
+                if (held.ContainsKey(number))
+                    continue;
+
+                offsets[number] = stream.Position;
+                Write(stream, $"{number} 0 obj\n");
+                stream.Write(number > objects
+                    ? containers[number - objects - 1]
+                    : _objects[number - 1] ?? throw new InvalidOperationException($"PDF object {number} was reserved but never set."));
+                Write(stream, "\nendobj\n");
+            }
+
+            long xrefAt = stream.Position;
+            offsets[xrefNumber] = xrefAt;
+
+            // One byte for the kind of entry, as few as hold the largest offset or object
+            // number for the second field, two for the third.
+            int width = 1;
+            while ((Math.Max(xrefAt, size) >> (8 * width)) > 0)
+                width++;
+
+            int entry = 1 + width + 2;
+            var entries = new byte[size * entry];
+            for (int number = 0; number < size; number++)
+            {
+                (int kind, long second, int third) = number == 0 ? (0, 0L, 0xFFFF)
+                    : held.TryGetValue(number, out var place) ? (2, place.Container, place.Index)
+                    : (1, offsets[number], 0);
+
+                int at = number * entry;
+                entries[at] = (byte)kind;
+                for (int b = 0; b < width; b++)
+                    entries[at + 1 + b] = (byte)(second >> (8 * (width - 1 - b)));
+                entries[at + 1 + width] = (byte)(third >> 8);
+                entries[at + 2 + width] = (byte)third;
+            }
+
+            byte[] table = Deflate(entries);
+            var dictionary = new StringBuilder("<< /Type /XRef /Size ").Append(size)
+                .Append(" /W [1 ").Append(width).Append(" 2] /Root ").Append(catalog).Append(" 0 R /Info ")
+                .Append(info).Append(" 0 R");
+
+            if (documentId != null)
+            {
+                string hex = Convert.ToHexString(documentId);
+                dictionary.Append(" /ID [<").Append(hex).Append("> <").Append(hex).Append(">]");
+            }
+
+            dictionary.Append(" /Filter /FlateDecode /Length ").Append(table.Length).Append(" >>\nstream\n");
+
+            Write(stream, $"{xrefNumber} 0 obj\n");
+            Write(stream, dictionary.ToString());
+            stream.Write(table);
+            Write(stream, "\nendstream\nendobj\n");
+            Write(stream, $"startxref\n{xrefAt}\n%%EOF\n");
 
             return stream.ToArray();
         }

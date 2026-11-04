@@ -62,7 +62,7 @@ namespace test
             FontLibrary fonts = DrawingFonts();
             Report sheet = FrameSheet(out List<(ContainerItem Frame, int Marks)> frames, out LineItem rule);
 
-            List<Mark> fromPdf = ReadPdfMarks(Encoding.Latin1.GetString(PdfOf(sheet, fonts, compress: false)))
+            List<Mark> fromPdf = ReadPdfMarks(Encoding.Latin1.GetString(Unpacked(PdfOf(sheet, fonts, compress: false))))
                 .Where(m => m.Kind != "text").ToList();
             var bare = new SvgBackend(new FontTextMeasurer(fonts)) { PageBackground = new Color(255, 255, 255, 0) };
             ReportRenderer.Render(sheet, bare);
@@ -231,7 +231,7 @@ namespace test
             pdf.EndPage();
             pdf.EndDocument();
 
-            string file = Encoding.Latin1.GetString(pdf.ToArray());
+            string file = Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             int open = System.Text.RegularExpressions.Regex.Match(file, @"stream\n(?=[\d.]+ 0 0 -[\d.]+ 0 [\d.]+ cm\n)").Index + 7;
             return file[open..file.IndexOf("endstream", open, StringComparison.Ordinal)];
         }

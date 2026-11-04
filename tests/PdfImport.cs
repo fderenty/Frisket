@@ -375,10 +375,10 @@ namespace test
             ReportRenderer.Render(unread, nothing);
 
             Console.WriteLine("    sans lecteur : "
-                            + $"{CountOccurrences(System.Text.Encoding.Latin1.GetString(nothing.ToArray()), "/Subtype /Form")} forme(s)");
+                            + $"{CountOccurrences(System.Text.Encoding.Latin1.GetString(Unpacked(nothing.ToArray())), "/Subtype /Form")} forme(s)");
 
             AssertEqual(testName, "with nobody to read it, nothing is drawn and nothing breaks",
-                0, CountOccurrences(System.Text.Encoding.Latin1.GetString(nothing.ToArray()),
+                0, CountOccurrences(System.Text.Encoding.Latin1.GetString(Unpacked(nothing.ToArray())),
                                     "/Subtype /Form"), 0);
 
             // --- and once something has --------------------------------------------------
@@ -429,7 +429,7 @@ namespace test
             byte[] bytes = pdf.ToArray();
             WriteSamplePdf(Path.Combine(OutputDirectory("import"), "with-terms.pdf"), bytes);
 
-            string written = System.Text.Encoding.Latin1.GetString(bytes);
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             int forms = CountOccurrences(written, "/Subtype /Form");
             int drawn = CountOccurrences(written, " Do");

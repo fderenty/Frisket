@@ -560,7 +560,7 @@ namespace test
                     Tagged = true, Interactive = interactive, Compress = false
                 };
                 ReportRenderer.Render(report, pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
 
             string flattened = Written(Sheet("The customer's name"), interactive: false);

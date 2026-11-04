@@ -109,7 +109,7 @@ namespace test
             }
             AssertEqual(testName, "and rows where Paeth has a tie to break", true, ties > 0, 0);
 
-            string file = Encoding.Latin1.GetString(PdfOf(SheetWith(rgba, "image/png"), fonts));
+            string file = Encoding.Latin1.GetString(Unpacked(PdfOf(SheetWith(rgba, "image/png"), fonts)));
             byte[] bytes = Encoding.Latin1.GetBytes(file);
 
             Match image = Regex.Match(file, @"(\d+) 0 obj\s*<<[^>]*?/Subtype /Image[^>]*?/SMask (\d+) 0 R");
@@ -141,7 +141,7 @@ namespace test
 
             // Gray with alpha takes the same road, with one colour to a pixel.
             byte[] gray = PngEncoder.WithAlpha(w, h, Shade, gray: true);
-            string grayFile = Encoding.Latin1.GetString(PdfOf(SheetWith(gray, "image/png"), fonts));
+            string grayFile = Encoding.Latin1.GetString(Unpacked(PdfOf(SheetWith(gray, "image/png"), fonts)));
             Match grayImage = Regex.Match(grayFile, @"(\d+) 0 obj\s*<<[^>]*?/Subtype /Image[^>]*?/SMask \d+ 0 R");
             AssertEqual(testName, "gray with alpha has a mask too", true, grayImage.Success, 0);
             AssertEqual(testName, "and one colour to a pixel", w * h,
@@ -149,12 +149,12 @@ namespace test
 
             // Opaque RGBA, which is what a canvas usually exports, has nothing to mask.
             byte[] opaque = PngEncoder.WithAlpha(w, h, (x, y) => (10, 20, 30, 255));
-            string opaqueFile = Encoding.Latin1.GetString(PdfOf(SheetWith(opaque, "image/png"), fonts));
+            string opaqueFile = Encoding.Latin1.GetString(Unpacked(PdfOf(SheetWith(opaque, "image/png"), fonts)));
             AssertEqual(testName, "an opaque picture draws", true, Regex.IsMatch(opaqueFile, "/Subtype /Image"), 0);
             AssertEqual(testName, "and carries no mask", false, opaqueFile.Contains("/SMask"), 0);
 
             // Plain RGB still crosses untouched: the decoding is for what needs it.
-            string plain = Encoding.Latin1.GetString(PdfOf(SheetWith(PngEncoder.Rgb(8, 8, (x, y) => (1, 2, 3)), "image/png"), fonts));
+            string plain = Encoding.Latin1.GetString(Unpacked(PdfOf(SheetWith(PngEncoder.Rgb(8, 8, (x, y) => (1, 2, 3)), "image/png"), fonts)));
             AssertEqual(testName, "plain RGB keeps its predictor", true, plain.Contains("/Predictor 15"), 0);
 
             // Spoiled ones say so, in words, and from the header where they can.
@@ -483,7 +483,7 @@ namespace test
                 Report sheet = SheetWith(Encoding.UTF8.GetBytes(svg), "image/svg+xml", wide, tall);
                 sheet.Body!.Childs[0].As<ImageItem>().Scaling = ImageScaling.Stretch;
 
-                string pdf = Encoding.Latin1.GetString(PdfOf(sheet, fonts, compress: false));
+                string pdf = Encoding.Latin1.GetString(Unpacked(PdfOf(sheet, fonts, compress: false)));
                 List<Mark> fromPdf = ReadPdfMarks(pdf);
                 List<Mark> fromProof = ReadProofMarks(ProofOf(sheet, fonts).Pages[0]);
 
@@ -499,11 +499,11 @@ namespace test
             }
 
             // By hand. A frame at (20,30) of 100 x 50 over a viewBox of 200 x 100 from (10,5).
-            List<Mark> marks = ReadPdfMarks(Encoding.Latin1.GetString(PdfOf(
+            List<Mark> marks = ReadPdfMarks(Encoding.Latin1.GetString(Unpacked(PdfOf(
                 SheetWith(Encoding.UTF8.GetBytes(
                     "<svg viewBox='10 5 200 100'><rect x='20' y='15' width='40' height='20' fill='#ff0000'/>"
                     + "<g transform='rotate(90 110 55)'><line x1='110' y1='55' x2='130' y2='55' stroke='blue' stroke-width='4'/></g>"
-                    + "<path d='M 110 55 A 20 20 0 0 1 130 75' fill='none' stroke='lime'/></svg>"), "image/svg+xml"), fonts, compress: false)));
+                    + "<path d='M 110 55 A 20 20 0 0 1 130 75' fill='none' stroke='lime'/></svg>"), "image/svg+xml"), fonts, compress: false))));
 
             AssertEqual(testName, "three shapes", 3, marks.Count, 0);
             (double X, double Y) corner = marks[0].Points[0];
@@ -534,7 +534,7 @@ namespace test
                 Size = 20 / TextStyle.PointsToMillimeters, SizeUnit = FontSizeUnit.Point
             }, double.PositiveInfinity).Width;
 
-            List<Mark> set = ReadPdfMarks(Encoding.Latin1.GetString(PdfOf(
+            List<Mark> set = ReadPdfMarks(Encoding.Latin1.GetString(Unpacked(PdfOf(
                 SheetWith(Encoding.UTF8.GetBytes(
                     "<svg viewBox='10 5 200 100' font-size='20'>"
                     + "<text x='100' y='50'>Start</text>"
@@ -544,7 +544,7 @@ namespace test
                     + "<text x='30' y='20'>One<tspan x='30' dy='1.5em'>Two</tspan><tspan dx='2'>Three</tspan></text>"
                     // The position on the text and the words in its only tspan, as generators write.
                     + "<text x='60' y='70'><tspan fill='#900'>Inside</tspan></text>"
-                    + "</svg>"), "image/svg+xml"), fonts, compress: false)));
+                    + "</svg>"), "image/svg+xml"), fonts, compress: false))));
 
             double OnPageX(double x) => 20 + (x - 10) / 2.0;
             double OnPageY(double y) => 30 + (y - 5) / 2.0;
@@ -978,7 +978,7 @@ namespace test
             AssertEqual(testName, "and no sign of the file it came from", false, page.Contains("id=\"plot\""), 0);
             AssertEqual(testName, "the title is text, accent and all", true, page.Contains(">Fréquentation 2026</text>"), 0);
 
-            string uncompressed = Encoding.Latin1.GetString(PdfOf(bound, fonts, compress: false));
+            string uncompressed = Encoding.Latin1.GetString(Unpacked(PdfOf(bound, fonts, compress: false)));
             AssertEqual(testName, "the PDF holds no image for it", false, uncompressed.Contains("/Subtype /Image"), 0);
             AssertEqual(testName, "and draws its labels as text", true,
                 ReadPdfMarks(uncompressed).Count(m => m.Kind == "text") > 20, 0);
@@ -1032,7 +1032,7 @@ namespace test
             };
             sheet.Reattach();
             AssertEqual(testName, "a faded drawing fades, on what it already was", 0.25,
-                ReadPdfMarks(Encoding.Latin1.GetString(PdfOf(sheet, fonts, compress: false))).Single().Alpha, 0.002);
+                ReadPdfMarks(Encoding.Latin1.GetString(Unpacked(PdfOf(sheet, fonts, compress: false)))).Single().Alpha, 0.002);
             AssertEqual(testName, "a backdrop it could not draw is said", true,
                 TemplateValidator.Check(BackdropOf("<svg/>")).Any(i => i.Rule == "sound.unreadablePicture"), 0);
 

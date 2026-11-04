@@ -216,7 +216,7 @@ namespace test
             AssertEqual(testName, "a document comes out at all", true, thrown.Length == 0, 0);
             AssertEqual(testName, "and it is a file", true, bytes.Length > 1000, 0);
 
-            string written = System.Text.Encoding.Latin1.GetString(bytes);
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             // The form is the whole document, so it has to be there. Without a font
             // embedded the AcroForm was skipped and the widgets were never reserved -
@@ -301,7 +301,7 @@ namespace test
 
                 var pdf = new PdfBackend(library) { Interactive = true, Compress = false };
                 ReportRenderer.Render(report, pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
 
             // --- a name handed out is a name taken -----------------------------------
@@ -463,7 +463,7 @@ namespace test
                 Tagged = true, Interactive = true, Compress = false
             };
             ReportRenderer.Render(report, backend);
-            string pdf = System.Text.Encoding.Latin1.GetString(backend.ToArray());
+            string pdf = System.Text.Encoding.Latin1.GetString(Unpacked(backend.ToArray()));
 
             // --- the widget really was written, or nothing below proves anything ------
             var widget = System.Text.RegularExpressions.Regex.Match(
@@ -579,7 +579,7 @@ namespace test
             };
             LayoutResult laid = tall.Resolve(new FontTextMeasurer(library));
             ReportRenderer.Render(tall, laid, second);
-            string split = System.Text.Encoding.Latin1.GetString(second.ToArray());
+            string split = System.Text.Encoding.Latin1.GetString(Unpacked(second.ToArray()));
 
             int halves = laid.Pages.Sum(p => p.Items.Count(i => i.Source == longRow));
             int widgets = CountOccurrences(split, "/Subtype /Widget");
@@ -643,7 +643,7 @@ namespace test
                 pdf.AttachFacturX(FacturXXml());
 
                 ReportRenderer.Render(report, pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
 
             string outbound = Written(interactive: true);
@@ -840,7 +840,7 @@ namespace test
             // --- the PDF carries a real form -------------------------------------
             var pdf = new PdfBackend(library);
             ReportRenderer.Render(quote, pdf);
-            string text = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            string text = System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
 
             AssertEqual(testName, "there is a form", true, text.Contains("/AcroForm"), 0);
             AssertEqual(testName, "one widget per fillable field", 7, CountOccurrences(text, "/Subtype /Widget"), 0);
@@ -859,7 +859,7 @@ namespace test
 
             var digital = new PdfBackend(library);
             ReportRenderer.Render(signed, digital);
-            string cryptographic = System.Text.Encoding.Latin1.GetString(digital.ToArray());
+            string cryptographic = System.Text.Encoding.Latin1.GetString(Unpacked(digital.ToArray()));
 
             AssertEqual(testName, "asked for, it is a real signature field", 1,
                 CountOccurrences(cryptographic, "/FT /Sig"), 0);
@@ -915,11 +915,11 @@ namespace test
             // anything was ever fillable. The same boxes go on the page underneath.
             var backed = new PdfBackend(library) { Compress = false, FieldBackdrop = true };
             ReportRenderer.Render(quote, backed);
-            string withBackdrop = System.Text.Encoding.Latin1.GetString(backed.ToArray());
+            string withBackdrop = System.Text.Encoding.Latin1.GetString(Unpacked(backed.ToArray()));
 
             var bare = new PdfBackend(library) { Compress = false };
             ReportRenderer.Render(quote, bare);
-            string withoutBackdrop = System.Text.Encoding.Latin1.GetString(bare.ToArray());
+            string withoutBackdrop = System.Text.Encoding.Latin1.GetString(Unpacked(bare.ToArray()));
 
             AssertEqual(testName, "the page draws each field's box as well",
                 7, CountOccurrences(withBackdrop, " re\nS") - CountOccurrences(withoutBackdrop, " re\nS"), 0);
@@ -932,7 +932,7 @@ namespace test
             // Uncompressed, so the drawing instructions can be read back here.
             var flat = new PdfBackend(library) { Interactive = false, Compress = false };
             ReportRenderer.Render(quote, flat);
-            string flattened = System.Text.Encoding.Latin1.GetString(flat.ToArray());
+            string flattened = System.Text.Encoding.Latin1.GetString(Unpacked(flat.ToArray()));
 
             AssertEqual(testName, "flattened, there is no form", false, flattened.Contains("/AcroForm"), 0);
             AssertEqual(testName, "and no widgets", 0, CountOccurrences(flattened, "/Subtype /Widget"), 0);
@@ -942,7 +942,7 @@ namespace test
             var archivable = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b };
             ReportRenderer.Render(quote, archivable);
             byte[] bytes = archivable.ToArray();
-            string archived = System.Text.Encoding.Latin1.GetString(bytes);
+            string archived = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             AssertEqual(testName, "an archivable form is still a form", true,
                 archived.Contains("/AcroForm") && archived.Contains("<pdfaid:part>3</pdfaid:part>"), 0);
@@ -1130,7 +1130,7 @@ namespace test
             Report blank = BoundQuote(signed: false);
             var paper = new PdfBackend(library);
             ReportRenderer.Render(blank, paper);
-            string fillable = System.Text.Encoding.Latin1.GetString(paper.ToArray());
+            string fillable = System.Text.Encoding.Latin1.GetString(Unpacked(paper.ToArray()));
 
             AssertEqual(testName, "the printable one is a form", true, fillable.Contains("/AcroForm"), 0);
             AssertEqual(testName, "with its boxes unticked", true, fillable.Contains("/V /Off"), 0);
@@ -1142,7 +1142,7 @@ namespace test
             var record = new PdfBackend(library) { Interactive = false, Conformance = PdfConformance.PdfA3b };
             ReportRenderer.Render(signed, record);
             byte[] bytes = record.ToArray();
-            string archived = System.Text.Encoding.Latin1.GetString(bytes);
+            string archived = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             AssertEqual(testName, "the record is not a form", false, archived.Contains("/AcroForm"), 0);
             AssertEqual(testName, "nor carries widgets", 0, CountOccurrences(archived, "/Subtype /Widget"), 0);
@@ -1158,7 +1158,7 @@ namespace test
             // picture: the number was right for the wrong reason.
             var readable = new PdfBackend(library) { Interactive = false, Compress = false };
             ReportRenderer.Render(BoundQuote(signed: true), readable);
-            string drawn = System.Text.Encoding.Latin1.GetString(readable.ToArray());
+            string drawn = System.Text.Encoding.Latin1.GetString(Unpacked(readable.ToArray()));
 
             AssertEqual(testName, "both signatures are drawn on it", 2,
                 System.Text.RegularExpressions.Regex.Matches(drawn, @"/Im\d+ Do").Count, 0);

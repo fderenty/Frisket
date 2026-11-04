@@ -255,7 +255,7 @@ namespace test
             var pdf1 = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
             oneLineReport.GeneratedAt = SampleDate;
             ReportRenderer.Render(Report.FromJson(oneLineReport.ToJson()), pdf1);
-            string pdf1Text = System.Text.Encoding.Latin1.GetString(pdf1.ToArray());
+            string pdf1Text = System.Text.Encoding.Latin1.GetString(Unpacked(pdf1.ToArray()));
             AssertEqual(testName, "and the PDF is well-formed", true, pdf1Text.StartsWith("%PDF-1.7"), 0);
 
             // The glyphs are composite-font codes, not the literal letters, so the words
@@ -265,7 +265,7 @@ namespace test
             var readablePdf1 = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b,
                                                          Language = "en-GB", Compress = false };
             ReportRenderer.Render(Report.FromJson(oneLineReport.ToJson()), readablePdf1);
-            string readable1 = System.Text.Encoding.Latin1.GetString(readablePdf1.ToArray());
+            string readable1 = System.Text.Encoding.Latin1.GetString(Unpacked(readablePdf1.ToArray()));
             int showTextOps = System.Text.RegularExpressions.Regex.Matches(readable1, @"\bTj\b").Count;
             Console.WriteLine($"    {showTextOps} Tj operators in the PDF");
             AssertEqual(testName, "and the PDF actually carries five pieces of text, not a blank page",
@@ -754,7 +754,7 @@ namespace test
             // them catches one stretching and the other not, or by a different amount.
             var pdf = new PdfBackend(library) { Language = "en-GB", Compress = false };
             ReportRenderer.Render(Report.FromJson(Paragraph(HorizontalAlignment.Justify).ToJson()), pdf);
-            string stream = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            string stream = System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
 
             var adjustments = System.Text.RegularExpressions.Regex
                 .Matches(stream, @"\]\s*TJ")

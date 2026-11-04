@@ -1111,7 +1111,7 @@ namespace test
             report.Body.Add(new TextItem { Text = "Nor here, in bold.", Font = new TextStyle { Bold = true } });
             var pdf = new PdfBackend(new FontLibrary());
             ReportRenderer.Render(report, pdf);
-            string written = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             var embedded = System.Text.RegularExpressions.Regex.Matches(written, @"/BaseFont /[A-Z]{6}\+([^\s/]+)")
                 .Select(m => m.Groups[1].Value).Distinct().ToList();
             string sanitised = new string(declared.Select(c => char.IsLetterOrDigit(c) || c == '-' ? c : '_').ToArray());

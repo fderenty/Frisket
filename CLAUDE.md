@@ -703,6 +703,57 @@ fault: a rule about an item doubles, a rule about the document stays put. Naming
 which would be a list the harness keeps, one rule away from checking less than it says
 (§16); the two legal answers can be stated without it.
 
+### 4c. A compressed file packs its dictionaries, and the XMP stays readable
+
+Asked on 4 November 2026: compress whatever the standards allow. Measured before anything was
+written, because the request assumed streams left raw and there were almost none - every
+stream was already deflated at the smallest size. What was left as text was everything that is
+not a stream: the catalog, the pages, the fonts' dictionaries, and above all a tagged file's
+structure elements, with a cross-reference table of twenty bytes an object. On the conformance
+document, 55 KB of dictionaries and 10 KB of table out of 160.
+
+`Compress`, on by default, now puts them in object streams and writes the cross-reference as a
+stream (ISO 32000-1 7.5.7, 7.5.8). PDF/A-1 forbade both, being PDF 1.4; PDF/A-2 and -3 allow
+them, and the file is never hybrid, which PDF/A-2 does forbid. veraPDF passed both profiles on
+the first run. The conformance document went from 160 KB to 107, small documents lost 10 to 20
+per cent, and an invoice set in Arial 3 - its weight is the font.
+
+**The XMP stays readable, by the author's decision**: it is the one part of the file a tool can
+find without reading PDF, and PDF/A-1 forbade a filter on it even though -2 and -3 do not.
+`Compress` off keeps the classic layout, every object as text where it stands: what a person
+reads while debugging, and what most tests read.
+
+**The trap was the tests, and the tests could not say so.** Forty-five places read a whole PDF
+as text. Packed, an assertion that something is *there* fails, and one that something is *not*
+passes for nothing - "flattened, there is no /AcroForm" holds of any packed file. Ten tests
+failed; the 114 green ones were the danger, since nothing marked which were green for want of
+matter. Among them, the guard refusing a sample dated now: it reads /CreationDate in the
+information dictionary, which is packed, so it would have gone silent the day it was needed.
+Every whole-file read goes through `Unpacked` now, which writes the packed objects out after the
+file and leaves every offset where it was.
+
+Test 24 follows each cross-reference entry to its object in both layouts, and asks the trailer -
+or the dictionary standing in for it - to name the catalog, the information dictionary and an
+/ID. Without that last part, a dangling /Info would leave test 40 finding the author's name in
+the text with no reader able to reach it.
+
+**The comparison accused correct code again (§8).** The offsets live inside the cross-reference
+stream now, so `tools/compare-pdf.py` found a recompressed copy of the same document different
+- and on Linux, where the native library deflates with the system zlib, that is every run. It
+reads the entries through /W and sets the offsets aside as it did a table's, and was shown saying
+yes to a copy recompressed by another zlib and no to a changed packed object and to two entries
+swapped.
+
+And the first version reserved its table's number in the writer, so calling `ToArray` twice found
+an object reserved and never set. Packing leaves the writer as it found it.
+
+Eleven sabotages from a run seen green, and two went through. One was serious: **every stream
+packed into object streams**, which 7.5.7 forbids outright - and veraPDF passed it on both
+profiles, as did every reader the suite uses, the reader in `Frisket.Import` among them. The
+other wrote entry 0 of the table as an object in use rather than the head of the free list.
+Test 24 asks both now. *A file every reader opens can still be one the standard refuses*, and
+the validator is not where that is found (§4b).
+
 ## 4b. An image can come from the data, not only from the template
 
 `ImageItem.SourceField` names a path in the data whose value is raw base64 or a

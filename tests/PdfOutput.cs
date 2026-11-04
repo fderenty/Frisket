@@ -81,7 +81,7 @@ namespace test
             // The PDF: one object per distinct picture, and one drawing per record.
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Compress = false };
             ReportRenderer.Render(bound, pdf);
-            string written = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
 
             int objects = CountOccurrences(written, "/Subtype /Image");
             var drawn = System.Text.RegularExpressions.Regex.Matches(written, @"/(Im\d+) Do")
@@ -119,7 +119,7 @@ namespace test
             """);
             var shared = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Compress = false };
             ReportRenderer.Render(same, shared);
-            string once = System.Text.Encoding.Latin1.GetString(shared.ToArray());
+            string once = System.Text.Encoding.Latin1.GetString(Unpacked(shared.ToArray()));
 
             Console.WriteLine($"    une seule image, trois fois : "
                               + $"{CountOccurrences(once, "/Subtype /Image")} objet(s), "
@@ -195,7 +195,7 @@ namespace test
                 Tagged = true, Interactive = true, Compress = false
             };
             ReportRenderer.Render(report, backend);
-            string pdf = System.Text.Encoding.Latin1.GetString(backend.ToArray());
+            string pdf = System.Text.Encoding.Latin1.GetString(Unpacked(backend.ToArray()));
 
             // --- what each structure element says it owns ----------------------------
             var owns = new Dictionary<int, int>();          // object number -> its mark
@@ -298,25 +298,33 @@ namespace test
             LayoutResult layout = ReportRenderer.Render(report, pdf);
             byte[] bytes = pdf.ToArray();
 
-            string text = System.Text.Encoding.Latin1.GetString(bytes);
+            string text = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             // --- the file is a PDF, and a well-formed one ---------------------
             AssertEqual(testName, "starts with a PDF header", true, text.StartsWith("%PDF-1.7"), 0);
-            AssertEqual(testName, "ends with the end-of-file marker", true, text.TrimEnd().EndsWith("%%EOF"), 0);
+            AssertEqual(testName, "ends with the end-of-file marker", true,
+                System.Text.Encoding.Latin1.GetString(bytes).TrimEnd().EndsWith("%%EOF"), 0);
             AssertEqual(testName, "has a catalog", true, text.Contains("/Type /Catalog"), 0);
             AssertEqual(testName, "one page object per page", layout.PageCount,
                 CountOccurrences(text, "/Type /Page "), 0);
             AssertEqual(testName, "several pages", true, layout.PageCount > 1, 0);
 
-            // The cross-reference table must point at real objects, or no reader opens it.
-            int xrefAt = text.LastIndexOf("startxref", StringComparison.Ordinal);
-            int declared = int.Parse(text[(xrefAt + 9)..].Trim().Split('\n')[0].Trim());
-            AssertEqual(testName, "startxref points at the xref table", true,
-                declared > 0 && declared < bytes.Length && text.Substring(declared, 4) == "xref", 0);
+            // The cross-reference must point at real objects, or no reader opens it - each
+            // entry followed to where it says its object is, in the packed file this writes
+            // by default and in the readable one it writes when told not to compress.
+            var uncompressed = new PdfBackend(library) { Compress = false };
+            ReportRenderer.Render(report, uncompressed);
 
-            int size = int.Parse(text[(text.IndexOf("/Size ", StringComparison.Ordinal) + 6)..].Split(' ')[0]);
-            AssertEqual(testName, "every object is numbered", true,
-                CountOccurrences(text, " 0 obj") == size - 1, 0);
+            foreach ((string shape, byte[] file) in new[] { ("packed", bytes), ("readable", uncompressed.ToArray()) })
+            {
+                (string kind, int size, int reached, List<string> wrong) = FollowCrossReference(file);
+                Console.WriteLine($"    {shape}: {file.Length} bytes, a cross-reference {kind} of {size} entries, "
+                                  + $"{reached} reaching their object");
+                AssertEqual(testName, $"{shape}: written as a {(shape == "packed" ? "stream" : "table")}",
+                    shape == "packed" ? "stream" : "table", kind, 0);
+                AssertEqual(testName, $"{shape}: every object is reached", size - 1, reached, 0);
+                AssertEqual(testName, $"{shape}: and nothing points astray: {string.Join("; ", wrong)}", 0, wrong.Count, 0);
+            }
 
             // --- the fonts travel with the section ---------------------------
             AssertEqual(testName, "text is Type0 for full Unicode", true, text.Contains("/Subtype /Type0"), 0);
@@ -337,7 +345,7 @@ namespace test
 
             var plain = new PdfBackend(library) { Compress = false };
             ReportRenderer.Render(report, plain);
-            string readable = System.Text.Encoding.Latin1.GetString(plain.ToArray());
+            string readable = System.Text.Encoding.Latin1.GetString(Unpacked(plain.ToArray()));
 
             AssertEqual(testName, "millimetres converted once per page", true,
                 readable.Contains("2.8346 0 0 -2.8346 0 841.8898 cm"), 0);
@@ -383,6 +391,112 @@ namespace test
             if (pdf[start] == 10) start++;   // LF
             int end = raw.IndexOf("endstream", start, StringComparison.Ordinal);
             return pdf.Skip(start).Take(end - start).ToArray();
+        }
+
+        /// <summary>
+        /// Follows every entry of a file's cross-reference - a table, or a stream with
+        /// objects packed in object streams - to the object it names. An entry in a table or
+        /// of the stream's kind 1 has to land on "n 0 obj"; one of kind 2 has to name an
+        /// object stream whose index lists n at the place given.
+        /// </summary>
+        static (string Kind, int Size, int Reached, List<string> Wrong) FollowCrossReference(byte[] pdf)
+        {
+            string raw = System.Text.Encoding.Latin1.GetString(pdf);
+            int marker = raw.LastIndexOf("startxref", StringComparison.Ordinal);
+            int declared = int.Parse(raw[(marker + 9)..].Trim().Split('\n')[0].Trim());
+            var wrong = new List<string>();
+            int reached = 0;
+
+            bool At(int offset, int number) => offset > 0 && offset < raw.Length
+                && raw.AsSpan(offset).StartsWith($"{number} 0 obj\n", StringComparison.Ordinal);
+
+            // What the trailer - or the stream's dictionary, which stands in for it - names
+            // has to be what it says it is: a /Root or an /Info pointing anywhere else leaves
+            // the catalog or the title written and unreachable, which a search of the text
+            // would still find.
+            string unpacked = System.Text.Encoding.Latin1.GetString(Unpacked(pdf));
+            string Body(int number)
+            {
+                int at = unpacked.IndexOf($"\n{number} 0 obj\n", StringComparison.Ordinal);
+                return at < 0 ? "" : unpacked[at..unpacked.IndexOf("endobj", at, StringComparison.Ordinal)];
+            }
+            void Names(string trailer)
+            {
+                var root = System.Text.RegularExpressions.Regex.Match(trailer, @"/Root (\d+) 0 R");
+                var info = System.Text.RegularExpressions.Regex.Match(trailer, @"/Info (\d+) 0 R");
+                if (!root.Success || !Body(int.Parse(root.Groups[1].Value)).Contains("/Type /Catalog"))
+                    wrong.Add("/Root does not name the catalog");
+                if (!info.Success || !Body(int.Parse(info.Groups[1].Value)).Contains("/Producer (Frisket)"))
+                    wrong.Add("/Info does not name the information dictionary");
+                if (!trailer.Contains("/ID [<"))
+                    wrong.Add("no /ID");
+            }
+
+            // An object stream may not hold a stream (7.5.7). veraPDF passed a file that put
+            // every stream in one, on both profiles, and so did every reader the suite uses.
+            if (unpacked.IndexOf("endstream", pdf.Length, StringComparison.Ordinal) >= 0)
+                wrong.Add("a stream packed into an object stream, which ISO 32000-1 7.5.7 forbids");
+
+            if (raw.AsSpan(declared).StartsWith("xref\n", StringComparison.Ordinal))
+            {
+                string[] lines = raw[declared..].Split('\n');
+                int entries = int.Parse(lines[1].Split(' ')[1]);
+                if (lines[2] != "0000000000 65535 f ")
+                    wrong.Add("entry 0 is not the head of the free list");
+                for (int n = 1; n < entries; n++)
+                {
+                    int offset = int.Parse(lines[2 + n][..10]);
+                    if (At(offset, n)) reached++; else wrong.Add($"{n} at {offset}");
+                }
+                Names(raw[raw.IndexOf("trailer", declared, StringComparison.Ordinal)..marker]);
+                return ("table", entries, reached, wrong);
+            }
+
+            var head = System.Text.RegularExpressions.Regex.Match(raw[declared..],
+                @"^(\d+) 0 obj\n<< /Type /XRef /Size (\d+) /W \[1 (\d+) 2\][^\n]*?/Length (\d+) >>\nstream\n");
+            if (!head.Success)
+                return ("neither", 0, 0, new() { "startxref points at neither a table nor a cross-reference stream" });
+
+            int size = int.Parse(head.Groups[2].Value), width = int.Parse(head.Groups[3].Value);
+            byte[] table = Inflated(pdf.AsSpan(declared + head.Length, int.Parse(head.Groups[4].Value)).ToArray());
+            int entry = 3 + width;
+            if (table[0] != 0 || table[1 + width] != 0xFF || table[2 + width] != 0xFF)
+                wrong.Add("entry 0 is not the head of the free list");
+
+            for (int n = 1; n < size; n++)
+            {
+                int kind = table[n * entry];
+                long second = 0;
+                for (int b = 0; b < width; b++)
+                    second = (second << 8) | table[n * entry + 1 + b];
+                int third = (table[n * entry + 1 + width] << 8) | table[n * entry + 2 + width];
+
+                bool arrives = kind switch
+                {
+                    1 => At((int)second, n),
+                    2 => ObjectStreamHolds(pdf, raw, (int)second, third) == n,
+                    _ => false
+                };
+                if (arrives) reached++; else wrong.Add($"{n} as kind {kind} ({second}, {third})");
+            }
+
+            Names(head.Value);
+            return ("stream", size, reached, wrong);
+        }
+
+        /// <summary>The number an object stream lists at an index, or -1.</summary>
+        static int ObjectStreamHolds(byte[] pdf, string raw, int container, int index)
+        {
+            var head = System.Text.RegularExpressions.Regex.Match(raw,
+                $@"(?<=\n){container} 0 obj\n<< /Type /ObjStm /N (\d+) /First (\d+) (/Filter /FlateDecode )?/Length (\d+) >>\nstream\n");
+            if (!head.Success)
+                return -1;
+
+            byte[] data = pdf.AsSpan(head.Index + head.Length, int.Parse(head.Groups[4].Value)).ToArray();
+            string content = System.Text.Encoding.Latin1.GetString(head.Groups[3].Success ? Inflated(data) : data);
+            int[] pairs = content[..int.Parse(head.Groups[2].Value)]
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+            return index * 2 < pairs.Length ? pairs[index * 2] : -1;
         }
 
         /// <summary>The glyphs a composite is assembled from; empty for a simple outline.</summary>
@@ -491,7 +605,7 @@ namespace test
         /// </summary>
         static List<(int Code, int Gid, bool Present)> DrawnGlyphOutlines(byte[] pdf)
         {
-            string raw = System.Text.Encoding.Latin1.GetString(pdf);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(pdf));
             var found = new List<(int, int, bool)>();
 
             // /Fn -> the subset embedded for it
@@ -562,7 +676,7 @@ namespace test
 
             AssertEqual(testName, "the file gets markedly smaller", true, bytes.Length < full * 3 / 4, 0);
 
-            string raw = System.Text.Encoding.Latin1.GetString(bytes);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
             AssertEqual(testName, "a partial font says so", true,
                 System.Text.RegularExpressions.Regex.IsMatch(raw, @"/BaseFont /[A-Z]{6}\+"), 0);
 
@@ -642,7 +756,7 @@ namespace test
 
             ReportRenderer.Render(report, pdf);
             byte[] bytes = pdf.ToArray();
-            string text = System.Text.Encoding.Latin1.GetString(bytes);
+            string text = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             // Attaching the invoice implies the archivable profile it rides on.
             AssertEqual(testName, "conformance switched to PDF/A-3", PdfConformance.PdfA3b, pdf.Conformance, 0);
@@ -727,7 +841,7 @@ namespace test
 
                 // ToUnicode is compressed whatever Compress says, which covers page content
                 // only - so every stream is inflated and the CMap found among them.
-                string file = System.Text.Encoding.Latin1.GetString(bytes);
+                string file = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
                 string cmap = "";
                 foreach (System.Text.RegularExpressions.Match stream in
                          System.Text.RegularExpressions.Regex.Matches(file, @"(?<!end)stream\r?\n"))
@@ -961,7 +1075,7 @@ namespace test
             ReportRenderer.Render(report, onScreen);
             File.WriteAllText(Path.Combine(dir, "conformance.html"), onScreen.ToHtml());
 
-            string raw = System.Text.Encoding.Latin1.GetString(bytes);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             // Each feature has to be in there, or the one file to validate is not the one
             // file that covers everything - and a validator passing it would say nothing.
@@ -996,7 +1110,7 @@ namespace test
 
             var wide = new PdfBackend(library);
             ReportRenderer.Render(narrow, wide);
-            string written = System.Text.Encoding.Latin1.GetString(wide.ToArray());
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(wide.ToArray()));
 
             AssertEqual(testName, "a title outside PDFDocEncoding goes out as UTF-16", true,
                 written.Contains("/Title <FEFF"), 0);
@@ -1051,7 +1165,7 @@ namespace test
             var readable = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Tagged = true, Compress = false };
             readable.AttachFacturX(FacturXXml());
             ReportRenderer.Render(report, readable);
-            string streams = System.Text.Encoding.Latin1.GetString(readable.ToArray());
+            string streams = System.Text.Encoding.Latin1.GetString(Unpacked(readable.ToArray()));
 
             AssertEqual(testName, "the section carries: marked content", true, streams.Contains("BDC"), 0);
             AssertEqual(testName, "the section carries: decoration set aside", true,

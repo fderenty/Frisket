@@ -412,7 +412,7 @@ namespace test
         /// <summary>Every Type0 font of an uncompressed file, followed down to its program.</summary>
         private static List<Embedded> EmbeddedFaces(byte[] pdf)
         {
-            string raw = System.Text.Encoding.Latin1.GetString(pdf);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(pdf));
             string Body(int obj)
             {
                 int at = raw.IndexOf("\n" + obj + " 0 obj", StringComparison.Ordinal);

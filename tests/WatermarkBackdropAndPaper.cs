@@ -134,7 +134,7 @@ namespace test
             byte[] bytes = pdf.ToArray();
             WriteSamplePdf(Path.Combine(dir, "draft.pdf"), bytes);
 
-            string raw = System.Text.Encoding.Latin1.GetString(bytes);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
             AssertEqual(testName, "and the PDF carries it too", true, raw.Contains(" Tm"), 0);
 
             // In front, and translucent. Behind, a filled title bar or a shaded table
@@ -158,7 +158,7 @@ namespace test
             byte[] archivable = archived.ToArray();
             WriteSamplePdf(Path.Combine(dir, "draft.pdfa.pdf"), archivable);
 
-            string conforming = System.Text.Encoding.Latin1.GetString(archivable);
+            string conforming = System.Text.Encoding.Latin1.GetString(Unpacked(archivable));
             AssertEqual(testName, "an archivable file carries the mark", true,
                 conforming.Contains("<pdfaid:part>3</pdfaid:part>"), 0);
             AssertEqual(testName, "and its transparency with it", true,
@@ -268,7 +268,7 @@ namespace test
                     Tagged = true, Compress = false
                 };
                 ReportRenderer.Render(report, pdf);
-                return System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+                return System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
             }
 
             static double Num(string text) =>

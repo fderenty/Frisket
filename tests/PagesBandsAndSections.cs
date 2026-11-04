@@ -727,7 +727,7 @@ namespace test
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Compress = false };
             ReportRenderer.Render(report, pdf);
             byte[] bytes = pdf.ToArray();
-            string raw = System.Text.Encoding.Latin1.GetString(bytes);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
 
             var boxes = System.Text.RegularExpressions.Regex
                 .Matches(raw, @"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]")
@@ -836,7 +836,7 @@ namespace test
 
             var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
             ReportRenderer.Render(report, pdf);
-            string written = System.Text.Encoding.Latin1.GetString(pdf.ToArray());
+            string written = System.Text.Encoding.Latin1.GetString(Unpacked(pdf.ToArray()));
 
             const double toPoints = 72.0 / 25.4;
 
@@ -1042,7 +1042,7 @@ namespace test
                     page.Items.Count(placed => placed.Fragment == loneTotal), 0);
 
             // --- and what a reader obeys ---------------------------------------------
-            string raw = System.Text.Encoding.Latin1.GetString(bytes);
+            string raw = System.Text.Encoding.Latin1.GetString(Unpacked(bytes));
             var boxes = System.Text.RegularExpressions.Regex
                 .Matches(raw, @"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]")
                 .Select(m => Math.Round(double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)))

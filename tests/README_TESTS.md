@@ -315,7 +315,11 @@ four is marked with what it used to say and what settled it.
 - The ICC profile is written by the engine rather than shipped as a binary. It is
   a valid v2 matrix/TRC sRGB profile through a plain 2.2 gamma, not a byte copy of
   Adobe's, which differs only in the deepest shadows.
-- `PdfBackend` writes PDF 1.7 directly, embedding the very font files the layout was
+- `PdfBackend` writes PDF 1.7 directly. With `Compress`, the default, every object that is
+  not a stream goes into object streams and the cross-reference is a stream; off, each
+  object is written as text where it stands, with a table (test 24 follows both, entry by
+  entry). A test reading a compressed file as text reads it through `Unpacked`. The XMP
+  packet is never compressed. It embeds the very font files the layout was
   measured with (Type0/Identity-H plus a ToUnicode map, so text stays selectable). A
   TrueType face carries only the glyphs drawn, renumbered, with a CIDToGIDMap from the
   codes on the page, and keeps the nine tables ISO 32000-1 9.9 names (test 117); its

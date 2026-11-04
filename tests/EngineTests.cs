@@ -95,7 +95,7 @@ namespace test
         static void WriteSamplePdf(string path, byte[] pdf)
         {
             var dated = System.Text.RegularExpressions.Regex.Match(
-                System.Text.Encoding.Latin1.GetString(pdf), @"/CreationDate \(D:(\d{14})");
+                System.Text.Encoding.Latin1.GetString(Unpacked(pdf)), @"/CreationDate \(D:(\d{14})");
             if (dated.Success)
             {
                 DateTime written = DateTime.ParseExact(dated.Groups[1].Value, "yyyyMMddHHmmss",
@@ -218,6 +218,54 @@ namespace test
             System.Collections.IEnumerable list => string.Join("|", list.Cast<object?>().Select(Describe)),
             _ => value.ToString() ?? ""
         };
+
+        /// <summary>
+        /// The file with what its object streams hold written out after it, as ordinary
+        /// numbered objects, so a test can find a dictionary in the text as it always did.
+        ///
+        /// A compressed file keeps every object that is not a stream in deflated object
+        /// streams, where a search of the bytes finds nothing. Everything before the end is
+        /// left byte for byte, so an offset into the file is still an offset into this one,
+        /// and a stream is still read where it stands. Only for reading: what comes back is
+        /// not a PDF any more.
+        /// </summary>
+        static byte[] Unpacked(byte[] pdf)
+        {
+            string raw = System.Text.Encoding.Latin1.GetString(pdf);
+            var written = new System.Text.StringBuilder();
+
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(raw,
+                         @"(?<=\n)\d+ 0 obj\n<< /Type /ObjStm /N (\d+) /First (\d+) (/Filter /FlateDecode )?/Length (\d+) >>\nstream\n"))
+            {
+                byte[] data = pdf.AsSpan(m.Index + m.Length, int.Parse(m.Groups[4].Value)).ToArray();
+                if (m.Groups[3].Success)
+                    data = Inflated(data);
+
+                string content = System.Text.Encoding.Latin1.GetString(data);
+                int count = int.Parse(m.Groups[1].Value), first = int.Parse(m.Groups[2].Value);
+                int[] index = content[..first].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+
+                for (int i = 0; i < count; i++)
+                {
+                    int start = first + index[i * 2 + 1];
+                    int end = i + 1 < count ? first + index[i * 2 + 3] : content.Length;
+                    written.Append('\n').Append(index[i * 2]).Append(" 0 obj\n")
+                           .Append(content[start..end].TrimEnd('\n')).Append("\nendobj\n");
+                }
+            }
+
+            return pdf.Concat(System.Text.Encoding.Latin1.GetBytes(written.ToString())).ToArray();
+        }
+
+        /// <summary>Bytes a stream holds deflated, as they were before.</summary>
+        static byte[] Inflated(byte[] data)
+        {
+            using var inflated = new MemoryStream();
+            using (var zlib = new System.IO.Compression.ZLibStream(new MemoryStream(data),
+                       System.IO.Compression.CompressionMode.Decompress))
+                zlib.CopyTo(inflated);
+            return inflated.ToArray();
+        }
 
         static int CountOccurrences(string haystack, string needle)
         {

@@ -57,7 +57,12 @@ namespace Frisket
 
         public ITextMeasurer Measurer { get; }
 
-        /// <summary>Compress page content streams. Off makes the output readable while debugging.</summary>
+        /// <summary>
+        /// Compress the file: its streams deflated, and every object that is not a stream
+        /// packed into deflated object streams, with the cross-reference table as a stream.
+        /// Off writes every object as text where it stands, which is what to read while
+        /// debugging. The XMP packet is never compressed either way.
+        /// </summary>
         public bool Compress { get; set; } = true;
 
         /// <summary>
@@ -1407,7 +1412,7 @@ namespace Frisket
 
             int catalog = _pdf.Add($"<< {catalogEntries} >>");
             return _pdf.Build(catalog, "Frisket", _now, _title, _author, DocumentId(),
-                              _subject, _keywords);
+                              _subject, _keywords, packed: Compress);
         }
 
         public void Save(string path) => File.WriteAllBytes(path, ToArray());
