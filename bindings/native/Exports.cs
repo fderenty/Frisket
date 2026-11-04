@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Frisket;
 
@@ -16,6 +17,14 @@ namespace Frisket.Native
     ///
     /// Every export catches. An exception reaching this boundary ends the process with
     /// nothing to read, so the rule is absolute rather than a matter of care.
+    ///
+    /// Every export names cdecl, which is what frisket.h and every wrapper declare. Left
+    /// unsaid, the runtime takes the platform's own convention, and on 32-bit Windows that
+    /// is stdcall: the callee pops its arguments and a cdecl caller pops them again, so
+    /// the first call with an argument corrupts the stack. Everywhere else there is one
+    /// convention and the attribute changes nothing, which is why no 64-bit run could see
+    /// it. Found by a Win32 Delphi host on 4 November 2026; the x86 import library had
+    /// been saying so all along, naming _fk_render@24 where frisket.h links _fk_render.
     /// </summary>
     public static unsafe class Exports
     {
@@ -27,7 +36,7 @@ namespace Frisket.Native
         /// The last failure on this thread, or null. Valid until the next call on the
         /// same thread - copy it if you intend to keep it.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_last_error")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_last_error")]
         public static IntPtr LastError() => Interop.LastError();
 
         /// <summary>
@@ -39,7 +48,7 @@ namespace Frisket.Native
         /// every build would have gone on saying; and it allocated a fresh copy on every call
         /// while frisket.h promised a static string nobody frees. Made once, kept.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_version")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_version")]
         public static IntPtr Version() => VersionText;
 
         private static readonly IntPtr VersionText = Interop.Utf8(
@@ -57,7 +66,7 @@ namespace Frisket.Native
         /// library - Mulish for text that names no family; the first face added makes them
         /// step aside, and the two are never mixed.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_create")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_create")]
         public static int FontsCreate(IntPtr* library) => Interop.Guarded(() =>
         {
             if (library == null)
@@ -72,7 +81,7 @@ namespace Frisket.Native
         /// A count of zero is not an error here - the caller may be adding several
         /// directories - but rendering with an empty library is.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_add_directory")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_add_directory")]
         public static int FontsAddDirectory(IntPtr library, IntPtr directory, int* count)
             => Interop.Guarded(() =>
         {
@@ -101,7 +110,7 @@ namespace Frisket.Native
         /// and skipping it in silence would leave a caller looking at a list their font
         /// is not in, with nothing to say why.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_add_file")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_add_file")]
         public static int FontsAddFile(IntPtr library, IntPtr file) => Interop.Guarded(() =>
         {
             if (Handles.Unwrap<FontLibrary>(library) is not { } fonts)
@@ -133,7 +142,7 @@ namespace Frisket.Native
         /// font and the caller's decision; what this project owes is not to *ship* one
         /// it has no right to (CLAUDE.md 3), which is a different promise.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_add_memory")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_add_memory")]
         public static int FontsAddMemory(IntPtr library, byte* data, int length)
             => Interop.Guarded(() =>
         {
@@ -162,7 +171,7 @@ namespace Frisket.Native
         /// fk_render does not return until it is finished, so the word has to come from
         /// somewhere else, and a handle is somewhere else.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_token_create")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_token_create")]
         public static int TokenCreate(IntPtr* result) => Interop.Guarded(() =>
         {
             if (result == null)
@@ -177,7 +186,7 @@ namespace Frisket.Native
         /// call twice - the second time is not an error, it is a caller who does not
         /// know the first one landed.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_cancel")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_cancel")]
         public static int Cancel(IntPtr token) => Interop.Guarded(() =>
         {
             if (Handles.Unwrap<CancellationTokenSource>(token) is not { } source)
@@ -189,7 +198,7 @@ namespace Frisket.Native
             return Interop.Ok;
         });
 
-        [UnmanagedCallersOnly(EntryPoint = "fk_token_free")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_token_free")]
         public static void TokenFree(IntPtr token)
         {
             if (Handles.Unwrap<CancellationTokenSource>(token) is { } source)
@@ -205,7 +214,7 @@ namespace Frisket.Native
         /// not hold: that is <see cref="FontNotFoundException"/>, deliberately, since
         /// laying the report out against another face would move every line break.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_set_default")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_set_default")]
         public static int FontsSetDefault(IntPtr library, IntPtr family) => Interop.Guarded(() =>
         {
             if (Handles.Unwrap<FontLibrary>(library) is not { } fonts)
@@ -219,7 +228,7 @@ namespace Frisket.Native
         /// What the library holds, as JSON: family, weight, slant, and the cap height the
         /// engine measured from the outline rather than read from the font's own tables.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_list")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_list")]
         public static int FontsList(IntPtr library, IntPtr* result) => Interop.Guarded(() =>
         {
             if (Handles.Unwrap<FontLibrary>(library) is not { } fonts)
@@ -255,7 +264,7 @@ namespace Frisket.Native
             return Interop.Ok;
         });
 
-        [UnmanagedCallersOnly(EntryPoint = "fk_fonts_free")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_fonts_free")]
         public static void FontsFree(IntPtr library) => Handles.Release(library);
 
         // ------------------------------------------------------------------
@@ -268,7 +277,7 @@ namespace Frisket.Native
         /// text came from, and a bare string carries no such place. Load from a path with
         /// <see cref="TemplateLoad"/> when the template may include others.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_template_parse")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_parse")]
         public static int TemplateParse(IntPtr json, IntPtr* template) => Interop.Guarded(() =>
         {
             if (template == null)
@@ -286,7 +295,7 @@ namespace Frisket.Native
         /// <see cref="TemplateParse"/>, resolving every <see cref="SubTemplateItem"/> the
         /// template contains, each relative to where it is.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_template_load")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_load")]
         public static int TemplateLoad(IntPtr path, IntPtr* template) => Interop.Guarded(() =>
         {
             if (template == null)
@@ -306,7 +315,7 @@ namespace Frisket.Native
         /// What is wrong with the template, as a JSON array. Empty means nothing to
         /// report. Same rules the designer shows and an outside validator would reach.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_template_check")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_check")]
         public static int TemplateCheck(IntPtr template, int accessible, IntPtr* result)
             => Interop.Guarded(() =>
         {
@@ -333,7 +342,7 @@ namespace Frisket.Native
             return Interop.Ok;
         });
 
-        [UnmanagedCallersOnly(EntryPoint = "fk_template_free")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_template_free")]
         public static void TemplateFree(IntPtr template) => Handles.Release(template);
 
         // ------------------------------------------------------------------
@@ -350,7 +359,7 @@ namespace Frisket.Native
         /// Every result is null-terminated as well as sized, so a text one can be used as
         /// a C string without copying.
         /// </summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_render")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_render")]
         public static int Render(IntPtr template, IntPtr fonts, IntPtr dataJson,
                                  IntPtr optionsJson, IntPtr token, IntPtr* result)
             => Interop.Guarded(() =>
@@ -449,16 +458,16 @@ namespace Frisket.Native
         // ------------------------------------------------------------------
 
         /// <summary>The bytes. Valid until the buffer is freed.</summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_buffer_data")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_buffer_data")]
         public static IntPtr BufferData(IntPtr buffer)
             => Handles.Unwrap<Buffer>(buffer) is { } held ? held.Data : IntPtr.Zero;
 
         /// <summary>How many, not counting the terminator that is there anyway.</summary>
-        [UnmanagedCallersOnly(EntryPoint = "fk_buffer_size")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_buffer_size")]
         public static int BufferSize(IntPtr buffer)
             => Handles.Unwrap<Buffer>(buffer) is { } held ? held.Size : 0;
 
-        [UnmanagedCallersOnly(EntryPoint = "fk_buffer_free")]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) }, EntryPoint = "fk_buffer_free")]
         public static void BufferFree(IntPtr buffer) => Handles.Release(buffer);
 
         // ------------------------------------------------------------------

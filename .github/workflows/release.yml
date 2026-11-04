@@ -7,7 +7,8 @@ name: Release
 # library and the command line linked ahead of time, each built on a runner of its own
 # platform and held - by the document it writes, never by its return code - to the managed
 # CLI on that same machine (CLAUDE.md 8). The one target with no hosted runner, 32-bit ARM,
-# is cross-compiled from x64 and checked inside an ARM container under emulation.
+# is cross-compiled from x64 and checked inside an ARM container under emulation; 32-bit
+# Windows needs no runner of its own, since x64 Windows runs it.
 #
 # Then the three packages, versioned from the tag, and the GitHub release. nuget.org comes
 # last, after every target, the packages and the release have succeeded - a push there
@@ -62,6 +63,12 @@ jobs:
         include:
           - rid: win-x64
             runner: windows-latest
+          # For a 32-bit Windows host, run on the x64 runner as Windows runs any 32-bit
+          # program. Its library is loaded by a 32-bit Python, and held by a 32-bit C program
+          # to the calling convention frisket.h declares, which no 64-bit run can see.
+          - rid: win-x86
+            runner: windows-latest
+            python: x86
           # A real Arm64 Windows machine: the library built for it in August 2026 had never
           # been run anywhere until this job (CLAUDE.md 8).
           - rid: win-arm64
@@ -89,9 +96,16 @@ jobs:
           dotnet-version: '10.0.x'
 
       - uses: actions/setup-python@v7
-        if: ${{ !matrix.cross }}
+        if: ${{ !matrix.cross && !matrix.python }}
         with:
           python-version: '3.x'
+
+      # A 32-bit library loads only into a 32-bit process.
+      - uses: actions/setup-python@v7
+        if: ${{ matrix.python }}
+        with:
+          python-version: '3.x'
+          architecture: ${{ matrix.python }}
 
       # ILCompiler finds the linker through vswhere, and fails naming vswhere when it is not
       # on PATH - a long way from the cause (CLAUDE.md 8). Put there rather than hoped for.
@@ -139,6 +153,14 @@ jobs:
       - name: The library, the CLI as shipped and the managed CLI write one document
         if: ${{ !matrix.cross }}
         run: python bindings/native/check-against-cli.py "$LIBRARY" "$CLI" apps/cli/bin/Release/net10.0/Frisket.Cli.dll
+
+      # The caller frisket.h is written for: a C program, linked against the import library,
+      # whose x86 names carry the calling convention - so a library exporting stdcall does
+      # not link (CLAUDE.md 8). win-x64 is the control, where the convention cannot be wrong.
+      - name: The C sample links against the import library and writes the same document
+        if: matrix.rid == 'win-x86' || matrix.rid == 'win-x64'
+        shell: pwsh
+        run: ./.github/scripts/c-sample.ps1 -Target ${{ matrix.rid }} -Out "$env:RUNNER_TEMP/c-sample"
 
       - uses: docker/setup-qemu-action@v4
         if: matrix.rid == 'linux-arm'

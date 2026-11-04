@@ -1882,6 +1882,29 @@ Third lesson from the same exercise, this one visible only on screen: **one docu
   characters demanding more glyphs. Hence `UTF8String` end to end, and
   `{$CODEPAGE UTF8}` in every `.pas` carrying an accented literal.
 
+**A convention that 64-bit has only one of.** `win-x86` was built for a Win32 Delphi host on
+4 November 2026, and it crashed on its first call. `frisket.h` said `__cdecl` and so did
+every wrapper, while the exports said nothing - and an `[UnmanagedCallersOnly]` that says
+nothing takes the platform's convention, `stdcall` on 32-bit Windows. Each call then popped
+its arguments twice. On x64, ARM64 and Linux there is one convention, so every run this
+project had ever made was blind to it. The fix names `CallConvCdecl` on each export; Delphi
+10.4 also lacked the wrapper's `PInt32`, now declared in the unit.
+
+The import library had been saying so the whole time: built `stdcall`, `frisket.lib` names
+`_fk_render@24`, and a C program compiled against the header asks for `_fk_render` and does
+not link. So the check is the caller the header is written for, `.github/scripts/c-sample.ps1`:
+the C sample built for the target, linked, run, and its PDF held to the managed CLI's. A
+32-bit Python runs `check-against-cli.py` there too, but is not relied on for this, since
+nothing here has shown that ctypes on x86 notices a callee popping what it should not. Test
+75 reads `Exports.cs` and refuses an export that does not name `cdecl`, so the next one fails
+on a push rather than on release day. Both were sabotaged on `fk_render` alone, and each named it.
+
+**And the restore of that sabotage was itself a stale binary** (§6). `Copy-Item` puts a file
+back with its old date, older than the sabotaged build's outputs, so the next publish
+decided nothing had changed and kept the broken library. The check failed on code that was
+correct, which is at least the honest direction. A file restored from a copy is touched
+before anything is built from it.
+
 ## 8b. What a hostile template gets, and what it no longer gets
 
 Review of 20-21 August 2026, on `engine/` and `bindings/native/` only. Three things

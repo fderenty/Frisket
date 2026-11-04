@@ -3,8 +3,8 @@
 `frisket.dll` / `libfrisket.so` — the engine compiled ahead of time, behind a
 flat C interface. No runtime to install, nothing managed beside it, one file.
 
-The contract is [`frisket.h`](frisket.h). Fifteen entry points, and three kinds
-of thing crossing: null-terminated UTF-8 strings, opaque handles, status codes.
+The contract is [`frisket.h`](frisket.h): flat entry points, all `cdecl`, and three
+kinds of thing crossing: null-terminated UTF-8 strings, opaque handles, status codes.
 
 ## Why it is shaped like this
 
@@ -30,7 +30,7 @@ the collector is free to move while C is reading it.
 One script per side. Both encode what is not obvious, so it need not be rediscovered.
 
 ```powershell
-./bindings/native/build.ps1 -Target win-x64      # or win-arm64
+./bindings/native/build.ps1 -Target win-x64      # or win-arm64, win-x86
 ```
 
 ```bash
@@ -42,14 +42,31 @@ One script per side. Both encode what is not obvious, so it need not be rediscov
 |---|---|---|
 | `win-x64` | a Windows x64 runner | there |
 | `win-arm64` | an Arm64 Windows runner | there - for the first time on 18 October 2026 |
+| `win-x86` | a Windows x64 runner | there, as a 32-bit process, by a 32-bit Python and a 32-bit C program |
 | `linux-x64` | an Ubuntu x64 runner | there |
 | `linux-arm64` | an Ubuntu Arm64 runner | there |
 | `linux-arm` | an Ubuntu x64 runner, cross-compiled | in an armhf container under qemu |
 
-Every release does all five (`.github/workflows/release.yml`), and so does running that
+Every release does all six (`.github/workflows/release.yml`), and so does running that
 workflow by hand: on each target the library, the CLI linked ahead of time and the managed
 CLI must write one document, and 32-bit ARM's is compared with the x64 render as well. A
 target that stops agreeing stops the release.
+
+### The calling convention, which only 32-bit Windows has
+
+Every export says `cdecl`, as the header does. Left unsaid, .NET takes the platform's own
+convention, which on 32-bit Windows is `stdcall`: the library pops its arguments and a
+`cdecl` caller pops them again, so the first call that takes an argument corrupts the
+stack. Everywhere else there is one convention and the word changes nothing, so no 64-bit
+run could see it. A Win32 Delphi host found it on 4 November 2026, on the first call.
+
+The import library had been saying so all along: built `stdcall`, `frisket.lib` names
+`_fk_render@24`, and a C program compiled against `frisket.h` asks for `_fk_render` and
+does not link. That is the check, `.github/scripts/c-sample.ps1`: the C sample built for
+the target against its import library, run, and its PDF compared with the managed CLI's.
+The release runs it on `win-x86`, and on `win-x64` as the control. Test 75 also reads
+`Exports.cs` and fails on an export that does not name `cdecl`, so the next one is caught
+on a push rather than on release day.
 
 ### What the scripts know that a plain `dotnet publish` does not
 
@@ -271,7 +288,7 @@ in the system code page unless the file says `{$CODEPAGE UTF8}`.
 | | |
 |---|---|
 | [`wrappers/cpp`](wrappers/cpp) | A header, and nothing to build. Every handle lives in an object that frees it on the way out of the block - including when an exception is unwinding through it |
-| [`wrappers/pascal`](wrappers/pascal) | Free Pascal and Delphi. Late-bound, nothing to link. Compiles clean on FPC 3.2.2 |
+| [`wrappers/pascal`](wrappers/pascal) | Free Pascal and Delphi. Late-bound, nothing to link. Compiles clean on FPC 3.2.2, and on Delphi 10.4 in 32 bits since it declares its own `PInt32` (checked by the host that asked for `win-x86`). Not Delphi 5, which predates records with methods and `UTF8String` |
 | [`wrappers/python`](wrappers/python) | ctypes. Also the cheapest proof that late binding works at all, which is what every other language does |
 
 C needs no wrapper — it has the header.

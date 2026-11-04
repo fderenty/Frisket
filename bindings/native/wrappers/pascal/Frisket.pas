@@ -127,14 +127,23 @@ const
 
   FK_OK = 0;
 
-{ ---------------------------------------------------------------- the imports }
+type
+  { Free Pascal has PInt32 and Delphi 10.4 does not, so the one pointer the imports
+    need is declared here rather than borrowed from System. }
+  PErInt32 = ^Int32;
+
+{ ---------------------------------------------------------------- the imports
+
+  cdecl, as frisket.h says. On 64-bit there is one convention and the word changes
+  nothing; on 32-bit Windows it is the whole agreement, and the library names cdecl
+  on every export to keep it. }
 
 function fk_last_error: PAnsiChar; cdecl; external ErLib;
 function fk_version: PAnsiChar; cdecl; external ErLib;
 
 function fk_fonts_create(out Fonts: TErHandle): Int32; cdecl; external ErLib;
 function fk_fonts_add_directory(Fonts: TErHandle; Directory: PAnsiChar;
-                                Count: PInt32): Int32; cdecl; external ErLib;
+                                Count: PErInt32): Int32; cdecl; external ErLib;
 function fk_fonts_add_file(Fonts: TErHandle; FileName: PAnsiChar): Int32; cdecl; external ErLib;
 function fk_fonts_add_memory(Fonts: TErHandle; Data: Pointer; Length: Int32): Int32; cdecl; external ErLib;
 function fk_fonts_set_default(Fonts: TErHandle; Family: PAnsiChar): Int32; cdecl; external ErLib;

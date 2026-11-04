@@ -20,16 +20,18 @@
     which runs with its own installer directory reachable.
 
     Loading the C++ environment by hand is kept as a fallback, for a machine where
-    that is not enough: vcvars64.bat, and -p:IlcUseEnvironmentalTools=true to tell
-    ILCompiler to use what is on PATH rather than go looking.
+    that is not enough: the vcvars script for the target, and
+    -p:IlcUseEnvironmentalTools=true to tell ILCompiler to use what is on PATH rather
+    than go looking.
 
     A win-arm64 build additionally needs the ARM64 C++ tools, a separate component of
-    the Visual Studio installer.
+    the Visual Studio installer. win-x86 needs nothing more: the x86 tools come with
+    the Desktop development with C++ workload.
 
     Linux targets are built on Linux; see build.sh.
 
 .PARAMETER Target
-    win-x64 or win-arm64.
+    win-x64, win-arm64 or win-x86.
 
 .PARAMETER Version
     The version the library reports through fk_version - a release passes its tag.
@@ -37,10 +39,13 @@
 
 .EXAMPLE
     ./bindings/native/build.ps1 -Target win-x64
+
+.EXAMPLE
+    ./bindings/native/build.ps1 -Target win-x86
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('win-x64', 'win-arm64')]
+    [ValidateSet('win-x64', 'win-arm64', 'win-x86')]
     [string] $Target = 'win-x64',
 
     [string] $Version,
@@ -70,12 +75,15 @@ Write-Host "Profile : $profilePath"
 $versioned = if ($Version) { "-p:Version=$Version" } else { "" }
 
 if ($UseEnvironmentalTools) {
+    # The script that sets up a compiler for the target, from an x64 host. It was
+    # vcvars64.bat whatever the target, which links x64 code into an ARM64 or x86 build.
+    $script = @{ 'win-x64' = 'vcvars64.bat'; 'win-arm64' = 'vcvarsamd64_arm64.bat'; 'win-x86' = 'vcvarsamd64_x86.bat' }[$Target]
     $vcvars = @(
-        'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat'
-        'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat'
+        "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\$script"
+        "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\$script"
     ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-    if (-not $vcvars) { throw "No vcvars64.bat found. Install the Desktop development with C++ workload." }
+    if (-not $vcvars) { throw "No $script found. Install the Desktop development with C++ workload." }
 
     Write-Host "Toolchain: $vcvars"
     cmd /c "call `"$vcvars`" >nul 2>&1 && dotnet publish `"$project`" -p:PublishProfile=$Target -p:IlcUseEnvironmentalTools=true $versioned --nologo"

@@ -44,6 +44,28 @@ namespace test
             AssertEqual(testName, "the header declares entry points at all",
                 true, declared.Count > 10, 0);
 
+            // Every export names cdecl, as the header does. Asked of the source because it
+            // needs no library published and no 32-bit machine: left unsaid, the runtime
+            // takes stdcall on 32-bit Windows, the convention 64-bit cannot tell apart, and
+            // the x86 library crashed a Win32 host on its first call (CLAUDE.md 8). What
+            // proves the binary is the C sample built for x86 in release.yml; this is what
+            // makes the next export fail on a push rather than on release day.
+            string exportsSource = File.ReadAllText(Path.Combine(root, "Exports.cs"));
+            var attributes = System.Text.RegularExpressions.Regex
+                .Matches(exportsSource, @"\[UnmanagedCallersOnly\((.*)\)\]")
+                .Select(m => m.Groups[1].Value).ToList();
+            var named = attributes
+                .Select(a => System.Text.RegularExpressions.Regex.Match(a, "EntryPoint\\s*=\\s*\"(fk_[a-z_]+)\"").Groups[1].Value)
+                .OrderBy(n => n).ToList();
+            var unsaid = attributes.Where(a => !a.Contains("typeof(CallConvCdecl)")).ToList();
+            foreach (string attribute in unsaid)
+                Console.WriteLine($"      sans cdecl : {attribute}");
+
+            AssertEqual(testName, "Exports.cs exports what frisket.h declares, by name",
+                string.Join(",", declared), string.Join(",", named), 0);
+            AssertEqual(testName, "and every export names cdecl, as frisket.h does",
+                0, unsaid.Count, 0);
+
             // Every publish folder, and what is in it - rather than only the ones that
             // happen to hold what this test can read. A folder that exists and is empty
             // reads as "published" to anybody browsing, and is not: linux-x64 is built
@@ -109,7 +131,8 @@ namespace test
                 // The folder names the architecture; the file has to agree. A win-arm64
                 // folder holding an x64 image is a build that quietly ignored its RID.
                 string wanted = rid.EndsWith("-arm64") ? "ARM64"
-                              : rid.EndsWith("-x64") ? "x64" : machine;
+                              : rid.EndsWith("-x64") ? "x64"
+                              : rid.EndsWith("-x86") ? "x86" : machine;
                 AssertEqual(testName, $"{rid} is an image of the architecture it claims",
                     wanted, machine, 0);
 
