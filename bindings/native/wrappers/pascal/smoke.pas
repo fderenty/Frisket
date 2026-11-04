@@ -51,6 +51,7 @@ function ReadAllBytes(const FileName: string): TBytes;
 var
   Stream: TFileStream;
 begin
+  Result := nil;
   Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
     SetLength(Result, Stream.Size);

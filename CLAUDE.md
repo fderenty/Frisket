@@ -1905,8 +1905,9 @@ The import library had been saying so the whole time: built `stdcall`, `frisket.
 `_fk_render@24`, and a C program compiled against the header asks for `_fk_render` and does
 not link. So the check is the caller the header is written for, `.github/scripts/c-sample.ps1`:
 the C sample built for the target, linked, run, and its PDF held to the managed CLI's. A
-32-bit Python runs `check-against-cli.py` there too, but is not relied on for this, since
-nothing here has shown that ctypes on x86 notices a callee popping what it should not. Test
+32-bit Python runs `check-against-cli.py` there too, and is no witness to this: ctypes calls
+through libffi, which puts the stack back, so the stdcall library passed it under Python 3.15
+in 32 bits - document and all. That was first only suspected, then shown the same day. Test
 75 reads `Exports.cs` and refuses an export that does not name `cdecl`, so the next one fails
 on a push rather than on release day. Both were sabotaged on `fk_render` alone, and each named it.
 

@@ -64,7 +64,9 @@ The import library had been saying so all along: built `stdcall`, `frisket.lib` 
 `_fk_render@24`, and a C program compiled against `frisket.h` asks for `_fk_render` and
 does not link. That is the check, `.github/scripts/c-sample.ps1`: the C sample built for
 the target against its import library, run, and its PDF compared with the managed CLI's.
-The release runs it on `win-x86`, and on `win-x64` as the control. Test 75 also reads
+The release runs it on `win-x86`, and on `win-x64` as the control. A 32-bit Python is no
+witness here: ctypes puts the stack back after each call, and the `stdcall` library passed
+`check-against-cli.py` under it, document and all. Test 75 also reads
 `Exports.cs` and fails on an export that does not name `cdecl`, so the next one is caught
 on a push rather than on release day.
 
@@ -288,7 +290,7 @@ in the system code page unless the file says `{$CODEPAGE UTF8}`.
 | | |
 |---|---|
 | [`wrappers/cpp`](wrappers/cpp) | A header, and nothing to build. Every handle lives in an object that frees it on the way out of the block - including when an exception is unwinding through it |
-| [`wrappers/pascal`](wrappers/pascal) | Free Pascal and Delphi. Late-bound, nothing to link. Compiles clean on FPC 3.2.2, and on Delphi 10.4 in 32 bits since it declares its own `PInt32` (checked by the host that asked for `win-x86`). Not Delphi 5, which predates records with methods and `UTF8String` |
+| [`wrappers/pascal`](wrappers/pascal) | Free Pascal and Delphi. Late-bound, nothing to link. Compiles clean on FPC 3.2.2 for Windows in 32 and 64 bits and for Linux in 64 bits, and on Delphi 10.4 in 32 bits since it declares its own `PInt32` (checked by the host that asked for `win-x86`). Not Delphi 5, which predates records with methods and `UTF8String` |
 | [`wrappers/python`](wrappers/python) | ctypes. Also the cheapest proof that late binding works at all, which is what every other language does |
 
 C needs no wrapper — it has the header.

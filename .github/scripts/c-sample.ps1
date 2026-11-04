@@ -15,8 +15,9 @@
     FK_OK proves nothing.
 
     check-against-cli.py runs on x86 too, under a 32-bit Python, for the CLI the release
-    ships. It is not what guards the convention: nothing here has shown that ctypes on x86
-    notices a callee popping what it should not.
+    ships. It cannot guard the convention: ctypes calls through libffi, which puts the stack
+    back after the call, and the stdcall library passed it under Python 3.15 in 32 bits,
+    document and all (4 November 2026).
 
     Takes the library from bindings/native/bin/<target>/publish and the import library
     from bindings/native/bin/Release/net10.0/<target>/native, where build.ps1 leaves them,
