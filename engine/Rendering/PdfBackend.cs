@@ -125,7 +125,10 @@ namespace Frisket
 
         /// <summary>Carries a file inside the section. PDF/A-3 is what allows this.</summary>
         public void Attach(PdfAttachment attachment)
-            => _attachments.Add(attachment ?? throw new ArgumentNullException(nameof(attachment)));
+        {
+            NotYetAssembled("a file attached now");
+            _attachments.Add(attachment ?? throw new ArgumentNullException(nameof(attachment)));
+        }
 
         /// <summary>
         /// Attaches the machine-readable invoice of a Factur-X section and declares it in
@@ -676,6 +679,8 @@ namespace Frisket
 
         public void BeginPage(Page page)
         {
+            NotYetAssembled("a page drawn now");
+
             _pageWidth = page.Frame.Width;
             _pageHeight = page.Frame.Height;
             _content = new StringBuilder(8192);
@@ -1300,9 +1305,24 @@ namespace Frisket
 
         // ------------------------------------------------------------------
 
-        /// <summary>Assembles the section. Call once the last page has been drawn.</summary>
+        /// <summary>
+        /// Assembles the document. Call once the last page has been drawn; a second call, or
+        /// <see cref="Save"/>, hands back the same bytes.
+        ///
+        /// Each call used to assemble everything again after what the last one had written -
+        /// fonts, images, pages, metadata, catalog - and the file named only the newest. So a
+        /// Save followed by a ToArray, which is how a host keeps one copy and sends another,
+        /// sent a file twice as heavy, and a third call three times: valid, and nothing said
+        /// so. Found by a sample carrying two XMP packets, written by a test that read the
+        /// document and then saved it.
+        /// </summary>
         public byte[] ToArray()
         {
+            // A copy each time, as MemoryStream.ToArray gives: a caller changing its array
+            // must not change the next caller's.
+            if (_assembled != null)
+                return (byte[])_assembled.Clone();
+
             if (Conformance == PdfConformance.PdfA3b && _missingGlyphs.Count > 0)
             {
                 string characters = string.Join(", ", _missingGlyphs.Take(12)
@@ -1414,8 +1434,24 @@ namespace Frisket
             catalogEntries.Append($" /Metadata {metadata} 0 R");
 
             int catalog = _pdf.Add($"<< {catalogEntries} >>");
-            return _pdf.Build(catalog, "Frisket", _now, _title, _author, DocumentId(),
-                              _subject, _keywords, packed: Compress);
+            _assembled = _pdf.Build(catalog, "Frisket", _now, _title, _author, DocumentId(),
+                                    _subject, _keywords, packed: Compress);
+            return (byte[])_assembled.Clone();
+        }
+
+        private byte[]? _assembled;
+
+        /// <summary>
+        /// Refuses what would come too late: a page or an attachment given once the document
+        /// is assembled would be in no file, and drawn on a backend that says nothing it would
+        /// simply be missing.
+        /// </summary>
+        private void NotYetAssembled(string what)
+        {
+            if (_assembled != null)
+                throw new InvalidOperationException(
+                    $"This document was assembled by ToArray or Save, so {what} would be in no file. " +
+                    "Another document is drawn on a new PdfBackend.");
         }
 
         public void Save(string path) => File.WriteAllBytes(path, ToArray());

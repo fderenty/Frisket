@@ -651,6 +651,55 @@ namespace test
             return found;
         }
 
+        /// <summary>
+        /// Each ToArray assembled the whole document again after the last one, and the file
+        /// named only the newest: a Save then a ToArray sent a file twice as heavy, carrying two
+        /// catalogs, two XMP packets and every font twice. Valid, so no reader and no validator
+        /// said a word; a sample here carried two packets for months.
+        /// </summary>
+        [Fact]
+        public void Test122_ASecondToArrayHandsBackTheSameDocument()
+        {
+            var testName = "Test 122: a second ToArray hands back the same document";
+            Console.WriteLine($"Running {testName}...");
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+
+            var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Tagged = true };
+            ReportRenderer.Render(BoundAcmeInvoice(3), pdf);
+
+            byte[] first = pdf.ToArray();
+            byte[] second = pdf.ToArray();
+            Console.WriteLine($"    first {first.Length} bytes, second {second.Length}");
+
+            AssertEqual(testName, "the second call gives the same length", first.Length, second.Length, 0);
+            AssertEqual(testName, "and the same bytes", true, first.AsSpan().SequenceEqual(second), 0);
+            AssertEqual(testName, "so one metadata packet", 1,
+                CountOccurrences(System.Text.Encoding.Latin1.GetString(Unpacked(second)), "/Type /Metadata"), 0);
+
+            // Each caller gets an array of its own, as MemoryStream.ToArray gives. Compared with
+            // a copy taken first: handed one shared array, first and second would be the same
+            // object and agree whatever was done to it.
+            byte[] kept = (byte[])first.Clone();
+            second[0] ^= 0xFF;
+            AssertEqual(testName, "changing one caller's array leaves the next one's alone", true,
+                kept.AsSpan().SequenceEqual(pdf.ToArray()), 0);
+
+            // What comes too late is refused rather than left out of a file already made.
+            var drawn = Assert.Throws<InvalidOperationException>(
+                () => ReportRenderer.Render(BoundAcmeInvoice(3), pdf));
+            Console.WriteLine($"    a second render: {drawn.Message}");
+            AssertEqual(testName, "a page drawn after assembly is refused, saying why", true,
+                drawn.Message.Contains("assembled", StringComparison.Ordinal), 0);
+
+            Assert.Throws<InvalidOperationException>(() => pdf.AttachFacturX(new byte[] { 60, 47, 62 }));
+            AssertEqual(testName, "and so is a file attached after it; the document is still the one assembled",
+                true, kept.AsSpan().SequenceEqual(pdf.ToArray()), 0);
+
+            Console.WriteLine();
+        }
+
         [Fact]
         public void Test36_FontSubset()
         {

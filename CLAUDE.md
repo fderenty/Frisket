@@ -740,6 +740,14 @@ information dictionary would no longer agree with the packet, which PDF/A refuse
 over those bytes would break. A PDF tool writes the stream again instead. The 1,980 bytes went on
 the request of a host measuring an invoice, in either layout.
 
+**And taking them out found a file that carried two packets.** `ToArray` assembled the whole
+document again on every call, after what the last call had written, and the file named only the
+newest: a `Save` then a `ToArray` - one copy kept, one sent - sent a file twice as heavy, fonts
+and catalog included. Valid, so nothing said so, and `advanced-text/styles.pdf` had carried the
+second set since its test read the document before saving it. The document is assembled once now
+and handed back as a copy each time, and a page or an attachment arriving after it is refused
+rather than left out of a file already made (test 122).
+
 **The trap was the tests, and the tests could not say so.** Forty-five places read a whole PDF
 as text. Packed, an assertion that something is *there* fails, and one that something is *not*
 passes for nothing - "flattened, there is no /AcroForm" holds of any packed file. Ten tests
