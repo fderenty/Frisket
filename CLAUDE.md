@@ -734,6 +734,12 @@ find without reading PDF, and PDF/A-1 forbade a filter on it even though -2 and 
 `Compress` off keeps the classic layout, every object as text where it stands: what a person
 reads while debugging, and what most tests read.
 
+**Readable, and with no padding** (5 November 2026). XMP's convention ends a packet with two
+kilobytes of spaces, so a tool can rewrite it over itself. In a PDF that would do harm: the
+information dictionary would no longer agree with the packet, which PDF/A refuses, and a signature
+over those bytes would break. A PDF tool writes the stream again instead. The 1,980 bytes went on
+the request of a host measuring an invoice, in either layout.
+
 **The trap was the tests, and the tests could not say so.** Forty-five places read a whole PDF
 as text. Packed, an assertion that something is *there* fails, and one that something is *not*
 passes for nothing - "flattened, there is no /AcroForm" holds of any packed file. Ten tests

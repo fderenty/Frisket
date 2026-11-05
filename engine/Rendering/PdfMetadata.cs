@@ -130,9 +130,11 @@ namespace Frisket
 
             sb.Append(" </rdf:RDF>\n</x:xmpmeta>\n");
 
-            // The trailing padding is what lets a tool rewrite the packet in place.
-            for (int i = 0; i < 20; i++)
-                sb.Append("                                                                                                  \n");
+            // No padding before the end. XMP's convention leaves two kilobytes of spaces so a
+            // tool can rewrite the packet over itself, and in a PDF that would do harm: the
+            // information dictionary would no longer agree with the packet, which PDF/A
+            // refuses, and a signature over those bytes would break. A PDF tool writes the
+            // stream again instead, so the 1,980 bytes this wrote served nothing.
             sb.Append("<?xpacket end=\"w\"?>");
 
             return sb.ToString();
