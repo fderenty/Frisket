@@ -20,4 +20,7 @@
     <ProjectReference Include="..\..\engine\Frisket.csproj" />
   </ItemGroup>
 
+  <!-- Zopfli, for a /pdf that asks for it. Off unless asked: see Program.cs. -->
+  <Import Project="..\..\ZopfliSharp.props" />
+
 </Project>

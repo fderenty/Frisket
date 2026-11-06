@@ -238,17 +238,21 @@ app.MapPost("/check", (CheckRequest request) =>
     return Results.Text(TemplateIssue.ToJson(issues), "application/json", System.Text.Encoding.UTF8);
 });
 
-app.MapPost("/pdf", (PreviewRequest request) =>
+// Deflated by zlib unless the request asks for Zopfli, and never by Zopfli on the server's
+// own initiative: a file 6 to 12 per cent smaller is worth seconds to an archive or a batch,
+// and nothing to somebody waiting for a preview. The request's own token reaches it, so a
+// client that gives up stops the work rather than leaving it to run.
+app.MapPost("/pdf", (PreviewRequest request, CancellationToken aborted) =>
 {
     try
     {
         Report report = Build(request);
-        var pdf = new PdfBackend(fonts);
+        var pdf = new PdfBackend(fonts) { Compressor = Compressor(request, aborted) };
 
         if (request.Archivable)
             pdf.Conformance = PdfConformance.PdfA3b;
 
-        ReportRenderer.Render(report, pdf);
+        ReportRenderer.Render(report, pdf, aborted);
         return Results.File(pdf.ToArray(), "application/pdf", "report.pdf");
     }
     catch (Exception e)
@@ -288,6 +292,35 @@ static Report Build(PreviewRequest request)
     return ReportBinder.Bind(template, request.Data!, options);
 }
 
+/// <summary>
+/// What deflates the PDF: nothing, which is the engine's own zlib, unless the request says
+/// "zopfli". Anything else is refused rather than read as zlib, as is a number of passes for
+/// an encoder nobody asked for - either would change nothing, and say nothing about it.
+/// </summary>
+static ZlibCompressor? Compressor(PreviewRequest request, CancellationToken aborted)
+{
+    switch (request.Compression?.Trim().ToLowerInvariant())
+    {
+        case null or "" or "zlib":
+            if (request.Iterations != null)
+                throw new ArgumentException("Iterations says how hard Zopfli works, so it goes with \"compression\": \"zopfli\".");
+            return null;
+
+        case "zopfli":
+            var settings = new ZopfliSharp.ZopfliOptions();
+            if (request.Iterations is { } passes)
+            {
+                if (passes < 1)
+                    throw new ArgumentException($"Iterations wants a whole number of at least 1, not {passes}.");
+                settings.Iterations = passes;
+            }
+            return data => ZopfliSharp.Zopfli.Compress(data, ZopfliSharp.ZopfliFormat.Zlib, settings, aborted);
+
+        case var other:
+            throw new ArgumentException($"Unknown compression '{other}'. Try zlib or zopfli.");
+    }
+}
+
 /// <summary>Loads every font shipped with the repository, looking upwards for the folder.</summary>
 static FontLibrary LoadFonts(string from, ILogger logger)
 {
@@ -314,12 +347,16 @@ static FontLibrary LoadFonts(string from, ILogger logger)
 /// <param name="ShowBands">Tint the header, body and footer bands.</param>
 /// <param name="Numbers">"french" for narrow-space grouping, anything else for invariant.</param>
 /// <param name="Archivable">Ask the PDF for PDF/A-3 conformance.</param>
+/// <param name="Compression">"zopfli" for a smaller PDF at about a hundred times the time; null or "zlib" for the engine's own.</param>
+/// <param name="Iterations">The passes Zopfli makes over each stream; null for ZopfliSharp's default. Only with "zopfli".</param>
 internal sealed record PreviewRequest(
     string Template,
     string? Data = null,
     bool ShowBands = false,
     string? Numbers = null,
-    bool Archivable = false);
+    bool Archivable = false,
+    string? Compression = null,
+    int? Iterations = null);
 
 /// <summary>
 /// What /check is asked: the template as text, the host's catalogue of fields when it has one

@@ -10,7 +10,8 @@ namespace Frisket
     /// text, lines, rectangles and images, not a page description language.
     ///
     /// Deflate comes from System.IO.Compression, which is part of the framework, so this
-    /// keeps the library free of dependencies like everything else here.
+    /// keeps the library free of dependencies like everything else here. A caller who wants
+    /// a smaller encoder brings one (<see cref="Compressor"/>); the engine never references it.
     /// </summary>
     internal sealed class PdfWriter
     {
@@ -18,6 +19,27 @@ namespace Frisket
 
         /// <summary>The objects that are streams, which an object stream may not hold.</summary>
         private readonly HashSet<int> _streams = new();
+
+        /// <summary>
+        /// The streams still to be deflated, by object number, with their dictionaries.
+        ///
+        /// Deflated when the file is built, all together, rather than one by one as they
+        /// arrive. That is what lets them go through several threads at once, and it makes the
+        /// compressor the one set when the file is built: a stream given while drawing, through
+        /// <see cref="IPdfSink"/>, would otherwise be deflated by whatever was set at that
+        /// moment. The price is that every stream's bytes are held until then.
+        /// </summary>
+        private readonly Dictionary<int, (string Dictionary, byte[] Data, string? DecodeParms)> _pending = new();
+
+        /// <summary>
+        /// What deflates the streams, when the caller brought something: see
+        /// <see cref="PdfBackend.Compressor"/>. Null is the framework's zlib at its smallest,
+        /// which is what this has always written.
+        /// </summary>
+        public ZlibCompressor? Compressor { get; set; }
+
+        /// <summary>How many streams are deflated at once: see <see cref="PdfBackend.CompressionThreads"/>.</summary>
+        public int Threads { get; set; } = 1;
 
         /// <summary>
         /// How many objects one object stream holds. Enough for the dictionaries of a page to
@@ -36,6 +58,7 @@ namespace Frisket
         {
             _objects[number - 1] = Latin1(body);
             _streams.Remove(number);
+            _pending.Remove(number);
         }
 
         public int Add(string body)
@@ -54,30 +77,56 @@ namespace Frisket
         }
 
         /// <summary>
+        /// Adds a stream that is always deflated, with what its filter needs to read it -
+        /// a predictor, for a picture's rows. Always, whatever its length: parameters for a
+        /// filter that is not there would have the rows' filter bytes drawn as pixels.
+        ///
+        /// Written after the filter, which is where a picture that crosses as it came has them,
+        /// so the two say the same thing in the same words and a comparison of two files sees
+        /// one dictionary.
+        /// </summary>
+        public int AddStream(string dictionary, byte[] data, string decodeParms)
+        {
+            int number = Reserve();
+            _objects[number - 1] = null;
+            _pending[number] = (dictionary, data, decodeParms);
+            _streams.Add(number);
+            return number;
+        }
+
+        /// <summary>
         /// Fills a stream object whose number was reserved earlier.
         ///
-        /// Separate from <see cref="AddStream"/> because an object graph copied out of
+        /// Separate from <see cref="AddStream(string, byte[], bool)"/> because an object graph copied out of
         /// another file - a page being imported - has references pointing in every
         /// direction, so every number has to be known before any body can be written.
         /// A method that reserves its own number cannot serve that.
         /// </summary>
         public void SetStream(int number, string dictionary, byte[] data, bool compress = true)
         {
-            _objects[number - 1] = StreamBody(dictionary, data, compress);
+            if (WorthDeflating(compress, data))
+            {
+                _objects[number - 1] = null;
+                _pending[number] = (dictionary, data, null);
+            }
+            else
+            {
+                _objects[number - 1] = StreamBody(dictionary, data, deflated: false);
+                _pending.Remove(number);
+            }
+
             _streams.Add(number);
         }
 
-        /// <summary>A stream object's body: its dictionary, then its bytes, deflated if asked and worth it.</summary>
-        private static byte[] StreamBody(string dictionary, byte[] data, bool compress)
-        {
-            byte[] payload = data;
-            string filter = string.Empty;
+        /// <summary>A stream short enough is stored as it is: deflating it would save nothing.</summary>
+        private static bool WorthDeflating(bool compress, byte[] data) => compress && data.Length > 128;
 
-            if (compress && data.Length > 128)
-            {
-                payload = Deflate(data);
-                filter = "/Filter /FlateDecode ";
-            }
+        /// <summary>A stream object's body: its dictionary, then its bytes, as they will be in the file.</summary>
+        private static byte[] StreamBody(string dictionary, byte[] payload, bool deflated, string? decodeParms = null)
+        {
+            string filter = !deflated ? string.Empty
+                : decodeParms == null ? "/Filter /FlateDecode "
+                : "/Filter /FlateDecode " + decodeParms + " ";
 
             var head = Latin1($"<< {dictionary} {filter}/Length {payload.Length} >>\nstream\n");
             var tail = Latin1("\nendstream");
@@ -117,6 +166,17 @@ namespace Frisket
             info.Append(" >>");
 
             int infoObject = Add(info.ToString());
+
+            // Every stream waiting to be deflated, before anything is laid out: the offsets
+            // depend on their lengths.
+            int[] waiting = _pending.Keys.Order().ToArray();
+            byte[][] deflated = DeflateAll(waiting.Select(n => _pending[n].Data).ToArray());
+            for (int i = 0; i < waiting.Length; i++)
+            {
+                var (dictionary, _, decodeParms) = _pending[waiting[i]];
+                _objects[waiting[i] - 1] = StreamBody(dictionary, deflated[i], deflated: true, decodeParms);
+            }
+            _pending.Clear();
 
             if (packed)
                 return Packed(catalog, infoObject, documentId);
@@ -183,7 +243,7 @@ namespace Frisket
             // streams and the table are numbered after the writer's own objects and never
             // join them, so the writer is left as it was found.
             var held = new Dictionary<int, (int Container, int Index)>();
-            var containers = new List<byte[]>();
+            var made = new List<(string Dictionary, byte[] Content)>();
             int objects = _objects.Count;
             var loose = Enumerable.Range(1, objects).Where(n => !_streams.Contains(n)).ToList();
 
@@ -207,10 +267,17 @@ namespace Frisket
                 head.CopyTo(content, 0);
                 bodies.ToArray().CopyTo(content, head.Length);
 
-                containers.Add(StreamBody($"/Type /ObjStm /N {group.Count} /First {head.Length}", content, compress: true));
+                made.Add(($"/Type /ObjStm /N {group.Count} /First {head.Length}", content));
                 for (int i = 0; i < group.Count; i++)
-                    held[group[i]] = (objects + containers.Count, i);
+                    held[group[i]] = (objects + made.Count, i);
             }
+
+            // Deflated together, as the streams were, and then each in its own place.
+            int[] worth = Enumerable.Range(0, made.Count).Where(i => WorthDeflating(true, made[i].Content)).ToArray();
+            byte[][] squeezed = DeflateAll(worth.Select(i => made[i].Content).ToArray());
+            var containers = made.Select(m => StreamBody(m.Dictionary, m.Content, deflated: false)).ToList();
+            for (int i = 0; i < worth.Length; i++)
+                containers[worth[i]] = StreamBody(made[worth[i]].Dictionary, squeezed[i], deflated: true);
 
             int xrefNumber = objects + containers.Count + 1;
             int size = xrefNumber + 1;
@@ -258,7 +325,7 @@ namespace Frisket
                 entries[at + 2 + width] = (byte)third;
             }
 
-            byte[] table = Deflate(entries);
+            byte[] table = Deflated(entries);
             var dictionary = new StringBuilder("<< /Type /XRef /Size ").Append(size)
                 .Append(" /W [1 ").Append(width).Append(" 2] /Root ").Append(catalog).Append(" 0 R /Info ")
                 .Append(info).Append(" 0 R");
@@ -306,6 +373,133 @@ namespace Frisket
             using (var deflate = new ZLibStream(output, CompressionLevel.SmallestSize, leaveOpen: true))
                 deflate.Write(data, 0, data.Length);
             return output.ToArray();
+        }
+
+        /// <summary>
+        /// Several streams deflated, each answer in the place of its question.
+        ///
+        /// On more than one thread when <see cref="Threads"/> allows it, and the file is the
+        /// same either way: each stream is deflated on its own, and the file is laid out in
+        /// object order afterwards. The largest go first, handed out one at a time, so a font
+        /// or an image that takes most of the work is not the last one started.
+        /// </summary>
+        private byte[][] DeflateAll(byte[][] inputs)
+        {
+            var outputs = new byte[inputs.Length][];
+
+            if (Threads == 1 || inputs.Length < 2)
+            {
+                for (int i = 0; i < inputs.Length; i++)
+                    outputs[i] = Deflated(inputs[i]);
+                return outputs;
+            }
+
+            int[] largestFirst = Enumerable.Range(0, inputs.Length).OrderByDescending(i => inputs[i].Length).ToArray();
+            try
+            {
+                Parallel.ForEach(
+                    System.Collections.Concurrent.Partitioner.Create(largestFirst,
+                        System.Collections.Concurrent.EnumerablePartitionerOptions.NoBuffering),
+                    new ParallelOptions { MaxDegreeOfParallelism = Threads },
+                    i => outputs[i] = Deflated(inputs[i]));
+            }
+            catch (AggregateException failed)
+            {
+                // What a stream threw, as it would have been thrown on one thread: a
+                // cancellation stays a cancellation, and a refusal keeps its own words.
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failed.InnerExceptions[0]).Throw();
+            }
+
+            return outputs;
+        }
+
+        /// <summary>
+        /// One stream deflated: by the framework's zlib, or by the caller's compressor once its
+        /// answer has been shown to be one.
+        ///
+        /// Shown, because nothing else would: a reader handed a stream that is not zlib draws a
+        /// blank page or a missing font, and says nothing of why. The commonest way to get there
+        /// is the plausible one - asking for raw deflate because the filter is called
+        /// FlateDecode - and inflating the answer costs little beside an encoder slow enough to
+        /// be worth bringing.
+        /// </summary>
+        private byte[] Deflated(byte[] data)
+        {
+            if (Compressor is not { } compressor)
+                return Deflate(data);
+
+            byte[] made = compressor(data);
+            if (NotZlibOf(made, data) is { } why)
+            {
+                throw new InvalidOperationException(
+                    $"PdfBackend.Compressor handed back {made?.Length ?? 0} bytes that are not a zlib stream of the " +
+                    $"{data.Length} it was given: {why}. /FlateDecode reads zlib (RFC 1950) - a two-byte header, the " +
+                    "deflate data, then the Adler-32 of what was compressed. With ZopfliSharp that is " +
+                    "ZopfliFormat.Zlib; ZopfliFormat.Deflate leaves the header and the checksum out.");
+            }
+
+            return made;
+        }
+
+        /// <summary>What is wrong with <paramref name="made"/> as a zlib stream of <paramref name="data"/>, or null.</summary>
+        private static string? NotZlibOf(byte[]? made, byte[] data)
+        {
+            if (made is not { Length: >= 7 })
+                return "too short to hold a header, any data and a checksum";
+
+            int cmf = made[0], flg = made[1];
+            if ((cmf & 0x0F) != 8 || cmf >> 4 > 7 || ((cmf << 8) | flg) % 31 != 0)
+                return "it does not start with a zlib header";
+            if ((flg & 0x20) != 0)
+                return "it asks for a preset dictionary, which a PDF has no way to give";
+
+            uint adler = (uint)(made[^4] << 24 | made[^3] << 16 | made[^2] << 8 | made[^1]);
+            if (adler != Adler32(data))
+                return "its checksum is not that of the data";
+
+            try
+            {
+                using var inflate = new ZLibStream(new MemoryStream(made), CompressionMode.Decompress);
+                var back = new byte[data.Length + 1];
+                int filled = 0, got;
+                while (filled < back.Length && (got = inflate.Read(back, filled, back.Length - filled)) > 0)
+                    filled += got;
+
+                if (filled != data.Length || !back.AsSpan(0, filled).SequenceEqual(data))
+                    return "it inflates to something else";
+            }
+            // InvalidDataException for data that is not deflate, and ZLibException - an
+            // IOException - for an error code zlib returns instead, such as asking for a
+            // dictionary; neither names the stream, and this does.
+            catch (Exception broken) when (broken is InvalidDataException or IOException)
+            {
+                return "it does not inflate (" + broken.Message + ")";
+            }
+
+            return null;
+        }
+
+        /// <summary>The checksum a zlib stream ends with (RFC 1950 8.2).</summary>
+        private static uint Adler32(byte[] data)
+        {
+            const uint Base = 65521;
+            uint a = 1, b = 0;
+            int at = 0;
+
+            // 5552 is the most bytes that can be summed before b can overflow 32 bits.
+            while (at < data.Length)
+            {
+                int end = Math.Min(at + 5552, data.Length);
+                for (; at < end; at++)
+                {
+                    a += data[at];
+                    b += a;
+                }
+                a %= Base;
+                b %= Base;
+            }
+
+            return b << 16 | a;
         }
 
         /// <summary>

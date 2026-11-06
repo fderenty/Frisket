@@ -186,6 +186,35 @@ of what it is handed, how many renders run at once, and how long one may take.
 `Report.Resolve()` composes without drawing, so a page count can be known before a
 document is paid for.
 
+## A smaller file, with Zopfli
+
+`"compression": "zopfli"` in `fk_render`'s options deflates every stream of the PDF with
+Zopfli rather than zlib. Readers inflate it exactly as before - it is the same document -
+and it is smaller: 6.6% off the ACME invoice, 11.5% off the showcase. It costs about a
+hundred times zlib's time, so it belongs to a document kept or sent many times, not to one
+somebody is waiting for.
+
+```c
+fk_render(tmpl, fonts, data,
+          "{ \"conformance\": \"pdfa3b\", \"compression\": \"zopfli\", \"threads\": -1 }",
+          token, &out);
+```
+
+`"threads"` is how many threads compressing may take, the streams at once and each stream
+spread over several: 1 by default, because a library takes no threads its caller did not
+offer, and -1 for what the machine has. The bytes are the same whatever it says; the
+invoice takes 5 seconds on one thread and 1.5 on eight. `"iterations"` is Zopfli's passes
+over each stream, 15 unless said, and is refused without `"compression": "zopfli"`. The token
+reaches Zopfli too, so a cancellation lands between two passes and comes back `FK_CANCELLED`.
+
+The engine has no encoder of its own beyond zlib and depends on nothing; this library is a
+product built on it, and carries [ZopfliSharp](https://github.com/fderenty/ZopfliSharp)
+compiled in, under the Apache License 2.0. Its licence and notice travel in the release
+archive under `licenses/zopflisharp/`, as [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md)
+says. The C++ and Pascal wrappers have it as `zopfli`, `zopfli_iterations` and
+`compression_threads` (`Zopfli`, `ZopfliIterations`, `CompressionThreads`), and the Python
+one passes `compression="zopfli"` through like any other option.
+
 ## What the library says, beside what it writes
 
 Two questions, and the command line's answers to both, in the shape it writes them -

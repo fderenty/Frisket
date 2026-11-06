@@ -779,6 +779,59 @@ other wrote entry 0 of the table as an object in use rather than the head of the
 Test 24 asks both now. *A file every reader opens can still be one the standard refuses*, and
 the validator is not where that is found (§4b).
 
+### 4d. An encoder the caller brings, and the stream it had never seen
+
+Asked on 6 November 2026: Zopfli in the products, and the engine still depending on nothing.
+`PdfBackend.Compressor` takes a `ZlibCompressor`; the CLI, the native library and the server
+reference ZopfliSharp through one file, `ZopfliSharp.props`, which names the version once and
+copies the licence and the NOTICE beside every build - Apache-2.0 asks for both, and the
+release archives already take `licenses/` from the publish directory.
+
+**The stream that mattered was the one that never met a compressor.** An opaque PNG crosses as
+it came - its IDAT is already Flate, behind Predictor 15 - so the first version deflated
+everything but the ACME invoice's logo, which is 70 per cent of the file: 1.6 per cent saved
+where 6.6 was there. Measured by kind of stream before a number was claimed. With a compressor
+the rows are inflated and deflated again behind the same predictor, under the same dictionary;
+without one, they cross as before. A page imported from another PDF still crosses as it came:
+its bytes are somebody else's, and re-deflating them would mean reading their filters.
+
+**Every stream is deflated when the file is built**, all together. That is what lets several
+threads share the work for the same bytes (`CompressionThreads`, 1 by default: a library takes
+no threads it was not offered), and it makes the compressor the one set at assembly, whenever
+it was set. With none, every sample under `tests/output` came out as it was, to the byte - which
+is how "unchanged" was checked, rather than argued.
+
+**What a compressor hands back is inflated before it goes in.** Raw deflate is the plausible
+mistake - the filter is called FlateDecode - and a reader handed it draws a blank page and says
+nothing. Writing the check found two things about the check. The framework's inflater verifies
+the Adler-32 itself, so a body under a borrowed checksum never reached the comparison: reaching
+it took other data with the *same* checksum, which Adler-32 makes easy (one byte up and its
+neighbour down, then the same again the other way round). And a stream asking for a preset
+dictionary throws `ZLibException`, an `IOException`, which the first catch let out unexplained.
+
+**A dictionary is text, and compare-pdf.py compares text.** The re-deflated PNG wrote
+`/DecodeParms` before `/Filter`: one dictionary to a reader, a different structure to the tool
+that holds the native library to the CLI. Test 125, asking what that tool asks, said so first.
+
+**One stream is often most of the work.** Eight cores: the invoice 5.0 s on one thread, 3.8
+across its streams, 1.5 with each stream spread over the cores as well; the showcase 26, 9.4,
+9.4. The same bytes every time. Zopfli's time follows the data more than its size - the
+showcase's 256-by-256 test picture, 197 KB that zlib already takes to 1.5, costs six seconds -
+and that is Zopfli's slow case, not the port's: ZopfliSharp linked ahead of time 4.9 s, Google's
+C 4.1 s on the same bytes in the same WSL, identical output.
+
+**And the Zopfli file is the same file on every platform it was tried on**, where zlib's is not
+(§3: Ubuntu's .NET deflates with the system zlib). The invoice with `--zopfli` came out
+byte for byte the same from Windows x64, Windows x86 and Linux x64, managed or linked ahead of
+time, because ZopfliSharp brings its own deflate. ARM was built and not run: there is no
+qemu-user here, and `release.yml` is where it runs.
+
+Sixteen sabotages from a run seen green, sixteen caught, each by its own assertion - the xref,
+the object streams and the logo each kept from the compressor, every branch of the check, a
+parallel answer put in another stream's place, a failure left wrapped, and the CLI's three
+refusals. `check-against-cli.py` holds the library to the CLI with Zopfli on every platform a
+release builds, and both to zlib's document.
+
 ## 4b. An image can come from the data, not only from the template
 
 `ImageItem.SourceField` names a path in the data whose value is raw base64 or a

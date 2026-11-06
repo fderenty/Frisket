@@ -1,0 +1,29 @@
+<Project>
+
+  <!-- Zopfli, for the products that offer it: the command line, the native library and the
+       preview server - and the tests, which hold them to it. Never the engine. It stays
+       without a dependency and takes an encoder through PdfBackend.Compressor; whoever
+       ships one says so.
+
+       One file so the version is written once: three products naming it each in their own
+       project would be three numbers to keep in step, and the one forgotten would ship a
+       document compressed by another release than the notices describe.
+
+       ZopfliSharp is Apache-2.0, which asks two things of whatever carries it: a copy of the
+       licence, and the content of its NOTICE (Apache-2.0, section 4). Both come out of the
+       package and are copied beside every build under licenses/zopflisharp/, which is where
+       the release archives take the typefaces' licences from already
+       (.github/scripts/stage-release.sh), so they go wherever the binary goes.
+       THIRD-PARTY-NOTICES.md says the same in prose. -->
+  <ItemGroup>
+    <PackageReference Include="ZopfliSharp" Version="0.1.0" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PkgZopfliSharp)' != ''">
+    <None Include="$(PkgZopfliSharp)\LICENSE" Link="licenses\zopflisharp\LICENSE"
+          CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(PkgZopfliSharp)\NOTICE" Link="licenses\zopflisharp\NOTICE"
+          CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>

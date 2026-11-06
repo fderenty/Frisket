@@ -30,6 +30,13 @@ namespace Frisket.Native
         // separator is a French convention, not a neutral one.
         internal NumberFormatInfo Numbers { get; private init; } = NumberFormats.Invariant;
 
+        // How the PDF's streams are deflated: the engine's zlib unless Zopfli is asked for,
+        // and ZopfliSharp's own number of passes unless one is given. Threads: how many
+        // streams at once - one, since a library takes no threads its caller did not offer.
+        internal bool Zopfli { get; private init; }
+        internal int? Iterations { get; private init; }
+        internal int Threads { get; private init; } = 1;
+
         // A check's own two, read only by fk_template_check_for: the same object asks what
         // an output would lose, and these say how hard to look. A render is not asked them,
         // and is told so rather than let one through that changes nothing.
@@ -59,6 +66,9 @@ namespace Frisket.Native
                     "interactive" => options with { Interactive = Flag(property) },
                     "bare" => options with { Bare = Flag(property) },
                     "numbers" => options with { Numbers = Numbering(Word(property)) },
+                    "compression" => options with { Zopfli = Compression(Word(property)) },
+                    "iterations" => options with { Iterations = Count(property, "at least 1", n => n >= 1) },
+                    "threads" => options with { Threads = Count(property, "-1 or at least 1", n => n is -1 or >= 1) },
                     "accessible" when check => options with { Accessible = Flag(property) },
                     "fields" when check => options with { Fields = Catalogue(property) },
                     "accessible" or "fields" => throw new ArgumentException(
@@ -66,6 +76,11 @@ namespace Frisket.Native
                     _ => throw new ArgumentException($"unknown option '{property.Name}'")
                 };
             }
+
+            // After every key, since a JSON object has no order: passes for an encoder nobody
+            // asked for would change nothing, which is the misspelt option this refuses above.
+            if (options.Iterations != null && !options.Zopfli)
+                throw new ArgumentException("option 'iterations' says how hard Zopfli works, so it goes with \"compression\": \"zopfli\"");
 
             return options;
         }
@@ -84,6 +99,18 @@ namespace Frisket.Native
         private static string Catalogue(JsonProperty property) => property.Value.ValueKind == JsonValueKind.Array
             ? property.Value.GetRawText()
             : throw new ArgumentException($"option '{property.Name}' wants the catalogue, a JSON array");
+
+        private static int Count(JsonProperty property, string wanted, Func<int, bool> allowed)
+            => property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out int n) && allowed(n)
+                ? n
+                : throw new ArgumentException($"option '{property.Name}' wants a whole number, {wanted}");
+
+        private static bool Compression(string value) => value switch
+        {
+            "zlib" => false,
+            "zopfli" => true,
+            _ => throw new ArgumentException($"unknown compression '{value}'. Try zlib or zopfli.")
+        };
 
         private static PdfConformance Conform(string value) => value switch
         {

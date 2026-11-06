@@ -28,6 +28,13 @@ once; and fk_render_issues against what `frisket render` prints on standard erro
 the invoice held to a page fewer than it takes. Each side has to say something, or two
 silences would agree.
 
+And Zopfli, since 6 November 2026, when both learnt to deflate with it: the invoice through
+fk_render with "compression": "zopfli" and through `frisket render --zopfli`, which must be
+the same document as each other and as the zlib one - Zopfli changes the size and nothing
+else - and smaller than it. Five passes rather than fifteen, since the question is agreement
+and not the last byte, and the key that sets them is then asked too. The keys a host can get
+wrong are asked to be refused, each in its own words.
+
 Exit code 0 when every case agrees, 1 when one does not.
 """
 import json
@@ -153,6 +160,65 @@ def compare_render_issues(api, fonts, cli, out):
     return 0 if agree else 1
 
 
+def same_document(one, other):
+    """tools/compare-pdf.py's verdict on two files, and what it said when it was no."""
+    compared = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "compare-pdf.py"), one, other],
+                              capture_output=True, text=True)
+    return compared.returncode == 0, compared.stdout + compared.stderr
+
+
+def compare_zopfli(template, fonts, cli, out):
+    """The invoice deflated by Zopfli on both sides: the same document as each other and as
+    zlib's, and smaller - then the options a host can get wrong, refused."""
+    data = CASES[0]
+    name = os.path.splitext(os.path.basename(data))[0]
+    with open(data, encoding="utf-8") as f:
+        record = f.read()
+
+    zlib = os.path.join(out, name + ".native.pdf")
+    native = os.path.join(out, name + ".zopfli.native.pdf")
+    with open(native, "wb") as f:
+        f.write(template.render(fonts, record, compression="zopfli", iterations=5, threads=-1))
+
+    where = os.path.join(out, "zopfli-" + os.path.basename(cli))
+    subprocess.run(command(cli) + ["render", "-t", TEMPLATE, "-d", data, "-o", where, "--format", "pdf",
+                                   "--zopfli", "--zopfli-iterations", "5"],
+                   check=True, stdout=subprocess.DEVNULL)
+    produced = os.path.join(where, name + ".pdf")
+
+    failures = 0
+    for label, one, other in [(f"native and {os.path.basename(cli)}, both Zopfli", native, produced),
+                              ("Zopfli and zlib, native", native, zlib)]:
+        same, said = same_document(one, other)
+        print(f"  zopfli, {label}: {os.path.getsize(one)} and {os.path.getsize(other)} bytes - "
+              f"{'the same document' if same else 'DIFFERENT'}")
+        if not same:
+            print(said)
+            failures += 1
+
+    if os.path.getsize(native) >= os.path.getsize(zlib):
+        print(f"  zopfli: {os.path.getsize(native)} bytes is not smaller than zlib's {os.path.getsize(zlib)}")
+        failures += 1
+
+    malformed = [({"compression": "lzma"}, "unknown compression"),
+                 ({"iterations": 5}, "goes with"),
+                 ({"compression": "zopfli", "iterations": 0}, "at least 1"),
+                 ({"threads": 0}, "-1 or at least 1")]
+    wrong = 0
+    for options, said in malformed:
+        try:
+            template.render(fonts, record, **options)
+            print(f"  zopfli: {options} was taken")
+            wrong += 1
+        except frisket.FrisketError as refused:
+            if said not in str(refused):
+                print(f"  zopfli: {options} was refused, but not for its fault: {refused}")
+                wrong += 1
+    if not wrong:
+        print(f"  zopfli: {len(malformed)} malformed options refused, each for its own fault")
+    return failures + wrong
+
+
 def main(library, clis, out):
     api = frisket._Api(os.path.abspath(library))
     print(f"  library {os.path.basename(library)} {api.version().decode()}")
@@ -188,6 +254,7 @@ def main(library, clis, out):
         for cli in clis:
             failures += compare_checks(api, cli, out)
             failures += compare_render_issues(api, fonts, cli, out)
+            failures += compare_zopfli(template, fonts, cli, out)
 
     print("all agree" if not failures else f"{failures} comparison(s) disagree")
     return 1 if failures else 0

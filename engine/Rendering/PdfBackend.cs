@@ -6,7 +6,7 @@ namespace Frisket
     /// <summary>
     /// Writes a PDF, with the very fonts the layout was measured with embedded in it.
     /// No dependency: the container is written by hand and Deflate comes from the
-    /// framework.
+    /// framework - or from whatever the caller hands <see cref="Compressor"/>.
     ///
     /// Fonts go in as Type0/Identity-H, which is what makes accented text and the euro
     /// sign come out right anywhere, with a ToUnicode map so the text stays selectable and
@@ -64,6 +64,47 @@ namespace Frisket
         /// debugging. The XMP packet is never compressed either way.
         /// </summary>
         public bool Compress { get; set; } = true;
+
+        /// <summary>
+        /// What deflates the streams the file compresses, when the framework's zlib is not
+        /// the one wanted. Null, the default, is that zlib at its smallest setting, and the
+        /// file is what it has always been.
+        ///
+        /// The engine depends on no encoder; a caller who wants a smaller file brings one.
+        /// Zopfli, through the ZopfliSharp package, took 6.6 per cent off the ACME invoice and
+        /// 11.7 off the showcase, for about a hundred times the time:
+        /// <code>pdf.Compressor = data => Zopfli.Compress(data, ZopfliFormat.Zlib);</code>
+        /// Worth it for a file written once and kept or sent many times - an archive, a
+        /// batch - and not for one drawn while somebody waits.
+        ///
+        /// Whatever it hands back is inflated and compared with what it was given, and a
+        /// stream that does not come back is refused by <see cref="ToArray"/>, naming the
+        /// fault: a reader would only draw a blank page. Read when the document is
+        /// assembled, so it may be set at any time before then.
+        /// </summary>
+        public ZlibCompressor? Compressor { get; set; }
+
+        /// <summary>
+        /// How many streams are deflated at once: 1, the default, keeps the work on the
+        /// thread that calls <see cref="ToArray"/>; -1 takes as many as the thread pool
+        /// gives. The file is the same whatever the number - each stream is deflated on its
+        /// own and the file laid out in order afterwards.
+        ///
+        /// Off by default because a library should not take threads its caller did not
+        /// offer, and with zlib there is little to win. With a slow
+        /// <see cref="Compressor"/> there is a great deal, on a document of many streams;
+        /// the compressor must then be safe to call from several threads, which
+        /// <c>Zopfli.Compress</c> is.
+        /// </summary>
+        public int CompressionThreads
+        {
+            get => _compressionThreads;
+            set => _compressionThreads = value is 0 or < -1
+                ? throw new ArgumentOutOfRangeException(nameof(value), value, "CompressionThreads is -1 or at least 1.")
+                : value;
+        }
+
+        private int _compressionThreads = 1;
 
         /// <summary>
         /// How strictly the file should conform. <see cref="PdfConformance.PdfA3b"/> adds
@@ -1334,6 +1375,11 @@ namespace Frisket
                     "Use a font that covers them, or change the text.");
             }
 
+            // Every stream is deflated when the file is built, so whatever is set now covers
+            // them all - one given while drawing included.
+            _pdf.Compressor = Compressor;
+            _pdf.Threads = CompressionThreads;
+
             int pagesObject = _pdf.Reserve();
 
             foreach (EmbeddedFont font in _fonts.Values)
@@ -1898,11 +1944,22 @@ namespace Frisket
 
             // PNG's own filtering is PDF's Predictor 15, so the compressed data goes in
             // untouched here too.
-            image.ObjectNumber = _pdf.AddRawStream(
-                $"/Type /XObject /Subtype /Image /Width {png.Width} /Height {png.Height} " +
-                $"/ColorSpace {png.ColorSpace} /BitsPerComponent {png.BitDepth} /Filter /FlateDecode " +
-                $"/DecodeParms << /Predictor 15 /Colors {png.Colors} /BitsPerComponent {png.BitDepth} " +
-                $"/Columns {png.Width} >>", png.Data);
+            string picture = $"/Type /XObject /Subtype /Image /Width {png.Width} /Height {png.Height} " +
+                             $"/ColorSpace {png.ColorSpace} /BitsPerComponent {png.BitDepth} ";
+            string predictor = $"/DecodeParms << /Predictor 15 /Colors {png.Colors} /BitsPerComponent {png.BitDepth} " +
+                               $"/Columns {png.Width} >>";
+
+            // Unless the caller brought a compressor: then the rows are inflated and handed to
+            // it like every other stream, behind the same predictor and under the same
+            // dictionary. Otherwise this one stream would be the one the compressor never saw -
+            // and on an invoice whose weight is its logo, the one that mattered.
+            if (Compressor != null && png.Rows() is { } rows)
+            {
+                image.ObjectNumber = _pdf.AddStream(picture.TrimEnd(), rows, predictor);
+                return;
+            }
+
+            image.ObjectNumber = _pdf.AddRawStream(picture + "/Filter /FlateDecode " + predictor, png.Data);
         }
 
         /// <summary>Reads a JPEG's size and component count from its start-of-frame marker.</summary>

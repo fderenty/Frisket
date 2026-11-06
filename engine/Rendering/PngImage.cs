@@ -6,7 +6,8 @@ namespace Frisket
     /// Nothing is decoded: PNG's per-row filtering is exactly PDF's Predictor 15, and
     /// both use Deflate, so the compressed data crosses over untouched. That keeps the
     /// engine free of an image library, and costs nothing in quality since no pixel is
-    /// ever recompressed.
+    /// ever recompressed. A caller who brings a better compressor has the rows inflated and
+    /// deflated again (<see cref="Rows"/>), which changes the size and never a pixel.
     ///
     /// An alpha channel is the exception, since PDF keeps it apart in a soft mask: such an
     /// image is decoded once and split, by <see cref="Planes"/>. It needs nothing beyond the
@@ -186,20 +187,7 @@ namespace Frisket
         {
             int channels = Colors + 1;
             int stride = Width * channels;
-            var raw = new byte[Height * (1L + stride)];
-
-            using (var zlib = new System.IO.Compression.ZLibStream(
-                new MemoryStream(Data), System.IO.Compression.CompressionMode.Decompress))
-            {
-                int filled = 0;
-                while (filled < raw.Length)
-                {
-                    int got = zlib.Read(raw, filled, raw.Length - filled);
-                    if (got == 0)
-                        throw new InvalidDataException("This PNG holds fewer pixels than it says.");
-                    filled += got;
-                }
-            }
+            byte[] raw = Inflated(Height * (1L + stride));
 
             Unfilter(raw, stride, channels);
 
@@ -223,6 +211,54 @@ namespace Frisket
             }
 
             return (colour, opaque ? null : alpha);
+        }
+
+        /// <summary>
+        /// An opaque image's rows inflated, each still behind its filter byte - which is what
+        /// PDF's Predictor 15 reads - so a caller's compressor can deflate them again
+        /// (<see cref="PdfBackend.Compressor"/>). No pixel changes: the filters stay as the
+        /// file chose them, and only the deflating is done over.
+        ///
+        /// Null when the image is larger than this inflates, or does not inflate to what its
+        /// header says. Its data then crosses as it came, as it always has: a compressor makes
+        /// a file smaller, and must not make a picture that was taken one that is refused.
+        /// </summary>
+        public byte[]? Rows()
+        {
+            long size = Height * (1L + (long)Width * Colors);
+            if (HasAlpha || size > MostDecoded || size > Data.LongLength * MostInflation)
+                return null;
+
+            // InvalidDataException for data that is not deflate, ZLibException - an IOException -
+            // for an error code zlib returns instead.
+            try
+            {
+                return Inflated(size);
+            }
+            catch (Exception spoiled) when (spoiled is InvalidDataException or IOException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>The IDAT data inflated to exactly <paramref name="size"/> bytes, or <see cref="InvalidDataException"/>.</summary>
+        private byte[] Inflated(long size)
+        {
+            var raw = new byte[size];
+
+            using var zlib = new System.IO.Compression.ZLibStream(
+                new MemoryStream(Data), System.IO.Compression.CompressionMode.Decompress);
+
+            int filled = 0;
+            while (filled < raw.Length)
+            {
+                int got = zlib.Read(raw, filled, raw.Length - filled);
+                if (got == 0)
+                    throw new InvalidDataException("This PNG holds fewer pixels than it says.");
+                filled += got;
+            }
+
+            return raw;
         }
 
         /// <summary>Undoes PNG's five row filters, in place.</summary>

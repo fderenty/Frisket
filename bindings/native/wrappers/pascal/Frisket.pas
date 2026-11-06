@@ -58,6 +58,13 @@ type
     InteractiveFields: Boolean;
     BareHtml: Boolean;
     FrenchNumbers: Boolean;
+    // Zopfli rather than zlib: the same document, smaller, at about a hundred times
+    // the time. Passes over each stream: 0 leaves Zopfli's own number. See fk_render.
+    Zopfli: Boolean;
+    ZopfliIterations: Int32;
+    // How many threads compressing may take: 1 keeps it on this one, -1 takes the
+    // machine. It never changes the bytes.
+    CompressionThreads: Int32;
 
     class function Default: TErOptions; static;
     function ToJson: UTF8String;
@@ -301,6 +308,9 @@ begin
   // Invariant to match the engine's own default; a narrow-space thousands
   // separator is a French convention, not a neutral one.
   Result.FrenchNumbers := False;
+  Result.Zopfli := False;
+  Result.ZopfliIterations := 0;
+  Result.CompressionThreads := 1;
 end;
 
 function BoolJson(Value: Boolean): UTF8String;
@@ -323,9 +333,19 @@ begin
     + ',"bare":' + BoolJson(BareHtml)
     + ',"numbers":"';
   if FrenchNumbers then
-    Result := Result + 'french"}'
+    Result := Result + 'french"'
   else
-    Result := Result + 'invariant"}';
+    Result := Result + 'invariant"';
+  if Zopfli then
+    Result := Result + ',"compression":"zopfli"'
+  else
+    Result := Result + ',"compression":"zlib"';
+  Result := Result + ',"threads":' + UTF8String(IntToStr(CompressionThreads));
+  // Only with Zopfli, which the library asks: passes for an encoder nobody asked
+  // for would change nothing, and it refuses them rather than let that pass.
+  if Zopfli and (ZopfliIterations > 0) then
+    Result := Result + ',"iterations":' + UTF8String(IntToStr(ZopfliIterations));
+  Result := Result + '}';
 end;
 
 { ---------------------------------------------------------------------- fonts }

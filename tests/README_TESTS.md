@@ -33,6 +33,7 @@ question a file name answers is where a person would look.
 | `Barcodes.cs` | QR and Code 128 held to their published standards rather than to themselves |
 | `BindingAndTokens.cs` | tokens and formats, scope and its fallback, show/hide, mail merge, heading numbers |
 | `Checks.cs` | what frisket check answers: the three profiles, and the rules that must fall silent |
+| `Compression.cs` | how the streams are deflated: by a compressor the caller brings, checked before it goes in, on one thread or several, and by Zopfli - smaller, the same document, valid on both profiles |
 | `EmbeddedFonts.cs` | what a face becomes in the PDF: cut, renumbered, with or without its hinting, TrueType or OpenType, held glyph by glyph to the file it came from |
 | `EngineTests.cs` | the assertion, the paths, the small builders - and no tests, deliberately |
 | `Fonts.cs` | cap-height sizing and the cascade, measured metrics, family names, a font as bytes, and the typefaces a library nobody filled draws with |

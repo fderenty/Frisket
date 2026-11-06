@@ -63,6 +63,20 @@ token to the host's catalogue of fields, the array the content editor is handed.
 [examples/ai](https://github.com/fderenty/Frisket/tree/main/examples/ai) is the guide for
 wiring a model to these checks.
 
+## A smaller file
+
+The PDF is deflated with the framework's zlib, and the package depends on nothing else. For
+a smaller file, hand the backend another encoder - Zopfli, through the
+[ZopfliSharp](https://www.nuget.org/packages/ZopfliSharp) package, takes 6 to 12 per cent off
+for about a hundred times the time:
+
+```csharp
+pdf.Compressor = data => Zopfli.Compress(data, ZopfliFormat.Zlib);
+```
+
+Every stream the file deflates goes through it, and what it hands back is checked before it
+goes in. `CompressionThreads = -1` spreads the streams over the cores, for the same bytes.
+
 ## Fonts
 
 A `FontLibrary` nobody fills draws with the typefaces in

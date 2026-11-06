@@ -70,12 +70,21 @@ What it usually is:
   "data": "<the data JSON, or null>",
   "showBands": false,
   "numbers": "french",
-  "archivable": false
+  "archivable": false,
+  "compression": "zlib",
+  "iterations": null
 }
 ```
 
 A template that will not lay out comes back as a 400 carrying the engine's own
 words. That is what the designer shows.
+
+`"compression": "zopfli"` asks `/pdf` for a file deflated by Zopfli rather than zlib: the
+same document, 6 to 12% smaller on the documents here, for about a hundred times the time -
+seconds rather than hundredths, on one thread. So it is off unless a request asks, and meant
+for a request that is archiving or working through a batch, never for a preview somebody is
+waiting on. `"iterations"` sets Zopfli's passes over each stream and is refused without it,
+as is a compression the server does not know. A client that gives up stops the work.
 
 CORS is wide open on purpose: the designer is often opened straight off the disk,
 which sends `Origin: null`. Tighten it before putting this anywhere but a

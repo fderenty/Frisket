@@ -123,6 +123,12 @@ struct options {
     // Invariant to match the engine's own default; a narrow-space thousands
     // separator is a French convention, not a neutral one.
     bool french_numbers = false;
+    // Zopfli rather than zlib: the same document, smaller, at about a hundred times the
+    // time. Passes over each stream: 0 leaves Zopfli's own number. See fk_render.
+    bool zopfli = false;
+    std::int32_t zopfli_iterations = 0;
+    // How many threads compressing may take: 1 keeps it on this one, -1 takes the machine.
+    std::int32_t compression_threads = 1;
 
     std::string to_json() const {
         // A value outside the enum is refused rather than allowed to fall through to
@@ -148,7 +154,14 @@ struct options {
               + ",\"hinting\":" + flag(font_hinting)
               + ",\"interactive\":" + flag(interactive_fields)
               + ",\"bare\":" + flag(bare_html)
-              + ",\"numbers\":\"" + (french_numbers ? "french" : "invariant") + "\"}";
+              + ",\"numbers\":\"" + (french_numbers ? "french" : "invariant") + '"'
+              + ",\"compression\":\"" + (zopfli ? "zopfli" : "zlib") + '"'
+              + ",\"threads\":" + std::to_string(compression_threads);
+        // Only with Zopfli, which the library asks: passes for an encoder nobody asked for
+        // would change nothing, and it refuses them rather than let that pass.
+        if (zopfli && zopfli_iterations > 0)
+            json += ",\"iterations\":" + std::to_string(zopfli_iterations);
+        json += '}';
         return json;
     }
 };

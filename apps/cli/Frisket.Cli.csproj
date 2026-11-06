@@ -31,4 +31,8 @@
     <ProjectReference Include="..\..\import\Frisket.Import.csproj" />
   </ItemGroup>
 
+  <!-- Zopfli, for the option of `render` that asks for it: the version and the licence
+       texts live in one file. -->
+  <Import Project="..\..\ZopfliSharp.props" />
+
 </Project>

@@ -161,6 +161,46 @@ The test writes those three files, reads the template back with `Report.FromFile
 validates what comes out. So the example cannot drift from the document that is checked:
 they are the same document.
 
+## A smaller file, with an encoder you bring
+
+The engine deflates its PDF with the framework's zlib and depends on nothing. A program that
+wants a smaller file hands it another encoder, and the engine still names none - here
+Zopfli, through the [ZopfliSharp](https://www.nuget.org/packages/ZopfliSharp) package:
+
+```csharp
+pdf.Compressor = data => Zopfli.Compress(data, ZopfliFormat.Zlib);
+```
+
+It deflates every stream the file deflates: the pages, the fonts, the pictures - an opaque
+PNG's rows included, inflated and deflated again behind the same predictor, so no pixel
+changes - the object streams and the cross-reference stream. A JPEG, the XMP packet and the
+streams of a page imported from another PDF go in as they came, as they always have. Each
+answer is inflated and compared with what it was given before it goes in, and one that is
+not zlib of those bytes is refused, naming the fault: `ZopfliFormat.Deflate` would leave out
+the header and the checksum, and a reader would draw a blank page without a word. Left
+unset, the file is the one it has always been, to the byte.
+
+`CompressionThreads` lets the streams be deflated on several threads at once, for the same
+bytes; it is 1 by default, because a library should not take threads its caller did not
+offer.
+
+The command line (`--zopfli`), the native library (`"compression": "zopfli"`) and the
+preview server (`"compression": "zopfli"` on `/pdf`, off unless asked) carry ZopfliSharp
+and offer it. Measured on 6 November 2026, in process, eight cores:
+
+| | zlib | Zopfli | smaller by | Zopfli, one thread | Zopfli, every core |
+|---|---:|---:|---:|---:|---:|
+| the ACME invoice | 52,146 bytes | 48,712 bytes | 6.6% | 5.0 s | 1.5 s |
+| the showcase, PDF/A-3B and tagged | 105,591 bytes | 93,262 bytes | 11.7% | 26 s | 9.4 s |
+
+zlib takes a few hundredths of a second for either. So Zopfli is for a file written once and
+kept or sent many times - an archive, a batch - never for one somebody is waiting on. It also
+writes the same bytes on Windows and on Linux, which zlib does not: the invoice came out
+identical from Windows x64, Windows x86 and Linux x64. How
+long it takes depends on the data more than on its size: very repetitive data is its slow
+case, and the showcase's 256-by-256 test picture, which zlib already shrinks 130 times, takes
+six seconds alone - Google's own C takes four on the same bytes, and writes the same ones.
+
 ## Bringing in a page from another PDF
 
 [`import/`](import/) is a separate assembly that reads one page out of an existing PDF so
@@ -261,6 +301,10 @@ The four bundled typefaces are **not** covered by that licence — all four are 
 the SIL Open Font License, and so is the `Frisket.Fonts` package that carries them.
 Each carries its own licence text and copyright notice in its own folder, and those
 must travel with it. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Nor is ZopfliSharp, which the command line, the native library and the preview server
+carry compiled in, under the Apache License 2.0; its licence and notice travel beside each
+of them. The `Frisket` package does not carry it and stays MIT.
 
 Fonts that could not produce a licence were removed rather than shipped on the
 strength of a label. "Freeware" means free to use, which is not the same as free to

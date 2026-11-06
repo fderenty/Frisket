@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Frisket;
+using ZopfliSharp;
 
 namespace Frisket.Cli
 {
@@ -273,7 +274,13 @@ namespace Frisket.Cli
                         Subset = !options.NoSubset,
                         Hinting = !options.NoHinting,
                         Language = report.Language,
-                        Interactive = !options.Flat
+                        Interactive = !options.Flat,
+                        Compressor = Compressor(options),
+                        // Every core, with Zopfli: it is a hundred times slower than zlib, and the
+                        // file is the same whatever the number. A command somebody ran may take
+                        // the machine; a library, which the engine is, may not, so it does not by
+                        // default.
+                        CompressionThreads = options.Zopfli ? -1 : 1
                     };
                     Warn(ReportRenderer.Render(report, pdf));
 
@@ -539,6 +546,28 @@ namespace Frisket.Cli
             return library;
         }
 
+        /// <summary>
+        /// Zopfli when asked for, and otherwise nothing, which leaves the engine's own zlib. The
+        /// engine names no encoder; this is the program that ships one (ZopfliSharp.props).
+        ///
+        /// Spread over the cores within each stream as well as across them, since one stream
+        /// is often most of the work - an invoice's logo, a picture of flat colour - and the
+        /// streams around it finish long before it does. Measured on 6 November 2026, eight
+        /// cores: the ACME invoice 5.0 s on one thread, 3.8 s across the streams alone, 1.5 s
+        /// with both; the showcase 26 s, 9.4 s, 9.4 s. The bytes were the same every time.
+        /// </summary>
+        private static ZlibCompressor? Compressor(Options options)
+        {
+            if (!options.Zopfli)
+                return null;
+
+            var settings = new ZopfliOptions { MaxDegreeOfParallelism = -1 };
+            if (options.ZopfliIterations is { } passes)
+                settings.Iterations = passes;
+
+            return data => Zopfli.Compress(data, ZopfliFormat.Zlib, settings);
+        }
+
         private static System.Globalization.NumberFormatInfo Numbers(Options options)
             => options.Numbers switch
             {
@@ -634,6 +663,13 @@ namespace Frisket.Cli
                                                 a hinted face such as Arial, drawn alike by
                                                 Acrobat and Edge, and worse by Firefox at small
                                                 sizes - an accented letter can blur
+                  --zopfli                      deflate with Zopfli rather than zlib: the same
+                                                document, read alike by every reader, 6 to 12%
+                                                smaller, at a second or more a document on
+                                                every core - for files kept or sent many times
+                  --zopfli-iterations <n>       passes Zopfli makes over each stream: fewer is
+                                                faster and a little larger. Default: Zopfli's
+                                                own, 15
 
             The HTML
 
@@ -646,6 +682,7 @@ namespace Frisket.Cli
             Examples
 
               frisket render -t note.json -d data/ -o out --format pdf,html
+              frisket render -t note.json -d data/ --conformance pdfa3b --zopfli   # to archive
               frisket check  -t note.json --accessible
               frisket check  -t note.json --flat        # what flattening would cost
               frisket check  -t note.json --format mail # what a message cannot carry

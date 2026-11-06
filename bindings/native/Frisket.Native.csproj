@@ -46,6 +46,12 @@
     <ProjectReference Include="..\..\fonts\Frisket.Fonts.csproj" />
   </ItemGroup>
 
+  <!-- Zopfli, for "compression": "zopfli" in fk_render's options. Referenced here and not
+       by the engine, whose sources are compiled in above: they take an encoder through
+       PdfBackend.Compressor and name none. AOT folds it into the one native file, as it
+       does the typefaces. -->
+  <Import Project="..\..\ZopfliSharp.props" />
+
   <!-- .NET names the shared library after the assembly, so a Linux build comes out as
        frisket.so. Every convention there - dlopen, -l, ldconfig - expects the lib
        prefix, and the wrappers ask for libfrisket.so because that is what a Linux

@@ -1,6 +1,9 @@
 # Third-party notices
 
-Frisket's own code is under the MIT licence in [LICENSE](LICENSE). What follows is not.
+Frisket's own code is under the MIT licence in [LICENSE](LICENSE). What follows is not: the
+typefaces, under the SIL Open Font License, and ZopfliSharp, under the Apache License 2.0,
+which the command line, the native library and the preview server carry and the engine does
+not.
 
 ## Typefaces
 
@@ -50,3 +53,44 @@ claiming one name are reported rather than one hiding the other. It copies Mulis
 A font that cannot produce its own licence text does not go into `engine/Fonts`. A label on
 a download page is not a licence: one font already said "freeware" there while its own
 licence file forbade redistribution in as many words.
+
+## ZopfliSharp
+
+The command line, the native library and the preview server can deflate a PDF with Zopfli,
+through [ZopfliSharp](https://github.com/fderenty/ZopfliSharp), which each of them carries
+compiled in: the command line and the native library are linked ahead of time, so it is inside
+the one binary of each release archive. Its version is named once, in
+[`ZopfliSharp.props`](ZopfliSharp.props). It is under the **Apache License 2.0**, not MIT.
+
+The engine does not carry it, and neither do the `Frisket`, `Frisket.Fonts` and
+`Frisket.Import` packages: the engine takes an encoder through `PdfBackend.Compressor` and
+names none, so a program built on it carries ZopfliSharp only if it references it itself.
+
+Apache-2.0 asks two things of anything that redistributes the work (section 4): a copy of
+the licence, and the content of its NOTICE file. Both travel beside each binary, in
+`licenses/zopflisharp/LICENSE` and `licenses/zopflisharp/NOTICE`, copied out of the package
+by [`ZopfliSharp.props`](ZopfliSharp.props), and the NOTICE reads:
+
+```
+ZopfliSharp
+Copyright 2026 Frédéric Derenty
+
+This product is a translation to C# of Zopfli, the compression library by Google:
+https://github.com/google/zopfli
+
+  Zopfli Compression Algorithm
+  Copyright 2011-2016 Google Inc. All Rights Reserved.
+  Licensed under the Apache License, Version 2.0.
+
+  Zopfli was created by Lode Vandevenne and Jyrki Alakuijala, based on an
+  algorithm by Jyrki Alakuijala. Contributors to the original: Mark Adler,
+  Jyrki Alakuijala, Frédéric Kayser, Jeffrey Lim, Daniel Reed, Huzaifa
+  Sidhpurwala, Péter Szabó, Lode Vandevenne, Derek Buitenhuis.
+
+Changes from the original: the C sources under src/zopfli were translated to
+C#, keeping their structure so that the output stays byte-for-byte identical.
+Each translated file names the C file it comes from. Spreading one compression
+over several threads is an addition of this version.
+```
+
+The licence itself: <https://www.apache.org/licenses/LICENSE-2.0>.

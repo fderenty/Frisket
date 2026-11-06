@@ -500,11 +500,32 @@ namespace Frisket.Native
                 Subset = options.Subset,
                 Hinting = options.Hinting,
                 Interactive = options.Interactive,
-                Language = report.Language
+                Language = report.Language,
+                Compressor = options.Zopfli ? ZopfliCompressor(options, cancellation) : null,
+                CompressionThreads = options.Threads
             };
 
             layout = ReportRenderer.Render(report, pdf, cancellation);
             return pdf.ToArray();
+        }
+
+        /// <summary>
+        /// Zopfli, holding the render's token: the streams are deflated when the document is
+        /// assembled, after composing has finished asking, and at a hundred times zlib's time
+        /// that is where a cancellation is most likely to arrive. It lands between Zopfli's
+        /// passes and comes back FK_CANCELLED, like one that lands while composing.
+        ///
+        /// "threads" goes to both levels, the streams deflated at once and the threads one
+        /// stream spreads over, because one stream is often most of the work: an invoice's
+        /// logo took 5.0 s on one thread, 3.8 s across the streams alone and 1.5 s with both.
+        /// </summary>
+        private static ZlibCompressor ZopfliCompressor(RenderOptions options, CancellationToken cancellation)
+        {
+            var settings = new ZopfliSharp.ZopfliOptions { MaxDegreeOfParallelism = options.Threads };
+            if (options.Iterations is { } passes)
+                settings.Iterations = passes;
+
+            return data => ZopfliSharp.Zopfli.Compress(data, ZopfliSharp.ZopfliFormat.Zlib, settings, cancellation);
         }
 
         private static string Html(Report report, FontLibrary library, RenderOptions options,

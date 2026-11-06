@@ -162,7 +162,10 @@ void FK_CALL fk_template_free(fk_template tmpl);
  *       "hinting":     true | false,               default true    (pdf, see below)
  *       "interactive": true | false,               default true
  *       "bare":        true | false,               default false   (html)
- *       "numbers":     "french" | "invariant" }    default "invariant"
+ *       "numbers":     "french" | "invariant",     default "invariant"
+ *       "compression": "zlib" | "zopfli",          default "zlib"    (pdf, see below)
+ *       "iterations":  1, 2, ...                   default Zopfli's own, 15; only with "zopfli"
+ *       "threads":     -1 | 1, 2, ... }            default 1         (pdf)
  *
  * The result is bytes for a PDF, UTF-8 text for HTML, and for SVG a JSON envelope -
  * { pageWidth, pageHeight, fontCss, pages: [...] } - since a set of pages is not one
@@ -175,6 +178,18 @@ void FK_CALL fk_template_free(fk_template tmpl);
  * with a hinted face such as Arial. Acrobat and Edge draw the page exactly alike; Firefox
  * draws small text worse without it, and an accent can run into its letter at 8 pt. The
  * hinting tables themselves stay, as ISO 32000-1 asks. The bundled faces have none.
+ *
+ * "compression": "zopfli" deflates every stream with Zopfli rather than zlib - the same
+ * document, read the same by every reader, and smaller: 6.6 per cent off an invoice whose
+ * weight is its logo, 11.5 off a report of fonts, pictures and a form. It costs about a
+ * hundred times zlib's time, a second or more a document, so it is for a file written once
+ * and kept or sent many times. "iterations" is how many passes Zopfli makes over each
+ * stream; fewer is faster and a little larger. A token cancels it, between two passes.
+ *
+ * "threads" is how many threads compressing may take: 1 keeps it on the calling thread,
+ * -1 takes what the machine has. It never changes the bytes. One by default, since a
+ * library takes no threads its caller did not offer; with Zopfli it is worth raising - the
+ * invoice above takes 5 seconds on one thread and 1.5 on eight.
  */
 fk_status FK_CALL fk_render(fk_template tmpl, fk_fonts fonts,
                             const char* data_json, const char* options_json,

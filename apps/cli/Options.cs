@@ -1,3 +1,4 @@
+using System.Globalization;
 using Frisket;
 
 namespace Frisket.Cli
@@ -46,14 +47,27 @@ namespace Frisket.Cli
                     case "--name": options._single["name"] = Value("name"); break;
                     case "--max-documents": options._single["max-documents"] = Value("max-documents"); break;
                     case "--fields": options._single["fields"] = Value("fields"); break;
+                    case "--zopfli-iterations": options._single["zopfli-iterations"] = Value("zopfli-iterations"); break;
 
-                    case "--tagged" or "--flat" or "--no-subset" or "--no-hinting" or "--bare" or "--accessible" or "--json":
+                    case "--tagged" or "--flat" or "--no-subset" or "--no-hinting" or "--bare" or "--accessible" or "--json"
+                        or "--zopfli":
                         options._flags.Add(arg.TrimStart('-'));
                         break;
 
                     default:
                         throw new CliError($"unknown option '{arg}'");
                 }
+            }
+
+            // Said at once rather than at the first PDF, which may come after an hour of a
+            // batch - and never let through: a number of passes for an encoder nobody asked
+            // for would change nothing, which is a flag somebody chases for an hour.
+            if (options._single.TryGetValue("zopfli-iterations", out string? passes))
+            {
+                if (!options.Zopfli)
+                    throw new CliError("--zopfli-iterations says how hard Zopfli works, so it goes with --zopfli.");
+                if (!int.TryParse(passes, NumberStyles.None, CultureInfo.InvariantCulture, out int count) || count < 1)
+                    throw new CliError($"--zopfli-iterations wants a whole number of at least 1, not '{passes}'.");
             }
 
             return options;
@@ -86,6 +100,17 @@ namespace Frisket.Cli
         public bool NoHinting => _flags.Contains("no-hinting");
         public bool Bare => _flags.Contains("bare");
         public bool Accessible => _flags.Contains("accessible");
+
+        /// <summary>Whether the PDF is deflated by Zopfli rather than zlib.</summary>
+        public bool Zopfli => _flags.Contains("zopfli");
+
+        /// <summary>
+        /// The passes Zopfli makes over each stream, when said; null leaves ZopfliSharp's own
+        /// default, which is not repeated here to drift from it.
+        /// </summary>
+        public int? ZopfliIterations => _single.TryGetValue("zopfli-iterations", out string? passes)
+            ? int.Parse(passes, NumberStyles.None, CultureInfo.InvariantCulture)
+            : null;
 
         /// <summary>Findings written for a program rather than a person: TemplateIssue.ToJson.</summary>
         public bool Json => _flags.Contains("json");

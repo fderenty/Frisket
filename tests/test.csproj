@@ -19,6 +19,10 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.5.61" />
   </ItemGroup>
 
+  <!-- Zopfli, the encoder the products hand PdfBackend.Compressor: the same version they
+       ship, from the same file. -->
+  <Import Project="..\ZopfliSharp.props" />
+
   <ItemGroup>
     <ProjectReference Include="..\engine\Frisket.csproj" />
 
