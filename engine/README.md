@@ -20,7 +20,7 @@ Given the same template, data and date, the output is the same file byte for byt
 ## What it does
 
 - **Layout** - flowing or pinned to coordinates, headers and footers, tables whose rows
-  split across pages, columns that balance, justified text, sections with a page size of
+  split across pages and whose columns the data can drop, columns that balance, justified text, sections with a page size of
   their own.
 - **PDF** - PDF/A-3B and PDF/UA-1 (`Conformance = PdfConformance.PdfA3b`, `Tagged = true`),
   both validated with veraPDF; Factur-X attachments; fillable forms, and signature fields

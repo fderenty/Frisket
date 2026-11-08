@@ -1413,11 +1413,28 @@ function computeFrame(item, area, report) {
   return rect(left, top, right, bottom);
 }
 
+/// How a table's column shows: its own Visibility, or Gone when the data loaded says so - the
+/// engine's TableColumn.ShowWhen and HideWhen, read at the root as everything here is. With no
+/// data a conditional column is drawn, as a conditional item is: the panel says why it may go.
+function columnVisibility(table, index) {
+  const column = (table.Columns || [])[index];
+  if (!column) return "Visible";
+  const own = column.Visibility;          // filled by hydrate(), as every default is
+  if (own !== "Gone" && bound
+      && ((column.ShowWhen && !hasSomething(column.ShowWhen))
+          || (column.HideWhen && hasSomething(column.HideWhen))))
+    return "Gone";
+  return own;
+}
+
+/// A Gone column is not there: its two edges meet and its width goes to the columns sharing
+/// what is left, so a cell keeps its index and loses its room - LayoutResolver.ColumnEdges.
 function columnEdges(table, left, right) {
   const cols = table.Columns && table.Columns.length ? table.Columns : [{ Width: "NaN" }];
   const total = right - left;
   let fixed = 0, autos = 0;
-  const widths = cols.map(c => {
+  const widths = cols.map((c, i) => {
+    if (columnVisibility(table, i) === "Gone") return 0;
     if (!has(c.Width)) { autos++; return NaN; }
     const w = mm(num(c.Width), c.WidthUnit, total);
     fixed += w; return w;
@@ -1502,7 +1519,7 @@ function hydrate(item) {
 
   if (D) for (const k in D) if (item[k] === undefined) item[k] = D[k];
 
-  (item.Columns || []).forEach(c => { if (c.WidthUnit === undefined) c.WidthUnit = "Millimeter"; });
+  (item.Columns || []).forEach(c => fill(c, { WidthUnit: "Millimeter", Visibility: "Visible" }));
   (item.Childs || []).forEach(hydrate);
   return item;
 }
@@ -1862,21 +1879,26 @@ function table(item, frame, placed, report) {
   const edgesX = columnEdges(item, inner.left, inner.right);
   let cursor = inner.top;
 
+  // The grid strokes no box for a Gone column, whose edges meet: it would be a line drawn
+  // over the one already there.
+  const gridX = edgesX.filter((x, i) => i === 0 || columnVisibility(item, i - 1) !== "Gone");
+
   for (const row of item.Childs || []) {
     if (row.Style.Visibility === "Gone") continue;
     const pad = row.Style.Padding;
     let tallest = 0;
     (row.Childs || []).forEach((cell, i) => {
-      if (i + 1 >= edgesX.length) return;
+      if (i + 1 >= edgesX.length || cell.Style.Visibility === "Gone" || columnVisibility(item, i) === "Gone") return;
       const w = edgesX[i + 1] - edgesX[i] - pad.Left - pad.Right - cell.Style.Margin.Left - cell.Style.Margin.Right;
       tallest = Math.max(tallest, intrinsicHeight(cell, Math.max(0, w), report));
     });
     const height = tallest + pad.Top + pad.Bottom;
     const rowFrame = rect(edgesX[0], cursor, inner.right, cursor + height);
-    placed.push({ item: row, frame: rowFrame, gridEdges: item.Grid ? edgesX : null, grid: item.Grid });
+    placed.push({ item: row, frame: rowFrame, gridEdges: item.Grid ? gridX : null, grid: item.Grid });
 
+    // An Invisible column has its width and its share of the row's height, and draws nothing.
     (row.Childs || []).forEach((cell, i) => {
-      if (i + 1 >= edgesX.length || cell.Style.Visibility === "Gone") return;
+      if (i + 1 >= edgesX.length || cell.Style.Visibility === "Gone" || columnVisibility(item, i) !== "Visible") return;
       const box = rect(edgesX[i] + pad.Left, cursor + pad.Top, edgesX[i + 1] - pad.Right, cursor + height - pad.Bottom);
       arrange(cell, box, placed, report);
     });
@@ -2295,6 +2317,7 @@ const STRINGS = {
     "section.condition": "Shown when",
     "field.showWhen": "Only if", "field.hideWhen": "Except if",
     "hint.condition": "A path in the data, such as Client.Vat. The element is dropped - it takes no room - when there is nothing at that path: absent, empty, zero or false.",
+    "hint.columns": "Each column shows, keeps its width and draws nothing (Invisible), or goes with all its cells (Gone), its width left to the columns without one. Only if and Except if name a path in the data, read where the table stands and never in a line of its list: a discount column for the invoices that have a discount. With no data loaded this page draws it.",
 
     "panel.issues": "Checks", "issues.none": "Nothing to report",
     "issues.count": "{errors} error(s), {warnings} warning(s)",
@@ -2519,13 +2542,14 @@ const STRINGS = {
   },
 
   fr: {
+    "app.name": "Frisket",
     "app.title": "Frisket — concepteur de gabarit",
 
     "action.new": "Nouveau", "action.open": "Ouvrir JSON…", "action.save": "Enregistrer JSON",
     "action.load": "Charger…", "action.saveShort": "Enregistrer", "action.clear": "Vider",
-    "action.exact": "Aperçu exact", "action.delete": "Supprimer",
+    "action.exact": "Aperçu exact", "action.pdf": "PDF", "action.delete": "Supprimer",
 
-    "tab.back": "Verso", "tab.data": "Données", "tab.watermark": "Filigrane",
+    "tab.section": "Section", "tab.back": "Verso", "tab.data": "Données", "tab.watermark": "Filigrane",
     "tab.background": "Fond",
 
     "panel.add": "Ajouter", "panel.addBack": "Ajouter au verso", "panel.structure": "Structure",
@@ -2710,6 +2734,7 @@ const STRINGS = {
     "section.condition": "Affiché quand",
     "field.showWhen": "Seulement si", "field.hideWhen": "Sauf si",
     "hint.condition": "Un chemin dans les données, par exemple Client.Vat. L\u2019élément dispara\u00eet \u2014 sans laisser de place \u2014 quand il n\u2019y a rien \u00e0 ce chemin\u202f: absent, vide, z\u00e9ro ou faux.",
+    "hint.columns": "Chaque colonne est affichée, garde sa largeur sans rien dessiner (Invisible), ou disparaît avec toutes ses cellules (Retiré), sa largeur laissée aux colonnes qui n\u2019en fixent pas. Seulement si et Sauf si nomment un chemin dans les données, lu là où se trouve le tableau et jamais dans une ligne de sa liste\u202f: une colonne de remise pour les factures qui en ont une. Sans données chargées, cette page la dessine.",
 
     "panel.issues": "Contrôles", "issues.none": "Rien à signaler",
     "issues.count": "{errors} erreur(s), {warnings} avertissement(s)",
@@ -6694,8 +6719,20 @@ function frisketDesigner(seams = {}) {
             v => { c.Width = v === "" ? "NaN" : Number(v); refresh(); }, { step: 1, placeholder: "auto" }));
           row.appendChild(select(["Millimeter", "Percentage"], c.WidthUnit, v => { c.WidthUnit = v; refresh(); }, "Units"));
           cols.appendChild(field2(t("field.column") + " " + (i + 1), row));
+
+          // The column as a whole, its cells in every row with it: TableColumn.Visibility,
+          // ShowWhen and HideWhen, read where the table stands.
+          const shows = document.createElement("div"); shows.className = "val"; shows.style.marginBottom = "8px";
+          shows.appendChild(select(["Visible", "Invisible", "Gone"], c.Visibility || "Visible",
+            v => { c.Visibility = v; refresh(); }, "Visibility"));
+          shows.appendChild(input("text", c.ShowWhen ?? "",
+            v => { c.ShowWhen = v.trim() || null; refresh(); }, { placeholder: t("field.showWhen") }));
+          shows.appendChild(input("text", c.HideWhen ?? "",
+            v => { c.HideWhen = v.trim() || null; refresh(); }, { placeholder: t("field.hideWhen") }));
+          cols.appendChild(field2("", shows));
         });
         p.appendChild(cols);
+        p.appendChild(field2("", note(t("hint.columns"))));
         const bar = document.createElement("div"); bar.className = "val";
         bar.append(
           button("+ colonne", () => {

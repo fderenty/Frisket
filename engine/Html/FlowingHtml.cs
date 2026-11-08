@@ -505,8 +505,15 @@ namespace Frisket
                     continue;
 
                 html.Append("<tr>");
-                foreach (BaseItem cell in row.Childs)
+                for (int i = 0; i < row.Childs.Count; i++)
                 {
+                    // A column that does not show is not written, as anything Invisible is not
+                    // here: a message keeps no room for what it does not say. The row that spans
+                    // the table has one cell, which no column hides.
+                    if (!row.SpansColumns && table.ColumnVisibility(i) != Visibility.Visible)
+                        continue;
+
+                    BaseItem cell = row.Childs[i];
                     string tag = row.IsHeader ? "th" : "td";
                     html.Append('<').Append(tag);
                     if (row.ColumnSpan > 1)
@@ -514,7 +521,10 @@ namespace Frisket
                     html.Append(" style=\"padding:.3em .5em;vertical-align:top;")
                         .Append(row.IsHeader ? "text-align:left;border-bottom:1px solid #ddd;" : "")
                         .Append("\">");
-                    WriteItem(html, cell, report, band);
+                    // A cell hidden on its own keeps its place, or the row slides under the
+                    // wrong header - and says nothing, as it does on the page.
+                    if (cell.Style.Visibility == Visibility.Visible)
+                        WriteItem(html, cell, report, band);
                     html.Append("</").Append(tag).Append('>');
                 }
                 html.Append("</tr>\n");

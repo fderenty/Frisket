@@ -27,7 +27,7 @@ every stream inflated, which is the comparison that means something there.
 
 | | |
 |---|---|
-| **Layout** | flowing or pinned to coordinates, headers and footers, back pages, tables whose rows split across pages, columns that balance, text that justifies |
+| **Layout** | flowing or pinned to coordinates, headers and footers, back pages, tables whose rows split across pages and whose columns the data can drop, columns that balance, text that justifies |
 | **Sections** | a report is a list of sections, each with its own page size — A4 portrait, then an appendix in A3 landscape, in one file |
 | **Type** | cap heights measured from the glyph outline — TrueType and CFF alike — never from what a font claims about itself; fonts subset into the file |
 | **PDF** | PDF/A-3B and PDF/UA-1, both validated; tagged structure down to `Table`/`TR`/`TH`/`TD`; Factur-X attachments; outlines; interactive forms that work in real readers |

@@ -427,9 +427,41 @@ namespace Frisket
         /// <summary>Ceiling for a fitted column, in millimeters. Zero means none.</summary>
         public double MaxWidth { get; set; }
 
+        /// <summary>
+        /// The column as a whole, its cells in every row with it: Visible; Invisible, keeping
+        /// its width and drawing nothing in it; or Gone, as if it had never been declared - its
+        /// width goes to the columns that share what is left, and a table whose columns all
+        /// state a width simply ends sooner. A cell keeps its own Visibility as well, and the
+        /// more hidden of the two wins.
+        /// </summary>
+        [JsonConverter(typeof(JsonStringEnumConverter<Visibility>))]
+        public Visibility Visibility { get; set; } = Visibility.Visible;
+
+        /// <summary>
+        /// A path in the data: the column is Gone unless the value there is worth showing -
+        /// present, and not an empty string, not zero, not false - the reading
+        /// <see cref="BaseItem.ShowWhen"/> gives an item. Read where the table stands and
+        /// never in an entry of the list it repeats over, as its header is: a column is the
+        /// same in every row. A discount column for the invoices that have a discount.
+        /// </summary>
+        public string? ShowWhen { get; set; }
+
+        /// <summary>
+        /// The other way round: the column is Gone when the value <em>is</em> there. Both may
+        /// be given, and either one hiding the column is enough.
+        /// </summary>
+        public string? HideWhen { get; set; }
+
         /// <summary>True when no explicit width was given.</summary>
         [JsonIgnore]
         public bool Auto => double.IsNaN(Width);
+
+        /// <summary>A copy, so a table cloned for each record does not share its columns.</summary>
+        public TableColumn Clone() => new(Width, WidthUnit)
+        {
+            Fit = Fit, MinWidth = MinWidth, MaxWidth = MaxWidth,
+            Visibility = Visibility, ShowWhen = ShowWhen, HideWhen = HideWhen
+        };
 
         public TableColumn() { }
 
@@ -458,8 +490,13 @@ namespace Frisket
         /// </summary>
         internal bool SpansColumns { get; set; }
 
-        /// <summary>How many columns this row's one cell takes, for the outputs that have to say.</summary>
-        internal int ColumnSpan => SpansColumns && Parent is TableItem table ? Math.Max(1, table.Columns.Count) : 1;
+        /// <summary>
+        /// How many columns this row's one cell takes, for the outputs that have to say: those
+        /// that show, since a hidden column's cells are neither tagged nor written in a mail.
+        /// </summary>
+        internal int ColumnSpan => SpansColumns && Parent is TableItem table
+            ? Math.Max(1, table.Columns.Count(c => c.Visibility == Visibility.Visible))
+            : 1;
 
         public TableRow() { }
 
@@ -537,12 +574,25 @@ namespace Frisket
             copy.Grid = Grid?.Clone();
             copy.Columns.Clear();
             foreach (TableColumn column in Columns)
-            {
-                copy.Columns.Add(new TableColumn(column.Width, column.WidthUnit)
-                {
-                    Fit = column.Fit, MinWidth = column.MinWidth, MaxWidth = column.MaxWidth
-                });
-            }
+                copy.Columns.Add(column.Clone());
+        }
+
+        /// <summary>
+        /// How the column at <paramref name="index"/> shows. A row's cell past the declared
+        /// columns has no column to hide it, so it shows as itself.
+        /// </summary>
+        internal Visibility ColumnVisibility(int index)
+            => index < Columns.Count ? Columns[index].Visibility : Visibility.Visible;
+
+        /// <summary>
+        /// How a cell of this table shows: the more hidden of its own visibility and its
+        /// column's. Gone hides more than Invisible, which hides more than Visible - the
+        /// order the enum is declared in.
+        /// </summary>
+        internal Visibility CellVisibility(BaseItem cell, int index)
+        {
+            Visibility own = cell.Style.Visibility, column = ColumnVisibility(index);
+            return own > column ? own : column;
         }
 
         private TableRow AddRow(bool header, params BaseItem[] cells)

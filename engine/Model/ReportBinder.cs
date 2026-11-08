@@ -193,6 +193,17 @@ namespace Frisket
         private static void BindContainer(ContainerItem container, ReportData data,
                                           ReportData.Scope? scope, BindingOptions options)
         {
+            // Before the rows are stamped out, in the scope the table stands in: a column is
+            // the same in every row, so no entry of the list can decide it.
+            if (container is TableItem table)
+            {
+                foreach (TableColumn column in table.Columns)
+                {
+                    if (!Shows(column.ShowWhen, column.HideWhen, data, scope))
+                        column.Visibility = Visibility.Gone;
+                }
+            }
+
             if (container.RepeatOver != null)
             {
                 Repeat(container, data, scope, options);
@@ -472,11 +483,15 @@ namespace Frisket
         /// the paths it named. Silent when it named none, which is nearly every item.
         /// </summary>
         private static bool Shows(BaseItem item, ReportData data, ReportData.Scope? scope)
+            => Shows(item.ShowWhen, item.HideWhen, data, scope);
+
+        /// <summary>The same question asked of the two paths alone, which is all a table's column has.</summary>
+        private static bool Shows(string? showWhen, string? hideWhen, ReportData data, ReportData.Scope? scope)
         {
-            if (item.ShowWhen is { Length: > 0 } show && !HasSomething(show, data, scope))
+            if (showWhen is { Length: > 0 } show && !HasSomething(show, data, scope))
                 return false;
 
-            return item.HideWhen is not { Length: > 0 } hide || !HasSomething(hide, data, scope);
+            return hideWhen is not { Length: > 0 } hide || !HasSomething(hide, data, scope);
         }
 
         /// <summary>

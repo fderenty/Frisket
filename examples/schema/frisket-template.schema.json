@@ -2890,6 +2890,29 @@
             "number",
             "string"
           ]
+        },
+        "Visibility": {
+          "description": "The column as a whole, its cells in every row with it: Visible; Invisible, keeping its width and drawing nothing in it; or Gone, as if it had never been declared - its width goes to the columns that share what is left, and a table whose columns all state a width simply ends sooner. A cell keeps its own Visibility as well, and the more hidden of the two wins.",
+          "type": "string",
+          "enum": [
+            "Visible",
+            "Invisible",
+            "Gone"
+          ]
+        },
+        "ShowWhen": {
+          "description": "A path in the data: the column is Gone unless the value there is worth showing - present, and not an empty string, not zero, not false - the reading BaseItem.ShowWhen gives an item. Read where the table stands and never in an entry of the list it repeats over, as its header is: a column is the same in every row. A discount column for the invoices that have a discount.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "HideWhen": {
+          "description": "The other way round: the column is Gone when the value is there. Both may be given, and either one hiding the column is enough.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

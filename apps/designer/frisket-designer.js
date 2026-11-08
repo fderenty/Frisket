@@ -1390,8 +1390,20 @@ function frisketDesigner(seams = {}) {
             v => { c.Width = v === "" ? "NaN" : Number(v); refresh(); }, { step: 1, placeholder: "auto" }));
           row.appendChild(select(["Millimeter", "Percentage"], c.WidthUnit, v => { c.WidthUnit = v; refresh(); }, "Units"));
           cols.appendChild(field2(t("field.column") + " " + (i + 1), row));
+
+          // The column as a whole, its cells in every row with it: TableColumn.Visibility,
+          // ShowWhen and HideWhen, read where the table stands.
+          const shows = document.createElement("div"); shows.className = "val"; shows.style.marginBottom = "8px";
+          shows.appendChild(select(["Visible", "Invisible", "Gone"], c.Visibility || "Visible",
+            v => { c.Visibility = v; refresh(); }, "Visibility"));
+          shows.appendChild(input("text", c.ShowWhen ?? "",
+            v => { c.ShowWhen = v.trim() || null; refresh(); }, { placeholder: t("field.showWhen") }));
+          shows.appendChild(input("text", c.HideWhen ?? "",
+            v => { c.HideWhen = v.trim() || null; refresh(); }, { placeholder: t("field.hideWhen") }));
+          cols.appendChild(field2("", shows));
         });
         p.appendChild(cols);
+        p.appendChild(field2("", note(t("hint.columns"))));
         const bar = document.createElement("div"); bar.className = "val";
         bar.append(
           button("+ colonne", () => {

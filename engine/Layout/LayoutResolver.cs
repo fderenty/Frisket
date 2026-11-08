@@ -1518,6 +1518,9 @@ namespace Frisket
         /// left over is shared equally among the plain auto columns - and if the fitted
         /// columns alone would overrun the table, they are scaled back together rather
         /// than one of them being starved.
+        ///
+        /// A column that is Gone is not there: its two edges meet, and what it would have
+        /// taken is left to the others, so its cells keep their index and lose their room.
         /// </summary>
         private double[] ColumnEdges(TableItem table, double left, double right, Page page)
         {
@@ -1531,6 +1534,12 @@ namespace Frisket
             for (int i = 0; i < count; i++)
             {
                 TableColumn? column = i < table.Columns.Count ? table.Columns[i] : null;
+
+                if (column is { Visibility: Visibility.Gone })
+                {
+                    widths[i] = 0;
+                    continue;
+                }
 
                 if (column != null && !column.Auto)
                 {
@@ -1703,6 +1712,34 @@ namespace Frisket
             => row.SpansColumns ? new[] { edges[0], edges[^1] } : edges;
 
         /// <summary>
+        /// How a cell shows once its column has had its say: the more hidden of the two. A row
+        /// outside a table has no column to ask.
+        /// </summary>
+        private static Visibility Shown(TableRow row, BaseItem cell, int index)
+            => row.Parent is TableItem table ? table.CellVisibility(cell, index) : cell.Style.Visibility;
+
+        /// <summary>
+        /// The edges the grid strokes for a row: those it was laid out between, less the second
+        /// edge of each column that is Gone. Its two edges meet, and stroking the box between
+        /// them would draw a line nobody asked for over the one already there.
+        /// </summary>
+        private static double[] GridEdgesOf(TableRow row, double[] edges)
+        {
+            if (row.SpansColumns || row.Parent is not TableItem table
+                || !table.Columns.Exists(c => c.Visibility == Visibility.Gone))
+                return edges;
+
+            var kept = new List<double> { edges[0] };
+            for (int i = 0; i + 1 < edges.Length; i++)
+            {
+                if (table.ColumnVisibility(i) != Visibility.Gone)
+                    kept.Add(edges[i + 1]);
+            }
+
+            return kept.ToArray();
+        }
+
+        /// <summary>
         /// How many lines of a row fit in the room left. Walks up from one, each cell's
         /// lines measured once: the height is not linear in them because cells differ, and
         /// a row taller than a page has thousands.
@@ -1755,7 +1792,7 @@ namespace Frisket
             for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
             {
                 BaseItem cell = cells[i];
-                if (cell.Style.Visibility == Visibility.Gone)
+                if (Shown(row, cell, i) == Visibility.Gone)
                     continue;
 
                 // The row padding insets every cell, on all four sides.
@@ -1797,7 +1834,7 @@ namespace Frisket
             for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
             {
                 BaseItem cell = cells[i];
-                if (cell.Style.Visibility == Visibility.Gone || cell is not (TextItem or AdvancedTextItem))
+                if (Shown(row, cell, i) == Visibility.Gone || cell is not (TextItem or AdvancedTextItem))
                     continue;
 
                 double width = Math.Max(0, edges[i + 1] - edges[i] - inset.Left - inset.Right
@@ -1858,7 +1895,7 @@ namespace Frisket
             SetFrame(row, frame);
             PlacedItem placedRow = page.Place(row, frame);
             NoteOutline(row, page, frame);
-            placedRow.GridEdges = edges;
+            placedRow.GridEdges = GridEdgesOf(row, edges);
 
             EdgeSize inset = row.Style.Padding;
             double cellTop = top + inset.Top;
@@ -1868,7 +1905,14 @@ namespace Frisket
             for (int i = 0; i < cells.Count && i + 1 < edges.Length; i++)
             {
                 BaseItem cell = cells[i];
-                if (cell.Style.Visibility == Visibility.Gone)
+                if (Shown(row, cell, i) == Visibility.Gone)
+                    continue;
+
+                // A column that is Invisible has been given its width and its share of the
+                // row's height, and draws nothing: its cells are never placed, so nothing of
+                // them reaches the page, the tagged tree or a reader. A cell Invisible on its
+                // own is placed, as anything Invisible is, and the renderer passes it by.
+                if (row.Parent is TableItem owner && owner.ColumnVisibility(i) == Visibility.Invisible)
                     continue;
 
                 // Arrange subtracts the cell's own margin, so hand it the padded box.

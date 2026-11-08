@@ -1413,6 +1413,22 @@ check('alt+arrow moves a picture too, not only a paragraph',
         && table.Childs.every(r => r.Childs.length === 2),
         table.Childs.map(r => r.Childs.length).join('/'));
 
+  // What a column says about showing - TableColumn.Visibility, ShowWhen, HideWhen - is set
+  // in the designer or by a host, and this face has no control for it. It must travel with
+  // the column it was written on, whichever column the rails add or take away around it.
+  Object.assign(table.Columns[1], { Visibility: 'Gone', ShowWhen: 'Discount', HideWhen: 'Waived' });
+  held.addColumn(table);
+  held.dropColumn(table, 0);
+  const travelled = table.Columns[0];
+  check('a column keeps what it says about showing when the rails move the others',
+        table.Columns.length === 2 && travelled.Visibility === 'Gone'
+        && travelled.ShowWhen === 'Discount' && travelled.HideWhen === 'Waived'
+        && (table.Columns[1].Visibility || 'Visible') === 'Visible' && !table.Columns[1].ShowWhen,
+        JSON.stringify(table.Columns));
+  check('and the document handed out says it too',
+        JSON.stringify(held.report()).includes('"ShowWhen":"Discount"'));
+  for (const key of ['Visibility', 'ShowWhen', 'HideWhen']) delete travelled[key];
+
   // A row handing back fewer cells than the table has columns is refused by a
   // conformance checker and unreadable aloud - CLAUDE.md §11 - so the one thing this
   // must never produce is a ragged table.

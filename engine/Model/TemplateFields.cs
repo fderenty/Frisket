@@ -107,6 +107,17 @@ namespace Frisket
                 if (item is not ContainerItem container)
                     return;
 
+                // A column is read where the table stands, before its list is entered.
+                if (container is TableItem table)
+                {
+                    for (int i = 0; i < table.Columns.Count; i++)
+                    {
+                        string at = $"{pointer}/Columns/{i}";
+                        Path(table.Columns[i].ShowWhen, at + "/ShowWhen", name + " › Columns › ShowWhen", item, scopes);
+                        Path(table.Columns[i].HideWhen, at + "/HideWhen", name + " › Columns › HideWhen", item, scopes);
+                    }
+                }
+
                 // A repeated container reads an entry first. Its list is looked for where the
                 // binder looks: in the entries already entered, then at the root.
                 IReadOnlyList<Scope> inside = scopes;

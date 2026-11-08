@@ -43,6 +43,10 @@ checks return, checks again and composes the document. Its material is left in
    - a token is a path in braces, such as `{Destinataire.Nom}`;
    - a table repeats over a list with `RepeatOver`: a header row with `IsHeader: true`,
      then one row naming the fields of an entry;
+   - a column only some documents have says so once, on its entry in `Columns`
+     (`"ShowWhen": "Remise"`), not on each of its cells. The path is read where the table
+     stands, never in an entry of its list, and a column that goes leaves its width to the
+     columns that state none;
    - a chart is a picture: an `ImageItem` whose `SourceField` names where the data holds it,
      with an `AltText` saying what the chart shows. See [Charts](#charts).
 

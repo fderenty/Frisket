@@ -460,6 +460,15 @@ if (quotePath) {
 
     check('and every rule has something to say in each of them', mute.length === 0,
           mute.join(', ') || `${inEcho.size} rule(s) x ${languages.length} language(s)`);
+
+    // The same for every other wording - a hint, a label, a tab. Asked of the rules alone, a
+    // hint written in English and forgotten in French showed as English on a French panel and
+    // passed: the fallback that is right on screen is what hides it here.
+    const everyKey = new Set(languages.flatMap(code => Object.keys(sandbox.STRINGS[code])));
+    const unsaid = languages.flatMap(code =>
+      [...everyKey].filter(key => typeof sandbox.STRINGS[code][key] !== 'string').map(key => `${key} (${code})`));
+    check('every wording one language has, every language has', unsaid.length === 0,
+          unsaid.join(', ') || `${everyKey.size} wording(s) x ${languages.length} language(s)`);
   }
 
   // Alignment, against the engine's own frames.
@@ -1791,6 +1800,39 @@ if (faultyPath && findingsPath) {
   check('and a translucent fill is faded on the canvas as in the PDF', /<rect[^>]*fill-opacity="0.2"/.test(veiled), 'fill-opacity 0.2');
 }
 
+// --- a column shows, keeps its room or goes ------------------------------------
+// Test 128 writes, for each way a column can show, the grid edges the engine strokes and the
+// headers it draws, with the template and the data it was given. The echo lays the same out,
+// reading the same data, and has to come to the same columns - or the canvas shows a discount
+// column the invoice will not have.
+{
+  const cases = JSON.parse(readText(path.join(REPO, 'tests', 'output', 'tables', 'columns.json')));
+  let agreed = 0;
+  for (const c of cases) {
+    sandbox.setData(c.data ? c.data : '');
+    const report = JSON.parse(JSON.stringify(c.report));
+    const out = sandbox.layout(report);
+    sandbox.setData('');
+
+    const first = out.placed.find(p => p.item.$type === 'TableRow' && p.gridEdges);
+    const cells = new Set(first ? first.item.Childs : []);
+    const header = out.placed.filter(p => cells.has(p.item)).sort((a, b) => a.frame.left - b.frame.left).map(p => p.item.Text);
+    const edges = first ? first.gridEdges : [];
+
+    const fault = !first ? 'no table row with a grid'
+      : edges.length !== c.edges.length || edges.some((e, i) => Math.abs(e - c.edges[i]) > 0.001)
+        ? `edges ${edges.map(e => e.toFixed(1)).join(' / ')} here, ${c.edges.join(' / ')} in the engine`
+      : header.join('|') !== c.header.join('|') ? `headers ${header.join('|')} here, ${c.header.join('|')} in the engine`
+      : null;
+    if (fault) check(`${c.name}: the same columns`, false, fault);
+    else agreed += 1;
+  }
+  check('there are tables to confront, a column gone and one invisible among them',
+        cases.some(c => c.edges.length === 4) && cases.some(c => c.header.length === 3 && c.edges.length === 5),
+        cases.length + ' cases');
+  check('and every one lays its columns out as the engine does', agreed === cases.length, `${agreed} of ${cases.length}`);
+}
+
 // --- and they must agree about the output, not only about the template -------
 // The same confrontation for the third profile, on a template that is faultless:
 // everything found here is something the chosen output drops. The echo has to be
@@ -2040,6 +2082,26 @@ if (flatPath && flatFindingsPath) {
   const saved = sandbox.forEngine(report).Sections[0].Childs.find(c => c.$type === 'Body').Childs[0];
   check('and the template keeps the list it names', table.RepeatOver === 'Lignes' && saved.RepeatOver === 'Lignes',
         `${table.RepeatOver} / ${saved.RepeatOver}`);
+
+  // Each column says how it shows, and when - TableColumn.Visibility, ShowWhen, HideWhen.
+  const condition = findIn(sandbox.ui.props,
+    n => (n.children || []).some(c => c.placeholder === sandbox.STRINGS.en['field.showWhen']));
+  const [shows, onlyIf, exceptIf] = condition ? condition.children : [];
+  check('a column offers how it shows, and when, and says what that means',
+        !!condition && typeof shows.onchange === 'function' && typeof onlyIf.oninput === 'function'
+        && typeof exceptIf.oninput === 'function'
+        && wordsIn(sandbox.ui.props).includes(sandbox.STRINGS.en['hint.columns']),
+        condition ? 'offered' : 'no such field');
+  if (condition) {
+    shows.value = 'Invisible'; shows.onchange();
+    onlyIf.value = ' Discount '; onlyIf.oninput();
+    exceptIf.value = 'Waived'; exceptIf.oninput();
+  }
+  const column = sandbox.forEngine(report).Sections[0].Childs.find(c => c.$type === 'Body').Childs[0].Columns[0];
+  check('and the template keeps what the column was told',
+        column.Visibility === 'Invisible' && column.ShowWhen === 'Discount' && column.HideWhen === 'Waived',
+        JSON.stringify(column));
+  Object.assign(table.Columns[0], { Visibility: 'Visible', ShowWhen: null, HideWhen: null });
 
   const drawn = sandbox.render(report, null, 0, {});
   check('the canvas says on the page that what it shows once repeats',

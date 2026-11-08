@@ -2254,5 +2254,378 @@ namespace test
 
             Console.WriteLine();
         }
+
+        /// <summary>The table tests 128 and 129 ask about: Ref fixed, Name sharing what is left, Rebate fixed, Total fixed.</summary>
+        private static TableItem RebateTable(Action<TableColumn>? rebate = null, bool shareNothing = false,
+                                             string? empty = null, string list = "Lines")
+        {
+            static TextItem Cell(string text) => new() { Text = text };
+
+            var table = new TableItem { RepeatOver = list, EmptyText = empty, Grid = new PenStyle { Width = 0.2 } };
+            table.AddColumn(15);
+            if (shareNothing)
+                table.AddColumn(60);
+            else
+                table.AddAutoColumn();
+            table.AddColumn(20).AddColumn(25);
+            rebate?.Invoke(table.Columns[2]);
+            table.AddHeaderRow(Cell("Ref"), Cell("Name"), Cell("Rebate"), Cell("Total"));
+            table.AddRow(Cell("{Ref}"), Cell("{Name}"), Cell("{Rebate}"), Cell("{Total}"));
+            return table;
+        }
+
+        /// <summary>A page holding <paramref name="content"/> and nothing else.</summary>
+        private static Report RebateSheet(params BaseItem[] content)
+        {
+            var report = new Report
+            {
+                Title = "A column that goes",
+                Language = "en-GB",
+                GeneratedAt = SampleDate,
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack },
+            };
+            foreach (BaseItem item in content)
+                report.Body!.Add(item);
+            report.Reattach();
+            return report;
+        }
+
+        private const string WithRebate = """
+            { "Client": "ACME", "Discount": true,
+              "Lines": [ { "Ref": "a1", "Name": "Hammer", "Rebate": "-10% on a first order\nof the year", "Total": "9.00" },
+                         { "Ref": "a2", "Name": "Nails", "Rebate": "-5%", "Total": "4.75" } ] }
+            """;
+
+        private static readonly string WithoutRebate = WithRebate.Replace("\"Discount\": true", "\"Discount\": false");
+
+        [Fact]
+        public void Test128_AColumnShowsKeepsItsRoomOrGoes()
+        {
+            const string testName = "Test 128";
+            Console.WriteLine("Test 128: a column shows, keeps its room or goes - by itself, or as the data says");
+            Console.WriteLine();
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+            var measurer = new FontTextMeasurer(library);
+
+            static string TextOf(PlacedItem p) => p.Fragment ?? ((TextItem)p.Source).Text;
+            static List<string> Words(List<PlacedItem> placed) => placed.Where(p => p.Source is TextItem).Select(TextOf).ToList();
+            static int Rebates(List<PlacedItem> placed)
+                => Words(placed).Count(w => w.Contains("Rebate", StringComparison.Ordinal) || w.StartsWith('-'));
+            static Rect At(List<PlacedItem> placed, string text) => placed.First(p => p.Source is TextItem && TextOf(p) == text).Frame;
+            static double Foot(List<PlacedItem> placed) => placed.First(p => p.Source is TableItem).Frame.Bottom;
+
+            List<PlacedItem> Placed(Report report) => report.Resolve(measurer).Pages.SelectMany(p => p.Items).ToList();
+            List<PlacedItem> Bound(string data, params BaseItem[] content) => Placed(ReportBinder.Bind(RebateSheet(content), data));
+
+            // --- the data decides ------------------------------------------------------------
+            List<PlacedItem> shown = Bound(WithRebate, RebateTable(c => c.ShowWhen = "Discount"));
+            List<PlacedItem> gone = Bound(WithoutRebate, RebateTable(c => c.ShowWhen = "Discount"));
+            Console.WriteLine($"    with a discount: {string.Join(" | ", Words(shown))}");
+            Console.WriteLine($"    without one:     {string.Join(" | ", Words(gone))}");
+
+            AssertEqual(testName, "with a discount the column is there, its header and every line", true, Rebates(shown) >= 3, Rebates(shown));
+            AssertEqual(testName, "without one, nothing of it is", 0, Rebates(gone), 0);
+            AssertEqual(testName, "and everything else is", 9, Words(gone).Count, 0);
+
+            AssertEqual(testName, "the shared column takes the rebate's 20 mm",
+                At(shown, "Name").Width + 20, At(gone, "Name").Width, 0.001);
+            AssertEqual(testName, "and reaches the total, with no gap where the rebate was",
+                At(gone, "Total").Left, At(gone, "Name").Right, 0.001);
+            AssertEqual(testName, "the total stays at the table's end", At(shown, "Total").Right, At(gone, "Total").Right, 0.001);
+            AssertEqual(testName, "at its own width", 25, At(gone, "Total").Width, 0.001);
+            // The rebate holds a line break of its own, so it is two lines tall at any width - at
+            // none too, which is the width a Gone column has. Asked of the table's foot, a cell
+            // of no width that counted anyway would have passed, being one word to a line there.
+            static double[] RowHeights(List<PlacedItem> placed)
+                => placed.Where(p => p.Source is TableRow).Select(p => p.Frame.Height).ToArray();
+            AssertEqual(testName, "the long rebate made the first line taller, or the next comparison proves nothing", true,
+                RowHeights(shown)[1] > RowHeights(shown)[2] + 3, 0);
+            AssertEqual(testName, "gone, it no longer makes its line taller: both lines are one line tall",
+                RowHeights(gone)[2], RowHeights(gone)[1], 0.001);
+
+            List<PlacedItem> hidden = Bound(WithRebate, RebateTable(c => c.HideWhen = "Discount"));
+            AssertEqual(testName, "HideWhen is the other way round", 0, Rebates(hidden), 0);
+            AssertEqual(testName, "with the same table", At(gone, "Name").Width, At(hidden, "Name").Width, 0.001);
+
+            TableItem template = RebateTable(c => c.ShowWhen = "Discount");
+            ReportBinder.Bind(RebateSheet(template), WithoutRebate);
+            AssertEqual(testName, "the template itself is left as it was", true,
+                template.Columns[2].Visibility == Visibility.Visible, 0);
+
+            // --- said once and for all, with no data at all ---------------------------------
+            List<PlacedItem> unbound = Placed(RebateSheet(RebateTable(c => c.Visibility = Visibility.Gone)));
+            AssertEqual(testName, "Gone on the column itself, unbound: none of it", 0, Rebates(unbound), 0);
+            AssertEqual(testName, "laid out as the data would have", At(gone, "Name").Width, At(unbound, "Name").Width, 0.001);
+
+            // --- with every width stated, nothing absorbs it -----------------------------------
+            List<PlacedItem> fixedShown = Bound(WithRebate, RebateTable(c => c.ShowWhen = "Discount", shareNothing: true));
+            List<PlacedItem> fixedGone = Bound(WithoutRebate, RebateTable(c => c.ShowWhen = "Discount", shareNothing: true));
+            AssertEqual(testName, "every width stated, the table ends 20 mm sooner",
+                At(fixedShown, "Total").Right - 20, At(fixedGone, "Total").Right, 0.001);
+            AssertEqual(testName, "and the others keep theirs", 60, At(fixedGone, "Name").Width, 0.001);
+
+            // --- Invisible keeps the room ------------------------------------------------------
+            List<PlacedItem> blank = Bound(WithRebate, RebateTable(c => c.Visibility = Visibility.Invisible));
+            AssertEqual(testName, "an invisible column draws none of its cells", 0, Rebates(blank), 0);
+            AssertEqual(testName, "and keeps its width", At(shown, "Total").Left, At(blank, "Total").Left, 0.001);
+            AssertEqual(testName, "the shared column does not take it", At(shown, "Name").Width, At(blank, "Name").Width, 0.001);
+            AssertEqual(testName, "nor does a line lose the height its rebate gave it", Foot(shown), Foot(blank), 0.001);
+
+            List<PlacedItem> both = Bound(WithoutRebate, RebateTable(c => { c.Visibility = Visibility.Invisible; c.ShowWhen = "Discount"; }));
+            AssertEqual(testName, "invisible and not shown by the data is gone: the more hidden wins",
+                At(gone, "Name").Width, At(both, "Name").Width, 0.001);
+
+            // A cell keeps its own say in a column that shows. Nothing in the suite had placed a
+            // cell gone on its own in a table before, so this is the first check that it stays gone.
+            // Three lines tall, so that counting it anywhere would show.
+            static TableItem Nameless()
+            {
+                TableItem table = RebateTable();
+                var cell = (TextItem)table.Childs.OfType<TableRow>().Last().Childs[1];
+                cell.Text = "{Name}\nsecond line\nthird line";
+                cell.ShowWhen = "Nope";
+                return table;
+            }
+            List<PlacedItem> namelessPlaced = Bound(WithRebate, Nameless());
+            AssertEqual(testName, "a cell gone on its own stays gone in a column that shows", 0,
+                Words(namelessPlaced).Count(w => w.Contains("Hammer") || w.Contains("Nails") || w.Contains("{Name}")), 0);
+            AssertEqual(testName, "and the rest of its line is there", true, Words(namelessPlaced).Contains("9.00"), 0);
+            AssertEqual(testName, "and it makes its line no taller: the more hidden of cell and column wins",
+                RowHeights(shown)[2], RowHeights(namelessPlaced)[2], 0.001);
+
+            // --- a line cut across pages is cut by what shows ----------------------------------
+            // A Gone column's text, longer than anything that shows, must not decide where a line
+            // too tall for a page is cut, nor how many pages it takes.
+            static TableItem Long(string hidden)
+            {
+                var table = new TableItem();
+                table.AddAutoColumn().AddColumn(20);
+                table.Columns[1].Visibility = Visibility.Gone;
+                table.AddHeaderRow(new TextItem { Text = "Article" }, new TextItem { Text = "Hidden" });
+                table.AddRow(new TextItem { Text = string.Join("\n", Enumerable.Range(1, 120).Select(i => $"Line {i}")) },
+                             new TextItem { Text = hidden });
+                return table;
+            }
+            int Pages(TableItem table) => RebateSheet(table).Resolve(measurer).Pages.Count;
+            int alone = Pages(Long(""));
+            AssertEqual(testName, "a line of 120 lines goes over pages, or this proves nothing", true, alone >= 2, alone);
+            AssertEqual(testName, "and a Gone column of 400 lines beside it changes nothing", alone,
+                Pages(Long(string.Join("\n", Enumerable.Range(1, 400).Select(i => $"Hidden {i}")))), 0);
+
+            // --- read where the table stands -----------------------------------------------
+            var invoices = new ContainerItem { Layout = LayoutMode.Stack, RepeatOver = "Invoices" };
+            invoices.Add(RebateTable(c => c.ShowWhen = "Discount"));
+            List<PlacedItem> each = Bound("""
+                { "Invoices": [
+                    { "Discount": true,  "Lines": [ { "Ref": "a1", "Name": "Hammer", "Rebate": "-10%", "Total": "9.00" } ] },
+                    { "Discount": false, "Lines": [ { "Ref": "b1", "Name": "Saw", "Rebate": "-3%", "Total": "20.00" } ] } ] }
+                """, invoices);
+            AssertEqual(testName, "in a list of invoices, each table asks its own invoice", "Rebate | -10%",
+                string.Join(" | ", Words(each).Where(w => w is "Rebate" or "-10%" or "-3%")), 0);
+
+            AssertEqual(testName, "and no line decides it: a field of the entries is not read for a column", 0,
+                Rebates(Bound(WithRebate, RebateTable(c => c.ShowWhen = "Rebate"))), 0);
+
+            // --- the grid ---------------------------------------------------------------
+            static int Rows(List<PlacedItem> placed) => placed.Count(p => p.Source is TableRow);
+            static int Boxes(List<PlacedItem> placed) => placed.Where(p => p.Source is TableRow).Sum(p => p.GridEdges!.Length - 1);
+            AssertEqual(testName, "shown, the grid strokes four boxes a row", 4 * Rows(shown), Boxes(shown), 0);
+            AssertEqual(testName, "gone, three", 3 * Rows(gone), Boxes(gone), 0);
+            AssertEqual(testName, "and none of them over another", true,
+                gone.Where(p => p.Source is TableRow).All(p => p.GridEdges!.Zip(p.GridEdges!.Skip(1)).All(e => e.Second > e.First)), 0);
+            AssertEqual(testName, "invisible, the grid still strokes its box", 4 * Rows(blank), Boxes(blank), 0);
+
+            int Rectangles(string data, TableItem table)
+            {
+                var svg = new SvgBackend(measurer);
+                ReportRenderer.Render(ReportBinder.Bind(RebateSheet(table), data), svg);
+                return System.Text.RegularExpressions.Regex.Matches(string.Concat(svg.Pages), "<rect").Count;
+            }
+            AssertEqual(testName, "and the proof draws one rectangle fewer a row", Rows(gone),
+                Rectangles(WithRebate, RebateTable(c => c.ShowWhen = "Discount"))
+                - Rectangles(WithoutRebate, RebateTable(c => c.ShowWhen = "Discount")), 0);
+
+            // --- what a reader hears ----------------------------------------------------
+            byte[] Pdf(string data, params BaseItem[] content)
+            {
+                var pdf = new PdfBackend(library) { Conformance = PdfConformance.PdfA3b, Language = "en-GB", Tagged = true };
+                ReportRenderer.Render(ReportBinder.Bind(RebateSheet(content), data), pdf);
+                return pdf.ToArray();
+            }
+
+            Reading heardShown = ReadAloud(Pdf(WithRebate, RebateTable(c => c.ShowWhen = "Discount")));
+            Reading heardGone = ReadAloud(Pdf(WithoutRebate, RebateTable(c => c.ShowWhen = "Discount")));
+            Reading heardBlank = ReadAloud(Pdf(WithRebate, RebateTable(c => c.Visibility = Visibility.Invisible)));
+            static string Cells(Reading r) => $"{r.Tags.Count(t => t == "TH")} TH, {r.Tags.Count(t => t == "TD")} TD";
+
+            Console.WriteLine($"    tagged: shown {Cells(heardShown)}, gone {Cells(heardGone)}, invisible {Cells(heardBlank)}");
+            AssertEqual(testName, "shown, a reader is given four headers and four cells a line", "4 TH, 8 TD", Cells(heardShown), 0);
+            AssertEqual(testName, "gone, three and three", "3 TH, 6 TD", Cells(heardGone), 0);
+            AssertEqual(testName, "invisible, three and three too: there is nothing to read in it", "3 TH, 6 TD", Cells(heardBlank), 0);
+            AssertEqual(testName, "and never the rebate", false,
+                heardGone.Heard.Concat(heardBlank.Heard).Any(h => h.Words.Contains("Rebate", StringComparison.Ordinal)
+                                                                 || h.Words.Contains('%')), 0);
+            AssertEqual(testName, "with the tree and the pages reaching each other", "",
+                string.Join(" | ", heardShown.Faults.Concat(heardGone.Faults).Concat(heardBlank.Faults)), 0);
+
+            // The row standing in for an empty list spans the columns that show.
+            string Spans(string data, Action<TableColumn> rebate)
+            {
+                string pdf = System.Text.Encoding.Latin1.GetString(Unpacked(Pdf(data, RebateTable(rebate, empty: "Nothing for {Client}"))));
+                return string.Join(",", System.Text.RegularExpressions.Regex.Matches(pdf, @"/ColSpan (\d+)").Select(m => m.Groups[1].Value));
+            }
+            const string none = """{ "Client": "ACME", "Discount": false, "Lines": [] }""";
+            AssertEqual(testName, "an empty list's message spans the four columns that show", "4", Spans(none, c => { }), 0);
+            AssertEqual(testName, "three when one is gone", "3", Spans(none, c => c.ShowWhen = "Discount"), 0);
+            AssertEqual(testName, "and three when one keeps its room and says nothing", "3", Spans(none, c => c.Visibility = Visibility.Invisible), 0);
+
+            // --- the mail ---------------------------------------------------------------
+            string Mail(string data, TableItem table) => FlowingHtml.Write(ReportBinder.Bind(RebateSheet(table), data));
+            // The cells of the table, and not those the message is itself laid out in.
+            static int Count(string html, string tag)
+                => System.Text.RegularExpressions.Regex.Matches(html, "<" + tag + @"( colspan=""\d+"")? style=""padding:\.3em \.5em").Count;
+            static string Shape(string html) => $"{Count(html, "th")} th, {Count(html, "td")} td";
+
+            string mailShown = Mail(WithRebate, RebateTable(c => c.ShowWhen = "Discount"));
+            string mailGone = Mail(WithoutRebate, RebateTable(c => c.ShowWhen = "Discount"));
+            string mailBlank = Mail(WithRebate, RebateTable(c => c.Visibility = Visibility.Invisible));
+            AssertEqual(testName, "the mail writes the column when it shows", "4 th, 8 td", Shape(mailShown), 0);
+            AssertEqual(testName, "and none of it when it is gone", "3 th, 6 td", Shape(mailGone), 0);
+            AssertEqual(testName, "nor when it is invisible: a message keeps no room", "3 th, 6 td", Shape(mailBlank), 0);
+            AssertEqual(testName, "and never its words", false,
+                new[] { "Rebate", "-10%", "-5%" }.Any(w => (mailGone + mailBlank).Contains(w, StringComparison.Ordinal)), 0);
+            AssertEqual(testName, "the empty list's message spans three", true,
+                Mail(none, RebateTable(c => c.ShowWhen = "Discount", empty: "Nothing for {Client}"))
+                    .Contains("colspan=\"3\"", StringComparison.Ordinal), 0);
+
+            // A cell hidden on its own keeps its place in the mail, and says nothing. It was written
+            // there while the page left it out - and with its token as typed, since the binder fills
+            // nothing that is not going to appear: "{Name}", never "Hammer".
+            string mailNameless = Mail(WithRebate, Nameless());
+            AssertEqual(testName, "a cell gone on its own is an empty cell in the mail", 8, Count(mailNameless, "td"), 0);
+            AssertEqual(testName, "with none of its words, nor its token", false,
+                mailNameless.Contains("Hammer", StringComparison.Ordinal) || mailNameless.Contains("{Name}", StringComparison.Ordinal), 0);
+
+            // --- the file -------------------------------------------------------------------
+            string json = RebateSheet(RebateTable(c => { c.Visibility = Visibility.Invisible; c.ShowWhen = "Discount"; c.HideWhen = "Waived"; })).ToJson();
+            System.Text.Json.Nodes.JsonNode columns = System.Text.Json.Nodes.JsonNode.Parse(json)!["Sections"]![0]!["Childs"]!.AsArray()
+                .First(child => (string?)child!["$type"] == "Body")!["Childs"]![0]!["Columns"]!;
+            AssertEqual(testName, "the file names the visibility", "Invisible", (string?)columns[2]!["Visibility"] ?? "", 0);
+            AssertEqual(testName, "and holds both paths", "Discount/Waived",
+                $"{(string?)columns[2]!["ShowWhen"]}/{(string?)columns[2]!["HideWhen"]}", 0);
+            AssertEqual(testName, "a column that shows says nothing about it", false, ((System.Text.Json.Nodes.JsonObject)columns[0]!).ContainsKey("Visibility"), 0);
+
+            TableColumn back = Report.FromJson(json).AllItems.OfType<TableItem>().Single().Columns[2];
+            AssertEqual(testName, "and reads back as it was written", "Invisible Discount Waived",
+                $"{back.Visibility} {back.ShowWhen} {back.HideWhen}", 0);
+            TableColumn copied = ((TableItem)RebateTable(c => c.HideWhen = "Waived").Clone()).Columns[2];
+            AssertEqual(testName, "a copied table keeps it", "Waived", copied.HideWhen ?? "", 0);
+
+            // --- and the host's catalogue -----------------------------------------------------
+            const string catalogue = """[ "Client", "Discount", { "path": "Lines", "type": "list", "fields": [ "Ref", "Name", "Rebate", "Total" ] } ]""";
+            List<TemplateIssue> Unknown(string path)
+                => TemplateFields.Check(RebateSheet(RebateTable(c => c.ShowWhen = path)), catalogue).Where(i => i.Rule == "fields.unknown").ToList();
+
+            AssertEqual(testName, "a path the data answers has nothing said of it", 0, Unknown("Discount").Count, 0);
+            List<TemplateIssue> misspelt = Unknown("Discont");
+            AssertEqual(testName, "a misspelt one is found, at the column", true,
+                misspelt.Count == 1 && misspelt[0].Pointer?.EndsWith("/Columns/2/ShowWhen", StringComparison.Ordinal) == true, 0);
+            AssertEqual(testName, "with the name meant", true, misspelt[0].Message.Contains("\"Discount\"", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and a field of the entries is one too: a column is read outside the list", 1, Unknown("Rebate").Count, 0);
+
+            // --- what the designer's echo is held to ------------------------------------------
+            // Where the grid falls and which headers are drawn, for each way a column can show:
+            // the harness lays the same template out with the same data and has to agree.
+            var cases = new System.Text.Json.Nodes.JsonArray();
+            void Case(string name, TableItem table, string? data)
+            {
+                Report report = RebateSheet(table);
+                string written = report.ToJson();
+                List<PlacedItem> placed = Placed(data == null ? report : ReportBinder.Bind(report, data));
+                PlacedItem first = placed.First(p => p.Source is TableRow);
+                var header = placed.Where(p => p.Source is TextItem && ReferenceEquals(p.Source.Parent, first.Source))
+                                   .OrderBy(p => p.Frame.Left).Select(p => (System.Text.Json.Nodes.JsonNode?)TextOf(p));
+                cases.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["name"] = name,
+                    ["report"] = System.Text.Json.Nodes.JsonNode.Parse(written),
+                    ["data"] = data,
+                    ["edges"] = new System.Text.Json.Nodes.JsonArray(first.GridEdges!.Select(e => (System.Text.Json.Nodes.JsonNode?)Math.Round(e, 4)).ToArray()),
+                    ["header"] = new System.Text.Json.Nodes.JsonArray(header.ToArray()),
+                });
+            }
+
+            Case("shown by the data", RebateTable(c => c.ShowWhen = "Discount"), WithRebate);
+            Case("gone by the data", RebateTable(c => c.ShowWhen = "Discount"), WithoutRebate);
+            Case("gone by HideWhen", RebateTable(c => c.HideWhen = "Discount"), WithRebate);
+            Case("gone on its own", RebateTable(c => c.Visibility = Visibility.Gone), null);
+            Case("invisible", RebateTable(c => c.Visibility = Visibility.Invisible), null);
+            Case("every width stated, gone", RebateTable(c => c.ShowWhen = "Discount", shareNothing: true), WithoutRebate);
+            Case("a condition and no data to read it", RebateTable(c => c.ShowWhen = "Discount"), null);
+            Case("invisible, and not shown by the data", RebateTable(c => { c.Visibility = Visibility.Invisible; c.ShowWhen = "Discount"; }), WithoutRebate);
+            TableItem firstGone = RebateTable();
+            firstGone.Columns[0].Visibility = Visibility.Gone;
+            Case("the first column gone", firstGone, null);
+
+            File.WriteAllText(Path.Combine(OutputDirectory("tables"), "columns.json"),
+                cases.ToJsonString(new() { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");
+            Console.WriteLine($"    {cases.Count} tables written for the echo");
+
+            Console.WriteLine();
+        }
+
+        /// <summary>A table with a column gone or keeping its room, and an empty list beside it, shown to the validator.</summary>
+        [SkippableTheory]
+        [InlineData("ua1", Visibility.Gone)]
+        [InlineData("ua1", Visibility.Invisible)]
+        [InlineData("3b", Visibility.Gone)]
+        public void Test129_AHiddenColumnIsValid(string flavour, Visibility rebate)
+        {
+            string testName = $"Test 129: veraPDF {flavour}, the rebate column {rebate}";
+            Console.WriteLine($"Running {testName}...");
+
+            string? verapdf = FindVeraPdf();
+            Skip.If(verapdf == null, "veraPDF was not found. Set FRISKET_VERAPDF to its launcher, or put it on PATH.");
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            // The lines with the column hidden, and an empty list whose message spans what is left.
+            Report report = ReportBinder.Bind(
+                RebateSheet(RebateTable(c => c.Visibility = rebate),
+                            RebateTable(c => c.Visibility = rebate, empty: "Nothing withheld from {Client}", list: "Withheld")),
+                WithRebate);
+
+            var pdf = new PdfBackend(library) { Tagged = true, Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            ReportRenderer.Render(report, pdf);
+
+            string path = Path.Combine(Path.GetTempPath(), $"frisket-columns-{Guid.NewGuid():N}.pdf");
+            File.WriteAllBytes(path, pdf.ToArray());
+
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo(verapdf!)
+                {
+                    Arguments = $"--format text --flavour {flavour} \"{path}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                }
+            };
+            process.Start();
+            process.ErrorDataReceived += (_, _) => { };
+            process.BeginErrorReadLine();
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(180_000);
+            File.Delete(path);
+
+            Console.WriteLine($"    {output.Trim()}");
+            AssertEqual(testName, $"the document is valid {flavour}", true, output.Contains("PASS", StringComparison.Ordinal), 0);
+        }
     }
 }

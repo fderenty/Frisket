@@ -823,8 +823,11 @@ C 4.1 s on the same bytes in the same WSL, identical output.
 **And the Zopfli file is the same file on every platform it was tried on**, where zlib's is not
 (§3: Ubuntu's .NET deflates with the system zlib). The invoice with `--zopfli` came out
 byte for byte the same from Windows x64, Windows x86 and Linux x64, managed or linked ahead of
-time, because ZopfliSharp brings its own deflate. ARM was built and not run: there is no
-qemu-user here, and `release.yml` is where it runs.
+time, because ZopfliSharp brings its own deflate. ARM was built here and run by `release.yml`,
+linux-arm64 on its own hardware and linux-arm under qemu, where the library and the CLI wrote
+one Zopfli document. Not here, though qemu-user is in WSL-Frisket: it is on the PATH of a
+login shell only, the check ran in a plain `bash`, and wrote "cannot be run here" - and this
+paragraph first said there was no qemu at all. The trap was in the distro's notes already.
 
 Sixteen sabotages from a run seen green, sixteen caught, each by its own assertion - the xref,
 the object streams and the logo each kept from the compressor, every branch of the check, a
@@ -2699,6 +2702,50 @@ not the same as wrong either.
 
 **And the same run found what it was not looking for**, by dumping the tree of a table to see what
 a cut cell had done to it: §15c.
+
+## 11c. A column shows, keeps its room or goes
+
+Asked on 8 November 2026 by the author, from another project: a column could be hidden only by
+giving it no width and every one of its cells `Gone`, and nothing about it could ask the data.
+`TableColumn` carries the item's three now - `Visibility`, `ShowWhen`, `HideWhen` - with the
+item's reading of an empty value, and the more hidden of a cell and its column wins.
+
+What was decided, once:
+
+- **Gone is as if never declared.** Its width goes to the columns that state none; a table
+  whose every column states a width ends sooner, and nothing is rescaled to fill it;
+- **Invisible keeps its width and its share of the row's height, and draws nothing.** Its
+  cells are never placed, so nothing of them is tagged, and the mail leaves it out, as it
+  leaves out anything Invisible: a message keeps no room;
+- **read where the table stands, never in an entry of its list**, as its header is. The binder
+  decides before the rows are stamped out, so no line can show a column the others lack;
+- the row standing in for an empty list spans the columns that show, which are the cells a
+  reader is given.
+
+**Building it found the mail writing a cell gone on its own** - and with its token as typed,
+since the binder fills nothing that is not going to appear: `{Name}` in a message where the
+page showed nothing. It is an empty cell now, so the row stays under its headers.
+
+Twenty-three sabotages from a run seen green, and five went through. All five were samples that
+could not differ from the fault:
+
+- a cell in a column of no width breaks one word to a line, so a long rebate there was one line
+  tall, and the table's foot never moved. The rebate holds a break of its own now, two lines at
+  any width, and each line's height is asked;
+- the mail was searched for the filled word, and a gone cell's word is never filled;
+- no test anywhere placed a cell gone on its own in a table. `Arrange` passes it by anyway, so
+  the rule only shows in the row's height, and the sample needed a tall hidden cell;
+- no row was cut across pages beside a hidden column;
+- the hint's French wording: `t()` falls back to English, and the harness held the rule
+  wordings alone to every language. It holds every key now. French had borrowed three from
+  English all along, which are written out.
+
+The designer offers the three on each column and its echo draws them. The harness lays out nine
+tables test 128 writes into `tests/output/tables/columns.json`, with their data, and must reach
+the engine's grid edges and headers. The content editor has no control for them. It keeps them on
+the column whichever columns its rails add or take away, and `check-editor.js` holds that. It still
+draws every column, as it draws every item whatever its visibility. That is a limit nobody has
+asked about yet.
 
 ## 12. Test outputs
 

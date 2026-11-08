@@ -1,0 +1,1432 @@
+[
+  {
+    "name": "shown by the data",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "ShowWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: true,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "edges": [
+      0,
+      15,
+      165,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Rebate",
+      "Total"
+    ]
+  },
+  {
+    "name": "gone by the data",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "ShowWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "edges": [
+      0,
+      15,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "gone by HideWhen",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "HideWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: true,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "edges": [
+      0,
+      15,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "gone on its own",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "Visibility": "Gone"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      15,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "invisible",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "Visibility": "Invisible"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      15,
+      165,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "every width stated, gone",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {
+                      "Width": 60
+                    },
+                    {
+                      "Width": 20,
+                      "ShowWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "edges": [
+      0,
+      15,
+      75,
+      100
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "a condition and no data to read it",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "ShowWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      15,
+      165,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Rebate",
+      "Total"
+    ]
+  },
+  {
+    "name": "invisible, and not shown by the data",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15
+                    },
+                    {},
+                    {
+                      "Width": 20,
+                      "Visibility": "Invisible",
+                      "ShowWhen": "Discount"
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "edges": [
+      0,
+      15,
+      185,
+      210
+    ],
+    "header": [
+      "Ref",
+      "Name",
+      "Total"
+    ]
+  },
+  {
+    "name": "the first column gone",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 15,
+                      "Visibility": "Gone"
+                    },
+                    {},
+                    {
+                      "Width": 20
+                    },
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "RepeatOver": "Lines",
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "Ref",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Name",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Rebate",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "Total",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Ref}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Name}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Rebate}",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "{Total}",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      165,
+      185,
+      210
+    ],
+    "header": [
+      "Name",
+      "Rebate",
+      "Total"
+    ]
+  }
+]
