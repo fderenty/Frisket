@@ -1816,13 +1816,17 @@ if (faultyPath && findingsPath) {
 
     const first = out.placed.find(p => p.item.$type === 'TableRow' && p.gridEdges);
     const cells = new Set(first ? first.item.Childs : []);
-    const header = out.placed.filter(p => cells.has(p.item)).sort((a, b) => a.frame.left - b.frame.left).map(p => p.item.Text);
+    const heads = out.placed.filter(p => cells.has(p.item) && p.item.$type === 'TextItem')
+                            .sort((a, b) => a.frame.left - b.frame.left);
+    const header = heads.map(p => p.item.Text);
+    const lefts = heads.map(p => p.frame.left);
     const edges = first ? first.gridEdges : [];
+    const apart = (mine, theirs) => mine.length !== theirs.length || mine.some((v, i) => Math.abs(v - theirs[i]) > 0.001);
 
     const fault = !first ? 'no table row with a grid'
-      : edges.length !== c.edges.length || edges.some((e, i) => Math.abs(e - c.edges[i]) > 0.001)
-        ? `edges ${edges.map(e => e.toFixed(1)).join(' / ')} here, ${c.edges.join(' / ')} in the engine`
+      : apart(edges, c.edges) ? `edges ${edges.map(e => e.toFixed(2)).join(' / ')} here, ${c.edges.join(' / ')} in the engine`
       : header.join('|') !== c.header.join('|') ? `headers ${header.join('|')} here, ${c.header.join('|')} in the engine`
+      : apart(lefts, c.lefts) ? `headers start at ${lefts.map(e => e.toFixed(2)).join(' / ')} here, ${c.lefts.join(' / ')} in the engine`
       : null;
     if (fault) check(`${c.name}: the same columns`, false, fault);
     else agreed += 1;
@@ -1831,6 +1835,72 @@ if (faultyPath && findingsPath) {
         cases.some(c => c.edges.length === 4) && cases.some(c => c.header.length === 3 && c.edges.length === 5),
         cases.length + ' cases');
   check('and every one lays its columns out as the engine does', agreed === cases.length, `${agreed} of ${cases.length}`);
+}
+
+// --- a grid of pictures -------------------------------------------------------------
+// Test 48 writes where the engine put each picture of a grid - columns, gap, the grid's
+// padding, a picture's margin, one gone. The echo's grid() was written from the engine's
+// arithmetic and only ever read against it; here it is laid out and has to land on the edge.
+{
+  const cases = JSON.parse(readText(path.join(REPO, 'tests', 'output', 'gallery', 'grids.json')));
+  let agreed = 0;
+  for (const c of cases) {
+    const report = JSON.parse(JSON.stringify(c.report));
+    const out = sandbox.layout(report);
+    const grid = report.Sections[0].Childs.find(k => k.$type === 'Body').Childs[0];
+    const mine = grid.Childs.map(child => {
+      const at = out.placed.find(p => p.item === child);
+      return at && Number.isFinite(at.frame.left) ? [at.frame.left, at.frame.top, at.frame.right, at.frame.bottom] : null;
+    });
+
+    let fault = null;
+    mine.forEach((frame, i) => {
+      const theirs = c.cells[i];
+      if (fault) return;
+      if (!frame !== !theirs) fault = `picture ${i + 1}: ${frame ? 'drawn' : 'not drawn'} here, ${theirs ? 'drawn' : 'not drawn'} in the engine`;
+      else if (frame && frame.some((v, k) => Math.abs(v - theirs[k]) > 0.001))
+        fault = `picture ${i + 1}: ${frame.map(v => v.toFixed(2)).join(' ')} here, ${theirs.join(' ')} in the engine`;
+    });
+    if (fault) check(`${c.name}: the same cells`, false, fault);
+    else agreed += 1;
+  }
+  check('there are grids to confront, a margin and a picture gone among them',
+        cases.some(c => c.cells.includes(null)) && cases.length >= 5, cases.length + ' cases');
+  check('and every one puts its pictures where the engine does', agreed === cases.length, `${agreed} of ${cases.length}`);
+}
+
+// --- a flow in columns, against the engine's answer ----------------------------------
+// The section on columns above holds the echo to arithmetic written here, which is a copy of
+// the rule (section 16). Test 45 writes where the engine put each block - balanced or filled
+// in order, two columns or three, a group in columns between two blocks - and the echo has to
+// land on the same edges.
+{
+  const cases = JSON.parse(readText(path.join(REPO, 'tests', 'output', 'columns', 'blocks.json')));
+  const blocksOf = item => (item.Childs && item.Childs.length) ? item.Childs.flatMap(blocksOf)
+                         : item.$type === 'ContainerItem' ? [item] : [];
+  let agreed = 0;
+  for (const c of cases) {
+    const report = JSON.parse(JSON.stringify(c.report));
+    const out = sandbox.layout(report);
+    const body = report.Sections[0].Childs.find(k => k.$type === 'Body');
+    const mine = blocksOf(body).map(block => {
+      const at = out.placed.find(p => p.item === block);
+      return at ? [at.frame.left, at.frame.top, at.frame.right, at.frame.bottom] : null;
+    });
+
+    let fault = mine.length !== c.blocks.length ? `${mine.length} blocks here, ${c.blocks.length} in the engine` : null;
+    mine.forEach((frame, i) => {
+      if (fault) return;
+      const theirs = c.blocks[i];
+      if (!frame) fault = `block ${i + 1} not drawn here`;
+      else if (frame.some((v, k) => Math.abs(v - theirs[k]) > 0.001))
+        fault = `block ${i + 1}: ${frame.map(v => v.toFixed(2)).join(' ')} here, ${theirs.join(' ')} in the engine`;
+    });
+    if (fault) check(`${c.name}: the same blocks`, false, fault);
+    else agreed += 1;
+  }
+  check('there are columned flows to confront, balanced and not, nested among them', cases.length >= 5, cases.length + ' cases');
+  check('and every one puts its blocks where the engine does', agreed === cases.length, `${agreed} of ${cases.length}`);
 }
 
 // --- and they must agree about the output, not only about the template -------
@@ -2102,6 +2172,25 @@ if (flatPath && flatFindingsPath) {
         column.Visibility === 'Invisible' && column.ShowWhen === 'Discount' && column.HideWhen === 'Waived',
         JSON.stringify(column));
   Object.assign(table.Columns[0], { Visibility: 'Visible', ShowWhen: null, HideWhen: null });
+
+  // A column with no width of its own can be fitted to its widest cell, between two bounds.
+  const labelled = label => findIn(sandbox.ui.props,
+    n => (n.children || []).some(c => c.textContent === sandbox.STRINGS.en[label]));
+  const fitRow = labelled('field.fit');
+  const fitBox = fitRow && findIn(fitRow, n => n.type === 'checkbox');
+  check('a column with no width offers to fit its content', !!fitBox && typeof fitBox.oninput === 'function',
+        fitRow ? 'offered' : 'no such field');
+  if (fitBox) {
+    fitBox.checked = true; fitBox.oninput();
+    sandbox.drawProps();
+    const bound = placeholder => findIn(sandbox.ui.props, n => n.placeholder === sandbox.STRINGS.en[placeholder]);
+    const least = bound('field.fitMin'), most = bound('field.fitMax');
+    if (least && most) { least.value = '12'; least.oninput(); most.value = '40'; most.oninput(); }
+  }
+  const fitted = sandbox.forEngine(report).Sections[0].Childs.find(c => c.$type === 'Body').Childs[0].Columns[0];
+  check('and the template keeps it, with its bounds', fitted.Fit === true && fitted.MinWidth === 12 && fitted.MaxWidth === 40,
+        JSON.stringify(fitted));
+  Object.assign(table.Columns[0], { Fit: false, MinWidth: 0, MaxWidth: 0 });
 
   const drawn = sandbox.render(report, null, 0, {});
   check('the canvas says on the page that what it shows once repeats',

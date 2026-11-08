@@ -168,7 +168,35 @@ namespace test
             var item = r.Body.Childs.First();
             AssertEqual(testName, "Width clamped to MaxWidth", 100, item.Style.RenderedFrame.Width, 0.1);
             AssertEqual(testName, "Height clamped to MaxHeight", 50, item.Style.RenderedFrame.Height, 0.1);
-            
+
+            // Which edge stays when a bound narrows an item: the one the author anchored. One that
+            // states no position keeps its left and its top. Until 8 November 2026 it kept its right
+            // and its foot, so a paragraph held to 50 mm sat against the right margin.
+            Rect Clamped(Action<Style> shape, LayoutMode layout = LayoutMode.Absolute)
+            {
+                var report = new Report { Title = testName, Dimension = new() { Width = 210, Height = 297 }, Body = new() { Layout = layout } };
+                var box = new ContainerItem();
+                box.Style.Constraints = new() { MaxWidth = 50, MaxHeight = 20 };
+                shape(box.Style);
+                report.Body!.Add(box);
+                report.Reattach();
+                return report.Resolve().Pages[0].Items.First(p => ReferenceEquals(p.Source, box)).Frame;
+            }
+
+            Rect free = Clamped(_ => { });
+            AssertEqual(testName, "stating no position, it keeps its left", 0, free.Left, 0.001);
+            AssertEqual(testName, "and its top", 0, free.Top, 0.001);
+            AssertEqual(testName, "in a flow too", 0, Clamped(s => s.Location.HeightValue = 40, LayoutMode.Stack).Left, 0.001);
+            AssertEqual(testName, "held by both sides, its left", 0, Clamped(s => s.Location.Dock = Dock.Fill).Left, 0.001);
+
+            Rect docked = Clamped(s => s.Location.Dock = Dock.Right | Dock.Bottom);
+            AssertEqual(testName, "docked right, it keeps its right", 210, docked.Right, 0.001);
+            AssertEqual(testName, "and docked to the foot, its foot", 297, docked.Bottom, 0.001);
+            // Wider than its bound, or there is nothing to narrow and either edge would do: held by its
+            // right alone it is as wide as its content, which here is nothing.
+            Rect offset = Clamped(s => { s.Location.RightValue = 10; s.Location.WidthValue = 80; });
+            AssertEqual(testName, "held by a right offset, the same", "150..200", $"{offset.Left:0.##}..{offset.Right:0.##}", 0);
+
             Console.WriteLine();
         }
 

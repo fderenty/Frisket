@@ -157,6 +157,12 @@
       "Name",
       "Rebate",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      165,
+      185
     ]
   },
   {
@@ -315,6 +321,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      185
     ]
   },
   {
@@ -473,6 +484,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      185
     ]
   },
   {
@@ -631,6 +647,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      185
     ]
   },
   {
@@ -790,6 +811,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      185
     ]
   },
   {
@@ -950,6 +976,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      75
     ]
   },
   {
@@ -1110,6 +1141,12 @@
       "Name",
       "Rebate",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      165,
+      185
     ]
   },
   {
@@ -1269,6 +1306,11 @@
       "Ref",
       "Name",
       "Total"
+    ],
+    "lefts": [
+      0,
+      15,
+      185
     ]
   },
   {
@@ -1427,6 +1469,1454 @@
       "Name",
       "Rebate",
       "Total"
+    ],
+    "lefts": [
+      0,
+      165,
+      185
+    ]
+  },
+  {
+    "name": "widths in percent",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 20,
+                      "WidthUnit": "Percentage"
+                    },
+                    {},
+                    {
+                      "Width": 30,
+                      "WidthUnit": "Percentage"
+                    },
+                    {
+                      "Width": 15
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "D",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "a",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "b",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "c",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "d",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      42,
+      132,
+      195,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "lefts": [
+      0,
+      42,
+      132,
+      195
+    ]
+  },
+  {
+    "name": "a row\u0027s padding and a cell\u0027s margin",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 30
+                    },
+                    {},
+                    {
+                      "Width": 40
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {
+                            "Margin": {
+                              "Left": 4
+                            }
+                          }
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {
+                        "Padding": {
+                          "Left": 3,
+                          "Right": 2
+                        }
+                      }
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "a",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "b",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "c",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      30,
+      170,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      3,
+      37,
+      173
+    ]
+  },
+  {
+    "name": "a fitted column, its cells of stated width",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Fit": true
+                    },
+                    {},
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ImageItem",
+                          "Source": {
+                            "Data": "",
+                            "MediaType": "image/png"
+                          },
+                          "NaturalWidth": 33,
+                          "NaturalHeight": 10,
+                          "Scaling": "Uniform",
+                          "AltText": "a picture",
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ContainerItem",
+                          "Layout": "Absolute",
+                          "ColumnCount": 1,
+                          "ColumnGap": 6,
+                          "BalanceColumns": true,
+                          "GroupItems": "Items",
+                          "Childs": [],
+                          "Style": {
+                            "Location": {
+                              "WidthValue": 30,
+                              "HeightValue": 5
+                            },
+                            "Margin": {
+                              "Left": 3,
+                              "Right": 3
+                            }
+                          }
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      36,
+      185,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      36,
+      185
+    ]
+  },
+  {
+    "name": "a fitted column held by its floor",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Fit": true,
+                      "MinWidth": 45
+                    },
+                    {},
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ImageItem",
+                          "Source": {
+                            "Data": "",
+                            "MediaType": "image/png"
+                          },
+                          "NaturalWidth": 33,
+                          "NaturalHeight": 10,
+                          "Scaling": "Uniform",
+                          "AltText": "a picture",
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      45,
+      185,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      45,
+      185
+    ]
+  },
+  {
+    "name": "a fitted column held by its ceiling",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Fit": true,
+                      "MaxWidth": 20
+                    },
+                    {},
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ImageItem",
+                          "Source": {
+                            "Data": "",
+                            "MediaType": "image/png"
+                          },
+                          "NaturalWidth": 33,
+                          "NaturalHeight": 10,
+                          "Scaling": "Uniform",
+                          "AltText": "a picture",
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      20,
+      185,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      20,
+      185
+    ]
+  },
+  {
+    "name": "fitted columns that would overrun the table, scaled back together",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 30
+                    },
+                    {
+                      "Fit": true
+                    },
+                    {
+                      "Fit": true
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "ContainerItem",
+                          "Layout": "Absolute",
+                          "ColumnCount": 1,
+                          "ColumnGap": 6,
+                          "BalanceColumns": true,
+                          "GroupItems": "Items",
+                          "Childs": [],
+                          "Style": {
+                            "Location": {
+                              "WidthValue": 120,
+                              "HeightValue": 5
+                            }
+                          }
+                        },
+                        {
+                          "$type": "ContainerItem",
+                          "Layout": "Absolute",
+                          "ColumnCount": 1,
+                          "ColumnGap": 6,
+                          "BalanceColumns": true,
+                          "GroupItems": "Items",
+                          "Childs": [],
+                          "Style": {
+                            "Location": {
+                              "WidthValue": 120,
+                              "HeightValue": 5
+                            }
+                          }
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      30,
+      120,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      30,
+      120
+    ]
+  },
+  {
+    "name": "a stated width with Fit set is a stated width, even when the fitted ones overrun",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Width": 30,
+                      "Fit": true
+                    },
+                    {
+                      "Fit": true
+                    },
+                    {
+                      "Fit": true
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "ContainerItem",
+                          "Layout": "Absolute",
+                          "ColumnCount": 1,
+                          "ColumnGap": 6,
+                          "BalanceColumns": true,
+                          "GroupItems": "Items",
+                          "Childs": [],
+                          "Style": {
+                            "Location": {
+                              "WidthValue": 120,
+                              "HeightValue": 5
+                            }
+                          }
+                        },
+                        {
+                          "$type": "ContainerItem",
+                          "Layout": "Absolute",
+                          "ColumnCount": 1,
+                          "ColumnGap": 6,
+                          "BalanceColumns": true,
+                          "GroupItems": "Items",
+                          "Childs": [],
+                          "Style": {
+                            "Location": {
+                              "WidthValue": 120,
+                              "HeightValue": 5
+                            }
+                          }
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      30,
+      120,
+      210
+    ],
+    "header": [
+      "A",
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      30,
+      120
+    ]
+  },
+  {
+    "name": "a fitted column counts the row\u0027s padding",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Fit": true
+                    },
+                    {}
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ImageItem",
+                          "Source": {
+                            "Data": "",
+                            "MediaType": "image/png"
+                          },
+                          "NaturalWidth": 33,
+                          "NaturalHeight": 10,
+                          "Scaling": "Uniform",
+                          "AltText": "a picture",
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {
+                        "Padding": {
+                          "Left": 2,
+                          "Right": 3
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      38,
+      210
+    ],
+    "header": [
+      "A",
+      "B"
+    ],
+    "lefts": [
+      0,
+      38
+    ]
+  },
+  {
+    "name": "a fitted column gone",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableItem",
+                  "Columns": [
+                    {
+                      "Fit": true,
+                      "Visibility": "Gone"
+                    },
+                    {},
+                    {
+                      "Width": 25
+                    }
+                  ],
+                  "RepeatHeader": true,
+                  "Grid": {
+                    "Color": {
+                      "A": 255
+                    },
+                    "Width": 0.2
+                  },
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TableRow",
+                      "IsHeader": true,
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "TextItem",
+                          "Text": "A",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "B",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "C",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    },
+                    {
+                      "$type": "TableRow",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [
+                        {
+                          "$type": "ImageItem",
+                          "Source": {
+                            "Data": "",
+                            "MediaType": "image/png"
+                          },
+                          "NaturalWidth": 33,
+                          "NaturalHeight": 10,
+                          "Scaling": "Uniform",
+                          "AltText": "a picture",
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        },
+                        {
+                          "$type": "TextItem",
+                          "Text": "",
+                          "Font": {},
+                          "Style": {}
+                        }
+                      ],
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "data": null,
+    "edges": [
+      0,
+      185,
+      210
+    ],
+    "header": [
+      "B",
+      "C"
+    ],
+    "lefts": [
+      0,
+      185
     ]
   }
 ]

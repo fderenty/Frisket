@@ -1573,7 +1573,7 @@ namespace Frisket
                 double scale = Math.Max(0, total - fixedTotal) / fitTotal;
                 for (int i = 0; i < count; i++)
                 {
-                    if (i < table.Columns.Count && table.Columns[i] is { Fit: true })
+                    if (i < table.Columns.Count && table.Columns[i] is { Fit: true, Auto: true })
                         widths[i] *= scale;
                 }
                 spare = 0;
@@ -3031,11 +3031,23 @@ namespace Frisket
             return ratio;
         }
 
+        /// <summary>
+        /// Holds an item's size between its bounds, keeping the edge the author anchored: the right
+        /// only when the item is held by its right and not its left, the foot likewise.
+        ///
+        /// It asked <see cref="Style.Location4Calc"/>, which fills both sides for an item that states
+        /// no position, so every such item narrowed by a MaxWidth kept its right edge: a paragraph
+        /// held to 50 mm sat against the right margin, a picture in a grid against the right of its
+        /// cell, a group at coordinates in the bottom corner. The designer's preview kept the left
+        /// one, and the two disagreed until test 48's grids put a bounded picture to both.
+        /// </summary>
         private static void ApplyConstraints(BaseItem item, ref double left, ref double top, ref double right, ref double bottom)
         {
             Constraints c = item.Style.Constraints;
-            bool anchoredRight = (item.Style.Location4Calc.Dock & Dock.Right) != 0;
-            bool anchoredBottom = (item.Style.Location4Calc.Dock & Dock.Bottom) != 0;
+            FrameDimension stated = item.Style.Location;
+            static bool Holds(Dock dock, Dock side, double offset) => (dock & side) != 0 || !double.IsNaN(offset);
+            bool anchoredRight = Holds(stated.Dock, Dock.Right, stated.RightValue) && !Holds(stated.Dock, Dock.Left, stated.LeftValue);
+            bool anchoredBottom = Holds(stated.Dock, Dock.Bottom, stated.BottomValue) && !Holds(stated.Dock, Dock.Top, stated.TopValue);
 
             if (!double.IsNaN(left) && !double.IsNaN(right))
             {

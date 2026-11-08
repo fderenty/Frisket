@@ -1401,6 +1401,20 @@ function frisketDesigner(seams = {}) {
           shows.appendChild(input("text", c.HideWhen ?? "",
             v => { c.HideWhen = v.trim() || null; refresh(); }, { placeholder: t("field.hideWhen") }));
           cols.appendChild(field2("", shows));
+
+          // A column with no width of its own shares what is left, or - Fit - takes what its
+          // widest cell asks, held between two bounds if it has them.
+          if (!has(c.Width)) {
+            const fit = document.createElement("div"); fit.className = "val"; fit.style.marginBottom = "8px";
+            fit.appendChild(input("checkbox", !!c.Fit, v => { c.Fit = v; refresh(); }));
+            if (c.Fit) {
+              fit.appendChild(input("number", c.MinWidth > 0 ? c.MinWidth : "",
+                v => { c.MinWidth = Math.max(0, Number(v) || 0); refresh(); }, { step: 1, placeholder: t("field.fitMin") }));
+              fit.appendChild(input("number", c.MaxWidth > 0 ? c.MaxWidth : "",
+                v => { c.MaxWidth = Math.max(0, Number(v) || 0); refresh(); }, { step: 1, placeholder: t("field.fitMax") }));
+            }
+            cols.appendChild(field2(t("field.fit"), fit));
+          }
         });
         p.appendChild(cols);
         p.appendChild(field2("", note(t("hint.columns"))));

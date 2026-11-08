@@ -756,6 +756,36 @@ function statedWidth(loc, docked) {
       && (has(loc.RightValue) || (docked & DOCK.Right) !== 0);
 }
 
+/// An item's size held between its bounds - LayoutResolver.ApplyConstraints. The edge that
+/// stays is the one the author anchored: the right only when the item is held by its right and
+/// not its left, the foot likewise - so an item that states no position keeps its left and top.
+function constrained(item, a, left, top, right, bottom) {
+  const c = item.Style.Constraints;
+  const loc = item.Style.Location;
+  const holds = (side, offset) => (a & side) !== 0 || has(offset);
+  const keepRight = holds(DOCK.Right, loc.RightValue) && !holds(DOCK.Left, loc.LeftValue);
+  const keepFoot = holds(DOCK.Bottom, loc.BottomValue) && !holds(DOCK.Top, loc.TopValue);
+  if (Number.isFinite(left) && Number.isFinite(right)) {
+    const width = right - left;
+    let clamped = width;
+    if (c.MinWidth > 0 && clamped < c.MinWidth) clamped = c.MinWidth;
+    if (c.MaxWidth > 0 && clamped > c.MaxWidth) clamped = c.MaxWidth;
+    if (clamped !== width) {
+      if (keepRight) left = right - clamped; else right = left + clamped;
+    }
+  }
+  if (Number.isFinite(top) && Number.isFinite(bottom)) {
+    const height = bottom - top;
+    let clamped = height;
+    if (c.MinHeight > 0 && clamped < c.MinHeight) clamped = c.MinHeight;
+    if (c.MaxHeight > 0 && clamped > c.MaxHeight) clamped = c.MaxHeight;
+    if (clamped !== height) {
+      if (keepFoot) top = bottom - clamped; else bottom = top + clamped;
+    }
+  }
+  return { left, top, right, bottom };
+}
+
 function computeFrame(item, area, report) {
   const loc = item.Style.Location;
   const a = dockOf(loc);
@@ -825,25 +855,7 @@ function computeFrame(item, area, report) {
   // theory and a few ULPs off in practice: an auto-sized box is sized to fit
   // its own text exactly, so that sliver of rounding error is enough to tip a
   // width comparison the wrong way and wrap a line that fit.
-  const c = item.Style.Constraints;
-  if (Number.isFinite(left) && Number.isFinite(right)) {
-    const width = right - left;
-    let clamped = width;
-    if (c.MinWidth > 0 && clamped < c.MinWidth) clamped = c.MinWidth;
-    if (c.MaxWidth > 0 && clamped > c.MaxWidth) clamped = c.MaxWidth;
-    if (clamped !== width) {
-      if (a & DOCK.Right) left = right - clamped; else right = left + clamped;
-    }
-  }
-  if (Number.isFinite(top) && Number.isFinite(bottom)) {
-    const height = bottom - top;
-    let clamped = height;
-    if (c.MinHeight > 0 && clamped < c.MinHeight) clamped = c.MinHeight;
-    if (c.MaxHeight > 0 && clamped > c.MaxHeight) clamped = c.MaxHeight;
-    if (clamped !== height) {
-      if (a & DOCK.Bottom) top = bottom - clamped; else bottom = top + clamped;
-    }
-  }
+  ({ left, top, right, bottom } = constrained(item, a, left, top, right, bottom));
   // The same move the engine makes in AlignInside, at the same moment: after the
   // constraints and after every sizing pass, never inside one of them.
   //
@@ -894,19 +906,78 @@ function columnVisibility(table, index) {
   return own;
 }
 
-/// A Gone column is not there: its two edges meet and its width goes to the columns sharing
-/// what is left, so a cell keeps its index and loses its room - LayoutResolver.ColumnEdges.
-function columnEdges(table, left, right) {
+/// The width an item wants when nothing holds it in - LayoutResolver.IntrinsicWidth: a width
+/// stated in millimetres, a text on one line, a picture at its natural size, a field's box, a
+/// group as wide as its widest child. A percentage is skipped, being a share of the very width
+/// being worked out; and what the engine does not measure - a rich text, a barcode, a rule, a
+/// page this page cannot read - wants nothing here either.
+function intrinsicWidth(item, report) {
+  const loc = item.Style.Location;
+  if (has(loc.WidthValue) && loc.WidthUnit !== "Percentage") return num(loc.WidthValue);
+
+  let width = 0;
+  if (item.$type === "TextItem")
+    width = Math.max(0, ...String(tokens(item.Text, report, 1, 1, item)).split("\n")
+                                  .map(line => textWidth(line, item.Font, report)));
+  else if (item.$type === "ImageItem") width = has(item.NaturalWidth) ? num(item.NaturalWidth) : 0;
+  else if (item.$type === "FieldItem") width = item.Kind === "Checkbox" ? lineHeight(item.Font, report) : 40;
+  else if (item.Childs && item.$type !== "AdvancedTextItem") {
+    for (const c of item.Childs) {
+      const at = c.Style.Location;
+      const offset = has(at.LeftValue) && at.LeftUnit !== "Percentage" ? num(at.LeftValue) : 0;
+      width = Math.max(width, offset + intrinsicWidth(c, report) + c.Style.Margin.Left + c.Style.Margin.Right);
+    }
+  }
+  return width + item.Style.Padding.Left + item.Style.Padding.Right;
+}
+
+/// How wide a fitted column's widest cell would like to be, its margin and the row's padding
+/// included - LayoutResolver.FittedWidth.
+function fittedWidth(table, column, report) {
+  let widest = 0;
+  for (const row of table.Childs || []) {
+    if (row.$type !== "TableRow" || row.Style.Visibility === "Gone" || !showsWithData(row)
+        || column >= (row.Childs || []).length) continue;
+    const cell = row.Childs[column];
+    if (cell.Style.Visibility === "Gone" || !showsWithData(cell)) continue;
+    widest = Math.max(widest, intrinsicWidth(cell, report) + cell.Style.Margin.Left + cell.Style.Margin.Right
+                              + row.Style.Padding.Left + row.Style.Padding.Right);
+  }
+  return widest;
+}
+
+/// Column boundaries - LayoutResolver.ColumnEdges. A stated width or percentage is honoured; a
+/// fitted column takes what its widest cell asks, within its bounds; the plain auto columns share
+/// what is left. Fitted columns that would overrun the table are scaled back together. A Gone
+/// column is not there: its two edges meet and its width goes to the others, so a cell keeps its
+/// index and loses its room.
+function columnEdges(table, left, right, report) {
   const cols = table.Columns && table.Columns.length ? table.Columns : [{ Width: "NaN" }];
   const total = right - left;
-  let fixed = 0, autos = 0;
+  let fixed = 0, fitted = 0, autos = 0;
   const widths = cols.map((c, i) => {
     if (columnVisibility(table, i) === "Gone") return 0;
-    if (!has(c.Width)) { autos++; return NaN; }
-    const w = mm(num(c.Width), c.WidthUnit, total);
-    fixed += w; return w;
+    if (has(c.Width)) {
+      const w = mm(num(c.Width), c.WidthUnit, total);
+      fixed += w; return w;
+    }
+    if (c.Fit) {
+      let needed = fittedWidth(table, i, report);
+      if (c.MinWidth > 0) needed = Math.max(needed, c.MinWidth);
+      if (c.MaxWidth > 0) needed = Math.min(needed, c.MaxWidth);
+      fitted += needed; return needed;
+    }
+    autos++; return NaN;
   });
-  const share = autos ? Math.max(0, total - fixed) / autos : 0;
+
+  let spare = total - fixed - fitted;
+  if (spare < 0 && fitted > 0) {
+    const scale = Math.max(0, total - fixed) / fitted;
+    cols.forEach((c, i) => { if (!has(c.Width) && c.Fit) widths[i] *= scale; });
+    spare = 0;
+  }
+
+  const share = autos ? Math.max(0, spare) / autos : 0;
   const out = [left];
   widths.forEach(w => out.push(out[out.length - 1] + (Number.isFinite(w) ? w : share)));
   return out;
@@ -1325,16 +1396,30 @@ function flowColumn(container, area, placed, report, start, stopAtBottom) {
     if (stopAtBottom && frame.bottom > area.bottom && index > start)
       return index;
 
+    const slot = placed.length;
     placed.push({ item: child, frame });
     if (child.$type === "TableItem") table(child, frame, placed, report);
     else if (child.$type === "ImageGridItem") grid(child, frame, placed, report);
     else if (child.$type === "AdvancedTextItem") advancedText(child, frame, placed, report);
+    else if (child.Childs && child.Layout === "Stack" && !has(child.Style.Location.HeightValue)) {
+      // A stacked group is as tall as what it holds ends up - the engine's FlowStack: its
+      // children are given the room down to the foot, and it closes on the lowest of them, its
+      // padding under that. Measured beforehand, the group counted its last child's margin,
+      // which the engine does not, and a group in columns as one long column - so whatever
+      // followed it was drawn a column's worth too low. Found by test 45's blocks.json.
+      flow(child, deflate(rect(left, top, right, Math.max(top, area.bottom)), child.Style.Padding), placed, report);
+      let lowest = -Infinity;
+      for (let k = slot + 1; k < placed.length; k++)
+        if (Number.isFinite(placed[k].frame.bottom)) lowest = Math.max(lowest, placed[k].frame.bottom);
+      const bottom = Math.max(top, (Number.isFinite(lowest) ? lowest : top) + child.Style.Padding.Bottom);
+      placed[slot] = { item: child, frame: rect(left, top, right, bottom) };
+    }
     else if (child.Childs) {
       const inner = deflate(frame, child.Style.Padding);
       if (child.Layout === "Stack") flow(child, inner, placed, report);
       else child.Childs.forEach(c => arrange(c, inner, placed, report));
     }
-    cursor = frame.bottom + m.Bottom;
+    cursor = placed[slot].frame.bottom + m.Bottom;
     if (scope !== "All") variantBottom = Math.max(variantBottom, cursor);
   }
 
@@ -1343,7 +1428,7 @@ function flowColumn(container, area, placed, report, start, stopAtBottom) {
 
 function table(item, frame, placed, report) {
   const inner = deflate(frame, item.Style.Padding);
-  const edgesX = columnEdges(item, inner.left, inner.right);
+  const edgesX = columnEdges(item, inner.left, inner.right, report);
   let cursor = inner.top;
 
   // The grid strokes no box for a Gone column, whose edges meet: it would be a line drawn
@@ -1395,9 +1480,14 @@ function grid(item, frame, placed, report) {
       const cell = visible[k];
       const col = k - i;
       const left = inner.left + col * (cellWidth + gap);
+      // The cell is the frame, its margin taken off once, as LayoutResolver's Place makes it:
+      // a picture is fitted inside when it is drawn. Through arrange() the margin came off a
+      // second time, and a picture took the height its proportions asked rather than its
+      // row's - a photo drawn over the row below it, which the engine never does.
       const m = cell.Style.Margin;
-      const box = rect(left + m.Left, cursor + m.Top, left + cellWidth - m.Right, cursor + rowHeight - m.Bottom);
-      arrange(cell, box, placed, report);
+      const f = constrained(cell, dockOf(cell.Style.Location),
+                            left + m.Left, cursor + m.Top, left + cellWidth - m.Right, cursor + rowHeight - m.Bottom);
+      placed.push({ item: cell, frame: rect(f.left, f.top, f.right, f.bottom) });
     }
     cursor += rowHeight + gap;
   }
@@ -1784,6 +1874,7 @@ const STRINGS = {
     "section.condition": "Shown when",
     "field.showWhen": "Only if", "field.hideWhen": "Except if",
     "hint.condition": "A path in the data, such as Client.Vat. The element is dropped - it takes no room - when there is nothing at that path: absent, empty, zero or false.",
+    "field.fit": "Fit to content", "field.fitMin": "at least, mm", "field.fitMax": "at most, mm",
     "hint.columns": "Each column shows, keeps its width and draws nothing (Invisible), or goes with all its cells (Gone), its width left to the columns without one. Only if and Except if name a path in the data, read where the table stands and never in a line of its list: a discount column for the invoices that have a discount. With no data loaded this page draws it.",
 
     "panel.issues": "Checks", "issues.none": "Nothing to report",
@@ -2201,6 +2292,7 @@ const STRINGS = {
     "section.condition": "Affiché quand",
     "field.showWhen": "Seulement si", "field.hideWhen": "Sauf si",
     "hint.condition": "Un chemin dans les données, par exemple Client.Vat. L\u2019élément dispara\u00eet \u2014 sans laisser de place \u2014 quand il n\u2019y a rien \u00e0 ce chemin\u202f: absent, vide, z\u00e9ro ou faux.",
+    "field.fit": "Ajustée au contenu", "field.fitMin": "au moins, mm", "field.fitMax": "au plus, mm",
     "hint.columns": "Chaque colonne est affichée, garde sa largeur sans rien dessiner (Invisible), ou disparaît avec toutes ses cellules (Retiré), sa largeur laissée aux colonnes qui n\u2019en fixent pas. Seulement si et Sauf si nomment un chemin dans les données, lu là où se trouve le tableau et jamais dans une ligne de sa liste\u202f: une colonne de remise pour les factures qui en ont une. Sans données chargées, cette page la dessine.",
 
     "panel.issues": "Contrôles", "issues.none": "Rien à signaler",

@@ -1770,6 +1770,54 @@ Three things that bit:
   build CI runs. §4's rule again: a count of nothing from an incremental build is not a
   count.
 
+## 5c-novies. The echo held to the engine's answers, and what four of them had been drawing
+
+Asked on 8 November 2026, once a column could go: where else could the preview drift with
+nothing measuring it? Each answer is now a file a test writes and the harness lays out again:
+
+- `tables/columns.json` (test 128) covers widths in percent, a row's padding, a cell's margin
+  and fitted columns;
+- `gallery/grids.json` (test 48) covers grids of pictures;
+- `columns/blocks.json` (test 45) covers flows in columns.
+
+Every measurement is of something with a stated size, never of text, because the echo has no
+font file. The section on columns above held the echo to arithmetic the harness kept for
+itself, which is a copy of the rule (§16). It is still there, and the engine's answer is beside
+it now.
+
+Five faults turned up, all older than the question:
+
+- **The echo had no `Fit`.** A fitted column shared the room like an automatic one, and the
+  panel had no control for it. Both exist now: `intrinsicWidth` and `fittedWidth` mirror the
+  engine's, and the panel has a checkbox and two bounds.
+- **A picture in a grid took the height its proportions asked for, not its row's,** and lost
+  its margin twice, so a photo was drawn over the row below. The engine's `Place` takes the cell
+  as the frame, and the echo does too now.
+- **A stacked group was measured before it was laid out.** That counted its last child's margin,
+  and counted a group in columns as one long column, so what followed was drawn a column's
+  worth too low: 104 mm on the sample. It closes on its lowest child now, as `FlowStack` does.
+- **The engine kept the right edge and the foot when a bound narrowed an item with no
+  position.** A paragraph held to 50 mm sat against the right margin, and a group at coordinates
+  sat in the bottom corner. `ApplyConstraints` asked `Location4Calc`, which anchors such an item
+  on both sides; the echo asked the dock the author wrote. Both keep the edge the author anchored
+  now. No sample moved, because none had a bound on an item without a position.
+- **The engine shrank a column that states a width when the fitted columns overran,** if that
+  column also said `Fit`, which its own comment calls meaningless there.
+
+Twenty-three sabotages from a run seen green. Three samples were mended before any sabotage ran,
+because reading them showed they could not differ from a fault:
+
+- a margin smaller than the picture beside it (28 + 2 < 33);
+- no grid with a bounded picture;
+- no grid where the two anchoring rules disagree.
+
+The fourth was found by a sabotage that stayed green: an item held by its right and as wide as
+nothing, which a bound never narrows, so either edge would do.
+
+Two faults were left as found. A fitted column measures no rich text, since `IntrinsicWidth`
+answers 0 for one; the content editor's tables are all rich text, but it offers no `Fit`. And a
+picture in a flow narrowed by a bound keeps the height measured at the full width.
+
 ## 5d. Look for the property before adding one
 
 Aligning a picture first produced `ImageItem.Alignment`, written, wired and rendered —

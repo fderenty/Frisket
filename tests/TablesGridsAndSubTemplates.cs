@@ -598,6 +598,65 @@ namespace test
             AssertEqual(testName, "columns asked of an image grid are refused too", true,
                 columnedIssues.Any(i => i.Rule == "sound.columnsIgnored"), 0);
 
+            // --- what the designer's echo is held to ------------------------------------------
+            // Where each picture of a grid lands, for each thing that moves it: the harness lays
+            // the same template out and has to put every picture in the same cell, to the edge.
+            var gauge = new FontTextMeasurer(library);
+            var gridCases = new System.Text.Json.Nodes.JsonArray();
+            void GridCase(string name, Action<ImageGridItem> shape, int pictures, Action<List<ImageItem>>? each = null)
+            {
+                var grid = new ImageGridItem { GridColumns = 3, Gap = 4, RowHeight = 30 };
+                shape(grid);
+                List<ImageItem> items = Enumerable.Range(1, pictures)
+                    .Select(i => new ImageItem { NaturalWidth = 40, NaturalHeight = 30, AltText = $"picture {i}" }).ToList();
+                each?.Invoke(items);
+                foreach (ImageItem item in items)
+                    grid.Add(item);
+
+                Report report = RebateSheet(grid);
+                string written = report.ToJson();
+                List<PlacedItem> placed = report.Resolve(gauge).Pages.SelectMany(p => p.Items).ToList();
+                AssertEqual(testName, $"{name}: on one page, as the echo draws it", 1, report.Resolve(gauge).PageCount, 0);
+
+                var cells = items.Select(item => placed.FirstOrDefault(p => ReferenceEquals(p.Source, item)) is { } at
+                    ? new System.Text.Json.Nodes.JsonArray(Math.Round(at.Frame.Left, 4), Math.Round(at.Frame.Top, 4),
+                                                           Math.Round(at.Frame.Right, 4), Math.Round(at.Frame.Bottom, 4))
+                    : null);
+                gridCases.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["name"] = name,
+                    ["report"] = System.Text.Json.Nodes.JsonNode.Parse(written),
+                    ["cells"] = new System.Text.Json.Nodes.JsonArray(cells.Select(c => (System.Text.Json.Nodes.JsonNode?)c).ToArray()),
+                });
+            }
+
+            GridCase("three to a row, a gap between", _ => { }, 7);
+            GridCase("one to a row", g => { g.GridColumns = 1; g.Gap = 2; }, 3);
+            GridCase("four to a row and no gap", g => { g.GridColumns = 4; g.Gap = 0; g.RowHeight = 25; }, 6);
+            GridCase("the grid's own padding", g => { g.GridColumns = 2; g.Style.Padding = new() { Left = 5, Top = 6, Right = 7, Bottom = 8 }; }, 4);
+            GridCase("a picture's margin", _ => { }, 5,
+                pictures => pictures.ForEach(p => p.Style.Margin = new() { Left = 2, Top = 1, Right = 3, Bottom = 4 }));
+            GridCase("a picture gone leaves no cell", _ => { }, 5, pictures => pictures[1].Style.Visibility = Visibility.Gone);
+            GridCase("a picture held by its bounds", _ => { }, 3,
+                pictures => pictures.ForEach(p => p.Style.Constraints = new() { MaxWidth = 30, MaxHeight = 20 }));
+            // Which edge a bound keeps is the one the author anchored: a picture held by its right
+            // keeps its right, one docked all round keeps its left - the two the rule turns on.
+            GridCase("a bounded picture held by its right", _ => { }, 3, pictures => pictures.ForEach(p =>
+            {
+                p.Style.Constraints = new() { MaxWidth = 30, MaxHeight = 20 };
+                p.Style.Location.RightValue = 0;
+                p.Style.Location.BottomValue = 0;
+            }));
+            GridCase("a bounded picture docked all round", _ => { }, 3, pictures => pictures.ForEach(p =>
+            {
+                p.Style.Constraints = new() { MaxWidth = 30, MaxHeight = 20 };
+                p.Style.Location.Dock = Dock.Fill;
+            }));
+
+            File.WriteAllText(Path.Combine(OutputDirectory("gallery"), "grids.json"),
+                gridCases.ToJsonString(new() { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");
+            Console.WriteLine($"    {gridCases.Count} grids written for the echo");
+
             string dir = OutputDirectory("gallery");
             backend.SaveTo(dir, "grid");
 
@@ -2538,8 +2597,11 @@ namespace test
             AssertEqual(testName, "and a field of the entries is one too: a column is read outside the list", 1, Unknown("Rebate").Count, 0);
 
             // --- what the designer's echo is held to ------------------------------------------
-            // Where the grid falls and which headers are drawn, for each way a column can show:
-            // the harness lays the same template out with the same data and has to agree.
+            // Where the grid falls, which headers are drawn and where each starts, for each way a
+            // column can show and each way it can be given its width: the harness lays the same
+            // template out with the same data and has to agree. Fitted columns are fitted to cells
+            // of a stated width or a picture's natural one, never to text: the echo has no font
+            // file, and a check on text would test its ruler.
             var cases = new System.Text.Json.Nodes.JsonArray();
             void Case(string name, TableItem table, string? data)
             {
@@ -2547,8 +2609,10 @@ namespace test
                 string written = report.ToJson();
                 List<PlacedItem> placed = Placed(data == null ? report : ReportBinder.Bind(report, data));
                 PlacedItem first = placed.First(p => p.Source is TableRow);
-                var header = placed.Where(p => p.Source is TextItem && ReferenceEquals(p.Source.Parent, first.Source))
-                                   .OrderBy(p => p.Frame.Left).Select(p => (System.Text.Json.Nodes.JsonNode?)TextOf(p));
+                List<PlacedItem> heads = placed.Where(p => p.Source is TextItem && ReferenceEquals(p.Source.Parent, first.Source))
+                                               .OrderBy(p => p.Frame.Left).ToList();
+                var header = heads.Select(p => (System.Text.Json.Nodes.JsonNode?)TextOf(p));
+                var lefts = heads.Select(p => (System.Text.Json.Nodes.JsonNode?)Math.Round(p.Frame.Left, 4));
                 cases.Add(new System.Text.Json.Nodes.JsonObject
                 {
                     ["name"] = name,
@@ -2559,8 +2623,31 @@ namespace test
                     ["data"] = data == null ? null : System.Text.Json.Nodes.JsonNode.Parse(data)!.ToJsonString(),
                     ["edges"] = new System.Text.Json.Nodes.JsonArray(first.GridEdges!.Select(e => (System.Text.Json.Nodes.JsonNode?)Math.Round(e, 4)).ToArray()),
                     ["header"] = new System.Text.Json.Nodes.JsonArray(header.ToArray()),
+                    ["lefts"] = new System.Text.Json.Nodes.JsonArray(lefts.ToArray()),
                 });
             }
+
+            // A table of named columns, a header of single letters, and rows of whatever is given.
+            static TableItem Shaped(Action<TableItem> columns, params BaseItem[][] rows)
+            {
+                var table = new TableItem { Grid = new PenStyle { Width = 0.2 } };
+                columns(table);
+                table.AddHeaderRow(table.Columns.Select((_, i) => (BaseItem)new TextItem { Text = ((char)('A' + i)).ToString() }).ToArray());
+                foreach (BaseItem[] row in rows)
+                    table.AddRow(row);
+                return table;
+            }
+            static ImageItem Picture(double width) => new() { NaturalWidth = width, NaturalHeight = 10, AltText = "a picture" };
+            static ContainerItem Box(double width, double margin = 0)
+            {
+                var box = new ContainerItem();
+                box.Style.Location.WidthValue = width;
+                box.Style.Location.HeightValue = 5;
+                box.Style.Margin.Left = margin;
+                box.Style.Margin.Right = margin;
+                return box;
+            }
+            static TextItem Word(string text = "") => new() { Text = text };
 
             Case("shown by the data", RebateTable(c => c.ShowWhen = "Discount"), WithRebate);
             Case("gone by the data", RebateTable(c => c.ShowWhen = "Discount"), WithoutRebate);
@@ -2573,6 +2660,39 @@ namespace test
             TableItem firstGone = RebateTable();
             firstGone.Columns[0].Visibility = Visibility.Gone;
             Case("the first column gone", firstGone, null);
+
+            Case("widths in percent", Shaped(t => t.AddColumn(20, Units.Percentage).AddAutoColumn().AddColumn(30, Units.Percentage).AddColumn(15),
+                [Word("a"), Word("b"), Word("c"), Word("d")]), null);
+
+            TableItem padded = Shaped(t => t.AddColumn(30).AddAutoColumn().AddColumn(40), [Word("a"), Word("b"), Word("c")]);
+            TableRow head = padded.Childs.OfType<TableRow>().First();
+            head.Style.Padding.Left = 3;
+            head.Style.Padding.Right = 2;
+            head.Childs[1].Style.Margin.Left = 4;
+            Case("a row's padding and a cell's margin", padded, null);
+
+            Case("a fitted column, its cells of stated width",
+                Shaped(t => t.AddFittedColumn().AddAutoColumn().AddColumn(25), [Picture(33), Word(), Word()], [Box(30, 3), Word(), Word()]), null);
+            Case("a fitted column held by its floor",
+                Shaped(t => t.AddFittedColumn(minWidth: 45).AddAutoColumn().AddColumn(25), [Picture(33), Word(), Word()]), null);
+            Case("a fitted column held by its ceiling",
+                Shaped(t => t.AddFittedColumn(maxWidth: 20).AddAutoColumn().AddColumn(25), [Picture(33), Word(), Word()]), null);
+            Case("fitted columns that would overrun the table, scaled back together",
+                Shaped(t => t.AddColumn(30).AddFittedColumn().AddFittedColumn(), [Word(), Box(120), Box(120)]), null);
+
+            TableItem stated = Shaped(t => t.AddColumn(30).AddFittedColumn().AddFittedColumn(), [Word(), Box(120), Box(120)]);
+            stated.Columns[0].Fit = true;
+            Case("a stated width with Fit set is a stated width, even when the fitted ones overrun", stated, null);
+
+            TableItem fittedPadded = Shaped(t => t.AddFittedColumn().AddAutoColumn(), [Picture(33), Word()]);
+            TableRow line = fittedPadded.Childs.OfType<TableRow>().Last();
+            line.Style.Padding.Left = 2;
+            line.Style.Padding.Right = 3;
+            Case("a fitted column counts the row's padding", fittedPadded, null);
+
+            TableItem fittedGone = Shaped(t => t.AddFittedColumn().AddAutoColumn().AddColumn(25), [Picture(33), Word(), Word()]);
+            fittedGone.Columns[0].Visibility = Visibility.Gone;
+            Case("a fitted column gone", fittedGone, null);
 
             File.WriteAllText(Path.Combine(OutputDirectory("tables"), "columns.json"),
                 cases.ToJsonString(new() { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");

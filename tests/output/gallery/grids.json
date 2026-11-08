@@ -1,0 +1,1340 @@
+[
+  {
+    "name": "three to a row, a gap between",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 4",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 5",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 6",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 7",
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        67.3333,
+        30
+      ],
+      [
+        71.3333,
+        0,
+        138.6667,
+        30
+      ],
+      [
+        142.6667,
+        0,
+        210,
+        30
+      ],
+      [
+        0,
+        34,
+        67.3333,
+        64
+      ],
+      [
+        71.3333,
+        34,
+        138.6667,
+        64
+      ],
+      [
+        142.6667,
+        34,
+        210,
+        64
+      ],
+      [
+        0,
+        68,
+        67.3333,
+        98
+      ]
+    ]
+  },
+  {
+    "name": "one to a row",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 1,
+                  "RowHeight": 30,
+                  "Gap": 2,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        210,
+        30
+      ],
+      [
+        0,
+        32,
+        210,
+        62
+      ],
+      [
+        0,
+        64,
+        210,
+        94
+      ]
+    ]
+  },
+  {
+    "name": "four to a row and no gap",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 4,
+                  "RowHeight": 25,
+                  "Gap": 0,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 4",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 5",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 6",
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        52.5,
+        25
+      ],
+      [
+        52.5,
+        0,
+        105,
+        25
+      ],
+      [
+        105,
+        0,
+        157.5,
+        25
+      ],
+      [
+        157.5,
+        0,
+        210,
+        25
+      ],
+      [
+        0,
+        25,
+        52.5,
+        50
+      ],
+      [
+        52.5,
+        25,
+        105,
+        50
+      ]
+    ]
+  },
+  {
+    "name": "the grid\u0027s own padding",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 2,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 4",
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {
+                    "Padding": {
+                      "Left": 5,
+                      "Top": 6,
+                      "Right": 7,
+                      "Bottom": 8
+                    }
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        5,
+        6,
+        102,
+        36
+      ],
+      [
+        106,
+        6,
+        203,
+        36
+      ],
+      [
+        5,
+        40,
+        102,
+        70
+      ],
+      [
+        106,
+        40,
+        203,
+        70
+      ]
+    ]
+  },
+  {
+    "name": "a picture\u0027s margin",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {
+                        "Margin": {
+                          "Left": 2,
+                          "Top": 1,
+                          "Right": 3,
+                          "Bottom": 4
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {
+                        "Margin": {
+                          "Left": 2,
+                          "Top": 1,
+                          "Right": 3,
+                          "Bottom": 4
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {
+                        "Margin": {
+                          "Left": 2,
+                          "Top": 1,
+                          "Right": 3,
+                          "Bottom": 4
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 4",
+                      "Style": {
+                        "Margin": {
+                          "Left": 2,
+                          "Top": 1,
+                          "Right": 3,
+                          "Bottom": 4
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 5",
+                      "Style": {
+                        "Margin": {
+                          "Left": 2,
+                          "Top": 1,
+                          "Right": 3,
+                          "Bottom": 4
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        2,
+        1,
+        64.3333,
+        26
+      ],
+      [
+        73.3333,
+        1,
+        135.6667,
+        26
+      ],
+      [
+        144.6667,
+        1,
+        207,
+        26
+      ],
+      [
+        2,
+        35,
+        64.3333,
+        60
+      ],
+      [
+        73.3333,
+        35,
+        135.6667,
+        60
+      ]
+    ]
+  },
+  {
+    "name": "a picture gone leaves no cell",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {
+                        "Visibility": "Gone"
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 4",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 5",
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        67.3333,
+        30
+      ],
+      null,
+      [
+        71.3333,
+        0,
+        138.6667,
+        30
+      ],
+      [
+        142.6667,
+        0,
+        210,
+        30
+      ],
+      [
+        0,
+        34,
+        67.3333,
+        64
+      ]
+    ]
+  },
+  {
+    "name": "a picture held by its bounds",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        30,
+        20
+      ],
+      [
+        71.3333,
+        0,
+        101.3333,
+        20
+      ],
+      [
+        142.6667,
+        0,
+        172.6667,
+        20
+      ]
+    ]
+  },
+  {
+    "name": "a bounded picture held by its right",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {
+                        "Location": {
+                          "RightValue": 0,
+                          "BottomValue": 0
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {
+                        "Location": {
+                          "RightValue": 0,
+                          "BottomValue": 0
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {
+                        "Location": {
+                          "RightValue": 0,
+                          "BottomValue": 0
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        37.3333,
+        10,
+        67.3333,
+        30
+      ],
+      [
+        108.6667,
+        10,
+        138.6667,
+        30
+      ],
+      [
+        180,
+        10,
+        210,
+        30
+      ]
+    ]
+  },
+  {
+    "name": "a bounded picture docked all round",
+    "report": {
+      "Title": "A column that goes",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "GeneratedAt": "2026-01-15T09:00:00\u002B00:00",
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageGridItem",
+                  "GridColumns": 3,
+                  "RowHeight": 30,
+                  "Gap": 4,
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 1",
+                      "Style": {
+                        "Location": {
+                          "Dock": "Fill"
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 2",
+                      "Style": {
+                        "Location": {
+                          "Dock": "Fill"
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "NaturalWidth": 40,
+                      "NaturalHeight": 30,
+                      "Scaling": "Uniform",
+                      "AltText": "picture 3",
+                      "Style": {
+                        "Location": {
+                          "Dock": "Fill"
+                        },
+                        "Constraints": {
+                          "MaxWidth": 30,
+                          "MaxHeight": 20
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {}
+        }
+      ]
+    },
+    "cells": [
+      [
+        0,
+        0,
+        30,
+        20
+      ],
+      [
+        71.3333,
+        0,
+        101.3333,
+        20
+      ],
+      [
+        142.6667,
+        0,
+        172.6667,
+        20
+      ]
+    ]
+  }
+]

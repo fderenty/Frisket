@@ -1044,6 +1044,91 @@ namespace test
             AssertEqual(testName, "balancing does not spill onto another page", true,
                 evened[0] < lopsided[0], 0);
 
+            // --- what the designer's echo is held to ------------------------------------------
+            // Where each block of a columned flow lands, balanced or not, in the body or in a
+            // group under something else. Blocks of a stated height, never text: the echo has no
+            // font file, and a check on text would test its ruler. Its harness checked these
+            // against its own arithmetic until now - a copy of the rule, not the engine's answer.
+            var gauge = new FontTextMeasurer(library);
+            var flowCases = new System.Text.Json.Nodes.JsonArray();
+            static ContainerItem Block(double height)
+            {
+                var block = new ContainerItem();
+                block.Style.Location.HeightValue = height;
+                block.Style.Margin.Bottom = 2;
+                return block;
+            }
+            static IEnumerable<BaseItem> Blocks(BaseItem item)
+                => item is ContainerItem { Childs.Count: > 0 } holder ? holder.Childs.SelectMany(Blocks)
+                 : item is ContainerItem ? new[] { item } : Array.Empty<BaseItem>();
+            void FlowCase(string name, Action<ContainerItem> fill, Action<Report>? sheet = null)
+            {
+                var report = new Report
+                {
+                    Title = "Columns", Language = "en-GB",
+                    Dimension = new() { Width = 210, Height = 297 },
+                    Body = new() { Layout = LayoutMode.Stack, ColumnGap = 8 }
+                };
+                report.Section.Style.Padding = new() { Left = 15, Top = 15, Right = 15, Bottom = 15 };
+                fill(report.Body!);
+                sheet?.Invoke(report);
+                report.Reattach();
+
+                string written = report.ToJson();
+                LayoutResult laid = report.Resolve(gauge);
+                AssertEqual(testName, $"{name}: on one page, as the echo draws it", 1, laid.PageCount, 0);
+                List<PlacedItem> placed = laid.Pages.SelectMany(p => p.Items).ToList();
+                var frames = Blocks(report.Body!).Select(block => placed.First(p => ReferenceEquals(p.Source, block)).Frame)
+                    .Select(f => (System.Text.Json.Nodes.JsonNode?)new System.Text.Json.Nodes.JsonArray(
+                        Math.Round(f.Left, 4), Math.Round(f.Top, 4), Math.Round(f.Right, 4), Math.Round(f.Bottom, 4)));
+                flowCases.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["name"] = name,
+                    ["report"] = System.Text.Json.Nodes.JsonNode.Parse(written),
+                    ["blocks"] = new System.Text.Json.Nodes.JsonArray(frames.ToArray()),
+                });
+            }
+
+            FlowCase("two columns, balanced", body => { body.ColumnCount = 2; for (int i = 0; i < 20; i++) body.Add(Block(20)); });
+            FlowCase("two columns, filled in order", body =>
+            {
+                body.ColumnCount = 2;
+                body.BalanceColumns = false;
+                for (int i = 0; i < 20; i++) body.Add(Block(20));
+            });
+            FlowCase("three columns and a narrower gap", body =>
+            {
+                body.ColumnCount = 3;
+                body.ColumnGap = 5;
+                for (int i = 0; i < 14; i++) body.Add(Block(20));
+            });
+            FlowCase("blocks of three heights, balanced", body =>
+            {
+                body.ColumnCount = 2;
+                for (int i = 0; i < 15; i++) body.Add(Block(new[] { 10.0, 25, 15 }[i % 3]));
+            });
+            FlowCase("a group in one column between two blocks", body =>
+            {
+                body.Add(Block(30));
+                var group = new ContainerItem { Layout = LayoutMode.Stack };
+                group.Style.Padding = new() { Top = 3, Bottom = 4 };
+                for (int i = 0; i < 4; i++) group.Add(Block(15));
+                body.Add(group);
+                body.Add(Block(20));
+            });
+            FlowCase("a group in two columns between two blocks", body =>
+            {
+                body.Add(Block(30));
+                var group = new ContainerItem { Layout = LayoutMode.Stack, ColumnCount = 2, ColumnGap = 6 };
+                for (int i = 0; i < 12; i++) group.Add(Block(15));
+                body.Add(group);
+                body.Add(Block(20));
+            });
+
+            File.WriteAllText(Path.Combine(OutputDirectory("columns"), "blocks.json"),
+                flowCases.ToJsonString(new() { WriteIndented = true }).ReplaceLineEndings("\n") + "\n");
+            Console.WriteLine($"    {flowCases.Count} columned flows written for the echo");
+
             // Written out, because two columns is a thing to look at rather than count.
             string dir = OutputDirectory("columns");
             backend.SaveTo(dir, "terms");
