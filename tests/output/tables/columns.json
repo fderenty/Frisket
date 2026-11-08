@@ -144,7 +144,7 @@
         }
       ]
     },
-    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: true,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "data": "{\u0022Client\u0022:\u0022ACME\u0022,\u0022Discount\u0022:true,\u0022Lines\u0022:[{\u0022Ref\u0022:\u0022a1\u0022,\u0022Name\u0022:\u0022Hammer\u0022,\u0022Rebate\u0022:\u0022-10% on a first order\\nof the year\u0022,\u0022Total\u0022:\u00229.00\u0022},{\u0022Ref\u0022:\u0022a2\u0022,\u0022Name\u0022:\u0022Nails\u0022,\u0022Rebate\u0022:\u0022-5%\u0022,\u0022Total\u0022:\u00224.75\u0022}]}",
     "edges": [
       0,
       15,
@@ -304,7 +304,7 @@
         }
       ]
     },
-    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "data": "{\u0022Client\u0022:\u0022ACME\u0022,\u0022Discount\u0022:false,\u0022Lines\u0022:[{\u0022Ref\u0022:\u0022a1\u0022,\u0022Name\u0022:\u0022Hammer\u0022,\u0022Rebate\u0022:\u0022-10% on a first order\\nof the year\u0022,\u0022Total\u0022:\u00229.00\u0022},{\u0022Ref\u0022:\u0022a2\u0022,\u0022Name\u0022:\u0022Nails\u0022,\u0022Rebate\u0022:\u0022-5%\u0022,\u0022Total\u0022:\u00224.75\u0022}]}",
     "edges": [
       0,
       15,
@@ -462,7 +462,7 @@
         }
       ]
     },
-    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: true,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "data": "{\u0022Client\u0022:\u0022ACME\u0022,\u0022Discount\u0022:true,\u0022Lines\u0022:[{\u0022Ref\u0022:\u0022a1\u0022,\u0022Name\u0022:\u0022Hammer\u0022,\u0022Rebate\u0022:\u0022-10% on a first order\\nof the year\u0022,\u0022Total\u0022:\u00229.00\u0022},{\u0022Ref\u0022:\u0022a2\u0022,\u0022Name\u0022:\u0022Nails\u0022,\u0022Rebate\u0022:\u0022-5%\u0022,\u0022Total\u0022:\u00224.75\u0022}]}",
     "edges": [
       0,
       15,
@@ -939,7 +939,7 @@
         }
       ]
     },
-    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "data": "{\u0022Client\u0022:\u0022ACME\u0022,\u0022Discount\u0022:false,\u0022Lines\u0022:[{\u0022Ref\u0022:\u0022a1\u0022,\u0022Name\u0022:\u0022Hammer\u0022,\u0022Rebate\u0022:\u0022-10% on a first order\\nof the year\u0022,\u0022Total\u0022:\u00229.00\u0022},{\u0022Ref\u0022:\u0022a2\u0022,\u0022Name\u0022:\u0022Nails\u0022,\u0022Rebate\u0022:\u0022-5%\u0022,\u0022Total\u0022:\u00224.75\u0022}]}",
     "edges": [
       0,
       15,
@@ -1258,7 +1258,7 @@
         }
       ]
     },
-    "data": "{ \u0022Client\u0022: \u0022ACME\u0022, \u0022Discount\u0022: false,\n  \u0022Lines\u0022: [ { \u0022Ref\u0022: \u0022a1\u0022, \u0022Name\u0022: \u0022Hammer\u0022, \u0022Rebate\u0022: \u0022-10% on a first order\\nof the year\u0022, \u0022Total\u0022: \u00229.00\u0022 },\n             { \u0022Ref\u0022: \u0022a2\u0022, \u0022Name\u0022: \u0022Nails\u0022, \u0022Rebate\u0022: \u0022-5%\u0022, \u0022Total\u0022: \u00224.75\u0022 } ] }",
+    "data": "{\u0022Client\u0022:\u0022ACME\u0022,\u0022Discount\u0022:false,\u0022Lines\u0022:[{\u0022Ref\u0022:\u0022a1\u0022,\u0022Name\u0022:\u0022Hammer\u0022,\u0022Rebate\u0022:\u0022-10% on a first order\\nof the year\u0022,\u0022Total\u0022:\u00229.00\u0022},{\u0022Ref\u0022:\u0022a2\u0022,\u0022Name\u0022:\u0022Nails\u0022,\u0022Rebate\u0022:\u0022-5%\u0022,\u0022Total\u0022:\u00224.75\u0022}]}",
     "edges": [
       0,
       15,

@@ -2553,7 +2553,10 @@ namespace test
                 {
                     ["name"] = name,
                     ["report"] = System.Text.Json.Nodes.JsonNode.Parse(written),
-                    ["data"] = data,
+                    // Written compact, never as the raw string literal: that takes the line endings
+                    // of this file as git checked it out, and a CRLF clone wrote a different
+                    // fixture (CLAUDE.md 6).
+                    ["data"] = data == null ? null : System.Text.Json.Nodes.JsonNode.Parse(data)!.ToJsonString(),
                     ["edges"] = new System.Text.Json.Nodes.JsonArray(first.GridEdges!.Select(e => (System.Text.Json.Nodes.JsonNode?)Math.Round(e, 4)).ToArray()),
                     ["header"] = new System.Text.Json.Nodes.JsonArray(header.ToArray()),
                 });
