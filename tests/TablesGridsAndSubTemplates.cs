@@ -2596,6 +2596,29 @@ namespace test
             AssertEqual(testName, "with the name meant", true, misspelt[0].Message.Contains("\"Discount\"", StringComparison.Ordinal), 0);
             AssertEqual(testName, "and a field of the entries is one too: a column is read outside the list", 1, Unknown("Rebate").Count, 0);
 
+            // --- a fitted column of rich text ------------------------------------------------
+            // A rich text wants its widest line, each run in its own font. It wanted nothing, so a
+            // fitted column of it - the only text the content editor writes - closed to its padding.
+            static AdvancedTextItem Rich(params (string Text, bool Bold)[] runs)
+            {
+                var rich = new AdvancedTextItem();
+                foreach ((string text, bool bold) in runs)
+                    rich.Runs.Add(new TextRun { Text = text, Font = bold ? new TextStyle { Bold = true } : null });
+                return rich;
+            }
+            double FittedTo(BaseItem cell)
+                => Placed(RebateSheet(Shaped(t => t.AddFittedColumn().AddAutoColumn(), [cell, Word()])))
+                       .First(p => p.Source is TableRow).GridEdges![1];
+
+            double plainFit = FittedTo(Word("Quantity ordered"));
+            AssertEqual(testName, "a fitted column of plain text is as wide as its text, or this proves nothing", true, plainFit > 10, plainFit);
+            AssertEqual(testName, "and of rich text in one run, as wide as the same text plain", plainFit,
+                FittedTo(Rich(("Quantity ordered", false))), 0.001);
+            AssertEqual(testName, "a rich text of two lines is as wide as the wider one", plainFit,
+                FittedTo(Rich(("Qty\nQuantity ordered", false))), 0.001);
+            AssertEqual(testName, "and a run in bold counts in bold", true,
+                FittedTo(Rich(("Quantity ", true), ("ordered", false))) > plainFit + 0.5, 0);
+
             // --- what the designer's echo is held to ------------------------------------------
             // Where the grid falls, which headers are drawn and where each starts, for each way a
             // column can show and each way it can be given its width: the harness lays the same

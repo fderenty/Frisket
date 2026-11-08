@@ -508,7 +508,8 @@
         195,
         233
       ]
-    ]
+    ],
+    "texts": []
   },
   {
     "name": "two columns, filled in order",
@@ -1019,7 +1020,8 @@
         195,
         189
       ]
-    ]
+    ],
+    "texts": []
   },
   {
     "name": "three columns and a narrower gap",
@@ -1392,7 +1394,8 @@
         195,
         101
       ]
-    ]
+    ],
+    "texts": []
   },
   {
     "name": "blocks of three heights, balanced",
@@ -1788,7 +1791,8 @@
         195,
         142
       ]
-    ]
+    ],
+    "texts": []
   },
   {
     "name": "a group in one column between two blocks",
@@ -1993,7 +1997,8 @@
         195,
         140
       ]
-    ]
+    ],
+    "texts": []
   },
   {
     "name": "a group in two columns between two blocks",
@@ -2376,6 +2381,199 @@
         147,
         195,
         167
+      ]
+    ],
+    "texts": []
+  },
+  {
+    "name": "bounds in a flow",
+    "report": {
+      "Title": "Columns",
+      "RootFontSize": 3,
+      "DefaultFont": {},
+      "Fields": {},
+      "Language": "en-GB",
+      "Swatches": [],
+      "Sections": [
+        {
+          "Dimension": {
+            "Width": 210,
+            "Height": 297
+          },
+          "Layout": "Absolute",
+          "ColumnCount": 1,
+          "ColumnGap": 6,
+          "BalanceColumns": true,
+          "GroupItems": "Items",
+          "Childs": [
+            {
+              "$type": "Body",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 8,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ImageItem",
+                  "Source": {
+                    "Data": "",
+                    "MediaType": "image/png"
+                  },
+                  "NaturalWidth": 40,
+                  "NaturalHeight": 30,
+                  "Scaling": "Uniform",
+                  "AltText": "a picture",
+                  "Style": {
+                    "Constraints": {
+                      "MaxWidth": 50
+                    }
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [],
+                  "Style": {
+                    "Location": {
+                      "HeightValue": 10
+                    },
+                    "Margin": {
+                      "Bottom": 2
+                    },
+                    "Constraints": {
+                      "MaxWidth": 60
+                    },
+                    "AlignHorizontal": "Center"
+                  }
+                },
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ContainerItem",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [],
+                      "Style": {
+                        "Location": {
+                          "HeightValue": 10
+                        },
+                        "Margin": {
+                          "Bottom": 2
+                        }
+                      }
+                    },
+                    {
+                      "$type": "ContainerItem",
+                      "Layout": "Absolute",
+                      "ColumnCount": 1,
+                      "ColumnGap": 6,
+                      "BalanceColumns": true,
+                      "GroupItems": "Items",
+                      "Childs": [],
+                      "Style": {
+                        "Location": {
+                          "HeightValue": 10
+                        },
+                        "Margin": {
+                          "Bottom": 2
+                        }
+                      }
+                    }
+                  ],
+                  "Style": {
+                    "Constraints": {
+                      "MaxWidth": 80
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "A paragraph held to fifty millimetres. A paragraph held to fifty millimetres. A paragraph held to fifty millimetres. A paragraph held to fifty millimetres.",
+                  "Font": {},
+                  "Style": {
+                    "Constraints": {
+                      "MaxWidth": 50
+                    }
+                  }
+                },
+                {
+                  "$type": "TextItem",
+                  "Text": "A paragraph held to fifty millimetres. A paragraph held to fifty millimetres. A paragraph held to fifty millimetres. A paragraph held to fifty millimetres.",
+                  "Font": {},
+                  "Style": {
+                    "Constraints": {
+                      "MaxWidth": 50
+                    },
+                    "AlignHorizontal": "End"
+                  }
+                }
+              ],
+              "Style": {
+                "Location": {
+                  "Dock": "Fill"
+                }
+              }
+            }
+          ],
+          "Style": {
+            "Padding": {
+              "Left": 15,
+              "Top": 15,
+              "Right": 15,
+              "Bottom": 15
+            }
+          }
+        }
+      ]
+    },
+    "blocks": [
+      [
+        15,
+        15,
+        65,
+        52.5
+      ],
+      [
+        75,
+        52.5,
+        135,
+        62.5
+      ],
+      [
+        15,
+        64.5,
+        95,
+        74.5
+      ],
+      [
+        15,
+        76.5,
+        95,
+        86.5
+      ]
+    ],
+    "texts": [
+      [
+        15,
+        65
+      ],
+      [
+        145,
+        195
       ]
     ]
   }

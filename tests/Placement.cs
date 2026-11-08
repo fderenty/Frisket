@@ -197,6 +197,46 @@ namespace test
             Rect offset = Clamped(s => { s.Location.RightValue = 10; s.Location.WidthValue = 80; });
             AssertEqual(testName, "held by a right offset, the same", "150..200", $"{offset.Left:0.##}..{offset.Right:0.##}", 0);
 
+            // In a flow the bound holds the item before anything is measured against its width. It
+            // held only the frame: a paragraph was broken across the whole column and drawn 160 mm
+            // past it, a picture kept the height of the full width, a stacked group was not held.
+            PlacedItem Flowed(BaseItem item)
+            {
+                var report = new Report { Title = testName, Dimension = new() { Width = 210, Height = 297 }, Body = new() { Layout = LayoutMode.Stack } };
+                report.Body!.Add(item);
+                report.Reattach();
+                return report.Resolve().Pages[0].Items.First(p => ReferenceEquals(p.Source, item));
+            }
+
+            string words = string.Join(" ", Enumerable.Repeat("A paragraph held to fifty millimetres.", 6));
+            var held = new TextItem { Text = words };
+            held.Style.Constraints = new() { MaxWidth = 50 };
+            var narrow = new TextItem { Text = words };
+            narrow.Style.Location.WidthValue = 50;
+            PlacedItem heldText = Flowed(held), narrowText = Flowed(narrow);
+            AssertEqual(testName, "in a flow, a paragraph held to 50 mm breaks where one 50 mm wide does",
+                narrowText.Fragment ?? "", heldText.Fragment ?? "", 0);
+            AssertEqual(testName, "and is as tall", narrowText.Frame.Height, heldText.Frame.Height, 0.001);
+            AssertEqual(testName, "in a frame 50 mm wide", 50, heldText.Frame.Width, 0.001);
+
+            var picture = new ImageItem { NaturalWidth = 40, NaturalHeight = 30 };
+            picture.Style.Constraints = new() { MaxWidth = 50 };
+            AssertEqual(testName, "a picture held to 50 mm is as tall as its proportions at 50 mm", 37.5, Flowed(picture).Frame.Height, 0.001);
+
+            var centred = new ContainerItem();
+            centred.Style.Location.HeightValue = 10;
+            centred.Style.Constraints = new() { MaxWidth = 60 };
+            centred.Style.AlignHorizontal = ItemAlign.Center;
+            AssertEqual(testName, "and what the bound leaves is placed by the alignment", 75, Flowed(centred).Frame.Left, 0.001);
+
+            var group = new ContainerItem { Layout = LayoutMode.Stack };
+            group.Style.Constraints = new() { MaxWidth = 80 };
+            var inside = new ContainerItem();
+            inside.Style.Location.HeightValue = 10;
+            group.Add(inside);
+            Flowed(group);
+            AssertEqual(testName, "a stacked group held to 80 mm holds what it stacks", 80, inside.Style.RenderedFrame.Right, 0.001);
+
             Console.WriteLine();
         }
 

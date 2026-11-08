@@ -1814,9 +1814,21 @@ because reading them showed they could not differ from a fault:
 The fourth was found by a sabotage that stayed green: an item held by its right and as wide as
 nothing, which a bound never narrows, so either edge would do.
 
-Two faults were left as found. A fitted column measures no rich text, since `IntrinsicWidth`
-answers 0 for one; the content editor's tables are all rich text, but it offers no `Fit`. And a
-picture in a flow narrowed by a bound keeps the height measured at the full width.
+**Two faults were left as found and mended the next hour**, once the author asked whether they
+mattered. The answer was measured rather than argued, and one turned out wider than I had
+described it.
+
+- **A fitted column measured no rich text,** since `IntrinsicWidth` answered 0 for one. It
+  measures the widest line now, each run in its own font.
+- **A bound held an item in a flow only at `Place`, after everything had been measured against
+  the column.** I had written it down as a picture keeping the height of the full width. The
+  same flaw broke a paragraph held to 50 mm across the whole column, drawn 160 mm past its own
+  frame, and left a stacked group unheld. At coordinates it was right, because `ComputeFrame`
+  bounds the item, then aligns it, then breaks the text. `Flow` does the same now. The echo had
+  copied the engine's fault for text, and bounded the rest by another road.
+
+Six more sabotages, all caught. One case needed a second paragraph, aligned to the right, because
+the echo's flow aligns a text by a branch nothing else reaches.
 
 ## 5d. Look for the property before adding one
 

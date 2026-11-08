@@ -1847,9 +1847,9 @@ function columnVisibility(table, index) {
 
 /// The width an item wants when nothing holds it in - LayoutResolver.IntrinsicWidth: a width
 /// stated in millimetres, a text on one line, a picture at its natural size, a field's box, a
-/// group as wide as its widest child. A percentage is skipped, being a share of the very width
-/// being worked out; and what the engine does not measure - a rich text, a barcode, a rule, a
-/// page this page cannot read - wants nothing here either.
+/// group as wide as its widest child, a rich text its widest line. A percentage is skipped, being
+/// a share of the very width being worked out; and what the engine does not measure - a barcode,
+/// a rule, a page this page cannot read - wants nothing here either.
 function intrinsicWidth(item, report) {
   const loc = item.Style.Location;
   if (has(loc.WidthValue) && loc.WidthUnit !== "Percentage") return num(loc.WidthValue);
@@ -1858,6 +1858,8 @@ function intrinsicWidth(item, report) {
   if (item.$type === "TextItem")
     width = Math.max(0, ...String(tokens(item.Text, report, 1, 1, item)).split("\n")
                                   .map(line => textWidth(line, item.Font, report)));
+  else if (item.$type === "AdvancedTextItem")
+    width = Math.max(0, ...breakAdvancedRuns(item, Infinity, report).map(line => line.width));
   else if (item.$type === "ImageItem") width = has(item.NaturalWidth) ? num(item.NaturalWidth) : 0;
   else if (item.$type === "FieldItem") width = item.Kind === "Checkbox" ? lineHeight(item.Font, report) : 40;
   else if (item.Childs && item.$type !== "AdvancedTextItem") {
@@ -2324,8 +2326,22 @@ function flowColumn(container, area, placed, report, start, stopAtBottom) {
     const probe = child.$type === "TextItem"
       ? horizontalOf(child, column)
       : computeFrame(child, rect(column.left, top, column.right, area.bottom), report);
-    const left = Number.isFinite(probe.left) ? probe.left : column.left;
-    const right = Number.isFinite(probe.right) ? probe.right : column.right;
+    let left = Number.isFinite(probe.left) ? probe.left : column.left;
+    let right = Number.isFinite(probe.right) ? probe.right : column.right;
+
+    // A bound holds it before anything is measured against its width, then the alignment
+    // places what is left - LayoutResolver.Flow. computeFrame did both for everything but a
+    // text, so a paragraph held to 50 mm was broken across the whole column here as it was in
+    // the engine, which bounded only the frame.
+    ({ left, right } = constrained(child, dockOf(child.Style.Location), left, NaN, right, NaN));
+    const loc = child.Style.Location;
+    const align = child.Style.AlignHorizontal || "None";
+    if (align !== "None" && !statedWidth(loc, dockOf(loc)) && (dockOf(loc) & (DOCK.Left | DOCK.Right)) === 0
+        && !has(loc.LeftValue) && !has(loc.RightValue)) {
+      const width = right - left;
+      left = alignPlace(column.left, column.width, width, align);
+      right = left + width;
+    }
     const height = intrinsicHeight(child, right - left, report);
     const frame = rect(left, top, right, top + height);
 

@@ -1837,6 +1837,28 @@ if (faultyPath && findingsPath) {
   check('and every one lays its columns out as the engine does', agreed === cases.length, `${agreed} of ${cases.length}`);
 }
 
+// A fitted column of rich text is as wide as its widest line - the engine's IntrinsicWidth, held
+// by test 128. The echo measures text with a ruler of its own, so it is asked only to agree with
+// itself: rich in one run as wide as the same text plain, which it was not while it answered 0.
+{
+  const sheetWith = cell => ({
+    Title: 'Fit', Language: 'en-GB',
+    Sections: [{ $type: 'Section', Dimension: { Width: 210, Height: 297 },
+      Childs: [{ $type: 'Body', Layout: 'Stack', Childs: [{
+        $type: 'TableItem', Layout: 'Stack', Grid: { Color: { R: 0, G: 0, B: 0, A: 255 }, Width: 0.2, DashStyle: 'Solid' },
+        Columns: [{ Fit: true }, {}],
+        Childs: [{ $type: 'TableRow', Childs: [cell, { $type: 'TextItem', Text: '' }] }] }] }] }]
+  });
+  const fitted = cell => {
+    const row = sandbox.layout(sheetWith(cell)).placed.find(p => p.item.$type === 'TableRow' && p.gridEdges);
+    return row ? row.gridEdges[1] : NaN;
+  };
+  const plain = fitted({ $type: 'TextItem', Text: 'Quantity ordered' });
+  const rich = fitted({ $type: 'AdvancedTextItem', Runs: [{ Text: 'Quantity ordered' }] });
+  check('a fitted column of rich text is as wide as the same text plain', plain > 5 && Math.abs(plain - rich) < 0.001,
+        `${rich.toFixed(2)} against ${plain.toFixed(2)} mm`);
+}
+
 // --- a grid of pictures -------------------------------------------------------------
 // Test 48 writes where the engine put each picture of a grid - columns, gap, the grid's
 // padding, a picture's margin, one gone. The echo's grid() was written from the engine's
@@ -1877,7 +1899,8 @@ if (faultyPath && findingsPath) {
 {
   const cases = JSON.parse(readText(path.join(REPO, 'tests', 'output', 'columns', 'blocks.json')));
   const blocksOf = item => (item.Childs && item.Childs.length) ? item.Childs.flatMap(blocksOf)
-                         : item.$type === 'ContainerItem' ? [item] : [];
+                         : item.$type === 'ContainerItem' || item.$type === 'ImageItem' ? [item] : [];
+  const textsOf = item => item.Childs ? item.Childs.flatMap(textsOf) : item.$type === 'TextItem' ? [item] : [];
   let agreed = 0;
   for (const c of cases) {
     const report = JSON.parse(JSON.stringify(c.report));
@@ -1895,6 +1918,15 @@ if (faultyPath && findingsPath) {
       if (!frame) fault = `block ${i + 1} not drawn here`;
       else if (frame.some((v, k) => Math.abs(v - theirs[k]) > 0.001))
         fault = `block ${i + 1}: ${frame.map(v => v.toFixed(2)).join(' ')} here, ${theirs.join(' ')} in the engine`;
+    });
+    // A text only across: its height is its font's, which this echo does not have.
+    textsOf(body).forEach((text, i) => {
+      if (fault) return;
+      const at = out.placed.find(p => p.item === text);
+      const theirs = (c.texts || [])[i];
+      if (!at || !theirs) fault = `text ${i + 1}: ${at ? 'drawn' : 'not drawn'} here, ${theirs ? 'drawn' : 'not drawn'} in the engine`;
+      else if (Math.abs(at.frame.left - theirs[0]) > 0.001 || Math.abs(at.frame.right - theirs[1]) > 0.001)
+        fault = `text ${i + 1} across ${at.frame.left.toFixed(2)}..${at.frame.right.toFixed(2)} here, ${theirs[0]}..${theirs[1]} in the engine`;
     });
     if (fault) check(`${c.name}: the same blocks`, false, fault);
     else agreed += 1;

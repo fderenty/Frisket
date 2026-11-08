@@ -1058,9 +1058,14 @@ namespace test
                 block.Style.Margin.Bottom = 2;
                 return block;
             }
+            // What has a size of its own - a block, a picture - is compared on all four edges; a text
+            // only across, its height being its font's.
             static IEnumerable<BaseItem> Blocks(BaseItem item)
                 => item is ContainerItem { Childs.Count: > 0 } holder ? holder.Childs.SelectMany(Blocks)
-                 : item is ContainerItem ? new[] { item } : Array.Empty<BaseItem>();
+                 : item is ContainerItem or ImageItem ? new[] { item } : Array.Empty<BaseItem>();
+            static IEnumerable<BaseItem> Texts(BaseItem item)
+                => item is ContainerItem holder ? holder.Childs.SelectMany(Texts)
+                 : item is TextItem ? new[] { item } : Array.Empty<BaseItem>();
             void FlowCase(string name, Action<ContainerItem> fill, Action<Report>? sheet = null)
             {
                 var report = new Report
@@ -1081,11 +1086,15 @@ namespace test
                 var frames = Blocks(report.Body!).Select(block => placed.First(p => ReferenceEquals(p.Source, block)).Frame)
                     .Select(f => (System.Text.Json.Nodes.JsonNode?)new System.Text.Json.Nodes.JsonArray(
                         Math.Round(f.Left, 4), Math.Round(f.Top, 4), Math.Round(f.Right, 4), Math.Round(f.Bottom, 4)));
+                var across = Texts(report.Body!).Select(text => placed.First(p => ReferenceEquals(p.Source, text)).Frame)
+                    .Select(f => (System.Text.Json.Nodes.JsonNode?)new System.Text.Json.Nodes.JsonArray(
+                        Math.Round(f.Left, 4), Math.Round(f.Right, 4)));
                 flowCases.Add(new System.Text.Json.Nodes.JsonObject
                 {
                     ["name"] = name,
                     ["report"] = System.Text.Json.Nodes.JsonNode.Parse(written),
                     ["blocks"] = new System.Text.Json.Nodes.JsonArray(frames.ToArray()),
+                    ["texts"] = new System.Text.Json.Nodes.JsonArray(across.ToArray()),
                 });
             }
 
@@ -1123,6 +1132,36 @@ namespace test
                 for (int i = 0; i < 12; i++) group.Add(Block(15));
                 body.Add(group);
                 body.Add(Block(20));
+            });
+
+            // A bound holds an item in a flow before it is measured, and the alignment places what
+            // is left. The paragraph goes last: its height is its font's, and the echo has none.
+            FlowCase("bounds in a flow", body =>
+            {
+                var picture = new ImageItem { NaturalWidth = 40, NaturalHeight = 30, AltText = "a picture" };
+                picture.Style.Constraints = new() { MaxWidth = 50 };
+                body.Add(picture);
+
+                ContainerItem centred = Block(10);
+                centred.Style.Constraints = new() { MaxWidth = 60 };
+                centred.Style.AlignHorizontal = ItemAlign.Center;
+                body.Add(centred);
+
+                var group = new ContainerItem { Layout = LayoutMode.Stack };
+                group.Style.Constraints = new() { MaxWidth = 80 };
+                group.Add(Block(10));
+                group.Add(Block(10));
+                body.Add(group);
+
+                var paragraph = new TextItem { Text = string.Join(" ", Enumerable.Repeat("A paragraph held to fifty millimetres.", 4)) };
+                paragraph.Style.Constraints = new() { MaxWidth = 50 };
+                body.Add(paragraph);
+
+                // A text has no computeFrame in the echo's flow to align it, so it is asked apart.
+                var aligned = new TextItem { Text = paragraph.Text };
+                aligned.Style.Constraints = new() { MaxWidth = 50 };
+                aligned.Style.AlignHorizontal = ItemAlign.End;
+                body.Add(aligned);
             });
 
             File.WriteAllText(Path.Combine(OutputDirectory("columns"), "blocks.json"),

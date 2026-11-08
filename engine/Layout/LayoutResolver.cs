@@ -703,6 +703,16 @@ namespace Frisket
             if (double.IsNaN(right))
                 right = column.Right;
 
+            // A bound holds the item before anything is measured against its width, then the
+            // alignment places what is left - the order ComputeFrame has always kept. The flow
+            // bounded only the frame, at Place: a paragraph held to 50 mm was broken at the
+            // column's width and drawn 160 mm past its own frame, a picture kept the height of
+            // the full width under a frame a quarter as wide, and a stacked group was not held
+            // at all. Measured on 8 November 2026, asked whether a defect left as found mattered.
+            double noTop = double.NaN, noBottom = double.NaN;
+            ApplyConstraints(item, ref left, ref noTop, ref right, ref noBottom);
+            AlignInside(item, column, ref left, ref right, ref noTop, ref noBottom, item.Style.Location);
+
             double available = area.Bottom - itemTop;
 
             // An explicit height wins over any intrinsic measurement.
@@ -1641,6 +1651,16 @@ namespace Frisket
                 {
                     TextStyle font = ResolveFont(text.Font, double.NaN);
                     width = _measurer.Measure(TextOf(text, page), font, double.PositiveInfinity).Width;
+                    break;
+                }
+
+                // Its widest line, each run in its own font. It answered nothing, so a fitted
+                // column of rich text - the only text the content editor writes - closed to its
+                // padding and broke every word onto a line of its own.
+                case AdvancedTextItem rich:
+                {
+                    List<AdvancedLine> lines = BreakAdvancedText(rich, double.PositiveInfinity, page);
+                    width = lines.Count == 0 ? 0 : lines.Max(line => line.Width);
                     break;
                 }
 
