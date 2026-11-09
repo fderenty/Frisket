@@ -142,6 +142,48 @@ namespace test
             };
             report.Body!.Add(badBitmap);
 
+            // A table given a role a table cannot have: its rows were written with no table over
+            // them, which PDF/UA refuses, and nothing said so (9 November 2026). Mended by setting
+            // it aside, which is what the host that found it meant - and which silences its
+            // missing header row as well, a backdrop having nothing to announce.
+            // Its header row is set aside as well, so while it is read it has no header to
+            // announce: a row set aside is no header.
+            var backdrop = new TableItem { Role = PdfRole.Paragraph };
+            backdrop.AddColumn(40);
+            backdrop.AddHeaderRow(new TextItem { Text = "behind" }).Role = PdfRole.Artifact;
+            backdrop.AddRow(new TextItem { Text = "beneath" });
+            report.Body!.Add(backdrop);
+
+            // A control in a cell, and one in a group set aside: both are written as widgets, so
+            // both owe a name. Asked of the role alone, neither was asked. The picture beside the
+            // second is set aside with the group, and owes no description - two levels down, so
+            // that what is set aside has to be carried and not only read off the parent.
+            var answers = new TableItem();
+            answers.AddColumn(40);
+            answers.AddHeaderRow(new TextItem { Text = "Answer" });
+            var answer = new FieldItem { Name = "answer", Kind = FieldKind.Text };
+            answers.AddRow(answer);
+            report.Body!.Add(answers);
+
+            var decor = new ContainerItem { Layout = LayoutMode.Stack, Role = PdfRole.Artifact };
+            var decorInside = new ContainerItem { Layout = LayoutMode.Stack };
+            var behind = new ImageItem { SourceField = "Backdrop" };
+            decorInside.Add(behind);
+            var stamp = new FieldItem { Name = "stamp", Kind = FieldKind.Text };
+            decorInside.Add(stamp);
+            decor.Add(decorInside);
+            report.Body!.Add(decor);
+
+            // The other ways a table's roles and its shape disagree, one of each: a row read as a
+            // paragraph, a cell standing outside any row, and a group read as a table.
+            TableRow proseRow = answers.AddRow(new TextItem { Text = "aside" });
+            proseRow.Role = PdfRole.Paragraph;
+            var looseCell = new TextItem { Text = "loose", Role = PdfRole.TableCell };
+            report.Body!.Add(looseCell);
+            var notATable = new ContainerItem { Layout = LayoutMode.Stack, Role = PdfRole.Table };
+            notATable.Add(new TextItem { Text = "not rows" });
+            report.Body!.Add(notATable);
+
             // A second section with no page size, which nothing supplies: laid out on a sheet
             // of nothing. A person met it only by writing a template by hand; a model writing
             // one from the schema meets it the first time it leaves the property out.
@@ -196,6 +238,20 @@ namespace test
                 issues.Any(i => i.Rule == "sound.headingNumberOutsideHeading" && ReferenceEquals(i.Item, looseRich)), 0);
             AssertEqual(testName, "a role naming a control on something that is not one",
                 true, Has("ua.formRole"), 0);
+            AssertEqual(testName, "a table given a role that is not a table's", true,
+                issues.Any(i => i.Rule == "ua.tableRole" && ReferenceEquals(i.Item, backdrop)), 0);
+            AssertEqual(testName, "and with its header row set aside, no header", true,
+                issues.Any(i => i.Rule == "ua.tableHeader" && ReferenceEquals(i.Item, backdrop)), 0);
+            AssertEqual(testName, "a row, a loose cell and a group given a table's roles wrongly", 3,
+                issues.Count(i => i.Rule == "ua.tableRole"
+                               && (ReferenceEquals(i.Item, proseRow) || ReferenceEquals(i.Item, looseCell)
+                                   || ReferenceEquals(i.Item, notATable))), 0);
+            AssertEqual(testName, "a control in a cell is asked its name", true,
+                issues.Any(i => i.Rule == "ua.fieldName" && ReferenceEquals(i.Item, answer)), 0);
+            AssertEqual(testName, "and a control set aside", true,
+                issues.Any(i => i.Rule == "ua.fieldName" && ReferenceEquals(i.Item, stamp)), 0);
+            AssertEqual(testName, "a picture set aside owes no description", false,
+                issues.Any(i => ReferenceEquals(i.Item, behind)), 0);
             AssertEqual(testName, "a section with no page size", true,
                 issues.Any(i => i.Rule == "sound.noPageSize" && ReferenceEquals(i.Item, sizeless)), 0);
 
@@ -358,6 +414,30 @@ namespace test
             // section 8f for why it has to fall silent at all.
             notAControl.Role = PdfRole.Auto;
 
+            backdrop.Role = PdfRole.Artifact;
+            answer.Tooltip = "Your answer";
+            stamp.Tooltip = "Office stamp";
+            proseRow.Role = PdfRole.Auto;
+            looseCell.Role = PdfRole.Auto;
+            notATable.Role = PdfRole.Auto;
+
+            // Added mended: a table in a cell, which is a table and not the cell it stands in,
+            // and a signature given by hand with no tooltip, which writes no widget to name.
+            var holder = new TableItem();
+            holder.AddColumn(80);
+            holder.AddHeaderRow(new TextItem { Text = "Detail" });
+            var parts = new TableItem();
+            parts.AddColumn(30);
+            parts.AddHeaderRow(new TextItem { Text = "Part" });
+            parts.AddRow(new TextItem { Text = "Bolt" });
+            holder.AddRow(parts);
+            report.Body!.Add(holder);
+            report.Body!.Add(new FieldItem
+            {
+                Name = "witness", Kind = FieldKind.Signature, Signing = Signing.ByHand,
+                AltText = "Where the witness signs"
+            });
+
             var inARow = new ContainerItem { Layout = LayoutMode.Absolute };
             var rowLeft = new TextItem { Text = "left column" };
             rowLeft.Style.Location.LeftValue = 0;
@@ -436,6 +516,14 @@ namespace test
                         $$"""{"rule":"{{i.Rule}}","level":"{{i.Level.ToString().ToLowerInvariant()}}"}"""))
                     + "]}"))
                 + "]");
+
+            // Flattened and tagged, a field becomes a figure only where the backend makes one: in
+            // a cell it is that cell, and set aside it is decoration.
+            AssertEqual(testName, "a field in a cell or set aside is no figure once flattened", false,
+                asked[1].Found.Any(i => i.Rule == "can.flattenedFieldAltText"
+                                     && (ReferenceEquals(i.Item, answer) || ReferenceEquals(i.Item, stamp))), 0);
+            AssertEqual(testName, "while a field standing on its own is", true,
+                asked[1].Found.Any(i => i.Rule == "can.flattenedFieldAltText"), 0);
 
             // And the section that veraPDF passes must pass here too, or the two
             // disagree about what conformance means.

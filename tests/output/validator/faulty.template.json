@@ -279,6 +279,212 @@
               "Scaling": "Uniform",
               "AltText": "A bitmap",
               "Style": {}
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 40
+                }
+              ],
+              "RepeatHeader": true,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "behind",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Role": "Artifact",
+                  "Style": {}
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "beneath",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Role": "Paragraph",
+              "Style": {}
+            },
+            {
+              "$type": "TableItem",
+              "Columns": [
+                {
+                  "Width": 40
+                }
+              ],
+              "RepeatHeader": true,
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TableRow",
+                  "IsHeader": true,
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "Answer",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "FieldItem",
+                      "Name": "answer",
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                },
+                {
+                  "$type": "TableRow",
+                  "Layout": "Absolute",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "TextItem",
+                      "Text": "aside",
+                      "Font": {},
+                      "Style": {}
+                    }
+                  ],
+                  "Role": "Paragraph",
+                  "Style": {}
+                }
+              ],
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "ContainerItem",
+                  "Layout": "Stack",
+                  "ColumnCount": 1,
+                  "ColumnGap": 6,
+                  "BalanceColumns": true,
+                  "GroupItems": "Items",
+                  "Childs": [
+                    {
+                      "$type": "ImageItem",
+                      "Source": {
+                        "Data": "",
+                        "MediaType": "image/png"
+                      },
+                      "Scaling": "Uniform",
+                      "SourceField": "Backdrop",
+                      "Style": {}
+                    },
+                    {
+                      "$type": "FieldItem",
+                      "Name": "stamp",
+                      "Font": {},
+                      "Outline": {
+                        "Color": {
+                          "R": 90,
+                          "G": 90,
+                          "B": 90,
+                          "A": 255
+                        },
+                        "Width": 0.2
+                      },
+                      "Style": {}
+                    }
+                  ],
+                  "Style": {}
+                }
+              ],
+              "Role": "Artifact",
+              "Style": {}
+            },
+            {
+              "$type": "TextItem",
+              "Text": "loose",
+              "Font": {},
+              "Role": "TableCell",
+              "Style": {}
+            },
+            {
+              "$type": "ContainerItem",
+              "Layout": "Stack",
+              "ColumnCount": 1,
+              "ColumnGap": 6,
+              "BalanceColumns": true,
+              "GroupItems": "Items",
+              "Childs": [
+                {
+                  "$type": "TextItem",
+                  "Text": "not rows",
+                  "Font": {},
+                  "Style": {}
+                }
+              ],
+              "Role": "Table",
+              "Style": {}
             }
           ],
           "Style": {

@@ -88,9 +88,7 @@ namespace Frisket.Cli
 
                 Report report = file.Length == 0
                     ? loaded
-                    : ReportBinder.Bind(LoadTemplate(template),
-                                        File.ReadAllText(file),
-                                        new BindingOptions { Numbers = Numbers(options) });
+                    : ReportBinder.Bind(LoadTemplate(template), File.ReadAllText(file), Binding(options));
 
                 foreach (string what in options.Formats)
                     Write(what, report, library, options, fallback);
@@ -154,8 +152,7 @@ namespace Frisket.Cli
                 JsonObject one = root.DeepClone().AsObject();
                 Replace(one, path, new JsonArray(record.DeepClone()));
 
-                Report report = ReportBinder.Bind(LoadTemplate(template), one.ToJsonString(),
-                                                  new BindingOptions { Numbers = Numbers(options) });
+                Report report = ReportBinder.Bind(LoadTemplate(template), one.ToJsonString(), Binding(options));
 
                 string name = Unique(pattern is null
                     ? $"{fallback}-{i + 1}"
@@ -386,7 +383,7 @@ namespace Frisket.Cli
             List<string> data = options.DataFiles();
             foreach (string file in data)
             {
-                foreach (TemplateIssue issue in TemplateData.Check(report, File.ReadAllText(file), target))
+                foreach (TemplateIssue issue in TemplateData.Check(report, File.ReadAllText(file), target, Binding(options)))
                     issues.Add(data.Count > 1 ? issue with { Where = Path.GetFileName(file) + " \u203A " + issue.Where } : issue);
             }
 
@@ -568,6 +565,10 @@ namespace Frisket.Cli
             return data => Zopfli.Compress(data, ZopfliFormat.Zlib, settings);
         }
 
+        /// <summary>How a template is filled, one answer for every place this binds or checks data.</summary>
+        private static BindingOptions Binding(Options options)
+            => new() { Numbers = Numbers(options), MissingField = options.Missing };
+
         private static System.Globalization.NumberFormatInfo Numbers(Options options)
             => options.Numbers switch
             {
@@ -591,7 +592,8 @@ namespace Frisket.Cli
             frisket - applies a template to data and writes the document
 
               frisket render -t <template.json> [options]
-              frisket check  -t <template.json> [--accessible] [--tagged] [--flat] [--fields <catalogue.json>] [--json]
+              frisket check  -t <template.json> [--accessible] [--tagged] [--flat] [--fields <catalogue.json>]
+                             [-d <data.json>] [--missing <show|blank|fail>] [--json]
               frisket fonts  [--fonts <dir>]
 
             Choosing what goes in
@@ -678,6 +680,12 @@ namespace Frisket.Cli
             Data
 
                   --numbers <french|invariant>  how numbers are written. Default: invariant
+                  --missing <show|blank|fail>   what a token the data has no answer for becomes:
+                                                left showing, so a typo shows; nothing, for data
+                                                that leaves out what a record does not have; or
+                                                a refusal naming the field. Read by `check -d`
+                                                too, where fail says which field is missing.
+                                                Default: show
 
             Examples
 

@@ -31,6 +31,16 @@ namespace test
             /// <summary>The tags directly under the document.</summary>
             public List<string> AtTheTop { get; } = new();
 
+            /// <summary>
+            /// What each element with words is said under, as "Table/TR/TD/H2: words": the tags
+            /// from the document down to it, the document left out. The order of the tags alone
+            /// cannot tell a TR under a Table from a TR beside one.
+            /// </summary>
+            public List<string> Lineage { get; } = new();
+
+            /// <summary>The elements each row holds, as "TD TD", in the order the rows come.</summary>
+            public List<string> Rows { get; } = new();
+
             /// <summary>Where the two halves of the tree, or the tree and the page, do not reach each other.</summary>
             public List<string> Faults { get; } = new();
         }
@@ -130,13 +140,14 @@ namespace test
             var owners = new Dictionary<(int Page, int Mark), int>();
             var holdingElements = new HashSet<int>();
 
-            void Walk(PdfReference reference, int depth)
+            void Walk(PdfReference reference, int depth, string above)
             {
                 var element = (PdfDictionary)file.Get(reference.Number)!;
                 string tag = ((PdfName)file.Resolve(element["S"])!).Value;
                 reading.Tags.Add(tag);
                 if (depth == 1)
                     reading.AtTheTop.Add(tag);
+                string path = depth == 0 ? "" : above.Length == 0 ? tag : above + "/" + tag;
 
                 int page = (element["Pg"] as PdfReference)?.Number ?? 0;
                 var own = new List<int>();
@@ -153,6 +164,10 @@ namespace test
                 if (kids.Count > 0)
                     holdingElements.Add(reference.Number);
 
+                if (tag == "TR")
+                    reading.Rows.Add(string.Join(" ", kids.Select(kid =>
+                        ((PdfName)file.Resolve(((PdfDictionary)file.Get(kid.Number)!)["S"])!).Value)));
+
                 foreach (int mark in own)
                 {
                     if (!marks.ContainsKey((page, mark)))
@@ -166,14 +181,15 @@ namespace test
                 {
                     string? language = element["Lang"] is PdfString lang ? Encoding.Latin1.GetString(lang.Bytes) : null;
                     reading.Heard.Add(new Heard(tag, words, language));
+                    reading.Lineage.Add($"{path}: {words}");
                 }
 
                 foreach (PdfReference child in kids)
-                    Walk(child, depth + 1);
+                    Walk(child, depth + 1, path);
             }
 
             PdfDictionary root = Dictionary(catalogue["StructTreeRoot"]);
-            Walk((PdfReference)root["K"]!, 0);
+            Walk((PdfReference)root["K"]!, 0, "");
 
             foreach (((int page, int mark), string said) in marks)
             {
@@ -634,6 +650,263 @@ namespace test
 
             Console.WriteLine($"    {output.Trim()}");
             AssertEqual(testName, $"the document is valid {flavour}", true, output.Contains("PASS", StringComparison.Ordinal), 0);
+        }
+
+        /// <summary>
+        /// Every shape a role takes around a table that the engine writes correctly: decoration
+        /// covering what it holds, and a cell that is something more than a cell keeping its
+        /// place in the row. Each word says which shape it stands in.
+        /// </summary>
+        private static Report AroundATable()
+        {
+            static TextItem Plain(string text, PdfRole role = PdfRole.Auto) => new() { Text = text, Role = role };
+            static AdvancedTextItem Rich(PdfRole role, params string[] runs)
+            {
+                var item = new AdvancedTextItem { Role = role };
+                foreach (string run in runs)
+                    item.Runs.Add(new TextRun { Text = run });
+                return item;
+            }
+
+            var report = new Report
+            {
+                Title = "Around a table",
+                Language = "en-GB",
+                GeneratedAt = SampleDate,
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack },
+            };
+            report.Body!.Add(Plain("Before", PdfRole.Heading1));
+
+            // A grid drawn as a backdrop, as the host that found this wrote it.
+            var backdrop = new TableItem { Role = PdfRole.Artifact, Grid = new PenStyle { Width = 0.2 } };
+            backdrop.AddColumn(40).AddColumn(40);
+            backdrop.AddHeaderRow(Plain("BackHead1"), Plain("BackHead2"));
+            backdrop.AddRow(Plain("BackA"), Plain("BackB"));
+            report.Body!.Add(backdrop);
+
+            // A group set aside, holding a table, and a control - which is read all the same.
+            var group = new ContainerItem { Layout = LayoutMode.Stack, Role = PdfRole.Artifact };
+            group.Add(Plain("GroupWords"));
+            var inGroup = new TableItem();
+            inGroup.AddColumn(30);
+            inGroup.AddRow(Plain("GroupCell"));
+            group.Add(inGroup);
+            group.Add(new FieldItem { Name = "initials", Kind = FieldKind.Text, Tooltip = "Initials" });
+            report.Body!.Add(group);
+
+            var table = new TableItem { Grid = new PenStyle { Width = 0.2 } };
+            table.AddColumn(60).AddColumn(60);
+            table.AddHeaderRow(Plain("Head1"), Plain("Head2"));
+            table.AddRow(Plain("Plain1"), Plain("CellHeading", PdfRole.Heading2));
+            table.AddRow(Plain("CellDecor", PdfRole.Artifact), Plain("Plain2"));
+            table.AddRow(Plain("RowDecor1"), Plain("RowDecor2")).Role = PdfRole.Artifact;
+
+            var nested = new TableItem();
+            nested.AddColumn(25).AddColumn(25);
+            nested.AddHeaderRow(Plain("NestedHead1"), Plain("NestedHead2"));
+            nested.AddRow(Plain("NestedX"), Plain("NestedY"));
+            table.AddRow(nested, Rich(PdfRole.Artifact, "Rich", "Decor"));
+
+            var held = new ContainerItem { Layout = LayoutMode.Stack, Role = PdfRole.Section };
+            held.Add(Plain("InGroup1"));
+            held.Add(Plain("InGroup2"));
+            table.AddRow(held, Rich(PdfRole.Paragraph, "RichPara ", "Two"));
+            report.Body!.Add(table);
+
+            report.Body!.Add(Plain("After"));
+            report.Reattach();
+            return report;
+        }
+
+        /// <summary>
+        /// A role on a table, on what is in one or around one, makes a tree a reader can follow.
+        ///
+        /// Reported on 9 November 2026 by a host whose backdrop grid was a table marked Artifact:
+        /// its rows came out as rows under the section with no table over them, refused by PDF/UA
+        /// 7.2, and `frisket check --tagged` said nothing. Decoration had covered the frame of the
+        /// item marked and nothing in it. Asking who else had it found a cell given any role of its
+        /// own - a heading, decoration, a nested table - leaving its row a cell short or its rows
+        /// under a TD, all refused, and a group set aside having every word in it read. What has no
+        /// right reading - a table given another role, a row given one - the validator now names.
+        /// </summary>
+        [Fact]
+        public void Test130_ARoleAroundATableMakesATreeAReaderCanFollow()
+        {
+            const string testName = "Test 130";
+            Console.WriteLine("Test 130: roles on a table, in one and around one");
+            Console.WriteLine();
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            Report report = AroundATable();
+            var pdf = new PdfBackend(library) { Tagged = true, Conformance = PdfConformance.PdfA3b, Language = "en-GB" };
+            ReportRenderer.Render(report, pdf);
+            Reading reading = ReadAloud(pdf.ToArray());
+
+            foreach (string said in reading.Lineage)
+                Console.WriteLine($"    {said}");
+            Console.WriteLine($"    rows: {string.Join(" | ", reading.Rows)}");
+            Console.WriteLine($"    skipped: {string.Join(" | ", reading.Skipped)}");
+
+            AssertEqual(testName, "the two halves of the tree and the page reach each other", "",
+                string.Join(" | ", reading.Faults), 0);
+
+            // --- decoration covers what it holds ----------------------------------------------
+            string heard = string.Join(" ", reading.Heard.Select(h => h.Words));
+            string skipped = string.Join(" ", reading.Skipped);
+            foreach (string decor in new[] { "BackHead1", "BackA", "GroupWords", "GroupCell", "CellDecor", "RowDecor1", "Rich Decor" })
+            {
+                AssertEqual(testName, $"\"{decor}\" is not read", false, heard.Contains(decor, StringComparison.Ordinal), 0);
+                AssertEqual(testName, $"and is drawn as decoration", true, skipped.Contains(decor, StringComparison.Ordinal), 0);
+            }
+
+            AssertEqual(testName, "only the two tables that are read are tables", 2, reading.Tags.Count(tag => tag == "Table"), 0);
+            AssertEqual(testName, "a control set aside is read all the same", 1, reading.Tags.Count(tag => tag == "Form"), 0);
+
+            // --- a cell keeps its place, and what it is goes under it -------------------------
+            // The rows in the order the tree gives them: the nested table's two come inside the
+            // fourth row of the outer one, and the row set aside is no row at all.
+            AssertEqual(testName, "every row of the read tables holds a cell for each column",
+                "TH TH | TD TD | TD TD | TD TD | TH TH | TD TD | TD TD",
+                string.Join(" | ", reading.Rows), 0);
+
+            bool Said(string lineage) => reading.Lineage.Any(said => said.EndsWith(lineage, StringComparison.Ordinal));
+            AssertEqual(testName, "a heading in a cell is a heading in the cell", true, Said("/Table/TR/TD/H2: CellHeading"), 0);
+            AssertEqual(testName, "a nested table's rows are under its table, in the cell", true,
+                Said("/Table/TR/TD/Table/TR/TD: NestedX"), 0);
+            AssertEqual(testName, "what a group in a cell holds is under the group", true,
+                Said("/Table/TR/TD/Sect/P: InGroup1"), 0);
+            AssertEqual(testName, "and a rich cell's pieces join what it is", true, Said("/Table/TR/TD/P: RichPara Two"), 0);
+            AssertEqual(testName, "the text after the tables comes after them", "P: After",
+                $"{reading.Heard[^1].Tag}: {reading.Heard[^1].Words}", 0);
+
+            // --- and the validator accuses none of it -------------------------------------------
+            IReadOnlyList<TemplateIssue> found = TemplateValidator.Check(report, TemplateProfile.All, new RenderTarget());
+            foreach (TemplateIssue issue in found)
+                Console.WriteLine($"    check: {issue.Rule} {issue.Where}");
+            AssertEqual(testName, "the validator finds nothing wrong with shapes written right", "",
+                string.Join(", ", found.Select(i => i.Rule)), 0);
+
+            // Flattened, the control set aside is decoration with the rest and owes no description;
+            // what it loses is its filling in, and that is said.
+            AssertEqual(testName, "flattened, only the filling in is lost", "can.flattenedFields",
+                string.Join(", ", TemplateValidator.Check(report, TemplateProfile.All,
+                    new RenderTarget(Tagged: true, Interactive: false, Paged: true)).Select(i => i.Rule)), 0);
+
+            // --- what has no right reading, the validator names --------------------------------
+            static (Report Report, BaseItem Item) Shape(Func<TableItem, BaseItem> spoil)
+            {
+                var report = new Report
+                {
+                    Title = "t", Language = "en-GB",
+                    Dimension = new() { Width = 210, Height = 297 },
+                    Body = new() { Layout = LayoutMode.Stack },
+                };
+                var table = new TableItem();
+                table.AddColumn(40);
+                table.AddHeaderRow(new TextItem { Text = "Head" });
+                table.AddRow(new TextItem { Text = "Cell" });
+                report.Body!.Add(table);
+                BaseItem item = spoil(table);
+                if (item.Parent == null)
+                    report.Body!.Add(item);
+                report.Reattach();
+                return (report, item);
+            }
+
+            var refused = new (string Name, Func<TableItem, BaseItem> Spoil)[]
+            {
+                ("a table read as a paragraph", t => { t.Role = PdfRole.Paragraph; return t; }),
+                ("a table read as a figure", t => { t.Role = PdfRole.Figure; t.AltText = "A grid"; return t; }),
+                ("a row read as a paragraph", t => { BaseItem row = t.Childs[^1]; row.Role = PdfRole.Paragraph; return row; }),
+                ("a cell outside a row", _ => new TextItem { Text = "Loose", Role = PdfRole.TableCell }),
+                ("a group read as a table", _ => new ContainerItem { Layout = LayoutMode.Stack, Role = PdfRole.Table }),
+                ("a cell read as a row", t => { BaseItem cell = ((TableRow)t.Childs[^1]).Childs[0]; cell.Role = PdfRole.TableRow; return cell; }),
+            };
+
+            foreach ((string name, Func<TableItem, BaseItem> spoil) in refused)
+            {
+                (Report shape, BaseItem item) = Shape(spoil);
+                AssertEqual(testName, $"{name} is named", true, TemplateValidator.Check(shape)
+                    .Any(i => i.Rule == "ua.tableRole" && ReferenceEquals(i.Item, item)), 0);
+            }
+
+            var allowed = new (string Name, Func<TableItem, BaseItem> Spoil)[]
+            {
+                ("a table set aside", t => { t.Role = PdfRole.Artifact; return t; }),
+                ("a row set aside", t => { BaseItem row = t.Childs[^1]; row.Role = PdfRole.Artifact; return row; }),
+                ("a cell heading its row", t => { BaseItem cell = ((TableRow)t.Childs[^1]).Childs[0]; cell.Role = PdfRole.TableHeader; return cell; }),
+                ("a cell holding a heading", t => { BaseItem cell = ((TableRow)t.Childs[^1]).Childs[0]; cell.Role = PdfRole.Heading2; return cell; }),
+                ("a table given its own role", t => { t.Role = PdfRole.Table; return t; }),
+            };
+
+            foreach ((string name, Func<TableItem, BaseItem> spoil) in allowed)
+            {
+                (Report shape, _) = Shape(spoil);
+                AssertEqual(testName, $"{name} is not", "", string.Join(", ", TemplateValidator.Check(shape).Select(i => i.Rule)), 0);
+            }
+
+            // A header row set aside announces nothing, so the table is read with no header.
+            (Report headless, BaseItem table) = Shape(t => { t.Childs[0].Role = PdfRole.Artifact; return t; });
+            AssertEqual(testName, "a header row set aside is no header", true, TemplateValidator.Check(headless)
+                .Any(i => i.Rule == "ua.tableHeader" && ReferenceEquals(i.Item, table)), 0);
+
+            Console.WriteLine();
+        }
+
+        /// <summary>The same shapes, shown to the validator on both profiles.</summary>
+        [SkippableTheory]
+        [InlineData("ua1")]
+        [InlineData("3b")]
+        public void Test131_ARoleAroundATableIsValid(string flavour)
+        {
+            string testName = $"Test 131: veraPDF {flavour}, roles around a table";
+            Console.WriteLine($"Running {testName}...");
+
+            string? verapdf = FindVeraPdf();
+            Skip.If(verapdf == null, "veraPDF was not found. Set FRISKET_VERAPDF to its launcher, or put it on PATH.");
+
+            var library = new FontLibrary();
+            library.RegisterDirectory(FontDirectory());
+            library.DefaultFamily = DmsFont;
+
+            // Both outputs: interactive, the control set aside is a Form at the root; flattened,
+            // it is decoration with the rest.
+            foreach (bool interactive in new[] { true, false })
+            {
+                var pdf = new PdfBackend(library)
+                {
+                    Tagged = true, Interactive = interactive, Conformance = PdfConformance.PdfA3b, Language = "en-GB"
+                };
+                ReportRenderer.Render(AroundATable(), pdf);
+
+                string path = Path.Combine(Path.GetTempPath(), $"frisket-roles-{Guid.NewGuid():N}.pdf");
+                File.WriteAllBytes(path, pdf.ToArray());
+
+                var process = new System.Diagnostics.Process
+                {
+                    StartInfo = new System.Diagnostics.ProcessStartInfo(verapdf!)
+                    {
+                        Arguments = $"--format text --flavour {flavour} \"{path}\"",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                    }
+                };
+                process.Start();
+                process.ErrorDataReceived += (_, _) => { };
+                process.BeginErrorReadLine();
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit(180_000);
+                File.Delete(path);
+
+                string mode = interactive ? "interactive" : "flattened";
+                Console.WriteLine($"    {mode}: {output.Trim()}");
+                AssertEqual(testName, $"the {mode} document is valid {flavour}", true, output.Contains("PASS", StringComparison.Ordinal), 0);
+            }
         }
     }
 }

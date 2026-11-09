@@ -43,6 +43,7 @@ namespace Frisket.Cli
                     case "--default-font": options._single["default-font"] = Value("default-font"); break;
                     case "--conformance": options._single["conformance"] = Value("conformance"); break;
                     case "--numbers": options._single["numbers"] = Value("numbers"); break;
+                    case "--missing": options._single["missing"] = Value("missing"); break;
                     case "--split-on": options._single["split-on"] = Value("split-on"); break;
                     case "--name": options._single["name"] = Value("name"); break;
                     case "--max-documents": options._single["max-documents"] = Value("max-documents"); break;
@@ -70,6 +71,10 @@ namespace Frisket.Cli
                     throw new CliError($"--zopfli-iterations wants a whole number of at least 1, not '{passes}'.");
             }
 
+            // At once too, and with or without data: a misspelt word here would otherwise be
+            // read only when a file is bound, after the first documents are written.
+            _ = options.Missing;
+
             return options;
         }
 
@@ -86,6 +91,19 @@ namespace Frisket.Cli
         // separator is a French typographic convention, not a neutral one, and a
         // library meant to be used from anywhere should not assume it.
         public string Numbers => _single.GetValueOrDefault("numbers", "invariant");
+
+        /// <summary>
+        /// What a token the data has no answer for becomes: left showing, the engine's own
+        /// default, so a typo shows instead of hiding; blank, for data that leaves out what a
+        /// record does not have; or a refusal naming the field.
+        /// </summary>
+        public MissingField Missing => _single.GetValueOrDefault("missing", "show").ToLowerInvariant() switch
+        {
+            "show" => MissingField.Show,
+            "blank" => MissingField.Blank,
+            "fail" => MissingField.Fail,
+            var other => throw new CliError($"unknown --missing '{other}'. Try show, blank or fail.")
+        };
 
         public bool Tagged => _flags.Contains("tagged");
         public bool Flat => _flags.Contains("flat");

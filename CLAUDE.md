@@ -2264,6 +2264,15 @@ A path that names no array is **refused** — a typo returning one document inst
 hundred would look like a success. An **empty** array returns zero documents without an
 error: nobody to write to today is an answer.
 
+**And a field a record leaves out was the engine's to decide and no door's to ask.**
+`MissingField` - show the token, blank it, or refuse - has existed since binding did, and the
+CLI, the native library and the server all bound with the default. A host driving the CLI
+wrote every one of twelve fields on every line of its data, empty or not, because a field
+left out printed `{Ref}` (9 November 2026). `--missing`, `"missing"` and `Missing` now ask,
+`show` stays the default so a typo still shows, and `check -d` reads it too, where `fail`
+names the field the data lacks. `check-against-cli.py` holds the library's blank document
+to the CLI's, and to differ from the shown one, or the key could reach neither.
+
 ## 8f. `RepeatOver` clones the children, never the container
 
 The trap, met while building the mail merge: a `PageBreak.Before` set on the container
@@ -3285,6 +3294,51 @@ the mended code, because a rule in a row is not an artifact. *A cell takes its r
 `PdfRoles.Resolve` says in its own comment, so a rule scoped to one page is a cell on one page, and reading its table
 there is right. The sample was wrong, not the rule (§10c).
 
+## 15e. Decoration covers what it holds, and a cell is a cell first
+
+Reported on 9 November 2026 by a host whose backdrop grid was a `TableItem` marked `Role = Artifact`: its
+rows came out as `TR`s straight under the section, refused by PDF/UA 7.2, and `frisket check --tagged` said
+nothing. The host had worked round it by marking every row and cell as well.
+
+Every placed item opens marked content of its own, so `Artifact` on a container set aside its frame - a
+background, a border - and nothing inside it. **Asking who else had it, twelve shapes went to veraPDF
+before a line was changed**, and eight more were refused or wrong:
+
+- a row or a header row set aside was refused the same way;
+- a group set aside passed, with every word in it read;
+- a cell given a role of its own - a heading, a paragraph, decoration - lost its `TD`. The row was then a
+  cell short, and an `H2` sat under a `TR`, which may hold nothing but `TH` and `TD`;
+- a table in a cell was taken for that cell, so its rows were `TR`s under a `TD`;
+- a table, a row or a group given a role that is not a table's, and a cell outside a row, were refused,
+  and no reading of them is right.
+
+What has an answer, the engine gives now. `PdfRoles.Resolve` sets aside whatever is inside something set
+aside. A control is the exception and is read all the same, since a widget must sit in a Form (7.18.4).
+`PdfRoles.CellOf` gives a row the cell it needs around anything that is more than a cell, and what the item
+is goes under it. That is the mechanism a field in a cell already had (§4b), now for every role. A cell set
+aside keeps an empty `TD`, so its row stays whole. What has no answer, `ua.tableRole` names, on both sides
+of §5.
+
+**And two checks followed the role where the backend does not.** `ua.fieldName` asked `role == Form`, so a
+field in a table cell was never asked for its tooltip, while the backend writes a Form for it.
+`can.flattenedFieldAltText` accused a flattened field in a cell or set aside, which the backend draws as a
+cell or as decoration. Both now ask what the backend asks.
+
+No sample moved by a byte, and that is the finding again (§11b): none of the twelve shapes was in any
+document here. Test 130 reads the tree back through `ReadAloud`, which now gives each element's lineage and
+each row's cells, since the order of the tags alone cannot tell a `TR` under a `Table` from one beside it.
+Test 131 shows the document to veraPDF in both output modes. Test 42's fixture carries each shape the
+validator names, mended in place, plus three the echo could get wrong silently: decoration two levels
+down, a table in a cell, and a signature by hand with no tooltip.
+
+Forty-one sabotages from a run seen green, and one went through. It was code doing nothing: a guard
+setting aside a table's header and row rules, which the line under it already answered by setting aside
+every row of the table. It went. The echo keeps its own, because a row read from JSON does not know its
+table.
+
+The cost, stated: a template that marked a group `Artifact` and expected its words read now has them set
+aside, which is what the role says.
+
 ## 15b. A heading numbers itself from the text, not from a style
 
 `{HeadingNumber}` in the heading's own text, `Report.HeadingNumbering` to say how it is written. That is all, and it is what separates it from a word processor's linked lists: the number is not painted to the left of the paragraph by a list machine, it **is** in the text. The author chooses where it sits, what comes before it, and **types the punctuation that follows it** — so the question "1.1 or 1.1." never arises in the format.
@@ -3370,6 +3424,13 @@ The mass rename bit in **three** places no test saw:
 
 - **`/S /Document`**, the root of the PDF structure tree, became `/S /Section`. `Document` is a **standard** structure type of ISO 32000-1; `Section` is not — the standard division type is written `/Sect`. Result: the whole tree passed for a non-standard type with no role map, which **PDF/UA 7.1 refuses**. Found by veraPDF, not by the 52 tests;
 - **the prose** where "document" meant the whole file — "rescales the whole document", "the document's outline" — became "section" and then said the opposite of what it means.
+
+  **And in what the checks say, for three months.** `ua.title` and `ua.language` are about
+  `Report.Title` and `Report.Language`, the file's own, and told every author "The section has
+  no title", located under "Section" while their pointer said `/Title`. The French gave it
+  away by its grammar: "Le section ne dit pas dans quelle langue **il** est écrit" - a
+  masculine pronoun left over from *le document*. Seen in passing on 9 November 2026; they
+  say "The document" now, under "Report" like every other rule about the file.
 
 - **`document`, the browser's object**, in the designer: 142 calls became `section.getElementById`, `section.createElement`… of an identifier that exists nowhere. The page died at its **first** top-level statement — the designer no longer opened at all. The harness's DOM stub went the same way (`global.section = {…}`), so the two breakages cancelled out: the harness said `all good` about a page that does not start. Found on 4 August 2026, a week after the rename, while instrumenting the harness for something else.
 

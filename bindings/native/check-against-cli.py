@@ -35,6 +35,12 @@ else - and smaller than it. Five passes rather than fifteen, since the question 
 and not the last byte, and the key that sets them is then asked too. The keys a host can get
 wrong are asked to be refused, each in its own words.
 
+And what a field the data leaves out becomes, since 9 November 2026, when both learnt to be
+told: the invoice filled from data that answers nothing, through fk_render with "missing":
+"blank" and through `frisket render --missing blank` - the same document as each other, and
+not the one "show" makes, or the option would have reached neither - and "fail" asked of a
+check on both sides, which must name the same field.
+
 Exit code 0 when every case agrees, 1 when one does not.
 """
 import json
@@ -69,6 +75,9 @@ def check_cases(out):
     unreadable = os.path.join(out, "unreadable.data.json")
     with open(unreadable, "w", encoding="utf-8") as f:
         f.write("{ not json")
+    silent = os.path.join(out, "silent.data.json")
+    with open(silent, "w", encoding="utf-8") as f:
+        f.write("{}")
     with open(CATALOGUE, encoding="utf-8") as f:
         catalogue = json.load(f)
 
@@ -78,6 +87,8 @@ def check_cases(out):
         ("--flat", FAULTY, {"interactive": False}, ["--flat"]),
         ("--fields, a model's template", MODEL, {"fields": catalogue}, ["--fields", CATALOGUE]),
         ("-d, data that is not JSON", TEMPLATE, {"data": "{ not json"}, ["-d", unreadable]),
+        ("-d --missing fail, data that answers nothing", TEMPLATE, {"data": "{}", "missing": "fail"},
+         ["-d", silent, "--missing", "fail"]),
     ]
 
 
@@ -219,6 +230,51 @@ def compare_zopfli(template, fonts, cli, out):
     return failures + wrong
 
 
+def compare_missing(template, fonts, cli, out):
+    """The invoice filled from data that answers nothing, its tokens left blank on both sides:
+    one document, and not the one left showing them - then a word neither knows, refused."""
+    silent = os.path.join(out, "silent.data.json")
+    with open(silent, "w", encoding="utf-8") as f:
+        f.write("{}")
+
+    shown = os.path.join(out, "silent.shown.native.pdf")
+    with open(shown, "wb") as f:
+        f.write(template.render(fonts, "{}"))
+    blank = os.path.join(out, "silent.blank.native.pdf")
+    with open(blank, "wb") as f:
+        f.write(template.render(fonts, "{}", missing="blank"))
+
+    where = os.path.join(out, "missing-" + os.path.basename(cli))
+    subprocess.run(command(cli) + ["render", "-t", TEMPLATE, "-d", silent, "-o", where, "--format", "pdf",
+                                   "--missing", "blank"],
+                   check=True, stdout=subprocess.DEVNULL)
+    produced = os.path.join(where, "silent.data.pdf")   # named after the data file, less its extension
+
+    failures = 0
+    same, said = same_document(blank, produced)
+    print(f"  missing blank, native and {os.path.basename(cli)}: {'the same document' if same else 'DIFFERENT'}")
+    if not same:
+        print(said)
+        failures += 1
+
+    differs, _ = same_document(blank, shown)
+    print(f"  missing blank and show, native: {'THE SAME' if differs else 'different documents'}")
+    if differs:
+        failures += 1
+
+    try:
+        template.render(fonts, "{}", missing="blanc")
+        print("  missing: 'blanc' was taken")
+        failures += 1
+    except frisket.FrisketError as refused:
+        if "show, blank or fail" not in str(refused):
+            print(f"  missing: 'blanc' was refused, but not for its fault: {refused}")
+            failures += 1
+        else:
+            print("  missing: a word it does not know is refused")
+    return failures
+
+
 def main(library, clis, out):
     api = frisket._Api(os.path.abspath(library))
     print(f"  library {os.path.basename(library)} {api.version().decode()}")
@@ -255,6 +311,7 @@ def main(library, clis, out):
             failures += compare_checks(api, cli, out)
             failures += compare_render_issues(api, fonts, cli, out)
             failures += compare_zopfli(template, fonts, cli, out)
+            failures += compare_missing(template, fonts, cli, out)
 
     print("all agree" if not failures else f"{failures} comparison(s) disagree")
     return 1 if failures else 0

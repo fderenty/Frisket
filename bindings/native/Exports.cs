@@ -391,7 +391,7 @@ namespace Frisket.Native
 
             if (Interop.Read(dataJson) is { Length: > 0 } data)
                 issues.AddRange(TemplateData.Check(report, data, target,
-                    new BindingOptions { Numbers = options.Numbers }));
+                    options.Binding));
 
             *result = Handles.Wrap(new Buffer(TemplateIssue.ToJson(issues)));
             return Interop.Ok;
@@ -444,7 +444,7 @@ namespace Frisket.Native
             // Bound or bare, the renderer is handed a section, never the template
             // itself: binding works on a copy so a template can be filled many times.
             Report report = Interop.Read(dataJson) is { Length: > 0 } data
-                ? ReportBinder.Bind(loaded, data, new BindingOptions { Numbers = options.Numbers })
+                ? ReportBinder.Bind(loaded, data, options.Binding)
                 : loaded;
 
             LayoutResult? layout = null;

@@ -70,6 +70,7 @@ What it usually is:
   "data": "<the data JSON, or null>",
   "showBands": false,
   "numbers": "french",
+  "missing": "show",
   "archivable": false,
   "compression": "zlib",
   "iterations": null
@@ -78,6 +79,10 @@ What it usually is:
 
 A template that will not lay out comes back as a 400 carrying the engine's own
 words. That is what the designer shows.
+
+`"missing"` is what a token the data has no answer for becomes: `"show"`, the default, leaves
+it on the page so a typo shows; `"blank"` writes nothing; `"fail"` refuses, naming the field.
+`/check` takes it too, beside `data`, where `"fail"` says which field the data lacks.
 
 `"compression": "zopfli"` asks `/pdf` for a file deflated by Zopfli rather than zlib: the
 same document, 6 to 12% smaller on the documents here, for about a hundred times the time -

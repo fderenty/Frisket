@@ -110,6 +110,9 @@ inline std::string take_text(void* handle) {
 /// this header. Writing the JSON here is six lines and no dependency.
 struct options {
     enum class format { pdf, html, svg };
+    // What a token the data has no answer for becomes: left showing, so a typo shows;
+    // nothing; or a refusal naming the field. See fk_render.
+    enum class missing_field { show, blank, fail };
 
     format shape = format::pdf;
     bool archivable_pdf_a3b = false;
@@ -123,6 +126,7 @@ struct options {
     // Invariant to match the engine's own default; a narrow-space thousands
     // separator is a French convention, not a neutral one.
     bool french_numbers = false;
+    missing_field missing = missing_field::show;
     // Zopfli rather than zlib: the same document, smaller, at about a hundred times the
     // time. Passes over each stream: 0 leaves Zopfli's own number. See fk_render.
     bool zopfli = false;
@@ -144,6 +148,15 @@ struct options {
         }
         if (!name) throw error("unknown format");
 
+        // The same refusal for the same reason: an impossible value is not read as "show".
+        const char* absent = nullptr;
+        switch (missing) {
+            case missing_field::show:  absent = "show";  break;
+            case missing_field::blank: absent = "blank"; break;
+            case missing_field::fail:  absent = "fail";  break;
+        }
+        if (!absent) throw error("unknown missing field rule");
+
         auto flag = [](bool value) { return value ? "true" : "false"; };
 
         std::string json = std::string("{\"format\":\"") + name + '"';
@@ -155,6 +168,7 @@ struct options {
               + ",\"interactive\":" + flag(interactive_fields)
               + ",\"bare\":" + flag(bare_html)
               + ",\"numbers\":\"" + (french_numbers ? "french" : "invariant") + '"'
+              + ",\"missing\":\"" + absent + '"'
               + ",\"compression\":\"" + (zopfli ? "zopfli" : "zlib") + '"'
               + ",\"threads\":" + std::to_string(compression_threads);
         // Only with Zopfli, which the library asks: passes for an encoder nobody asked for

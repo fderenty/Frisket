@@ -30,6 +30,12 @@ namespace Frisket.Native
         // separator is a French convention, not a neutral one.
         internal NumberFormatInfo Numbers { get; private init; } = NumberFormats.Invariant;
 
+        // What a token the data has no answer for becomes: left showing, the engine's own default.
+        internal MissingField Missing { get; private init; } = MissingField.Show;
+
+        /// <summary>How a template is filled: one answer for a render and for a check alike.</summary>
+        internal BindingOptions Binding => new() { Numbers = Numbers, MissingField = Missing };
+
         // How the PDF's streams are deflated: the engine's zlib unless Zopfli is asked for,
         // and ZopfliSharp's own number of passes unless one is given. Threads: how many
         // streams at once - one, since a library takes no threads its caller did not offer.
@@ -66,6 +72,7 @@ namespace Frisket.Native
                     "interactive" => options with { Interactive = Flag(property) },
                     "bare" => options with { Bare = Flag(property) },
                     "numbers" => options with { Numbers = Numbering(Word(property)) },
+                    "missing" => options with { Missing = Absent(Word(property)) },
                     "compression" => options with { Zopfli = Compression(Word(property)) },
                     "iterations" => options with { Iterations = Count(property, "at least 1", n => n >= 1) },
                     "threads" => options with { Threads = Count(property, "-1 or at least 1", n => n is -1 or >= 1) },
@@ -117,6 +124,14 @@ namespace Frisket.Native
             "none" => PdfConformance.None,
             "pdfa3b" or "pdf/a-3b" or "3b" => PdfConformance.PdfA3b,
             _ => throw new ArgumentException($"unknown conformance '{value}'. Try none or pdfa3b.")
+        };
+
+        private static MissingField Absent(string value) => value switch
+        {
+            "show" => MissingField.Show,
+            "blank" => MissingField.Blank,
+            "fail" => MissingField.Fail,
+            _ => throw new ArgumentException($"unknown missing '{value}'. Try show, blank or fail.")
         };
 
         private static NumberFormatInfo Numbering(string value) => value switch

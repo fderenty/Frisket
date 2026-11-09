@@ -45,6 +45,10 @@ type
 
   TErFormat = (erPdf, erHtml, erSvg);
 
+  { What a token the data has no answer for becomes: left showing, so a typo shows;
+    nothing; or a refusal naming the field. See fk_render. }
+  TErMissing = (erShowMissing, erBlankMissing, erFailOnMissing);
+
   { What one document should look like. It travels to the library as JSON, so a
     field added there does not break anything compiled against this unit. }
   TErOptions = record
@@ -58,6 +62,7 @@ type
     InteractiveFields: Boolean;
     BareHtml: Boolean;
     FrenchNumbers: Boolean;
+    Missing: TErMissing;
     // Zopfli rather than zlib: the same document, smaller, at about a hundred times
     // the time. Passes over each stream: 0 leaves Zopfli's own number. See fk_render.
     Zopfli: Boolean;
@@ -308,6 +313,7 @@ begin
   // Invariant to match the engine's own default; a narrow-space thousands
   // separator is a French convention, not a neutral one.
   Result.FrenchNumbers := False;
+  Result.Missing := erShowMissing;
   Result.Zopfli := False;
   Result.ZopfliIterations := 0;
   Result.CompressionThreads := 1;
@@ -321,6 +327,7 @@ end;
 function TErOptions.ToJson: UTF8String;
 const
   Formats: array[TErFormat] of UTF8String = ('pdf', 'html', 'svg');
+  Absent: array[TErMissing] of UTF8String = ('show', 'blank', 'fail');
 begin
   Result := '{"format":"' + Formats[Format] + '"';
   if ArchivablePdfA3b then
@@ -336,6 +343,7 @@ begin
     Result := Result + 'french"'
   else
     Result := Result + 'invariant"';
+  Result := Result + ',"missing":"' + Absent[Missing] + '"';
   if Zopfli then
     Result := Result + ',"compression":"zopfli"'
   else

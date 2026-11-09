@@ -163,6 +163,7 @@ void FK_CALL fk_template_free(fk_template tmpl);
  *       "interactive": true | false,               default true
  *       "bare":        true | false,               default false   (html)
  *       "numbers":     "french" | "invariant",     default "invariant"
+ *       "missing":     "show" | "blank" | "fail",  default "show"    (see below)
  *       "compression": "zlib" | "zopfli",          default "zlib"    (pdf, see below)
  *       "iterations":  1, 2, ...                   default Zopfli's own, 15; only with "zopfli"
  *       "threads":     -1 | 1, 2, ... }            default 1         (pdf)
@@ -173,6 +174,11 @@ void FK_CALL fk_template_free(fk_template tmpl);
  * used as a C string without copying it.
  *
  * An unknown option is refused rather than ignored.
+ *
+ * "missing" is what a token the data has no answer for becomes: left showing, so a typo
+ * shows instead of hiding; nothing, for data that leaves out what a record does not have;
+ * or a refusal, FK_FAILED with the field named. fk_template_check_for reads it too, where
+ * "fail" says which field the data lacks.
  *
  * "hinting": false leaves out the hinting inside each glyph of a subset - far smaller
  * with a hinted face such as Arial. Acrobat and Edge draw the page exactly alike; Firefox

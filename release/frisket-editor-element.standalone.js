@@ -1964,12 +1964,13 @@ const STRINGS = {
     "target.interactive": "fields stay fillable",
     "hint.target": "What you are about to produce. Untick either one to see what the template loses on the way out - the page looks the same either way, which is what makes the loss easy to miss.",
     "name.row": "row", "name.headerRow": "header row",
-    "issue.ua.language": "The section does not say what language it is written in, so a reader announces it with whatever voice it happens to have.",
-    "issue.ua.title": "The section has no title, which is what a reader announces when the file opens.",
+    "issue.ua.language": "The document does not say what language it is written in, so a reader announces it with whatever voice it happens to have.",
+    "issue.ua.title": "The document has no title, which is what a reader announces when the file opens.",
     "issue.ua.altText": "Shown rather than read, and with no alternative text: a screen reader announces nothing at all.",
     "issue.ua.formRole": "Only a field can be a form control. This will be drawn instead, and a drawing needs an alternative text.",
     "issue.ua.fieldName": "This field has no tooltip, so a reader announces a control with no idea what it is for.",
     "issue.ua.tableHeader": "This table has no header row, so values are announced with nothing to say what they are.",
+    "issue.ua.tableRole": "This role does not fit a table's shape: a table holds rows, a row holds cells, and a cell sits in a row. A reader cannot follow it, and PDF/UA refuses the file. Leave the role to be worked out, or choose Decoration.",
     "issue.sound.emptyBarcode": "This barcode has nothing to encode.",
     "issue.sound.emptyImage": "This image has neither a picture of its own nor a path to one in the data, so nothing will ever be drawn here.",
     "issue.sound.emptyImportedPage": "This imported page names no PDF, so nothing will be drawn here.",
@@ -2383,12 +2384,13 @@ const STRINGS = {
     "target.interactive": "champs remplissables",
     "hint.target": "Ce que vous allez produire. Décochez l'un ou l'autre pour voir ce que le gabarit perd en chemin — la page a la même allure dans les deux cas, et c'est ce qui rend la perte facile à manquer.",
     "name.row": "ligne", "name.headerRow": "ligne d\u2019en-tête",
-    "issue.ua.language": "Le section ne dit pas dans quelle langue il est écrit\u202f: un lecteur l\u2019annonce avec la voix qu\u2019il a sous la main.",
-    "issue.ua.title": "Le section n\u2019a pas de titre, or c\u2019est ce qu\u2019un lecteur annonce à l\u2019ouverture.",
+    "issue.ua.language": "Le document ne dit pas dans quelle langue il est écrit\u202f: un lecteur l\u2019annonce avec la voix qu\u2019il a sous la main.",
+    "issue.ua.title": "Le document n\u2019a pas de titre, or c\u2019est ce qu\u2019un lecteur annonce à l\u2019ouverture.",
     "issue.ua.altText": "Montré et non lu, sans texte de remplacement\u202f: un lecteur d\u2019écran n\u2019annonce rien du tout.",
     "issue.ua.formRole": "Seul un champ peut être un contrôle de formulaire. Celui-ci sera dessiné, et un dessin a besoin d\u2019un texte de remplacement.",
     "issue.ua.fieldName": "Ce champ n\u2019a pas d\u2019infobulle\u202f: un lecteur annonce un contrôle sans savoir à quoi il sert.",
     "issue.ua.tableHeader": "Ce tableau n\u2019a pas de ligne d\u2019en-tête\u202f: les valeurs sont annoncées sans rien qui dise ce qu\u2019elles sont.",
+    "issue.ua.tableRole": "Ce rôle ne suit pas la forme d\u2019un tableau\u202f: un tableau contient des lignes, une ligne des cellules, et une cellule se trouve dans une ligne. Un lecteur ne peut pas le suivre, et PDF/UA refuse le fichier. Laisser le rôle se déduire, ou choisir Décoration.",
     "issue.sound.emptyBarcode": "Ce code-barres n\u2019a rien à encoder.",
     "issue.sound.emptyImage": "Cette image n’a ni image propre ni chemin vers une image dans les données : rien n’y sera jamais dessiné.",
     "issue.sound.emptyImportedPage": "Cette page importée ne nomme aucun PDF : rien n’y sera dessiné.",
@@ -4490,10 +4492,14 @@ function sideBySide(container, band) {
 }
 
 /// What an element counts as when nothing was declared. Mirrors PdfRoles.Resolve.
-function roleOf(item, parent) {
+/// `aside` says the parent, or something above it, is decoration: it covers what it holds,
+/// whatever an item inside says of itself. JSON has no way up, so the walk carries it.
+function roleOf(item, parent, aside) {
+  if (aside) return "Artifact";
   if (item.Role && item.Role !== "Auto") return item.Role;
-  if (parent && parent.$type === "TableRow") return parent.IsHeader ? "TableHeader" : "TableCell";
+  // A table is a table wherever it stands; in a cell it gets the cell the row needs as well.
   if (item.$type === "TableItem") return "Table";
+  if (parent && parent.$type === "TableRow") return parent.IsHeader ? "TableHeader" : "TableCell";
   if (item.$type === "TableRow") return "TableRow";
   if (item.$type === "LineItem") return "Artifact";
   if (item.$type === "ImageItem" || item.$type === "BarcodeItem") return "Figure";
@@ -4501,6 +4507,23 @@ function roleOf(item, parent) {
     return item.Kind === "Signature" && item.Signing === "ByHand" ? "Figure" : "Form";
   if (item.$type === "TextItem" || item.$type === "AdvancedTextItem") return "Paragraph";
   return "Section";
+}
+
+/// Whether a table's roles and its shape disagree here. Mirrors PdfRoles.BreaksTable.
+function breaksTable(item, parent, role) {
+  if (role === "Artifact") return false;
+  if (item.$type === "TableItem") return role !== "Table";
+  if (item.$type === "TableRow") return role !== "TableRow";
+  if (role === "Table" || role === "TableRow") return true;
+  if (role === "TableCell" || role === "TableHeader") return !(parent && parent.$type === "TableRow");
+  return false;
+}
+
+/// Whether a field is written as a widget wherever the output keeps it fillable: every field
+/// but a signature to be given by hand. In a cell, set aside or given a role of its own, a
+/// control is still a Form - what the engine's backend asks, and so what the panel asks.
+function writesWidget(field) {
+  return !(field.Kind === "Signature" && field.Signing === "ByHand");
 }
 
 /// Reads the template and returns what will go wrong. `profile` is a set holding
@@ -4513,8 +4536,8 @@ function validate(rep, profile) {
     found.push({ rule, level, item, where, message: t("issue." + rule, args) });
 
   if (profile.accessible) {
-    if (!(rep.Language || "").trim()) add("ua.language", "error", null, t("panel.section"));
-    if (!(rep.Title || "").trim()) add("ua.title", "error", null, t("panel.section"));
+    if (!(rep.Language || "").trim()) add("ua.language", "error", null, t("panel.report"));
+    if (!(rep.Title || "").trim()) add("ua.title", "error", null, t("panel.report"));
   }
 
   // Every section, as the engine does, and named so a fault in the third does not
@@ -4559,10 +4582,17 @@ function validate(rep, profile) {
   // that is not happening here.
   if (profile.capable && profile.target) {
     const items = [];
-    const gather = node => {
-      (node.Childs || []).forEach(child => { items.push(child); gather(child); });
+    // Where each item stands, for roleOf: JSON has no way up.
+    const standing = new Map();
+    const gather = (node, aside) => {
+      aside = aside || node.Role === "Artifact";
+      (node.Childs || []).forEach(child => {
+        items.push(child);
+        standing.set(child, [node, aside]);
+        gather(child, aside);
+      });
     };
-    sections.forEach(gather);          // the same reach as Report.AllItems
+    sections.forEach(section => gather(section, false));   // the same reach as Report.AllItems
 
     if (!profile.target.Tagged) {
       const described = (rep.Language || "").trim()
@@ -4604,8 +4634,11 @@ function validate(rep, profile) {
       // with nothing to say for it is refused by PDF/UA. Only when tagged: untagged
       // there is no tree to be wrong about, and a rule that accuses a template that is
       // right is how people learn to stop reading the panel.
+      // A figure only where the engine makes one: a field set aside is decoration, and a
+      // field in a cell is that cell, neither owing a description.
       if (profile.target.Tagged)
-        for (const mute of losing.filter(f => !(f.AltText || "").trim()))
+        for (const mute of losing.filter(f => !(f.AltText || "").trim()
+                                             && ["Form", "Figure"].includes(roleOf(f, ...standing.get(f)))))
           add("can.flattenedFieldAltText", "error", mute, t("panel.report"));
 
       // One per signature: each is its own place to go and put right - globally by
@@ -4619,14 +4652,17 @@ function validate(rep, profile) {
   return found;
 }
 
-function walkFor(container, where, profile, add, numbering) {
-  if (container.$type === "TableItem") tableFaults(container, where, profile, add);
+function walkFor(container, where, profile, add, numbering, aside) {
+  // Set aside by its own role or by anything above it, as PdfRoles.Resolve asks of an item.
+  aside = !!aside || container.Role === "Artifact";
+
+  if (container.$type === "TableItem") tableFaults(container, where, profile, add, aside);
 
   const names = new Set();
 
   for (const child of container.Childs || []) {
     const here = where + " › " + shortName(child);
-    const role = roleOf(child, container);
+    const role = roleOf(child, container, aside);
 
     if (profile.accessible) {
       // A figure with nothing to say in its place is announced as nothing at all:
@@ -4642,9 +4678,15 @@ function walkFor(container, where, profile, add, numbering) {
       if (role === "Form" && child.$type !== "FieldItem")
         add("ua.formRole", "error", child, here);
 
-      // The tooltip is a field's accessible name.
-      if (role === "Form" && child.$type === "FieldItem" && !(child.Tooltip || "").trim())
+      // The tooltip is a field's accessible name, asked of every field a widget is written
+      // for: asked of the role alone, a field in a table cell was never asked.
+      if (child.$type === "FieldItem" && writesWidget(child) && !(child.Tooltip || "").trim())
         add("ua.fieldName", "error", child, here);
+
+      // A table's roles and its shape disagreeing, where no reading is right: rows with no
+      // table over them, a table holding something other than rows, a cell outside a row.
+      if (breaksTable(child, container, role))
+        add("ua.tableRole", "error", child, here);
     }
 
     if (profile.sound) {
@@ -4758,13 +4800,18 @@ function walkFor(container, where, profile, add, numbering) {
       }
     }
 
-    if (child.Childs) walkFor(child, here, profile, add, numbering);
+    if (child.Childs) walkFor(child, here, profile, add, numbering, aside);
   }
 }
 
-function tableFaults(table, where, profile, add) {
+function tableFaults(table, where, profile, add, aside) {
+  // A table set aside is not read, so neither rule is about it; nor is a row set aside,
+  // which is also why such a row is no header. The engine asks each row, which knows its
+  // table; a row read from JSON does not, so the table answers for its rows here.
+  if (aside) return;
   const rows = (table.Childs || []).filter(r => r.$type === "TableRow"
-                                           && (r.Style || {}).Visibility !== "Gone");
+                                           && (r.Style || {}).Visibility !== "Gone"
+                                           && r.Role !== "Artifact");
   if (!rows.length) return;
 
   if (profile.accessible && !rows.some(r => r.IsHeader))

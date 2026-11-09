@@ -280,6 +280,14 @@ namespace Frisket
                     && ReferenceEquals(element.Item, rich) && element.Page == _pageObjects.Count)
                 {
                     _inElement = true;
+
+                    // A cell set aside keeps its place in the row and nothing of its words.
+                    if (element.Mcid < 0)
+                    {
+                        _content.Append("/Artifact BMC\n");
+                        return;
+                    }
+
                     (element.Pieces ??= new List<int>()).Add(_mcid);
                     _content.Append('/').Append(element.Tag).Append(" <</MCID ").Append(_mcid).Append(">> BDC\n");
                     _mcid++;
@@ -291,6 +299,10 @@ namespace Frisket
 
             PdfRole role = PdfRoles.Resolve(item);
 
+            // The cell the row needs, asked before the role can change below: a control in
+            // a cell is still a cell, and so is a heading, a nested table or decoration.
+            PdfRole? cell = PdfRoles.CellOf(item, role);
+
             // The tree and the drawing must answer ONE question - is a widget coming? -
             // and the role must follow the answer in both directions.
             //
@@ -299,7 +311,8 @@ namespace Frisket
             // widget nested in a Form. A field used as a table cell reached exactly that
             // state - PdfRoles.Resolve answers TableCell for anything whose parent is a
             // TableRow, before it ever looks at FieldItem - so the widget was written,
-            // listed in /Annots and in /AcroForm /Fields, and pointed at by nothing.
+            // listed in /Annots and in /AcroForm /Fields, and pointed at by nothing. And a
+            // control set aside as decoration is read all the same, for the same reason.
             //
             // The other way round, three ways to open a Form no widget comes for: the
             // output is flattened; the item is a signature to be given by hand; or it is
@@ -307,9 +320,7 @@ namespace Frisket
             // PdfRoles.Resolve already has, because an authored role is taken first.
             // It becomes what it is - something drawn - and a drawing is a Figure, which
             // needs AltText like any other.
-            bool cell = role is PdfRole.TableCell or PdfRole.TableHeader;
-
-            if (WillHaveWidget(item, Interactive, frame) && !cell)
+            if (WillHaveWidget(item, Interactive, frame))
                 role = PdfRole.Form;
             else if (role == PdfRole.Form)
                 role = PdfRole.Figure;
@@ -328,6 +339,44 @@ namespace Frisket
                     : null;
 
             _inElement = true;
+
+            // A cell is the row's before it is anything else. Tagged as what it holds, a
+            // control or a heading in a cell left the row a cell short and put a Form or an
+            // H2 under a TR, which may hold nothing but TH and TD; a nested table left its rows
+            // under the TD; and a cell set aside left the row a cell short. Each was refused by
+            // veraPDF, and each one item makes two elements: the cell keeps its place in the
+            // row, and what it is besides goes under it - or, set aside, nowhere.
+            //
+            // The control came first and had this for itself alone. The form validator asked
+            // for both elements, in that order, on the conformance document (CLAUDE.md 4b);
+            // the rest were found asking who else had it, on 9 November 2026.
+            if (cell is { } around && around != role)
+            {
+                _marked.Add(new Marked(item, PdfRoles.Tag(around), null, language, _pageObjects.Count, -1));
+                int owner = _marked.Count - 1;
+
+                if (role == PdfRole.Artifact)
+                {
+                    _content.Append("/Artifact BMC\n");
+                    return;
+                }
+
+                string inner = PdfRoles.Tag(role);
+
+                if (role == PdfRole.Form)
+                {
+                    _marked.Add(new Marked(item, inner, altText, null, _pageObjects.Count, -1) { Owner = owner });
+                    _openForm = _marked.Count - 1;
+                    _content.Append("/Artifact BMC\n");
+                    return;
+                }
+
+                _marked.Add(new Marked(item, inner, altText, null, _pageObjects.Count, _mcid) { Owner = owner });
+                _openForm = -1;
+                _content.Append('/').Append(inner).Append(" <</MCID ").Append(_mcid).Append(">> BDC\n");
+                _mcid++;
+                return;
+            }
 
             // Decoration is marked as such rather than tagged. Assistive software skips
             // an artifact, which is the whole point: a tiled watermark read out
@@ -352,28 +401,6 @@ namespace Frisket
             if (role == PdfRole.Form)
             {
                 _marked.Add(new Marked(item, tag, altText, language, _pageObjects.Count, -1));
-                _openForm = _marked.Count - 1;
-                _content.Append("/Artifact BMC\n");
-                return;
-            }
-
-            // A control used as a table cell has to be both, and cannot be either alone.
-            // Tagged as a cell, its widget is reachable from nothing - PDF/UA 7.18.1
-            // wants every annotation in the tree, 7.18.4 wants it nested in a Form.
-            // Tagged as a Form, veraPDF answers "TR element may contain only TH and TD
-            // elements", and the row is then one cell short of the header, which is a
-            // second rule broken by the first fix.
-            //
-            // Both were tried, in that order, on the conformance document; this is what
-            // the validator was asking for. One item, two elements: the cell keeps its
-            // place in the row, and the Form under it takes the widget.
-            if (cell && WillHaveWidget(item, Interactive, frame))
-            {
-                _marked.Add(new Marked(item, tag, null, language, _pageObjects.Count, -1));
-                int owner = _marked.Count - 1;
-
-                _marked.Add(new Marked(item, PdfRoles.Tag(PdfRole.Form), altText, null,
-                                       _pageObjects.Count, -1) { Owner = owner });
                 _openForm = _marked.Count - 1;
                 _content.Append("/Artifact BMC\n");
                 return;
@@ -422,11 +449,12 @@ namespace Frisket
             var owner = new Dictionary<(BaseItem, int), int>();
             for (int i = 0; i < _marked.Count; i++)
             {
-                // An element that names its owner is a second element for an item that
-                // already has one - it is not what that item resolves to, and registering
-                // it here would hand the item's children to the wrong half of the pair.
-                if (_marked[i].Owner < 0)
-                    owner[(_marked[i].Item, _marked[i].Page)] = i;
+                // Where one item makes two elements - the cell a row needs, and what the item
+                // is under it - the second is written after the first and is the one kept
+                // here: what the item holds belongs in what it is. A nested table's rows go
+                // under its Table, which is under the TD; registered on the cell they were
+                // TRs under a TD, refused as surely as before it had a cell.
+                owner[(_marked[i].Item, _marked[i].Page)] = i;
             }
 
             var parentOf = new int[_marked.Count];
@@ -517,10 +545,8 @@ namespace Frisket
                 // /K -1 points at a mark that is in no content stream, which veraPDF
                 // reads as a broken tree.
                 //
-                // Unreachable today - -1 is written only for a Form, and a Form is now
-                // opened only where a widget is coming, which sets Field just above.
-                // That is a property of two other methods, and this one cannot see it:
-                // the guard costs a comparison and survives their next change.
+                // Reached by a cell set aside as decoration: the row keeps its cell, and the
+                // cell holds nothing a reader is given.
 
                 // A heading cell says which way it heads, or a reader cannot tell whether
                 // it labels the column below or the row beside it.

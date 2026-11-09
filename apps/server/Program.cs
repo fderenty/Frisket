@@ -211,6 +211,18 @@ app.MapPost("/check", (CheckRequest request) =>
     if (string.IsNullOrWhiteSpace(request.Template))
         return Results.BadRequest(new { error = "No template was sent." });
 
+    // A request the server cannot read is the caller's fault, said as such, and not a
+    // finding about the template.
+    MissingField missing;
+    try
+    {
+        missing = Missing(request.Missing);
+    }
+    catch (ArgumentException e)
+    {
+        return Results.BadRequest(new { error = e.Message });
+    }
+
     var issues = new List<TemplateIssue>(TemplateJson.Check(request.Template));
     if (!issues.Any(i => i.Rule == "read.invalid"))
     {
@@ -226,7 +238,8 @@ app.MapPost("/check", (CheckRequest request) =>
                 issues.AddRange(TemplateFields.Check(report, fields.GetRawText()));
 
             if (!string.IsNullOrWhiteSpace(request.Data))
-                issues.AddRange(TemplateData.Check(report, request.Data, target));
+                issues.AddRange(TemplateData.Check(report, request.Data, target,
+                    new BindingOptions { MissingField = missing }));
         }
         catch (Exception e) when (e is InvalidOperationException or FileNotFoundException or JsonException)
         {
@@ -285,7 +298,7 @@ static Report Build(PreviewRequest request)
     if (string.IsNullOrWhiteSpace(request.Data))
         return template;
 
-    var options = new BindingOptions();
+    var options = new BindingOptions { MissingField = Missing(request.Missing) };
     if (string.Equals(request.Numbers, "french", StringComparison.OrdinalIgnoreCase))
         options.Numbers = NumberFormats.French;
 
@@ -321,6 +334,18 @@ static ZlibCompressor? Compressor(PreviewRequest request, CancellationToken abor
     }
 }
 
+/// <summary>
+/// What a token the data has no answer for becomes: left showing unless the request says
+/// "blank" or "fail". Anything else is refused, as an unknown compression is.
+/// </summary>
+static MissingField Missing(string? asked) => asked?.Trim().ToLowerInvariant() switch
+{
+    null or "" or "show" => MissingField.Show,
+    "blank" => MissingField.Blank,
+    "fail" => MissingField.Fail,
+    var other => throw new ArgumentException($"Unknown missing '{other}'. Try show, blank or fail.")
+};
+
 /// <summary>Loads every font shipped with the repository, looking upwards for the folder.</summary>
 static FontLibrary LoadFonts(string from, ILogger logger)
 {
@@ -346,6 +371,7 @@ static FontLibrary LoadFonts(string from, ILogger logger)
 /// <param name="Data">The data section, or null to render the template as it stands.</param>
 /// <param name="ShowBands">Tint the header, body and footer bands.</param>
 /// <param name="Numbers">"french" for narrow-space grouping, anything else for invariant.</param>
+/// <param name="Missing">What a token the data has no answer for becomes: "show" (null), "blank" or "fail".</param>
 /// <param name="Archivable">Ask the PDF for PDF/A-3 conformance.</param>
 /// <param name="Compression">"zopfli" for a smaller PDF at about a hundred times the time; null or "zlib" for the engine's own.</param>
 /// <param name="Iterations">The passes Zopfli makes over each stream; null for ZopfliSharp's default. Only with "zopfli".</param>
@@ -356,7 +382,8 @@ internal sealed record PreviewRequest(
     string? Numbers = null,
     bool Archivable = false,
     string? Compression = null,
-    int? Iterations = null);
+    int? Iterations = null,
+    string? Missing = null);
 
 /// <summary>
 /// What /check is asked: the template as text, the host's catalogue of fields when it has one
@@ -370,7 +397,8 @@ internal sealed record CheckRequest(
     bool Tagged = true,
     bool Interactive = true,
     bool Paged = true,
-    string? Data = null);
+    string? Data = null,
+    string? Missing = null);
 
 [JsonSerializable(typeof(PreviewRequest))]
 internal partial class ServerJson : JsonSerializerContext;

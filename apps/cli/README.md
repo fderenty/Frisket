@@ -31,6 +31,12 @@ which forbids things the engine now writes, transparency first among them.
 `--flat` draws form fields instead of making them fill-in, for a section meant to be
 printed and written on rather than typed into.
 
+`--missing` says what a token the data has no answer for becomes. `show`, the default,
+leaves `{Ref}` on the page, so a typo shows instead of hiding. `blank` writes nothing in
+its place, for data that leaves out what a record does not have rather than writing every
+field on every line. `fail` refuses the document and names the field. `check -d` reads it
+too, where `fail` says which field the data lacks.
+
 `--zopfli` deflates the PDF with [Zopfli](https://github.com/fderenty/ZopfliSharp) rather
 than zlib: the same document, which every reader inflates exactly as before, and smaller -
 6.6% off the ACME invoice, whose weight is its logo, and 11.5% off the showcase, a report

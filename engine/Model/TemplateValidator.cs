@@ -383,9 +383,12 @@ namespace Frisket
                 // a rule that accuses a template that is right teaches people to ignore
                 // the panel, and this panel is the only thing between a simplified editor
                 // and a document veraPDF refuses.
+                // A Figure only where the backend makes one: a field set aside is drawn as
+                // decoration, and a field in a cell is that cell, neither owing a description.
                 if (target.Tagged)
                 {
-                    foreach (FieldItem mute in losing.Where(f => string.IsNullOrWhiteSpace(f.AltText)))
+                    foreach (FieldItem mute in losing.Where(f => string.IsNullOrWhiteSpace(f.AltText)
+                                                              && PdfRoles.Resolve(f) is PdfRole.Form or PdfRole.Figure))
                     {
                         found.Add(new TemplateIssue("can.flattenedFieldAltText", IssueLevel.Error,
                             "This field will be drawn rather than left fillable, so it is a "
@@ -423,16 +426,16 @@ namespace Frisket
             if (string.IsNullOrWhiteSpace(report.Language))
             {
                 found.Add(new TemplateIssue("ua.language", IssueLevel.Error,
-                    "The section does not say what language it is written in, so a reader "
+                    "The document does not say what language it is written in, so a reader "
                     + "announces it with whatever voice it happens to have. Set Language to a "
-                    + "tag such as fr-FR.", null, "Section"));
+                    + "tag such as fr-FR.", null, "Report"));
             }
 
             if (string.IsNullOrWhiteSpace(report.Title))
             {
                 found.Add(new TemplateIssue("ua.title", IssueLevel.Error,
-                    "The section has no title, which is what a reader announces when the file "
-                    + "opens and what an archive indexes it under.", null, "Section"));
+                    "The document has no title, which is what a reader announces when the file "
+                    + "opens and what an archive indexes it under.", null, "Report"));
             }
         }
 
@@ -535,13 +538,31 @@ namespace Frisket
                         + "leave the role to be worked out.", item, where));
                 }
 
-                // The tooltip is a field's accessible name; PDF/UA requires one.
+                // The tooltip is a field's accessible name; PDF/UA requires one. Asked of every
+                // field a widget is written for, which is what the backend asks: in a cell, set
+                // aside as decoration or given a role of its own, a control is still a Form.
+                // Asked of the role alone, a field in a table cell was never asked.
                 if (item is FieldItem field && string.IsNullOrWhiteSpace(field.Tooltip)
-                    && role == PdfRole.Form)
+                    && !(field.Kind == FieldKind.Signature && field.Signing == Signing.ByHand))
                 {
                     found.Add(new TemplateIssue("ua.fieldName", IssueLevel.Error,
                         "This field has no tooltip, so a reader announces a control with no idea "
                         + "what it is for.", item, where));
+                }
+
+                // A table's roles and its shape disagreeing: rows with no table over them, a
+                // table holding something other than rows, a cell outside a row. Nothing in
+                // the model stops it, a role being anything the author writes, and veraPDF
+                // refuses each. What the engine can mend it does - a cell keeps its TD and
+                // what it is goes under it, decoration covers what it holds - so this is what
+                // is left, where no reading is right.
+                if (PdfRoles.BreaksTable(item, role))
+                {
+                    found.Add(new TemplateIssue("ua.tableRole", IssueLevel.Error,
+                        "This role does not fit a table's shape: a table holds rows, a row holds "
+                        + "cells, and a cell sits in a row. A reader cannot follow it, and PDF/UA "
+                        + "refuses the file. Leave the role to be worked out, or set Artifact if "
+                        + "this is decoration.", item, where));
                 }
             }
 
@@ -731,6 +752,13 @@ namespace Frisket
         {
             var rows = table.Childs.OfType<TableRow>()
                             .Where(r => r.Style.Visibility != Visibility.Gone).ToList();
+
+            // A row set aside is not read, so neither rule is about it - and it is no header. A
+            // table set aside has every row set aside with it, so it has none left to ask about:
+            // a grid drawn as a backdrop has no header to announce and no row a reader could lose
+            // its place in. (A guard for the table itself was written first; taking it out changed
+            // nothing, since this line already answered, so it went.)
+            rows = rows.Where(r => PdfRoles.Resolve(r) != PdfRole.Artifact).ToList();
 
             if (rows.Count == 0)
                 return;

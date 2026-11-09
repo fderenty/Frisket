@@ -887,5 +887,107 @@ namespace test
 
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// The command line chooses what a token the data has no answer for becomes, and so do
+        /// the native library and the server: the engine always could, and no door said so.
+        ///
+        /// Reported on 9 November 2026 by a host driving the CLI, whose data file wrote every one
+        /// of twelve fields on every line, empty or not, because a field left out printed its
+        /// token - "{Ref}" - and nothing could ask for MissingField.Blank.
+        /// </summary>
+        [Fact]
+        public void Test132_TheCommandLineChoosesWhatAMissingFieldBecomes()
+        {
+            const string testName = "Test 132";
+            Console.WriteLine("Test 132: what a field the data leaves out becomes, asked from the command line");
+            Console.WriteLine();
+
+            var report = new Report
+            {
+                Title = "Missing", Language = "en-GB", GeneratedAt = SampleDate,
+                Dimension = new() { Width = 210, Height = 297 },
+                Body = new() { Layout = LayoutMode.Stack },
+            };
+            var lines = new TableItem { RepeatOver = "Lines" };
+            lines.AddColumn(40).AddColumn(80);
+            lines.AddHeaderRow(new TextItem { Text = "Item" }, new TextItem { Text = "Note" });
+            lines.AddRow(new TextItem { Text = "{Name}" }, new TextItem { Text = "{Note}" });
+            report.Body!.Add(lines);
+            report.Reattach();
+
+            string directory = Directory.CreateTempSubdirectory("frisket-missing").FullName;
+            string template = Path.Combine(directory, "lines.json");
+            string data = Path.Combine(directory, "lines.data.json");
+            File.WriteAllText(template, report.ToJson());
+            // The second line has no note, which is the whole question.
+            File.WriteAllText(data, """{ "Lines": [ { "Name": "Hammer", "Note": "Steel" }, { "Name": "Saw" } ] }""");
+
+            string configuration = AppContext.BaseDirectory.Contains(
+                Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar) ? "Debug" : "Release";
+            string cli = Path.Combine(RepositoryRoot(), "apps", "cli", "bin", configuration, "net10.0", "Frisket.Cli.dll");
+
+            (int Exit, string Errors, string Output) Cli(params string[] args)
+            {
+                var run = new System.Diagnostics.Process
+                {
+                    StartInfo = new System.Diagnostics.ProcessStartInfo("dotnet")
+                    {
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                    },
+                };
+                run.StartInfo.ArgumentList.Add(cli);
+                foreach (string arg in args)
+                    run.StartInfo.ArgumentList.Add(arg);
+                run.Start();
+                string output = run.StandardOutput.ReadToEnd();
+                string errors = run.StandardError.ReadToEnd();
+                run.WaitForExit();
+                return (run.ExitCode, errors, output);
+            }
+
+            string Rendered(string output, params string[] more)
+            {
+                string into = Path.Combine(directory, output);
+                (int exit, string errors, _) = Cli(["render", "-t", template, "-d", data, "-o", into, "--format", "mail", .. more]);
+                AssertEqual(testName, $"{output}: written", "0 ", $"{exit} {errors.Trim()}", 0);
+                return File.ReadAllText(Path.Combine(into, "lines.data.mail.html"));
+            }
+
+            string shown = Rendered("show");
+            AssertEqual(testName, "left showing by default, so a typo shows", true, shown.Contains("{Note}", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and as asked for by name", true,
+                Rendered("named", "--missing", "show").Contains("{Note}", StringComparison.Ordinal), 0);
+
+            string blank = Rendered("blank", "--missing", "blank");
+            AssertEqual(testName, "blank writes nothing in its place", false, blank.Contains("{Note}", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and leaves what the data does say", true,
+                blank.Contains("Steel", StringComparison.Ordinal) && blank.Contains("Saw", StringComparison.Ordinal), 0);
+
+            (int failed, string why, _) = Cli("render", "-t", template, "-d", data, "-o", Path.Combine(directory, "fail"),
+                                            "--format", "mail", "--missing", "fail");
+            AssertEqual(testName, "fail refuses", 1, failed, 0);
+            AssertEqual(testName, "naming the field", true, why.Contains("'Note'", StringComparison.Ordinal), 0);
+
+            // Refused at once, with or without data, and before anything is written.
+            (int unknown, string said, _) = Cli("render", "-t", template, "-o", Path.Combine(directory, "typo"), "--missing", "blanc");
+            AssertEqual(testName, "a word it does not know is refused", 2, unknown, 0);
+            AssertEqual(testName, "saying what it takes", true, said.Contains("show, blank or fail", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "and nothing is written", false, Directory.Exists(Path.Combine(directory, "typo")), 0);
+
+            // check -d reads it too, and fail is how it says which field the data lacks.
+            (int checkedExit, _, string findings) = Cli("check", "-t", template, "-d", data, "--missing", "fail", "--json");
+            (int quietExit, _, _) = Cli("check", "-t", template, "-d", data);
+            Console.WriteLine($"    {findings.Trim()}");
+            AssertEqual(testName, "check with fail finds the field the data lacks", true,
+                findings.Contains("data.invalid", StringComparison.Ordinal) && findings.Contains("'Note'", StringComparison.Ordinal), 0);
+            AssertEqual(testName, "as an error, which a build reads", 3, checkedExit, 0);
+            AssertEqual(testName, "and without it, nothing", 0, quietExit, 0);
+
+            Directory.Delete(directory, recursive: true);
+            Console.WriteLine();
+        }
     }
 }

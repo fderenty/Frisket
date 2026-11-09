@@ -16,8 +16,8 @@
   {
     "rule": "ua.language",
     "level": "error",
-    "message": "The section does not say what language it is written in, so a reader announces it with whatever voice it happens to have. Set Language to a tag such as fr-FR.",
-    "where": "Section",
+    "message": "The document does not say what language it is written in, so a reader announces it with whatever voice it happens to have. Set Language to a tag such as fr-FR.",
+    "where": "Report",
     "pointer": "/Language"
   },
   {
